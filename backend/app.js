@@ -8,11 +8,13 @@ app.use(cors());
 app.use(express.json());
 
 // Importar rotas
-const testeRoutes = require('./routes/teste.routes');
 const galeriaRoutes = require('./routes/galeriaRoutes');
+const authRoutes = require('./routes/auth.Routes');
+
+require('dotenv').config();
 
 // Usar rotas
-app.use('/api', testeRoutes);
+app.use('/api', authRoutes);
 app.use('/api/galeria', galeriaRoutes);
 
 module.exports = app;
