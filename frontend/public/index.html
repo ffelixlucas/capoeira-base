@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capoeira Base - Galeria</title>
+</head>
+<body>
+  <h1>Galeria de Fotos</h1>
+
+  <div id="galeria"></div>
+
+  <script>
+    fetch('http://localhost:3000/api/galeria')
+      .then(res => res.json())
+      .then(data => {
+        const galeria = document.getElementById('galeria');
+
+        if (data.length === 0) {
+          galeria.innerText = 'Nenhuma imagem cadastrada ainda.';
+          return;
+        }
+
+        data.forEach(imagem => {
+          const img = document.createElement('img');
+          img.src = imagem.imagem_url;
+          img.alt = imagem.titulo || 'Imagem da galeria';
+          img.style.maxWidth = '200px';
+          img.style.margin = '10px';
+          galeria.appendChild(img);
+        });
+      })
+      .catch(err => {
+        console.error('Erro ao carregar galeria:', err);
+        document.getElementById('galeria').innerText = 'Erro ao carregar imagens.';
+      });
+  </script>
+</body>
+</html>
