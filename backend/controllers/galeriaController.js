@@ -15,6 +15,17 @@ async function uploadImagem(req, res) {
   }
 }
 
+async function listarImagens(req, res) {
+  try {
+    const imagens = await galeriaService.obterTodasImagens();
+    res.status(200).json(imagens);
+  } catch (error) {
+    console.error('Erro ao listar imagens:', error);
+    res.status(500).json({ erro: 'Erro ao listar imagens.' });
+  }
+}
+
 module.exports = {
-  uploadImagem
+  uploadImagem,
+  listarImagens
 };
