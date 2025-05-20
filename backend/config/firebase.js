@@ -3,7 +3,7 @@ const serviceAccount = require('./capoeira-base-firebase-adminsdk-fbsvc-9c895f87
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: 'capoeira-base.firebasestorage.app'
+storageBucket: 'gs://capoeira-base.firebasestorage.app'
 });
 
 const bucket = admin.storage().bucket();
