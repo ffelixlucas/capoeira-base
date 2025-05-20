@@ -1,25 +1,39 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./contexts/AuthContext";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Galeria from "./pages/Galeria";
+import RedirectBasedOnAuth from "./components/RedirectBasedOnAuth";
 
-function App() {
+
+const PrivateRoute = ({ children }) => {
+  const { usuario } = useAuth();
+  return usuario ? children : <Navigate to="/login" />;
+};
+
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
         >
-          Learn React
-        </a>
-      </header>
-    </div>
+          <Route index element={<Navigate to="galeria" />} />
+          <Route path="galeria" element={<Galeria />} />
+        </Route>
+
+        <Route path="*" element={<RedirectBasedOnAuth />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
