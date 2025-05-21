@@ -29,14 +29,26 @@ async function processarUpload(imagem, titulo = null, criadoPor = null) {
   });
 }
 
-
 async function obterTodasImagens() {
-  const imagens = await galeriaRepository.buscarTodasImagens();
-  return imagens;
+  return await galeriaRepository.buscarTodasImagens();
 }
 
+async function atualizarOrdemGaleria(lista) {
+  if (!Array.isArray(lista) || lista.length === 0) {
+    throw new Error('Lista de ordem inválida');
+  }
+
+  for (const item of lista) {
+    if (typeof item.id !== 'number' || typeof item.ordem !== 'number') {
+      throw new Error('Formato inválido na lista de ordem');
+    }
+  }
+
+  return await galeriaRepository.atualizarOrdem(lista);
+}
 
 module.exports = {
   processarUpload,
-  obterTodasImagens
+  obterTodasImagens,
+  atualizarOrdemGaleria
 };
