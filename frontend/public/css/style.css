@@ -1,0 +1,57 @@
+/* Reset mínimo */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+    background-color: #f9f9f9;
+  }
+  
+  /* Container da imagem principal */
+  .slider {
+    max-width: 800px;
+    margin: 0 auto 20px;
+    text-align: center;
+  }
+  
+  .slider img {
+    width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  }
+  
+  /* Miniaturas */
+  .thumbnails {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .thumbnails .miniatura {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: transform 0.2s, opacity 0.2s;
+    border-radius: 6px;
+    border: 2px solid transparent;
+  }
+  
+  .thumbnails .miniatura:hover {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  
+  .thumbnails .miniatura.ativa {
+    border-color: #007bff;
+    opacity: 1;
+  }
+  

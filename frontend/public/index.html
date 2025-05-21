@@ -1,39 +1,36 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Capoeira Base - Galeria</title>
-</head>
-<body>
-  <h1>Galeria de Fotos</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Capoeira Base – Galeria</title>
 
-  <div id="galeria"></div>
+    <!-- CSS separado -->
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Capoeira Base</h1>
+    </header>
 
-  <script>
-    fetch('http://localhost:3000/api/galeria')
-      .then(res => res.json())
-      .then(data => {
-        const galeria = document.getElementById('galeria');
+    <main>
+      <!-- Seção da galeria -->
+      <section id="galeria-section">
+        <h2>Galeria de Fotos</h2>
 
-        if (data.length === 0) {
-          galeria.innerText = 'Nenhuma imagem cadastrada ainda.';
-          return;
-        }
+        <!-- Imagem principal -->
+        <div id="slider" class="slider">
+          <img id="imagem-principal" src="" alt="Imagem da galeria" />
+        </div>
 
-        data.forEach(imagem => {
-          const img = document.createElement('img');
-          img.src = imagem.imagem_url;
-          img.alt = imagem.titulo || 'Imagem da galeria';
-          img.style.maxWidth = '200px';
-          img.style.margin = '10px';
-          galeria.appendChild(img);
-        });
-      })
-      .catch(err => {
-        console.error('Erro ao carregar galeria:', err);
-        document.getElementById('galeria').innerText = 'Erro ao carregar imagens.';
-      });
-  </script>
-</body>
+        <!-- Miniaturas -->
+        <div id="thumbnails" class="thumbnails">
+          <!-- Miniaturas inseridas via JS -->
+        </div>
+      </section>
+    </main>
+
+    <!-- JS separado -->
+    <script src="./js/galeria.js" defer></script>
+  </body>
 </html>
