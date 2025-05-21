@@ -1,26 +1,29 @@
-import React from 'react';
-import GaleriaMenu from './GaleriaMenu';
+import React from "react";
+import GaleriaMenu from "./GaleriaMenu";
 
-function GaleriaItem({ imagem, index, onRemover }) {
+function GaleriaItem({ imagem, index, onRemover, onMoverParaFrente, onMoverParaTras, onGirar }) {
   return (
-<div className="relative border rounded overflow-visible bg-white shadow-sm">      {/* Imagem */}
+    <div className="relative border rounded-lg overflow-visible bg-white shadow-md">
       <img
         src={imagem.imagem_url}
-        alt={imagem.titulo || 'imagem'}
-        className="w-full h-28 object-cover"
+        alt={imagem.titulo || "imagem"}
+        className="w-full h-32 object-contain rounded-t-lg" // Ajuste para evitar corte
       />
 
-      {/* Número da imagem */}
-      <span className="absolute top-1 left-1 bg-white text-xs font-semibold px-1 py-0.5 rounded shadow">
-        {(index + 1).toString().padStart(2, '0')}
+      <span className="absolute top-2 left-2 bg-white text-xs font-semibold px-2 py-1 rounded-full shadow">
+        {(index + 1).toString().padStart(2, "0")}
       </span>
 
-      {/* Botão de teste no canto superior direito */}
-      <GaleriaMenu />
+      <GaleriaMenu
+        onVer={() => window.open(imagem.imagem_url, "_blank")}
+        onMoverParaFrente={() => onMoverParaFrente(index)}
+        onMoverParaTras={() => onMoverParaTras(index)}
+        onGirar={() => onGirar(index)}
+        onExcluir={() => onRemover(imagem.id)}
+      />
 
-      {/* Indicador de Foto Principal */}
       {index === 0 && (
-        <div className="absolute bottom-1 left-1 bg-blue-600 text-white text-[10px] px-1 rounded">
+        <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
           Foto principal
         </div>
       )}
