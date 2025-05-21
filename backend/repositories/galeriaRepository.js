@@ -15,7 +15,30 @@ async function buscarTodasImagens() {
   return linhas;
 }
 
+async function atualizarOrdem(lista) {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    for (const item of lista) {
+      await conn.execute(
+        'UPDATE galeria SET ordem = ? WHERE id = ?',
+        [item.ordem, item.id]
+      );
+    }
+
+    await conn.commit();
+    return { success: true };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   salvarImagem,
-  buscarTodasImagens
+  buscarTodasImagens,
+  atualizarOrdem
 };
