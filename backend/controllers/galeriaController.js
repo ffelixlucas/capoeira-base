@@ -25,7 +25,19 @@ async function listarImagens(req, res) {
   }
 }
 
+async function atualizarOrdem(req, res) {
+  try {
+    const { ordem } = req.body;
+    const resultado = await galeriaService.atualizarOrdemGaleria(ordem);
+    res.status(200).json(resultado);
+  } catch (error) {
+    console.error('Erro ao atualizar ordem da galeria:', error.message);
+    res.status(400).json({ erro: error.message });
+  }
+}
+
 module.exports = {
   uploadImagem,
-  listarImagens
+  listarImagens,
+  atualizarOrdem
 };
