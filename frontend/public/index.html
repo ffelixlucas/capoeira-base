@@ -3,34 +3,297 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Capoeira Base – Galeria</title>
+    <title>Capoeira Nota 10 - Projeto cultural</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/galeria.css">
 
-    <!-- CSS separado -->
-    <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
-    <header>
-      <h1>Capoeira Base</h1>
+    <!-- Cabeçalho -->
+    <header id="header">
+      <div class="container">
+        <img src="media/logo.png" alt="Logo Capoeira Nota 10" id="logo" />
+        <nav>
+          <ul>
+            <li><a href="#inicio">Início</a></li>
+            <li><a href="#sobre">Sobre</a></li>
+            <li><a href="#aulas">Aulas</a></li>
+            <li><a href="#eventos">Eventos</a></li>
+            <li><a href="#localizacao">Localização</a></li>
+            <li><a href="#contato">Contato</a></li>
+          </ul>
+        </nav>
+        <img
+          src="media/logo-capoeirabrasil.png"
+          alt="Logo Capoeira Nota 10"
+          id="logo"
+        />
+      </div>
+      <div class="hero">
+        <h1>CAPOEIRA NOTA 10</h1>
+        <p class="hero-subtitle">
+          Arte, cultura e transformação social através da capoeira
+        </p>
+        <div class="hero-buttons">
+          <a href="#sobre" class="btn-primario">Conheça o Projeto</a>
+          <a href="#aulas" class="btn-secundario">Horários de Aula</a>
+        </div>
+      </div>
     </header>
 
-    <main>
-      <!-- Seção da galeria -->
-      <section id="galeria-section">
+    <!-- Botão Fixo para Agendar Aula -->
+    <a href="#" class="btn-agendar" onclick="openModal()">
+      <i class="fas fa-calendar-alt"></i> Agendar Aula
+    </a>
+
+    <!-- Modal para Agendar Aula -->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h3>Agende Sua Aula Experimental</h3>
+        <input type="text" placeholder="Nome Completo" required />
+        <input type="email" placeholder="E-mail" required />
+        <input type="tel" placeholder="Telefone" required />
+        <select required>
+          <option value="" disabled selected>Selecione uma turma</option>
+          <option value="infantil">Infantil (Seg e Qua, 19h-20h)</option>
+          <option value="juvenil">Juvenil (Ter e Qui, 19h-20h)</option>
+          <option value="adulto">Adulto (Ter e Qui, 20h-21:30)</option>
+        </select>
+        <button onclick="agendarAula()">Enviar Agendamento</button>
+      </div>
+    </div>
+
+    <!-- Quem Somos -->
+    <section id="sobre" class="scroll-animate">
+      <div class="container">
+        <div class="sobre-grid">
+          <div class="sobre-texto">
+            <h2>Quem Somos</h2>
+            <h3>Capoeira Nota 10</h3>
+            <p>
+              O Capoeira Nota 10 é um projeto social que une arte, cultura e
+              educação através da capoeira, atendendo crianças e jovens da
+              comunidade desde 2010. Vinculado ao renomado Grupo Capoeira
+              Brasil, sob a supervisão do Mestre Duende, o projeto é liderado
+              pelo Formando Clone.
+            </p>
+            <p>
+              Nossa missão é promover inclusão social e desenvolvimento humano
+              por meio da arte da capoeira, oferecendo atividades que estimulam
+              a disciplina, o trabalho em equipe e a autoestima dos
+              participantes.
+            </p>
+            <p>
+              Aqui, a mente descansa e o corpo balança, enquanto construímos
+              cidadãos mais conscientes e saudáveis. Venha fazer parte dessa
+              roda e viva a cultura para todos!
+            </p>
+          </div>
+          <div class="sobre-imagem">
+            <img src="media/professor.png" alt="Grupo de capoeira" />
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Galeria -->
+    <section id="galeria" class="scroll-animate galeria">
+      <div class="container">
         <h2>Galeria de Fotos</h2>
-
-        <!-- Imagem principal -->
         <div id="slider" class="slider">
-          <img id="imagem-principal" src="" alt="Imagem da galeria" />
+          <img id="imagem-principal" src="" alt="Imagem principal da galeria" />
         </div>
+        <div id="thumbnails" class="thumbnails"></div>
+      </div>
+    </section>
 
-        <!-- Miniaturas -->
-        <div id="thumbnails" class="thumbnails">
-          <!-- Miniaturas inseridas via JS -->
+    <!-- Aulas e Horários -->
+    <section id="aulas" class="scroll-animate">
+      <div class="container">
+        <h2>Aulas e Horários</h2>
+        <div class="aulas-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Turma</th>
+                <th>Dias</th>
+                <th>Horário</th>
+                <th>Faixa Etária</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Infantil</td>
+                <td>Segunda e Quarta</td>
+                <td>19:00–20:00</td>
+                <td>5 a 10 anos</td>
+              </tr>
+              <tr>
+                <td>Juvenil</td>
+                <td>Terça e Quinta</td>
+                <td>19:00–20:00</td>
+                <td>11 a 17 anos</td>
+              </tr>
+              <tr>
+                <td>Adulto</td>
+                <td>Terça e Quinta</td>
+                <td>20:00–21:30</td>
+                <td>A partir de 18 anos</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </section>
-    </main>
+      </div>
+    </section>
 
-    <!-- JS separado -->
-    <script src="./js/galeria.js" defer></script>
+    <!-- Próximos Eventos -->
+    <section id="eventos" class="scroll-animate">
+      <div class="container">
+        <h2>Próximos Eventos</h2>
+        <div class="eventos-grid">
+          <div class="evento">
+            <img
+              src="https://images.unsplash.com/photo-1544464077-376d969d5b5a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
+              alt="Batizado e troca de corda"
+            />
+            <div class="evento-info">
+              <span class="evento-data">15 DE JUNHO</span>
+              <h3 class="evento-titulo">Batizado e Troca de Corda</h3>
+              <p class="evento-desc">
+                Cerimônia tradicional onde novos alunos são batizados e todos
+                têm oportunidade de evoluir na arte da capoeira.
+              </p>
+              <a href="#" class="evento-link"
+                >Saiba mais <i class="fas fa-arrow-right"></i
+              ></a>
+            </div>
+          </div>
+
+          <div class="evento">
+            <img
+              src="https://images.unsplash.com/photo-1547153760-18fc86324498?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
+              alt="Oficina com Mestre Duende"
+            />
+            <div class="evento-info">
+              <span class="evento-data">22 DE JULHO</span>
+              <h3 class="evento-titulo">Oficina com Mestre Duende</h3>
+              <p class="evento-desc">
+                Workshop especial com o Mestre Duende, abordando técnicas
+                avançadas e a história da capoeira.
+              </p>
+              <a href="#" class="evento-link"
+                >Saiba mais <i class="fas fa-arrow-right"></i
+              ></a>
+            </div>
+          </div>
+
+          <div class="evento">
+            <img
+              src="https://images.unsplash.com/photo-1544464077-376d969d5b5a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
+              alt="Roda aberta na praça"
+            />
+            <div class="evento-info">
+              <span class="evento-data">05 DE AGOSTO</span>
+              <h3 class="evento-titulo">Roda Aberta na Praça</h3>
+              <p class="evento-desc">
+                Evento gratuito e aberto ao público para apresentação do projeto
+                e integração com a comunidade.
+              </p>
+              <a href="#" class="evento-link"
+                >Saiba mais <i class="fas fa-arrow-right"></i
+              ></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Localização -->
+    <section id="localizacao" class="scroll-animate">
+      <div class="container">
+        <h2>Nosso Espaço</h2>
+        <div class="localizacao-grid">
+          <div class="localizacao-texto">
+            <h3>Centro de Treinamento Capoeira Nota 10</h3>
+            <p><i class="fas fa-star"></i> 4.9 (914 avaliações no Google)</p>
+            <p>
+              <i class="fas fa-map-marker-alt"></i> Academia em Pinhais, Paraná
+            </p>
+            <p>
+              <i class="fas fa-address-card"></i> Estr. Ecológica de Pinhais,
+              3472 - Jardim Karla, Pinhais - PR, 83328-200
+            </p>
+
+            <div class="localizacao-links">
+              <a
+                href="https://www.google.com/maps/dir//Centro+de+treinamento+capoeira+nota+10"
+                target="_blank"
+              >
+                <i class="fas fa-route"></i> Rotas
+              </a>
+              <a
+                href="https://www.google.com/maps/place/Centro+de+treinamento+capoeira+nota+10"
+                target="_blank"
+              >
+                <i class="fas fa-comment-alt"></i> Avaliar
+              </a>
+              <a href="#" onclick="alert('Local salvo com sucesso!')">
+                <i class="fas fa-bookmark"></i> Salvar
+              </a>
+              <a href="#" onclick="copiarEndereco()">
+                <i class="fas fa-share-alt"></i> Compartilhar
+              </a>
+            </div>
+          </div>
+          <div class="localizacao-mapa">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3603.639712750403!2d-49.150382099999995!3d-25.416867999999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94dcef0ddcf54b47%3A0xfabb9112d7ba8fc3!2sCentro%20de%20treinamento%20capoeira%20nota%2010!5e0!3m2!1spt-BR!2sbr!4v1627944555534!5m2!1spt-BR!2sbr"
+              allowfullscreen=""
+              loading="lazy"
+            ></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Rodapé -->
+    <footer>
+      <div class="container">
+        <div class="footer-content">
+          <img
+            src="media/logo.png"
+            alt="Logo Capoeira Nota 10"
+            class="footer-logo"
+          />
+
+          <div class="footer-social">
+            <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+            <a href="#" target="_blank"><i class="fab fa-youtube"></i></a>
+            <a href="#" target="_blank"><i class="fab fa-whatsapp"></i></a>
+          </div>
+
+          <div class="footer-links">
+            <a href="#sobre">Sobre Nós</a>
+            <a href="#aulas">Aulas</a>
+            <a href="#eventos">Eventos</a>
+            <a href="#localizacao">Localização</a>
+            <a href="#">Política de Privacidade</a>
+          </div>
+
+          <p class="footer-copyright">
+            © 2023 Capoeira Nota 10 - Todos os direitos reservados
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script src="js/galeria.js"></script>
+
   </body>
 </html>
