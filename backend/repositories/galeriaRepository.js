@@ -1,5 +1,11 @@
 const db = require('../database/connection');
 
+async function contarTotalItens() {
+  const [rows] = await db.execute('SELECT COUNT(*) as total FROM galeria');
+  return rows[0].total;
+}
+
+
 async function salvarImagem(imagemUrl, titulo = null, criadoPor = null) {
   const [resultado] = await db.execute(
     'INSERT INTO galeria (imagem_url, titulo, criado_por) VALUES (?, ?, ?)',
@@ -36,9 +42,28 @@ async function atualizarOrdem(lista) {
     conn.release();
   }
 }
+async function buscarPorId(id) {
+  const [rows] = await db.execute(
+    'SELECT * FROM galeria WHERE id = ?',
+    [id]
+  );
+  return rows[0];
+}
+
+async function excluir(id) {
+  await db.execute(
+    'DELETE FROM galeria WHERE id = ?',
+    [id]
+  );
+}
+
+
 
 module.exports = {
   salvarImagem,
   buscarTodasImagens,
-  atualizarOrdem
+  atualizarOrdem,
+  buscarPorId,
+  excluir,
+  contarTotalItens
 };
