@@ -3,10 +3,16 @@ const { v4: uuidv4 } = require('uuid');
 const galeriaRepository = require('../repositories/galeriaRepository');
 
 async function processarUpload(imagem, titulo = null, criadoPor = null) {
-  return new Promise((resolve, reject) => {
-    const nomeArquivo = `galeria/${uuidv4()}-${imagem.originalname}`;
-    const blob = bucket.file(nomeArquivo);
+  const totalItens = await galeriaRepository.contarTotalItens();
 
+  if (totalItens >= 20) {
+    throw new Error('Limite de 20 itens atingido. Exclua um para continuar.');
+  }
+
+  const nomeArquivo = `galeria/${uuidv4()}-${imagem.originalname}`;
+  const blob = bucket.file(nomeArquivo);
+
+  return new Promise((resolve, reject) => {
     const blobStream = blob.createWriteStream({
       metadata: {
         contentType: imagem.mimetype
@@ -47,8 +53,25 @@ async function atualizarOrdemGaleria(lista) {
   return await galeriaRepository.atualizarOrdem(lista);
 }
 
+async function removerImagemPorId(id) {
+  const imagem = await galeriaRepository.buscarPorId(id);
+
+  if (!imagem) {
+    throw new Error('Imagem não encontrada');
+  }
+
+  const url = imagem.imagem_url;
+  const caminhoArquivo = decodeURIComponent(
+    new URL(url).pathname.replace(/^\/[^/]+\//, '')
+  );
+
+  await bucket.file(caminhoArquivo).delete();
+  await galeriaRepository.excluir(id);
+}
+
 module.exports = {
   processarUpload,
   obterTodasImagens,
-  atualizarOrdemGaleria
+  atualizarOrdemGaleria,
+  removerImagemPorId
 };
