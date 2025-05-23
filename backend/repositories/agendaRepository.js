@@ -42,8 +42,31 @@ const excluirEvento = async (id) => {
   return result.affectedRows > 0;
 };
 
+async function atualizar(id, dados) {
+  const [result] = await db.query(
+    `UPDATE agenda SET titulo = ?, descricao_curta = ?, descricao_completa = ?, 
+    local = ?, endereco = ?, telefone_contato = ?, data_inicio = ?, data_fim = ?, imagem_url = ? 
+    WHERE id = ?`,
+    [
+      dados.titulo,
+      dados.descricao_curta,
+      dados.descricao_completa,
+      dados.local,
+      dados.endereco,
+      dados.telefone_contato,
+      dados.data_inicio,
+      dados.data_fim,
+      dados.imagem_url,
+      id
+    ]
+  );
+  return result;
+}
+
+
 module.exports = {
   listarEventos,
   criarEvento,
   excluirEvento,
+  atualizar
 };

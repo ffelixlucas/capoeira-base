@@ -26,8 +26,14 @@ const excluirEvento = async (id) => {
   return true;
 };
 
+async function atualizarEvento(id, dados) {
+  return agendaRepository.atualizar(id, dados);
+}
+
+
 module.exports = {
   listarEventos,
   criarEvento,
   excluirEvento,
+  atualizarEvento
 };

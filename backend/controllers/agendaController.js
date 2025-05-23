@@ -32,8 +32,21 @@ const excluirEvento = async (req, res) => {
   }
 };
 
+async function atualizarEvento(req, res) {
+  const { id } = req.params;
+  const dados = req.body;
+  try {
+    await agendaService.atualizarEvento(id, dados);
+    res.status(200).json({ message: "Evento atualizado com sucesso" });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao atualizar evento" });
+  }
+}
+
+
 module.exports = {
   listarEventos,
   criarEvento,
   excluirEvento,
+  atualizarEvento
 };
