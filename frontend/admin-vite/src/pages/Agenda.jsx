@@ -1,10 +1,45 @@
+import { useEffect, useState } from "react";
+import { listarEventos } from "../services/agendaService";
+import AgendaItem from "../components/agenda/AgendaItem";
+import AgendaForm from "../components/agenda/AgendaForm";
+
 function Agenda() {
-    return (
-      <div className="p-6 text-center">
-        <h1 className="text-2xl font-bold">Página de Agenda (em construção)</h1>
+  const [eventos, setEventos] = useState([]);
+  const [eventoEditando, setEventoEditando] = useState(null);
+
+  const carregarEventos = async () => {
+    const dados = await listarEventos();
+    setEventos(dados);
+  };
+
+  useEffect(() => {
+    carregarEventos();
+  }, []);
+
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Gerenciar Agenda</h1>
+
+      <AgendaForm
+        onCriado={carregarEventos}
+        eventoEditando={eventoEditando}
+        onLimparEdicao={() => setEventoEditando(null)}
+      />
+
+      <div className="flex flex-wrap gap-4 justify-center">
+        {eventos.map((evento) =>
+          eventoEditando && eventoEditando.id === evento.id ? null : (
+            <AgendaItem
+              key={evento.id}
+              evento={evento}
+              onExcluir={carregarEventos}
+              onEditar={() => setEventoEditando(evento)}
+            />
+          )
+        )}
       </div>
-    );
-  }
-  
-  export default Agenda;
-  
+    </div>
+  );
+}
+
+export default Agenda;
