@@ -36,8 +36,20 @@ async function atualizarOrdem(req, res) {
   }
 }
 
+async function deletarImagem(req, res) {
+  try {
+    const { id } = req.params;
+    await galeriaService.removerImagemPorId(id);
+    res.status(200).json({ mensagem: 'Imagem excluída com sucesso.' });
+  } catch (error) {
+    console.error('Erro ao excluir imagem:', error.message);
+    res.status(500).json({ erro: 'Erro ao excluir imagem.' });
+  }
+}
+
 module.exports = {
   uploadImagem,
   listarImagens,
-  atualizarOrdem
+  atualizarOrdem,
+  deletarImagem
 };
