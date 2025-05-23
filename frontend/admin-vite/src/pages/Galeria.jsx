@@ -43,13 +43,17 @@ function Galeria() {
   };
 
   const handleRemoverImagem = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta imagem?')) return;
+  
     try {
       await deletarImagem(id);
-      carregarImagens();
+      setImagens((prev) => prev.filter((img) => img.id !== id));
     } catch (err) {
-      console.error("Erro ao remover imagem:", err);
+      console.error('Erro ao remover imagem:', err);
+      alert('Erro ao excluir a imagem. Tente novamente.');
     }
   };
+  
 
   return (
     <div className="max-w-5xl mx-auto p-4 flex flex-col gap-6">
