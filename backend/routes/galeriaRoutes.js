@@ -1,17 +1,26 @@
-const express = require('express');
-const multer = require('multer');
-const {
-  uploadImagem,
-  listarImagens,
-  atualizarOrdem
-} = require('../controllers/galeriaController');
-const verifyToken = require('../middlewares/verifyToken');
+const express = require("express");
+const multer = require("multer");
+const galeriaController = require("../controllers/galeriaController");
+const verifyToken = require("../middlewares/verifyToken");
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/upload', verifyToken, upload.single('imagem'), uploadImagem);
-router.get('/', listarImagens);
-router.put('/ordem', verifyToken, atualizarOrdem); 
+// Listar imagens
+router.get("/", galeriaController.listarImagens);
+
+// Upload de imagem
+router.post(
+  "/upload",
+  verifyToken,
+  upload.single("imagem"),
+  galeriaController.uploadImagem
+);
+
+// Atualizar ordem das imagens
+router.put("/ordem", verifyToken, galeriaController.atualizarOrdem);
+
+// Deletar imagem por ID
+router.delete("/:id", verifyToken, galeriaController.deletarImagem);
 
 module.exports = router;
