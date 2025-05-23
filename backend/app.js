@@ -1,20 +1,20 @@
 const express = require('express');
 const app = express();
-
 const cors = require('cors');
-app.use(cors());
+require('dotenv').config();
 
-// Middleware básico
+// Middlewares
+app.use(cors());
 app.use(express.json());
 
 // Importar rotas
 const galeriaRoutes = require('./routes/galeriaRoutes');
 const authRoutes = require('./routes/auth.Routes');
-
-require('dotenv').config();
+const agendaRoutes = require('./routes/agendaRoutes'); // ✅ Importação ok
 
 // Usar rotas
 app.use('/api', authRoutes);
 app.use('/api/galeria', galeriaRoutes);
+app.use('/api/agenda', agendaRoutes); // ✅ Faltava essa linha!
 
 module.exports = app;
