@@ -6,14 +6,14 @@
 }
 
 body {
-  font-family: 'Poppins', Arial, sans-serif;
+  font-family: "Poppins", Arial, sans-serif;
   background-color: #0b1e17;
   color: #fdf5dd;
   line-height: 1.6;
   overflow-x: hidden;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 .container {
   max-width: 1200px;
@@ -31,7 +31,7 @@ h2 {
 }
 
 h2::after {
-  content: '';
+  content: "";
   width: 60px;
   height: 3px;
   background: #f3c849;
@@ -43,8 +43,14 @@ h2::after {
 
 /* Animações */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fade-in {
@@ -61,8 +67,8 @@ h2::after {
 /* Cabeçalho */
 header {
   position: relative;
-  background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
-              url('../media/bg-hero.jpg') center/cover no-repeat;
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+    url("../media/bg-hero.jpg") center/cover no-repeat;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -105,7 +111,7 @@ nav a {
 }
 
 nav a::after {
-  content: '';
+  content: "";
   position: absolute;
   width: 0;
   height: 2px;
@@ -146,7 +152,7 @@ nav a:hover::after {
   font-size: 1.5rem;
   margin-bottom: 30px;
   max-width: 700px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .hero-buttons {
@@ -172,7 +178,7 @@ nav a:hover::after {
   background-color: transparent;
   color: #f3c849;
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .btn-secundario {
@@ -190,7 +196,7 @@ nav a:hover::after {
 .btn-secundario:hover {
   background-color: rgba(243, 200, 73, 0.2);
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 /* Botão Fixo para Agendar Aula */
@@ -243,8 +249,14 @@ nav a:hover::after {
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; transform: translateY(-50px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .close-modal {
@@ -273,7 +285,7 @@ nav a:hover::after {
   margin: 10px 0;
   border: 1px solid #ddd;
   border-radius: 5px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 .modal-content button {
@@ -287,7 +299,7 @@ nav a:hover::after {
   transition: all 0.3s ease;
   width: 100%;
   margin-top: 10px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 .modal-content button:hover {
@@ -360,7 +372,8 @@ table {
   margin: 30px 0;
 }
 
-th, td {
+th,
+td {
   padding: 15px;
   text-align: center;
   border-bottom: 1px solid #eee;
@@ -461,6 +474,33 @@ tr:hover {
   text-decoration: underline;
 }
 
+.evento-whatsapp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.icone-whatsapp {
+  display: inline-flex;
+  background-color: #25d366;
+  color: white;
+  font-size: 25px;
+  padding: 8px;
+  border-radius: 40%;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.icone-whatsapp:hover {
+  background-color: #128c7e;
+}
+
+.numero-whatsapp {
+  font-size: 0.95rem;
+  color: #333;
+}
+
 /* Seção Localização */
 #localizacao {
   padding: 80px 0;
@@ -550,7 +590,6 @@ footer {
 
 .footer-logo {
   height: 115px;
-
 }
 
 .footer-social {
@@ -599,11 +638,12 @@ footer {
   .hero h1 {
     font-size: 3.5rem;
   }
-  
-  .sobre-grid, .localizacao-grid {
+
+  .sobre-grid,
+  .localizacao-grid {
     flex-direction: column;
   }
-  
+
   .localizacao-mapa iframe {
     height: 300px;
   }
@@ -614,30 +654,31 @@ footer {
     flex-direction: column;
     gap: 20px;
   }
-  
+
   nav ul {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .hero h1 {
     font-size: 2.5rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.2rem;
   }
-  
+
   .hero-buttons {
     flex-direction: column;
     gap: 15px;
   }
-  
-  .btn-primario, .btn-secundario {
+
+  .btn-primario,
+  .btn-secundario {
     width: 100%;
     text-align: center;
   }
-  
+
   .evento {
     min-width: 100%;
   }

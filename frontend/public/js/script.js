@@ -76,7 +76,9 @@ async function carregarEventos() {
         <img src="${evento.imagem_url || "https://via.placeholder.com/350x200"}"
             alt="${evento.titulo}"
             class="w-full h-[200px] object-contain bg-gray-100 rounded-t-lg cursor-zoom-in"
-            onclick="abrirModalImagem('${evento.imagem_url}', '${evento.titulo}')"
+            onclick="abrirModalImagem('${evento.imagem_url}', '${
+        evento.titulo
+      }')"
         />
         <div class="evento-info">
           <span class="evento-data" style="color: #d97706; font-weight: 600;">
@@ -107,9 +109,22 @@ async function carregarEventos() {
 
           ${
             evento.telefone_contato
-              ? `<p><span style="color: #25d366;">📞 ${evento.telefone_contato}</span></p>`
+              ? `
+              <div class="evento-whatsapp">
+                <a href="https://wa.me/55${evento.telefone_contato.replace(/\D/g, '')}" 
+                   target="_blank" 
+                   class="icone-whatsapp"
+                   title="Conversar no WhatsApp">
+                  <i class="fab fa-whatsapp"></i>
+                </a>
+                <span class="numero-whatsapp">${evento.telefone_contato}</span>
+              </div>
+              `
               : ""
           }
+          
+          
+          
 
           <a href="#" class="evento-link toggle-detalhe" data-id="${
             evento.id
@@ -180,7 +195,6 @@ document.addEventListener("keydown", function (e) {
     fecharModalImagem();
   }
 });
-
 
 // Iniciar ao carregar a página
 document.addEventListener("DOMContentLoaded", () => {
