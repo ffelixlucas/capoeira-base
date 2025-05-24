@@ -9,8 +9,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     />
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/galeria.css">
-
+    <link rel="stylesheet" href="css/galeria.css" />
   </head>
   <body>
     <!-- Cabeçalho -->
@@ -154,61 +153,7 @@
     <section id="eventos" class="scroll-animate">
       <div class="container">
         <h2>Próximos Eventos</h2>
-        <div class="eventos-grid">
-          <div class="evento">
-            <img
-              src="https://images.unsplash.com/photo-1544464077-376d969d5b5a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
-              alt="Batizado e troca de corda"
-            />
-            <div class="evento-info">
-              <span class="evento-data">15 DE JUNHO</span>
-              <h3 class="evento-titulo">Batizado e Troca de Corda</h3>
-              <p class="evento-desc">
-                Cerimônia tradicional onde novos alunos são batizados e todos
-                têm oportunidade de evoluir na arte da capoeira.
-              </p>
-              <a href="#" class="evento-link"
-                >Saiba mais <i class="fas fa-arrow-right"></i
-              ></a>
-            </div>
-          </div>
-
-          <div class="evento">
-            <img
-              src="https://images.unsplash.com/photo-1547153760-18fc86324498?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
-              alt="Oficina com Mestre Duende"
-            />
-            <div class="evento-info">
-              <span class="evento-data">22 DE JULHO</span>
-              <h3 class="evento-titulo">Oficina com Mestre Duende</h3>
-              <p class="evento-desc">
-                Workshop especial com o Mestre Duende, abordando técnicas
-                avançadas e a história da capoeira.
-              </p>
-              <a href="#" class="evento-link"
-                >Saiba mais <i class="fas fa-arrow-right"></i
-              ></a>
-            </div>
-          </div>
-
-          <div class="evento">
-            <img
-              src="https://images.unsplash.com/photo-1544464077-376d969d5b5a?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80"
-              alt="Roda aberta na praça"
-            />
-            <div class="evento-info">
-              <span class="evento-data">05 DE AGOSTO</span>
-              <h3 class="evento-titulo">Roda Aberta na Praça</h3>
-              <p class="evento-desc">
-                Evento gratuito e aberto ao público para apresentação do projeto
-                e integração com a comunidade.
-              </p>
-              <a href="#" class="evento-link"
-                >Saiba mais <i class="fas fa-arrow-right"></i
-              ></a>
-            </div>
-          </div>
-        </div>
+        <div class="eventos-grid" id="eventos-container"></div>
       </div>
     </section>
 
@@ -292,8 +237,43 @@
       </div>
     </footer>
 
+    <!-- Modal de imagem expandida -->
+    <div
+      id="imagem-modal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+      "
+    >
+      <img
+        id="imagem-expandida"
+        src=""
+        alt="Imagem expandida"
+        style="max-width: 95%; max-height: 90%; object-fit: contain"
+      />
+      <button
+        onclick="fecharModalImagem()"
+        style="
+          position: absolute;
+          top: 20px;
+          right: 30px;
+          color: white;
+          font-size: 2rem;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+        "
+      >
+        ✕
+      </button>
+    </div>
+
     <script src="js/script.js"></script>
     <script src="js/galeria.js"></script>
-
   </body>
 </html>
