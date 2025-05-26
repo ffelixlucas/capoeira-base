@@ -65,7 +65,7 @@ async function carregarEventos() {
     const container = document.getElementById("eventos-container");
 
     if (!eventos || eventos.length === 0) {
-      container.innerHTML = "<p>Nenhum evento cadastrado no momento.</p>";
+      container.innerHTML = "<p class='text-center text-white'>Nenhum evento cadastrado no momento.</p>";
       return;
     }
 
@@ -73,111 +73,160 @@ async function carregarEventos() {
       const card = document.createElement("div");
       card.className = "evento";
       card.innerHTML = `
-        <img src="${evento.imagem_url || "https://via.placeholder.com/350x200"}"
-            alt="${evento.titulo}"
-            class="w-full h-[200px] object-contain bg-gray-100 rounded-t-lg cursor-zoom-in"
-            onclick="abrirModalImagem('${evento.imagem_url}', '${
-        evento.titulo
-      }')"
+        <img src="${evento.imagem_url || "https://via.placeholder.com/400x250"}"
+             alt="${evento.titulo}"
+             class="evento-imagem"
         />
         <div class="evento-info">
-          <span class="evento-data" style="color: #d97706; font-weight: 600;">
-            📅 ${formatarData(evento.data_inicio, evento.data_fim)}
+          <span class="evento-data">
+            <i class="fas fa-calendar-alt"></i> ${formatarData(evento.data_inicio, evento.data_fim)}
           </span>
-
-          <h3 class="evento-titulo" style="font-weight: bold; margin-top: 5px;">
-            ${evento.titulo}
-          </h3>
-
-          ${
-            evento.descricao_curta
-              ? `<p class="evento-desc">${evento.descricao_curta}</p>`
-              : ""
-          }
-          ${
-            evento.local ? `<p class="evento-local">📍 ${evento.local}</p>` : ""
-          }
-          ${
-            evento.endereco
-              ? `<a href="https://www.google.com/maps/search/?q=${encodeURIComponent(
-                  evento.endereco
-                )}" target="_blank" class="evento-endereco">${
-                  evento.endereco
-                }</a>`
-              : ""
-          }
-
-          ${
-            evento.telefone_contato
-              ? `
-              <div class="evento-whatsapp">
-                <a href="https://wa.me/55${evento.telefone_contato.replace(/\D/g, '')}" 
-                   target="_blank" 
-                   class="icone-whatsapp"
-                   title="Conversar no WhatsApp">
-                  <i class="fab fa-whatsapp"></i>
-                </a>
-                <span class="numero-whatsapp">${evento.telefone_contato}</span>
-              </div>
-              `
-              : ""
-          }
-          
-          
-          
-
-          <a href="#" class="evento-link toggle-detalhe" data-id="${
-            evento.id
-          }" style="color: #1d4ed8; display: block; margin-top: 6px;">
-            Ver mais informações
-          </a>
-
-          <div class="evento-detalhe" id="detalhe-${
-            evento.id
-          }" style="display: none; background-color: #f9f9f9; padding: 10px; border-left: 4px solid #16a34a; margin-top: 10px; border-radius: 4px;">
-            ${evento.descricao_completa || "Sem informações adicionais."}
-          </div>
+          <h3 class="evento-titulo">${evento.titulo}</h3>
+          ${evento.descricao_curta ? `<p class="evento-desc">${evento.descricao_curta}</p>` : ""}
+          ${evento.local ? `<p class="evento-local"><i class="fas fa-map-marker-alt"></i> ${evento.local}</p>` : ""}
+          ${evento.endereco ? `
+            <a href="https://www.google.com/maps/search/?q=${encodeURIComponent(evento.endereco)}" 
+               target="_blank" 
+               class="evento-endereco">
+              ${evento.endereco}
+            </a>` : ""}
+          ${evento.telefone_contato ? `
+            <div class="evento-whatsapp">
+              <a href="https://wa.me/55${evento.telefone_contato.replace(/\D/g, "")}" 
+                 target="_blank" 
+                 class="icone-whatsapp">
+                <i class="fab fa-whatsapp"></i>
+              </a>
+              <span class="numero-whatsapp">${evento.telefone_contato}</span>
+            </div>` : ""}
+          <span class="toggle-detalhe" data-id="${evento.id}">
+            Ver mais
+          </span>
         </div>
       `;
-      container.appendChild(card);
-    });
-
-    // Ativar a expansão/colapso dos detalhes
-    document.querySelectorAll(".toggle-detalhe").forEach((link) => {
-      link.addEventListener("click", (e) => {
-        e.preventDefault();
-        const id = link.getAttribute("data-id");
-        const detalhe = document.getElementById(`detalhe-${id}`);
-        const estaVisivel = detalhe.style.display === "block";
-        detalhe.style.display = estaVisivel ? "none" : "block";
-        link.textContent = estaVisivel
-          ? "Ver mais informações"
-          : "Ocultar informações";
+      card.addEventListener("click", () => abrirModalEvento(evento));
+      const toggle = card.querySelector(".toggle-detalhe");
+      toggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        abrirModalEvento(evento);
       });
+      container.appendChild(card);
     });
   } catch (err) {
     console.error("Erro ao carregar eventos:", err);
-    document.getElementById("eventos-container").innerText =
-      "Erro ao carregar eventos.";
+    document.getElementById("eventos-container").innerHTML = 
+      "<p class='text-center text-white'>Erro ao carregar eventos.</p>";
   }
 }
 
 function formatarData(inicio, fim) {
   const d1 = new Date(inicio);
   const d2 = fim ? new Date(fim) : null;
-
   const opcoes = {
     day: "2-digit",
-    month: "long",
+    month: "short",
     hour: "2-digit",
     minute: "2-digit",
   };
   const data1 = d1.toLocaleDateString("pt-BR", opcoes).toUpperCase();
   const data2 = d2?.toLocaleDateString("pt-BR", opcoes).toUpperCase();
-
-  return data2 ? `${data1} até ${data2}` : data1;
+  return data2 ? `${data1} - ${data2}` : data1;
 }
 
+function scrollCarrossel(direcao) {
+  const container = document.getElementById("eventos-container");
+  const scrollAmount = container.offsetWidth;
+  container.scrollBy({
+    left: direcao === "direita" ? scrollAmount : -scrollAmount,
+    behavior: "smooth"
+  });
+
+  const botoes = document.querySelectorAll(".btn-carrossel");
+  botoes.forEach(btn => {
+    btn.disabled = true;
+    setTimeout(() => btn.disabled = false, 600);
+  });
+}
+
+function abrirModalEvento(evento) {
+  const modal = document.getElementById("evento-modal");
+  const modalImagem = document.getElementById("modal-imagem");
+  const modalTitulo = document.getElementById("modal-titulo");
+  const modalData = document.getElementById("modal-data");
+  const modalDesc = document.getElementById("modal-desc");
+  const modalLocal = document.getElementById("modal-local");
+  const modalEndereco = document.getElementById("modal-endereco");
+  const modalWhatsapp = document.getElementById("modal-whatsapp");
+  const modalDetalhe = document.getElementById("modal-detalhe");
+
+  modalImagem.src = evento.imagem_url || "https://via.placeholder.com/400x250";
+  modalImagem.alt = evento.titulo;
+  modalTitulo.textContent = evento.titulo;
+  modalData.innerHTML = `<i class="fas fa-calendar-alt"></i> ${formatarData(evento.data_inicio, evento.data_fim)}`;
+  modalDesc.textContent = evento.descricao_curta || "";
+  modalLocal.innerHTML = evento.local ? `<i class="fas fa-map-marker-alt"></i> ${evento.local}` : "";
+  modalEndereco.href = evento.endereco ? `https://www.google.com/maps/search/?q=${encodeURIComponent(evento.endereco)}` : "#";
+  modalEndereco.textContent = evento.endereco || "";
+  modalWhatsapp.innerHTML = evento.telefone_contato ? `
+    <a href="https://wa.me/55${evento.telefone_contato.replace(/\D/g, "")}" target="_blank" class="icone-whatsapp">
+      <i class="fab fa-whatsapp"></i>
+    </a>
+    <span class="numero-whatsapp">${evento.telefone_contato}</span>
+  ` : "";
+  modalDetalhe.textContent = evento.descricao_completa || "Sem informações adicionais.";
+
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  // Adicionar evento de clique na imagem após ela ser carregada
+  modalImagem.onload = () => {
+    modalImagem.onclick = () => abrirImagemAmpliada(evento.imagem_url || "https://via.placeholder.com/400x250", evento.titulo);
+  };
+  modalImagem.onerror = () => {
+    modalImagem.onclick = () => abrirImagemAmpliada("https://via.placeholder.com/400x250", evento.titulo);
+  };
+}
+
+function fecharModalEvento() {
+  const modal = document.getElementById("evento-modal");
+  modal.style.display = "none";
+  document.body.style.overflow = "auto";
+}
+
+function abrirImagemAmpliada(src, alt) {
+  const modal = document.getElementById("imagem-ampliada-modal");
+  const imagem = document.getElementById("imagem-ampliada");
+  imagem.src = src;
+  imagem.alt = alt;
+  modal.style.display = "flex";
+}
+
+function fecharImagemAmpliada() {
+  const modal = document.getElementById("imagem-ampliada-modal");
+  modal.style.display = "none";
+}
+
+// Fechar modal do evento ao clicar fora
+document.addEventListener("click", (e) => {
+  const modal = document.getElementById("evento-modal");
+  if (e.target === modal) fecharModalEvento();
+});
+
+// Fechar modal da imagem ampliada ao clicar fora
+document.addEventListener("click", (e) => {
+  const modal = document.getElementById("imagem-ampliada-modal");
+  if (e.target === modal) fecharImagemAmpliada();
+});
+
+// Fechar ambos os modais ao pressionar Esc
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    fecharImagemAmpliada();
+    fecharModalEvento();
+  }
+});
+
+document.addEventListener("DOMContentLoaded", carregarEventos);
 function abrirModalImagem(src, alt = "") {
   const modal = document.getElementById("imagem-modal");
   const imagem = document.getElementById("imagem-expandida");
@@ -196,18 +245,3 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
-function scrollCarrossel(direcao) {
-  const container = document.getElementById('eventos-container');
-  const largura = container.offsetWidth;
-
-  container.scrollBy({
-    left: direcao === 'direita' ? largura : -largura,
-    behavior: 'smooth'
-  });
-}
-
-
-// Iniciar ao carregar a página
-document.addEventListener("DOMContentLoaded", () => {
-  carregarEventos();
-});
