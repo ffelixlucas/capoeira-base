@@ -392,421 +392,172 @@ tr:hover {
 /* Seção Próximos Eventos */
 #eventos {
   padding: 80px 0;
-  background: linear-gradient(135deg, #0b1e17 0%, #1f4032 100%);
-  position: relative;
-  overflow: hidden;
+  background-color: #0b1e17;
 }
 
-.carrossel-titulo {
-  font-size: 2.5rem;
-  color: #fef0b6;
-  text-align: center;
-  margin-bottom: 40px;
-  position: relative;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.carrossel-titulo::after {
-  content: '';
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(to right, #f3c849, #d97706);
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.carrossel-eventos {
-  position: relative;
+.eventos-grid {
   display: flex;
-  align-items: center;
-  gap: 20px;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  overflow: visible;
-}
-
-.eventos-container {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  padding: 20px 0;
-  align-items: stretch;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  width: 100%;
-  margin: 0 -20px;
-}
-
-.eventos-container::-webkit-scrollbar {
-  display: none;
+  gap: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 40px;
 }
 
 .evento {
-  flex: 0 0 400px;
-  background: #fffef9;
-  color: #0b1e17;
-  border-radius: 12px;
+  flex: 1;
+  min-width: 300px;
+  max-width: 350px;
+  background-color: #fff;
+  color: #000;
+  border-radius: 8px;
   overflow: hidden;
-  transition: all 0.4s ease;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  scroll-snap-align: center;
-  display: flex;
-  flex-direction: column;
-  height: 550px;
-  transform: scale(0.95);
-  opacity: 0.9;
-  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .evento:hover {
-  transform: scale(1);
-  opacity: 1;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
 }
 
 .evento img {
   width: 100%;
-  height: 250px;
-  object-fit: contain;
-  object-position: top;
-  background: #f0f0f0;
-  transition: transform 0.3s ease;
-}
-
-.evento:hover img {
-  transform: scale(1.05);
+  height: 200px;
+  object-fit: cover;
 }
 
 .evento-info {
   padding: 20px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 300px;
 }
 
 .evento-data {
-  color: #d97706;
+  color: #f3c849;
   font-weight: 600;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  margin-bottom: 10px;
+  display: block;
 }
 
 .evento-titulo {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #0b1e17;
-  margin: 0;
-  line-height: 1.3;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
 }
 
 .evento-desc {
-  color: #444;
-  font-size: 1.1rem;
-  line-height: 1.5;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: #555;
+  margin-bottom: 10px;
 }
 
-.evento-local, .evento-endereco {
-  font-size: 1rem;
-  color: #555;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.evento-local {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 4px 0;
 }
 
 .evento-endereco {
-  color: #1d4ed8;
-  text-decoration: none;
-  cursor: pointer;
+  display: block;
+  color: #2b6cb0;
+  text-decoration: underline;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
 }
 
-.evento-endereco:hover {
+.evento-link {
+  display: inline-block;
+  color: #25d366;
+  font-weight: bold;
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.evento-link:hover {
+  color: #128c7e;
   text-decoration: underline;
 }
 
 .evento-whatsapp {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1rem;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .icone-whatsapp {
-  color: #25d366;
-  font-size: 1.4rem;
+  display: inline-flex;
+  background-color: #25d366;
+  color: white;
+  font-size: 25px;
+  padding: 8px;
+  border-radius: 40%;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
 }
 
 .icone-whatsapp:hover {
-  color: #1aa34a;
+  background-color: #128c7e;
 }
 
-.toggle-detalhe {
-  color: #1d4ed8;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  margin-top: auto;
-  transition: color 0.3s ease;
+.numero-whatsapp {
+  font-size: 0.95rem;
+  color: #333;
 }
 
-.toggle-detalhe:hover {
-  color: #f3c849;
-  text-decoration: underline;
-}
+/*carrossel de Eventos*/
 
-.evento-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-  overflow-y: auto;
-}
-
-.modal-content {
-  background: #fffef9;
-  border-radius: 12px;
-  padding: 20px;
-  max-width: 600px;
-  width: 90%;
-  position: relative;
-  animation: modalFadeIn 0.3s ease-out;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.modal-header {
+.carrossel-titulo {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #fef0b6;
   margin-bottom: 20px;
 }
 
-.modal-header img {
-  width: 100%;
-  height: 300px;
-  object-fit: cover;
-  border-radius: 8px;
-}
 
-.modal-body {
-  padding: 0 10px;
+.carrossel-eventos {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.modal-body .evento-desc,
-.modal-body .evento-detalhe {
-  color: #444;
-  font-size: 1.1rem;
-  line-height: 1.5;
-}
-
-.close-modal {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 1.5rem;
-  color: #0b1e17;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.close-modal:hover {
-  color: #f3c849;
-}
-
-.imagem-ampliada-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  z-index: 1100;
-  justify-content: center;
   align-items: center;
-  overflow: auto;
+  gap: 10px;
+  overflow: hidden;
+  max-width: 100vw;
+  padding: 0 20px;
 }
 
-.imagem-ampliada-modal img {
-  max-width: 90%;
-  max-height: 90vh;
-  object-fit: contain;
-  animation: zoomIn 0.3s ease-out;
+
+.eventos-container {
+  display: flex;
+  gap: 30px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 0;
 }
 
-@keyframes zoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.close-imagem-ampliada {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  font-size: 2rem;
-  color: #fff;
-  cursor: pointer;
-  transition: color 0.3s ease;
-  z-index: 1200;
-}
-
-.close-imagem-ampliada:hover {
-  color: #f3c849;
+.eventos-container::-webkit-scrollbar {
+  display: none;
 }
 
 .btn-carrossel {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: #f3c849;
-  color: #0b1e17;
+  background-color: #f3c849;
+  color: #000;
   border: none;
-  width: 50px;
-  height: 50px;
+  padding: 10px 15px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 1.2rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-size: 1.5rem;
+  transition: background-color 0.3s ease;
   z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .btn-carrossel:hover {
-  background: #d97706;
-  transform: translateY(-50%) scale(1.1);
-}
-
-.btn-carrossel:active {
-  transform: translateY(-50%) scale(0.95);
+  background-color: #d1a905;
 }
 
 .btn-carrossel.esquerda {
-  left: 0;
+  margin-left: -10px;
 }
 
 .btn-carrossel.direita {
-  right: 0;
+  margin-right: -10px;
 }
 
-@media (max-width: 992px) {
-  .evento {
-    flex: 0 0 350px;
-    height: 500px;
-  }
-
-  .evento img {
-    height: 220px;
-  }
-
-  .evento-info {
-    min-height: 270px;
-  }
-}
-
-@media (max-width: 768px) {
-  .evento {
-    flex: 0 0 300px;
-    height: 480px;
-  }
-
-  .evento img {
-    height: 200px;
-  }
-
-  .evento-info {
-    min-height: 250px;
-  }
-
-  .btn-carrossel {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-
-  .modal-content {
-    max-width: 90%;
-  }
-
-  .modal-header img {
-    height: 250px;
-  }
-}
-
-@media (max-width: 480px) {
-  .carrossel-titulo {
-    font-size: 2rem;
-  }
-
-  .evento {
-    flex: 0 0 100%;
-    height: 450px;
-  }
-
-  .evento img {
-    height: 180px;
-  }
-
-  .evento-info {
-    min-height: 230px;
-  }
-
-  .evento-titulo {
-    font-size: 1.4rem;
-  }
-
-  .evento-desc, .evento-local, .evento-endereco {
-    font-size: 0.95rem;
-  }
-
-  .modal-header img {
-    height: 200px;
-  }
-
-  .close-imagem-ampliada {
-    font-size: 1.5rem;
-    top: 15px;
-    right: 15px;
-  }
-}
 /* Seção Localização */
 #localizacao {
   padding: 80px 0;
