@@ -151,9 +151,24 @@
 
     <!-- Próximos Eventos -->
     <section id="eventos" class="scroll-animate">
-      <div class="container">
-        <h2>Próximos Eventos</h2>
-        <div class="eventos-grid" id="eventos-container"></div>
+      <h2 class="carrossel-titulo">Próximos Eventos</h2>
+      <div class="carrossel-eventos">
+          <button
+            class="btn-carrossel esquerda"
+            onclick="scrollCarrossel('esquerda')"
+          >
+            ❮
+          </button>
+
+          <div class="eventos-container" id="eventos-container"></div>
+
+          <button
+            class="btn-carrossel direita"
+            onclick="scrollCarrossel('direita')"
+          >
+            ❯
+          </button>
+        </div>
       </div>
     </section>
 

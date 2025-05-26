@@ -196,6 +196,17 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
+function scrollCarrossel(direcao) {
+  const container = document.getElementById('eventos-container');
+  const largura = container.offsetWidth;
+
+  container.scrollBy({
+    left: direcao === 'direita' ? largura : -largura,
+    behavior: 'smooth'
+  });
+}
+
+
 // Iniciar ao carregar a página
 document.addEventListener("DOMContentLoaded", () => {
   carregarEventos();
