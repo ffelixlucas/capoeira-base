@@ -358,8 +358,8 @@ tr:hover {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  width: 100%;
-  margin: 0 -20px;
+  min-width: 100%;
+  margin: 0 auto;
 }
 
 .eventos-container::-webkit-scrollbar {
