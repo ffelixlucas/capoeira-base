@@ -44,28 +44,6 @@
       </div>
     </header>
 
-    <!-- Botão Fixo para Agendar Aula -->
-    <a href="#" class="btn-agendar" onclick="openModal()">
-      <i class="fas fa-calendar-alt"></i> Agendar Aula
-    </a>
-
-    <!-- Modal para Agendar Aula -->
-    <div id="modal" class="modal">
-      <div class="modal-content">
-        <span class="close-modal" onclick="closeModal()">&times;</span>
-        <h3>Agende Sua Aula Experimental</h3>
-        <input type="text" placeholder="Nome Completo" required />
-        <input type="email" placeholder="E-mail" required />
-        <input type="tel" placeholder="Telefone" required />
-        <select required>
-          <option value="" disabled selected>Selecione uma turma</option>
-          <option value="infantil">Infantil (Seg e Qua, 19h-20h)</option>
-          <option value="juvenil">Juvenil (Ter e Qui, 19h-20h)</option>
-          <option value="adulto">Adulto (Ter e Qui, 20h-21:30)</option>
-        </select>
-        <button onclick="agendarAula()">Enviar Agendamento</button>
-      </div>
-    </div>
 
     <!-- Quem Somos -->
     <section id="sobre" class="scroll-animate">
@@ -75,9 +53,9 @@
             <h2>Quem Somos</h2>
             <h3>Capoeira Nota 10</h3>
             <p>
-              O Capoeira Nota 10 é um projeto social que une arte, cultura e
+              O Capoeira Nota 10 é um projeto cultural que une arte, cultura e
               educação através da capoeira, atendendo crianças e jovens da
-              comunidade desde 2010. Vinculado ao renomado Grupo Capoeira
+              comunidade desde 2011. Vinculado ao renomado Grupo Capoeira
               Brasil, sob a supervisão do Mestre Duende, o projeto é liderado
               pelo Formando Clone.
             </p>
@@ -149,28 +127,45 @@
       </div>
     </section>
 
-    <!-- Próximos Eventos -->
-    <section id="eventos" class="scroll-animate">
-      <h2 class="carrossel-titulo">Próximos Eventos</h2>
-      <div class="carrossel-eventos">
-          <button
-            class="btn-carrossel esquerda"
-            onclick="scrollCarrossel('esquerda')"
-          >
-            ❮
-          </button>
-
-          <div class="eventos-container" id="eventos-container"></div>
-
-          <button
-            class="btn-carrossel direita"
-            onclick="scrollCarrossel('direita')"
-          >
-            ❯
-          </button>
-        </div>
+<!-- Próximos Eventos -->
+<section id="eventos" class="scroll-animate">
+  <h2 class="carrossel-titulo">Próximos Eventos</h2>
+  <div class="carrossel-eventos">
+    <button class="btn-carrossel esquerda" onclick="scrollCarrossel('esquerda')">
+      ❮
+    </button>
+    <div class="eventos-container" id="eventos-container"></div>
+    <button class="btn-carrossel direita" onclick="scrollCarrossel('direita')">
+      ❯
+    </button>
+  </div>
+  <!-- Modal para exibir detalhes do evento -->
+  <div id="evento-modal" class="evento-modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="fecharModalEvento()">×</span>
+      <div class="modal-header">
+        <img id="modal-imagem" src="" alt="Imagem do evento" style="cursor: pointer;" />
       </div>
-    </section>
+      <div class="modal-body">
+        <h3 id="modal-titulo"></h3>
+        <p id="modal-data" class="evento-data"></p>
+        <p id="modal-desc" class="evento-desc"></p>
+        <p id="modal-local" class="evento-local"></p>
+        <a id="modal-endereco" class="evento-endereco" target="_blank"></a>
+        <div id="modal-whatsapp" class="evento-whatsapp"></div>
+        <div id="modal-detalhe" class="evento-detalhe"></div>
+        <button class="btn-compartilhar" onclick="compartilharEvento()" aria-label="Compartilhar evento no WhatsApp ou outras plataformas">
+          <i class="fas fa-share-alt"></i> Compartilhar Evento
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal para ampliar a imagem -->
+  <div id="imagem-ampliada-modal" class="imagem-ampliada-modal">
+    <span class="close-imagem-ampliada" onclick="fecharImagemAmpliada()">×</span>
+    <img id="imagem-ampliada" src="" alt="Imagem ampliada" />
+  </div>
+</section>
 
     <!-- Localização -->
     <section id="localizacao" class="scroll-animate">
@@ -287,6 +282,10 @@
         ✕
       </button>
     </div>
+
+    <!-- Importar html2canvas e Font Awesome para ícones -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
 
     <script src="js/script.js"></script>
     <script src="js/galeria.js"></script>
