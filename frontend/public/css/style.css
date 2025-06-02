@@ -412,6 +412,13 @@ tr:hover {
   gap: 12px;
   min-height: 300px;
 }
+.evento-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 
 .evento-data {
   color: #d97706;
@@ -793,6 +800,13 @@ tr:hover {
   object-fit: contain; /* Mantém a proporção da imagem */
   object-position: center; /* Centraliza a imagem */
 }
+.numero-whatsapp {
+  color: #0b1e17 !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-left: 6px;
+}
+
 
 /* Garantir que o modal-body não fique muito apertado */
 .modal-content.capture .modal-body {

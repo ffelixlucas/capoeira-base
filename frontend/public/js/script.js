@@ -77,60 +77,58 @@ async function carregarEventos() {
       const card = document.createElement("div");
       card.className = "evento";
       card.innerHTML = `
-        <img src="${evento.imagem_url || "https://via.placeholder.com/350x200"}"
-            alt="${evento.titulo}"
-            class="w-full h-[200px] object-contain bg-gray-100 rounded-t-lg cursor-zoom-in"
-            onclick="abrirModalImagem('${
-              evento.imagem_url || "https://via.placeholder.com/350x200"
-            }', '${evento.titulo}')"
-        />
-        
-        <div class="evento-info">
-          <span class="evento-data" style="color: #d97706; font-weight: 600;">
-            📅 ${formatarData(evento.data_inicio, evento.data_fim)}
-          </span>
-          <h3 class="evento-titulo" style="font-weight: bold; margin-top: 5px;">
-            ${evento.titulo}
-          </h3>
-          ${
-            evento.descricao_curta
-              ? `<p class="evento-desc">${evento.descricao_curta}</p>`
-              : ""
-          }
-          ${
-            evento.local ? `<p class="evento-local">📍 ${evento.local}</p>` : ""
-          }
-          ${
-            evento.endereco
-              ? `<a href="https://www.google.com/maps/search/?q=${encodeURIComponent(
-                  evento.endereco
-                )}" target="_blank" class="evento-endereco">${
-                  evento.endereco
-                }</a>`
-              : ""
-          }
-          ${
-            evento.telefone_contato
-              ? `
-              <div class="evento-whatsapp">
-                <a href="https://wa.me/55${evento.telefone_contato.replace(
-                  /\D/g,
-                  ""
-                )}" 
-                   target="_blank" 
-                   class="icone-whatsapp"
-                   title="Conversar no WhatsApp">
-                  <i class="fab fa-whatsapp"></i>
-                </a>
-                <span class="numero-whatsapp">${evento.telefone_contato}</span>
-              </div>
-              `
-              : ""
-          }
-          <small style="color: #888; font-style: italic;">Clique para ver mais detalhes</small>
+  <img src="${evento.imagem_url || "https://via.placeholder.com/350x200"}"
+      alt="${evento.titulo}"
+      class="w-full h-[200px] object-contain bg-gray-100 rounded-t-lg cursor-zoom-in"
+      onclick="abrirModalImagem('${
+        evento.imagem_url || "https://via.placeholder.com/350x200"
+      }', '${evento.titulo}')"
+  />
+  
+  <div class="evento-info">
+    <span class="evento-data" style="color: #d97706; font-weight: 600;">
+      📅 ${formatarData(evento.data_inicio, evento.data_fim)}
+    </span>
+    <h3 class="evento-titulo" style="font-weight: bold; margin-top: 5px;">
+      ${evento.titulo}
+    </h3>
+    ${
+      evento.descricao_curta
+        ? `<p class="evento-desc">${evento.descricao_curta}</p>`
+        : ""
+    }
 
+    <div class="evento-footer">
+      ${evento.local ? `<p class="evento-local">📍 ${evento.local}</p>` : ""}
+      ${
+        evento.endereco
+          ? `<a href="https://www.google.com/maps/search/?q=${encodeURIComponent(
+              evento.endereco
+            )}" target="_blank" class="evento-endereco">${evento.endereco}</a>`
+          : ""
+      }
+      ${
+        evento.telefone_contato
+          ? `
+          <div class="evento-whatsapp">
+            <a href="https://wa.me/55${evento.telefone_contato.replace(
+              /\D/g,
+              ""
+            )}" 
+               target="_blank" 
+               class="icone-whatsapp"
+               title="Conversar no WhatsApp">
+              <i class="fab fa-whatsapp"></i>
+            </a>
+            <span class="numero-whatsapp">${evento.telefone_contato}</span>
           </div>
-      `;
+          `
+          : ""
+      }
+      <small style="color: #888; font-style: italic;">Clique para ver mais detalhes</small>
+    </div>
+  </div>
+`;
       card.addEventListener("click", (e) => {
         if (
           e.target.tagName !== "IMG" &&
