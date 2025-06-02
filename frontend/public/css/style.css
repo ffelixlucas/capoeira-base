@@ -529,6 +529,24 @@ tr:hover {
 /* ========================================================================= */
 /* Modal de Detalhes do Evento */
 /* ========================================================================= */
+#modal-imagem {
+  width: 100%;
+  max-width: 600px;
+  max-height: 320px;
+  object-fit: contain;
+  object-position: center;
+  margin: 0 auto;
+  display: block;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+#modal-imagem:hover {
+  transform: scale(1.02);
+}
+
 .evento-modal {
   display: none;
   position: fixed;

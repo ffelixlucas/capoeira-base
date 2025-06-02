@@ -262,7 +262,7 @@ function abrirModalEvento(evento) {
       // Se o conteúdo for maior que a tela, reduz fonte e espaçamentos
       modalContent.style.fontSize = "0.9rem";
       modalContent.querySelector(".modal-body").style.gap = "8px";
-      modalImagem.style.maxHeight = "200px";
+      modalImagem.style.maxHeight = "320px";
       modalContent.querySelector(".modal-body h3").style.fontSize = "1.6rem";
     } else {
       // Reseta estilos para o padrão
