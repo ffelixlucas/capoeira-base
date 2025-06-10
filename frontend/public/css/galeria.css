@@ -6,8 +6,9 @@
 }
 
 .slider {
+  position: relative; 
   max-width: 800px;
-  height: 500px; /* 🚩 define altura fixa do container */
+  height: 500px;
   margin: 0 auto 20px;
   text-align: center;
   display: flex;
@@ -26,6 +27,19 @@
   transition: opacity 0.3s ease;
 }
 
+.legenda-imagem {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 1rem;
+  text-align: center;
+  font-style: italic;
+  z-index: 2;
+}
 
 .thumbnails {
   display: flex;
@@ -53,4 +67,49 @@
 .thumbnails .miniatura.ativa {
   border-color: var(--cor-primaria);
   opacity: 1;
+}
+
+/* ===== MOBILE AJUSTES ===== */
+@media screen and (max-width: 768px) {
+  .slider {
+    height: 260px;
+    margin-bottom: 3.5rem; /* espaço para legenda */
+    padding: 0;
+    overflow: visible;
+  }
+
+  .slider img {
+    border-radius: 6px;
+  }
+
+  .legenda-imagem {
+    position: absolute;
+    bottom: -3rem; /* empurra legenda pra fora */
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 99;
+  }
+
+  .thumbnails {
+    margin-top: 1.5rem;
+    padding: 0 1rem 1rem;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .thumbnails .miniatura {
+    width: 64px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 5px;
+  }
+}
+
+#botao-whatsapp {
+  bottom: 16px;
+  right: 16px;
 }
