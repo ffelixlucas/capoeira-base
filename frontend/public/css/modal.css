@@ -1,0 +1,455 @@
+/* ========================================================================= */
+/* 🧩 MODAIS GERAIS (eventos, imagens, contato, etc.) */
+/* ========================================================================= */
+
+/* --- Modal simples de imagem --- */
+#modal-imagem {
+  width: 100%;
+  max-width: 600px;
+  max-height: 320px;
+  object-fit: contain;
+  object-position: center;
+  margin: 0 auto;
+  display: block;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+#modal-imagem:hover {
+  transform: scale(1.02);
+}
+
+/* --- Modal de detalhes do evento (versão tradicional) --- */
+.evento-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.modal-content {
+  background: #fffef9;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: modalFadeIn 0.5s ease-out;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.modal-header {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.modal-header img {
+  width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  background: #f0f0f0;
+}
+
+.modal-header img:hover {
+  transform: scale(1.02);
+}
+
+.modal-body {
+  padding: 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 1rem;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.modal-body h3 {
+  font-size: 1.8rem;
+  color: #0b1e17;
+  margin-bottom: 8px;
+}
+
+.modal-body .evento-desc,
+.modal-body .evento-detalhe {
+  color: #333;
+}
+
+.modal-body .evento-data,
+.modal-body .evento-local,
+.modal-body .evento-endereco,
+.modal-body .evento-whatsapp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.close-modal {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 1.5rem;
+  color: #0b1e17;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+  color: #f3c849;
+}
+
+.btn-compartilhar {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #f3c849;
+  color: #0b1e17;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: center;
+  width: 100%;
+  max-width: 280px;
+}
+
+.btn-compartilhar:hover {
+  background: #d97706;
+  transform: translateY(-2px);
+}
+
+.btn-compartilhar i {
+  font-size: 1.1rem;
+}
+
+/* ========================================================================= */
+/* 🖼️ Modal de Imagem Ampliada (Galeria) */
+/* ========================================================================= */
+
+.imagem-ampliada-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1100;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+}
+
+.imagem-ampliada-modal img {
+  max-width: 90%;
+  max-height: 90vh;
+  object-fit: contain;
+  animation: zoomIn 0.3s ease-out;
+}
+
+.close-imagem-ampliada {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-size: 2rem;
+  color: #fff;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  z-index: 1200;
+}
+
+.close-imagem-ampliada:hover {
+  color: #f3c849;
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ========================================================================= */
+/* 🖨️ Modal em Modo de Captura (para compartilhar evento como imagem) */
+/* ========================================================================= */
+
+.modal-content.capture {
+  max-width: 1080px;
+  width: 1080px;
+  height: 1920px;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-content.capture::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(to right, #f3c849, #d97706);
+}
+
+.modal-content.capture::after {
+  background: url('../media/logo.png') no-repeat center;
+  background-size: contain;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 60px;
+}
+
+.modal-content.capture .modal-header {
+  margin: 20px 0;
+  width: 100%;
+  padding: 0 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.modal-content.capture .modal-header img {
+  max-height: 950px;
+  width: 100%;
+  max-width: 960px;
+  border-radius: 12px;
+  border: 4px solid #f3c849;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  background: #fffef9;
+  object-fit: contain;
+  object-position: center;
+}
+
+.modal-content.capture .modal-body {
+  gap: 15px;
+  padding: 0 30px;
+  align-items: flex-start;
+  text-align: left;
+  flex-grow: 1;
+  margin: 0 30px 80px 30px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content.capture .modal-body::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(to right, #f3c849, #d97706);
+}
+
+.modal-content.capture .modal-body h3 {
+  font-size: 2.5rem;
+  color: #0b1e17;
+  font-weight: bold;
+  border-left: 4px solid #f3c849;
+  padding-left: 10px;
+  margin: 0;
+}
+
+.modal-content.capture .modal-body .evento-desc {
+  font-size: 1.4rem;
+  color: #444;
+}
+
+.modal-content.capture .modal-body .evento-detalhe {
+  font-size: 1.2rem;
+  color: #555;
+  display: block;
+  overflow: visible;
+}
+
+.modal-content.capture .modal-body .evento-data,
+.modal-content.capture .modal-body .evento-local,
+.modal-content.capture .modal-body .evento-endereco,
+.modal-content.capture .modal-body .evento-whatsapp {
+  font-size: 1.3rem;
+  color: #0b1e17;
+  font-weight: 500;
+  margin: 5px 0;
+}
+
+.modal-content.capture .btn-compartilhar {
+  display: none;
+}
+
+.numero-whatsapp {
+  color: #0b1e17 !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-left: 6px;
+}
+
+/* ========================================================================= */
+/* 💬 MODAL FLUTUANTE - Botão WhatsApp e modal de seleção */
+/* ========================================================================= */
+
+/* Botão flutuante */
+#botao-whatsapp {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #25d366, #20b85a);
+  color: white;
+  font-size: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  z-index: 10000;
+  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+#botao-whatsapp:hover {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, #20b85a, #1a9c4e);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal de seleção de número */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.modal-overlay .modal-content {
+  background: #fff;
+  color: #222;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  position: relative;
+  text-align: center;
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.modal-content h2 {
+  margin: 0 0 1rem;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.modal-content button {
+  padding: 0.8rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5db2ad, #4a9b95);
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.modal-content button:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #4a9b95, #3a8983);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  font-size: 1.8rem;
+  color: #555;
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.modal-close:hover {
+  color: #111;
+  transform: rotate(90deg);
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    width: 95%;
+    padding: 1.5rem;
+  }
+
+  .modal-content h2 {
+    font-size: 1.4rem;
+  }
+
+  .modal-content button {
+    font-size: 0.9rem;
+    padding: 0.7rem 1rem;
+  }
+}
