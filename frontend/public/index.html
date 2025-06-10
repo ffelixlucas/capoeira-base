@@ -4,34 +4,87 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Capoeira Nota 10 - Projeto cultural</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-    />
+    <meta name="description" content="Projeto social de capoeira que transforma vidas com cultura e educação. Veja horários, fotos, eventos e participe!" />
+    <meta name="keywords" content="capoeira, projeto social, Pinhais, aulas de capoeira, Capoeira Nota 10, cultura, eventos" />
+    <meta name="author" content="Capoeira Nota 10" />
+  
+    <!-- SEO: Open Graph -->
+    <meta property="og:title" content="Capoeira Nota 10 - Projeto cultural" />
+    <meta property="og:description" content="Projeto social de capoeira que transforma vidas com cultura e educação." />
+    <meta property="og:image" content="media/preview.jpg" />
+    <meta property="og:type" content="website" />
+  
+    <!-- Ícones e fontes -->
+    <link rel="icon" href="media/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet" />
+  
+    <!-- Estilos -->
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/galeria.css" />
+
+  
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
   </head>
+  
   <body>
     <!-- Cabeçalho -->
-    <header id="header">
-      <div class="container">
-        <img src="media/logo.png" alt="Logo Capoeira Nota 10" id="logo" />
-        <nav>
-          <ul>
-            <li><a href="#inicio">Início</a></li>
-            <li><a href="#sobre">Sobre</a></li>
-            <li><a href="#aulas">Aulas</a></li>
-            <li><a href="#eventos">Eventos</a></li>
-            <li><a href="#localizacao">Localização</a></li>
-            <li><a href="#contato">Contato</a></li>
+    <!-- Header -->
+    <header class="header" id="header">
+      <nav class="nav container">
+        <!-- Logo com imagem preservada -->
+        <a href="#inicio" class="nav__logo" aria-label="Início">
+          <img src="media/logo.png" alt="Logo Capoeira Nota 10" id="logo" />
+        </a>
+
+        <!-- Menu de navegação -->
+        <div class="nav__menu" id="nav-menu">
+          <ul class="nav__list">
+            <li class="nav__item">
+              <a href="#inicio" class="nav__link active" aria-label="Início"
+                >Início</a
+              >
+            </li>
+            <li class="nav__item">
+              <a href="#sobre" class="nav__link" aria-label="Sobre">Sobre</a>
+            </li>
+            <li class="nav__item">
+              <a href="#aulas" class="nav__link" aria-label="Aulas">Aulas</a>
+            </li>
+            <li class="nav__item">
+              <a href="#eventos" class="nav__link" aria-label="Eventos"
+                >Eventos</a
+              >
+            </li>
+            <li class="nav__item">
+              <a href="#localizacao" class="nav__link" aria-label="Localização"
+                >Localização</a
+              >
+            </li>
+            <li class="nav__item">
+              <a href="#contato" class="nav__link" aria-label="Contato"
+                >Contato</a
+              >
+            </li>
           </ul>
-        </nav>
-        <img
-          src="media/logo-capoeirabrasil.png"
-          alt="Logo Capoeira Nota 10"
-          id="logo"
-        />
-      </div>
+          <img
+            src="media/logo-capoeirabrasil.png"
+            alt="Grupo Capoeira Brasil"
+            class="nav__logo-base"
+          />
+
+          <!-- Botão de fechar menu -->
+          <button class="nav__close" id="nav-close" aria-label="Fechar menu">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Botão hamburguer -->
+        <button class="nav__toggle" id="nav-toggle" aria-label="Abrir menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </nav>
+
       <div class="hero">
         <h1>CAPOEIRA NOTA 10</h1>
         <p class="hero-subtitle">
@@ -43,7 +96,6 @@
         </div>
       </div>
     </header>
-
 
     <!-- Quem Somos -->
     <section id="sobre" class="scroll-animate">
@@ -72,7 +124,7 @@
             </p>
           </div>
           <div class="sobre-imagem">
-            <img src="media/professor.png" alt="Grupo de capoeira" />
+            <img src="media/professor2.png" alt="Grupo de capoeira" />
           </div>
         </div>
       </div>
@@ -83,6 +135,7 @@
         <h2>Galeria de Fotos</h2>
         <div id="slider" class="slider">
           <img id="imagem-principal" src="" alt="Imagem principal da galeria" />
+          <div id="legenda-imagem" class="legenda-imagem"></div>
         </div>
         <div id="thumbnails" class="thumbnails"></div>
       </div>
@@ -102,70 +155,70 @@
                 <th>Faixa Etária</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>Infantil</td>
-                <td>Segunda e Quarta</td>
-                <td>19:00–20:00</td>
-                <td>5 a 10 anos</td>
-              </tr>
-              <tr>
-                <td>Juvenil</td>
-                <td>Terça e Quinta</td>
-                <td>19:00–20:00</td>
-                <td>11 a 17 anos</td>
-              </tr>
-              <tr>
-                <td>Adulto</td>
-                <td>Terça e Quinta</td>
-                <td>20:00–21:30</td>
-                <td>A partir de 18 anos</td>
-              </tr>
+            <tbody id="agenda-tbody">
+              <!-- Preenchido dinamicamente via JS -->
             </tbody>
           </table>
         </div>
       </div>
     </section>
 
-<!-- Próximos Eventos -->
-<section id="eventos" class="scroll-animate">
-  <h2 class="carrossel-titulo">Próximos Eventos</h2>
-  <div class="carrossel-eventos">
-    <button class="btn-carrossel esquerda" onclick="scrollCarrossel('esquerda')">
-      ❮
-    </button>
-    <div class="eventos-container" id="eventos-container"></div>
-    <button class="btn-carrossel direita" onclick="scrollCarrossel('direita')">
-      ❯
-    </button>
-  </div>
-  <!-- Modal para exibir detalhes do evento -->
-  <div id="evento-modal" class="evento-modal">
-    <div class="modal-content">
-      <span class="close-modal" onclick="fecharModalEvento()">×</span>
-      <div class="modal-header">
-        <img id="modal-imagem" src="" alt="Imagem do evento" style="cursor: pointer;" />
-      </div>
-      <div class="modal-body">
-        <h3 id="modal-titulo"></h3>
-        <p id="modal-data" class="evento-data"></p>
-        <p id="modal-desc" class="evento-desc"></p>
-        <p id="modal-local" class="evento-local"></p>
-        <a id="modal-endereco" class="evento-endereco" target="_blank"></a>
-        <div id="modal-whatsapp" class="evento-whatsapp"></div>
-        <div id="modal-detalhe" class="evento-detalhe"></div>
-        <button class="btn-compartilhar" onclick="compartilharEvento()" aria-label="Compartilhar evento no WhatsApp ou outras plataformas">
-          <i class="fas fa-share-alt"></i> Compartilhar Evento
+    <!-- Próximos Eventos -->
+    <section id="eventos" class="scroll-animate">
+      <h2 class="carrossel-titulo">Próximos Eventos</h2>
+      <div class="carrossel-eventos">
+        <button
+          class="btn-carrossel esquerda"
+          onclick="scrollCarrossel('esquerda')"
+        >
+          ❮
+        </button>
+        <div class="eventos-container" id="eventos-container"></div>
+        <button
+          class="btn-carrossel direita"
+          onclick="scrollCarrossel('direita')"
+        >
+          ❯
         </button>
       </div>
-    </div>
-  </div>
-  <!-- Modal para ampliar a imagem -->
-  <div id="imagem-ampliada-modal" class="imagem-ampliada-modal">
-    <span class="close-imagem-ampliada" onclick="fecharImagemAmpliada()">×</span>
-    <img id="imagem-ampliada" src="" alt="Imagem ampliada" />
-  </div>
-</section>
+      <!-- Modal para exibir detalhes do evento -->
+      <div id="evento-modal" class="evento-modal">
+        <div class="modal-content">
+          <span class="close-modal" onclick="fecharModalEvento()">×</span>
+          <div class="modal-header">
+            <img
+              id="modal-imagem"
+              src=""
+              alt="Imagem do evento"
+              style="cursor: pointer"
+            />
+          </div>
+          <div class="modal-body">
+            <h3 id="modal-titulo"></h3>
+            <p id="modal-data" class="evento-data"></p>
+            <p id="modal-desc" class="evento-desc"></p>
+            <p id="modal-local" class="evento-local"></p>
+            <a id="modal-endereco" class="evento-endereco" target="_blank"></a>
+            <div id="modal-whatsapp" class="evento-whatsapp"></div>
+            <div id="modal-detalhe" class="evento-detalhe"></div>
+            <button
+              class="btn-compartilhar"
+              onclick="compartilharEvento()"
+              aria-label="Compartilhar evento no WhatsApp ou outras plataformas"
+            >
+              <i class="fas fa-share-alt"></i> Compartilhar Evento
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Modal para ampliar a imagem -->
+      <div id="imagem-ampliada-modal" class="imagem-ampliada-modal">
+        <span class="close-imagem-ampliada" onclick="fecharImagemAmpliada()"
+          >×</span
+        >
+        <img id="imagem-ampliada" src="" alt="Imagem ampliada" />
+      </div>
+    </section>
 
     <!-- Localização -->
     <section id="localizacao" class="scroll-animate">
@@ -174,14 +227,12 @@
         <div class="localizacao-grid">
           <div class="localizacao-texto">
             <h3>Espaço Cultural Capoeira Nota 10</h3>
+            <p>
+              <i class="fas fa-address-card"></i> R. Alamanda, 384 A - Jardim
+              Karla, Pinhais - PR, 83328-130
+            </p>
+            <p><i class="fas fa-map-marker-alt"></i>Pinhais, Paraná</p>
             <p><i class="fas fa-star"></i> 4.9 (914 avaliações no Google)</p>
-            <p>
-              <i class="fas fa-map-marker-alt"></i> Academia em Pinhais, Paraná
-            </p>
-            <p>
-              <i class="fas fa-address-card"></i> Estr. Ecológica de Pinhais,
-              3472 - Jardim Karla, Pinhais - PR, 83328-200
-            </p>
 
             <div class="localizacao-links">
               <a
@@ -226,10 +277,21 @@
           />
 
           <div class="footer-social">
-            <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
-            <a href="#" target="_blank"><i class="fab fa-youtube"></i></a>
-            <a href="#" target="_blank"><i class="fab fa-whatsapp"></i></a>
+            <a
+              href="https://www.facebook.com/espacoculturalcn10"
+              target="_blank"
+              ><i class="fab fa-facebook-f"></i
+            ></a>
+            <a
+              href="https://www.instagram.com/espacocultural_cn10/"
+              target="_blank"
+              ><i class="fab fa-instagram"></i
+            ></a>
+            <a
+              href="https://www.youtube.com/channel/UCm7wnrzKO0FJL6nAyGg2FwA"
+              target="_blank"
+              ><i class="fab fa-youtube"></i
+            ></a>
           </div>
 
           <div class="footer-links">
@@ -282,12 +344,34 @@
         ✕
       </button>
     </div>
+    <!-- Botão flutuante -->
+    <div id="botao-whatsapp" aria-label="Fale conosco no WhatsApp">
+      <i class="ri-whatsapp-line"></i>
+    </div>
 
-    <!-- Importar html2canvas e Font Awesome para ícones -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <!-- Modal de Contato -->
+    <div id="modal-contato" class="modal-overlay">
+      <div class="modal-content">
+        <i class="ri-chat-3-line"></i>
+        <button onclick="agendarAula()">
+          <i class="ri-calendar-2-line"></i> Agendar aula experimental
+        </button>
+        <button onclick="abrirWhatsAppGenerico()">
+          <i class="ri-question-line"></i> Outros assuntos
+        </button>
+        <span class="modal-close" onclick="fecharModal()">×</span>
+      </div>
+    </div>
 
-    <script src="js/script.js"></script>
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js.js"></script>
+    <script src="js/menu.js"></script>
     <script src="js/galeria.js"></script>
+    <script src="js/agenda.js"></script>
+    <script src="js/eventos.js"></script>
+    <script src="js/whatsapp.js"></script>
+
+
   </body>
 </html>
