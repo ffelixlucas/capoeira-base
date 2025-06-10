@@ -5,11 +5,10 @@ async function contarTotalItens() {
   return rows[0].total;
 }
 
-
-async function salvarImagem(imagemUrl, titulo = null, criadoPor = null) {
+async function salvarImagem(imagemUrl, titulo = null, criadoPor = null, legenda = null) {
   const [resultado] = await db.execute(
-    'INSERT INTO galeria (imagem_url, titulo, criado_por) VALUES (?, ?, ?)',
-    [imagemUrl, titulo, criadoPor]
+    'INSERT INTO galeria (imagem_url, titulo, criado_por, legenda) VALUES (?, ?, ?, ?)',
+    [imagemUrl, titulo, criadoPor, legenda]
   );
   return resultado.insertId;
 }

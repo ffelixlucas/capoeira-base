@@ -2,7 +2,7 @@ const bucket = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
 const galeriaRepository = require('../repositories/galeriaRepository');
 
-async function processarUpload(imagem, titulo = null, criadoPor = null) {
+async function processarUpload(imagem, titulo = null, criadoPor = null, legenda = null) {
   const totalItens = await galeriaRepository.contarTotalItens();
 
   if (totalItens >= 20) {
@@ -24,7 +24,7 @@ async function processarUpload(imagem, titulo = null, criadoPor = null) {
     blobStream.on('finish', async () => {
       try {
         const url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
-        await galeriaRepository.salvarImagem(url, titulo, criadoPor);
+        await galeriaRepository.salvarImagem(url, titulo, criadoPor, legenda);
         resolve(url);
       } catch (error) {
         reject(error);

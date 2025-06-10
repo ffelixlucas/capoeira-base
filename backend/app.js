@@ -10,11 +10,15 @@ app.use(express.json());
 // Importar rotas
 const galeriaRoutes = require('./routes/galeriaRoutes');
 const authRoutes = require('./routes/auth.Routes');
-const agendaRoutes = require('./routes/agendaRoutes'); // ✅ Importação ok
+const agendaRoutes = require('./routes/agendaRoutes');
+const horariosRoutes = require('./routes/horariosRoutes'); 
+const configuracoesRoutes = require('./routes/configuracoesRoutes');
 
-// Usar rotas
-app.use('/api', authRoutes);
+// Configurações do servidor
+
+app.use('/api/auth', authRoutes);
 app.use('/api/galeria', galeriaRoutes);
-app.use('/api/agenda', agendaRoutes); // ✅ Faltava essa linha!
-
+app.use('/api/agenda', agendaRoutes);
+app.use('/api/horarios', horariosRoutes); 
+app.use('/api/configuracoes', configuracoesRoutes);
 module.exports = app;

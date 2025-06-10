@@ -3,17 +3,21 @@ const galeriaService = require('../services/galeriaService');
 async function uploadImagem(req, res) {
   try {
     const imagem = req.file;
+    const { titulo, legenda } = req.body;
+    const criadoPor = req.user?.id || null; // se você usar token com ID do usuário
+
     if (!imagem) {
       return res.status(400).json({ erro: 'Nenhum arquivo enviado.' });
     }
 
-    const url = await galeriaService.processarUpload(imagem);
+    const url = await galeriaService.processarUpload(imagem, titulo, criadoPor, legenda);
     return res.status(200).json({ url });
   } catch (error) {
     console.error('Erro no controller de upload:', error);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
   }
 }
+
 
 async function listarImagens(req, res) {
   try {
