@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  body {
+    @apply bg-cor-fundo text-cor-texto antialiased;
+  }
+}
+
+@layer components {
+  .ripple {
+    @apply relative overflow-hidden;
+  }
+  .ripple-effect {
+    @apply absolute rounded-full bg-cor-primaria/20 pointer-events-none;
+    transform: scale(0);
+    animation: ripple 600ms linear;
+  }
+  @keyframes ripple {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+  
+  .glass-effect {
+    @apply bg-cor-secundaria/80 backdrop-blur-xs border border-cor-secundaria/30;
+  }
+  
+  .shadow-glass {
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+}

@@ -1,6 +1,8 @@
-/** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./index.html"
+  ],
   theme: {
     extend: {
       colors: {
@@ -12,8 +14,8 @@ module.exports = {
         'cor-destaque': '#a28012',
         'cor-clara': '#fffef9',
         'cor-escura': '#000',
-      },
+      }
     },
   },
   plugins: [],
-};
+}
