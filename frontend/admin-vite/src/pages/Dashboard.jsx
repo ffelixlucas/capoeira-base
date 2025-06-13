@@ -1,160 +1,102 @@
+// src/pages/Dashboard.jsx
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
-  PhotoIcon,
-  CalendarIcon,
-  TagIcon,
-  VideoCameraIcon,
-  ClockIcon,
   UserGroupIcon,
-  ChartBarIcon,
-  CogIcon,
+  CalendarIcon,
+  CurrencyDollarIcon,
+  PhotoIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 
-const DashboardCard = ({ to, icon: Icon, title, subtitle, color }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      className="h-full"
-    >
-      <Link
-        to={to}
-        className={`h-full flex flex-col rounded-2xl p-6 bg-cor-card border border-cor-secundaria/30 shadow-sm hover:shadow-glass transition-all duration-300 group`}
-      >
-        <div className={`mb-4 p-3 rounded-lg ${color} w-fit`}>
-          <Icon className="h-6 w-6 text-white" />
-        </div>
-        <h3 className="text-xl font-bold text-cor-titulo mb-1">{title}</h3>
-        <p className="text-cor-texto/80 text-sm">{subtitle}</p>
-        <div className="mt-4 flex justify-end">
-          <div className="h-8 w-8 rounded-full bg-cor-secundaria flex items-center justify-center group-hover:bg-cor-primaria transition-colors">
-            <svg className="h-4 w-4 text-cor-texto group-hover:text-cor-escura" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-};
+export default function Dashboard() {
+  const usuario = { nome: 'Mestre João' }; // depois pode puxar do contexto
 
-const StatCard = ({ value, label, icon: Icon, trend }) => {
   return (
-    <div className="rounded-2xl p-5 bg-cor-card border border-cor-secundaria/30">
-      <div className="flex justify-between items-start">
+    <div className="space-y-6">
+      {/* Boas-vindas */}
+      <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
+        <h2 className="text-2xl font-bold text-cor-titulo">Olá, {usuario.nome}!</h2>
+        <p className="text-sm text-cor-texto/80 mt-1">Bem-vindo ao painel de administração</p>
+      </div>
+
+      {/* Estatísticas Rápidas */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <CardEstat valor="24" label="Alunos ativos" Icon={UserGroupIcon} cor="green" />
+        <CardEstat valor="5" label="Pendências" Icon={CurrencyDollarIcon} cor="red" />
+        <CardEstat valor="3" label="Eventos" Icon={CalendarIcon} cor="blue" />
+        <CardEstat valor="12" label="Fotos novas" Icon={PhotoIcon} cor="amber" />
+      </div>
+
+      {/* Agenda da Semana */}
+      <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
+        <h3 className="text-lg font-semibold text-cor-titulo mb-4">📅 Agenda da Semana</h3>
+        <ul className="space-y-2 text-sm text-cor-texto/80">
+          <li>• Segunda 19h – Aula Infantil</li>
+          <li>• Terça 20h – Roda Cultural</li>
+          <li>• Quinta 18h – Aula Adulto</li>
+        </ul>
+      </div>
+
+      {/* Acesso Rápido */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <BotaoModulo to="/galeria" label="Galeria" />
+        <BotaoModulo to="/agenda" label="Eventos" />
+        <BotaoModulo to="/alunos" label="Alunos" />
+        <BotaoModulo to="/mensalidades" label="Mensalidades" />
+        <BotaoModulo to="/uniformes" label="Loja" />
+        <BotaoModulo to="/horarios" label="Horários" />
+      </div>
+
+      {/* Aviso Interno */}
+      <div className="bg-yellow-100/10 text-yellow-400 border border-yellow-400/20 p-4 rounded-xl flex items-start gap-3">
+        <ExclamationTriangleIcon className="h-5 w-5 mt-1" />
         <div>
-          <p className="text-cor-texto/80 text-sm">{label}</p>
-          <p className="text-2xl font-bold text-cor-titulo mt-1">{value}</p>
-        </div>
-        <div className={`p-2 rounded-lg ${trend === 'up' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-          <Icon className="h-5 w-5" />
+          <strong className="text-yellow-300 block">Lembrete:</strong>
+          Levar caixa de som para o evento de sábado.
         </div>
       </div>
-    </div>
-  );
-};
 
-function Dashboard() {
-  const apps = [
-    {
-      to: '/galeria',
-      icon: PhotoIcon,
-      title: 'Galeria',
-      subtitle: 'Gerencie fotos e álbuns',
-      color: 'bg-blue-500/20 text-blue-400',
-    },
-    {
-      to: '/agenda',
-      icon: CalendarIcon,
-      title: 'Eventos',
-      subtitle: 'Calendário de atividades',
-      color: 'bg-purple-500/20 text-purple-400',
-    },
-    {
-      to: '/uniformes',
-      icon: TagIcon,
-      title: 'Loja',
-      subtitle: 'Produtos e uniformes',
-      color: 'bg-amber-500/20 text-amber-400',
-    },
-    {
-      to: '/video-aulas',
-      icon: VideoCameraIcon,
-      title: 'Aulas',
-      subtitle: 'Conteúdo educativo',
-      color: 'bg-red-500/20 text-red-400',
-    },
-    {
-      to: '/horarios',
-      icon: ClockIcon,
-      title: 'Horários',
-      subtitle: 'Agenda de treinos',
-      color: 'bg-emerald-500/20 text-emerald-400',
-    },
-    {
-      to: '/alunos',
-      icon: UserGroupIcon,
-      title: 'Alunos',
-      subtitle: 'Cadastro e mensalidades',
-      color: 'bg-indigo-500/20 text-indigo-400',
-    },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Seção de Estatísticas */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        <StatCard value="24" label="Alunos Ativos" icon={UserGroupIcon} trend="up" />
-        <StatCard value="5" label="Novos Alunos" icon={ChartBarIcon} trend="up" />
-        <StatCard value="3" label="Eventos" icon={CalendarIcon} trend="down" />
-        <StatCard value="92%" label="Presença" icon={CogIcon} trend="up" />
-      </motion.div>
-
-      {/* Seção Principal */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        <h2 className="text-2xl font-bold text-cor-titulo mb-6">Módulos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {apps.map((app, index) => (
-            <DashboardCard
-              key={app.to}
-              to={app.to}
-              icon={app.icon}
-              title={app.title}
-              subtitle={app.subtitle}
-              color={app.color}
-              index={index}
-            />
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Seção de Atividades Recentes */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="mt-8"
-      >
-        <h2 className="text-2xl font-bold text-cor-titulo mb-6">Atividades Recentes</h2>
-        <div className="rounded-2xl bg-cor-card border border-cor-secundaria/30 p-6">
-          {/* Conteúdo das atividades */}
-          <p className="text-cor-texto/80">Nenhuma atividade recente</p>
-        </div>
-      </motion.div>
+      {/* Atividades Recentes */}
+      <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
+        <h3 className="text-lg font-semibold text-cor-titulo mb-4">📝 Atividades Recentes</h3>
+        <ul className="text-sm text-cor-texto/80 space-y-1">
+          <li>✔️ Evento "Roda Cultural" atualizado</li>
+          <li>✔️ Foto adicionada por Assistente Maria</li>
+          <li>✔️ 2 alunos cadastrados</li>
+        </ul>
+      </div>
     </div>
   );
 }
 
-export default Dashboard;
+// COMPONENTES INTERNOS
+function CardEstat({ valor, label, Icon, cor }) {
+  const cores = {
+    green: 'bg-green-500/20 text-green-400',
+    red: 'bg-red-500/20 text-red-400',
+    blue: 'bg-blue-500/20 text-blue-400',
+    amber: 'bg-amber-500/20 text-amber-400',
+  };
+  return (
+    <div className="p-4 rounded-xl bg-cor-card border border-cor-secundaria/30 flex items-center gap-4">
+      <div className={`p-2 rounded-lg ${cores[cor]}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-lg font-bold text-cor-titulo">{valor}</p>
+        <p className="text-sm text-cor-texto/80">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function BotaoModulo({ to, label }) {
+  return (
+    <a
+      href={to}
+      className="bg-cor-card hover:bg-cor-secundaria border border-cor-secundaria/30 text-cor-titulo text-sm font-medium rounded-xl p-4 text-center transition-all"
+    >
+      {label}
+    </a>
+  );
+}
