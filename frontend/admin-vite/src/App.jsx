@@ -1,22 +1,22 @@
-import React from "react";
+import React from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-} from "react-router-dom";
+} from 'react-router-dom';
 
-import { AuthProvider } from "./contexts/AuthContext";
-import PrivateRoute from "./components/PrivateRoute";
-import LayoutAdmin from "./components/LayoutAdmin";
+import { AuthProvider } from './contexts/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import LayoutAdmin from './components/LayoutAdmin';
 
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Galeria from "./pages/Galeria";
-import Agenda from "./pages/Agenda";
-import Alunos from "./pages/Alunos";
-import Mensalidades from "./pages/Mensalidades";
-import NotFound from "./pages/NotFound";
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Galeria from './pages/Galeria';
+import Agenda from './pages/Agenda';
+import Alunos from './pages/Alunos';
+import Mensalidades from './pages/Mensalidades';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -36,6 +36,9 @@ function App() {
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/alunos" element={<Alunos />} />
             <Route path="/mensalidades" element={<Mensalidades />} />
+            <Route path="/uniformes" element={<div>Uniformes</div>} />
+            <Route path="/video-aulas" element={<div>Vídeo-aulas</div>} />
+            <Route path="/horarios" element={<div>Horários</div>} />
           </Route>
 
           {/* Rota de fallback */}
