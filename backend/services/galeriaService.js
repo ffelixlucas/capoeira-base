@@ -24,8 +24,9 @@ async function processarUpload(imagem, titulo = null, criadoPor = null, legenda 
     blobStream.on('finish', async () => {
       try {
         const url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
-        await galeriaRepository.salvarImagem(url, titulo, criadoPor, legenda);
-        resolve(url);
+        const id = await galeriaRepository.salvarImagem(url, titulo, criadoPor, legenda);
+        const novaImagem = await galeriaRepository.buscarPorId(id);
+        resolve(novaImagem);
       } catch (error) {
         reject(error);
       }
@@ -34,6 +35,7 @@ async function processarUpload(imagem, titulo = null, criadoPor = null, legenda 
     blobStream.end(imagem.buffer);
   });
 }
+
 
 async function obterTodasImagens() {
   return await galeriaRepository.buscarTodasImagens();
