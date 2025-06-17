@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
-  const usuario = { nome: 'Mestre João' }; // depois pode puxar do contexto
+  const usuario = { nome: 'Formando Clone' }; // depois pode puxar do contexto
 
   return (
     <div className="space-y-6">
