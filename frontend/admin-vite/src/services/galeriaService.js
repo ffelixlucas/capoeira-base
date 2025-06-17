@@ -16,8 +16,7 @@ export const deletarImagem = async (id) => {
   return response.data;
 };
 
-// Em breve
 export const atualizarOrdem = async (lista) => {
-  const response = await api.put('/galeria/ordem', lista);
+  const response = await api.put('/galeria/ordem', { ordem: lista });
   return response.data;
 };

@@ -47,7 +47,7 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
     }));
 
     try {
-      await atualizarOrdem({ ordem: novaOrdem });
+      await atualizarOrdem(novaOrdem);
       setOrdemEditada(false);
       alert("Ordem salva com sucesso!");
     } catch (err) {
@@ -55,7 +55,6 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
       alert("Erro ao salvar ordem");
     }
   };
-
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <Droppable droppableId="galeria" direction="horizontal">
