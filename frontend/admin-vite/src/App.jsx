@@ -7,8 +7,8 @@ import {
 } from 'react-router-dom';
 
 import { AuthProvider } from './contexts/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
-import LayoutAdmin from './components/LayoutAdmin';
+import PrivateRoute from './components/layout/PrivateRoute';
+import LayoutAdmin from './components/layout/LayoutAdmin';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';

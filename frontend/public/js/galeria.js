@@ -16,8 +16,8 @@ function atualizarImagemPrincipal() {
   imagemPrincipal.alt =
     imagens[indiceAtual].titulo || `Imagem ${indiceAtual + 1}`;
 
-  legendaEl.textContent = imagens[indiceAtual].legenda || ""; // 👈 insere legenda se existir
-
+  legendaEl.textContent = imagens[indiceAtual].titulo || "";
+  
   // Atualiza destaque na miniatura
   document.querySelectorAll(".miniatura").forEach((thumb, i) => {
     thumb.classList.toggle("ativa", i === indiceAtual);

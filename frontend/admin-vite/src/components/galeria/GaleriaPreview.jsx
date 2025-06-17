@@ -18,21 +18,31 @@ function GaleriaPreview({ imagens }) {
     );
   };
 
-  // Automação do slider a cada 3 segundos
+  // Slider automático a cada 5 segundos
   useEffect(() => {
     const interval = setInterval(() => {
       handleNext();
-    }, 5000); // 3 segundos
-    return () => clearInterval(interval); // Limpa o intervalo ao desmontar
-  }, [imagens]); // Reexecuta se a lista de imagens mudar
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [imagens]);
+
+  const imagemAtual = imagens[currentIndex];
 
   return (
-    <div className="relative mb-6 rounded-lg overflow-hidden shadow-lg">
+    <div className="relative mb-6 rounded-lg overflow-hidden shadow-lg bg-white">
+      {/* Imagem principal */}
       <img
-        src={imagens[currentIndex].imagem_url}
-        alt="Preview"
-        className="w-full max-h-[500px] object-contain rounded-lg" // Ajuste para evitar corte
+        src={imagemAtual.imagem_url}
+        alt={imagemAtual.legenda || "Imagem"}
+        className="w-full max-h-[500px] object-contain rounded-t-lg bg-gray-100"
       />
+
+      {/* Legenda */}
+      {imagemAtual.legenda && (
+        <div className="p-3 border-t bg-black text-white text-center text-sm">
+          {imagemAtual.legenda}
+        </div>
+      )}
 
       {/* Botões de navegação */}
       <div className="absolute inset-0 flex items-center justify-between px-4">
