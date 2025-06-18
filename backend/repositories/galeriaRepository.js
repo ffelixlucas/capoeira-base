@@ -55,11 +55,20 @@ async function excluir(id) {
     [id]
   );
 }
+async function atualizarLegenda(id, legenda) {
+  const [result] = await db.execute(
+    'UPDATE galeria SET legenda = ? WHERE id = ?',
+    [legenda, id]
+  );
+  return result;
+}
+
 
 
 
 module.exports = {
   salvarImagem,
+  atualizarLegenda,
   buscarTodasImagens,
   atualizarOrdem,
   buscarPorId,

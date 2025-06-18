@@ -47,10 +47,14 @@ async function atualizarOrdemGaleria(lista) {
   }
 
   for (const item of lista) {
-    if (typeof item.id !== 'number' || typeof item.ordem !== 'number') {
-      throw new Error('Formato inválido na lista de ordem');
+    item.id = Number(item.id);
+    item.ordem = Number(item.ordem);
+  
+    if (isNaN(item.id) || isNaN(item.ordem)) {
+      throw new Error('ID ou ordem inválido');
     }
   }
+  
 
   return await galeriaRepository.atualizarOrdem(lista);
 }
@@ -70,9 +74,19 @@ async function removerImagemPorId(id) {
   await bucket.file(caminhoArquivo).delete();
   await galeriaRepository.excluir(id);
 }
+async function atualizarLegenda(id, legenda) {
+  const imagem = await galeriaRepository.buscarPorId(id);
+  if (!imagem) {
+    throw new Error("Imagem não encontrada.");
+  }
+
+  return await galeriaRepository.atualizarLegenda(id, legenda);
+}
+
 
 module.exports = {
   processarUpload,
+  atualizarLegenda,
   obterTodasImagens,
   atualizarOrdemGaleria,
   removerImagemPorId

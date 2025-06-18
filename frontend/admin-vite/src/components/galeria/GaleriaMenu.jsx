@@ -1,7 +1,13 @@
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 
-function GaleriaMenu({ onVer, onMoverParaFrente, onMoverParaTras, onGirar, onExcluir }) {
+function GaleriaMenu({
+  onVer,
+  onMoverParaFrente,
+  onMoverParaTras,
+  onEditarLegenda,
+  onExcluir,
+}) {
   return (
     <Menu as="div" className="absolute top-2 right-2 z-50">
       <MenuButton className="p-1 rounded-full bg-white shadow hover:bg-gray-100">
@@ -37,9 +43,9 @@ function GaleriaMenu({ onVer, onMoverParaFrente, onMoverParaTras, onGirar, onExc
           <MenuItem>
             <button
               className="w-full px-4 py-2 text-left hover:bg-gray-100"
-              onClick={onGirar}
+              onClick={onEditarLegenda}
             >
-              Girar
+              Editar legenda
             </button>
           </MenuItem>
           <MenuItem>

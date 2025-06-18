@@ -18,13 +18,16 @@ function GaleriaPreview({ imagens }) {
     );
   };
 
-  // Slider automático a cada 5 segundos
+  // Slider automático a cada 5 segundos (com cleanup ✔️)
   useEffect(() => {
     const interval = setInterval(() => {
       handleNext();
     }, 5000);
-    return () => clearInterval(interval);
-  }, [imagens]);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [imagens.length]); // ⬅️ roda sempre que muda a quantidade de imagens
 
   const imagemAtual = imagens[currentIndex];
 

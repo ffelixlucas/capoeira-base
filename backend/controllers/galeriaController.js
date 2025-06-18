@@ -50,9 +50,27 @@ async function deletarImagem(req, res) {
     res.status(500).json({ erro: 'Erro ao excluir imagem.' });
   }
 }
+async function atualizarLegenda(req, res) {
+  const { id } = req.params;
+  const { legenda } = req.body;
+
+  if (!legenda) {
+    return res.status(400).json({ erro: "Legenda não pode ser vazia." });
+  }
+
+  try {
+    await galeriaService.atualizarLegenda(id, legenda);
+    res.status(200).json({ mensagem: "Legenda atualizada com sucesso." });
+  } catch (error) {
+    console.error('Erro ao atualizar legenda:', error);
+    res.status(500).json({ erro: "Erro ao atualizar legenda." });
+  }
+}
+
 
 module.exports = {
   uploadImagem,
+  atualizarLegenda,
   listarImagens,
   atualizarOrdem,
   deletarImagem

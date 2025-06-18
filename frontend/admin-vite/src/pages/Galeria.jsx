@@ -60,6 +60,18 @@ function Galeria() {
     }
   };
 
+  const handleEditarLegenda = (imagem) => {
+    const novaLegenda = prompt("Editar legenda:", imagem.legenda || "");
+    if (novaLegenda !== null) {
+      const atualizadas = imagens.map((img) =>
+        img.id === imagem.id ? { ...img, legenda: novaLegenda } : img
+      );
+      setImagens(atualizadas);
+      // 🚀 Aqui opcionalmente pode chamar uma função que atualiza no backend.
+    }
+  };
+  
+
   return (
     <div className="max-w-5xl mx-auto p-4 flex flex-col gap-6">
       <h2 className="text-2xl font-bold">Galeria</h2>

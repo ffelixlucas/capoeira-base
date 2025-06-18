@@ -17,8 +17,14 @@ router.post(
   galeriaController.uploadImagem
 );
 
+
+
+
 // Atualizar ordem das imagens
 router.put("/ordem", verifyToken, galeriaController.atualizarOrdem);
+
+// Atualizar legenda da imagem
+router.put('/:id', verifyToken, galeriaController.atualizarLegenda);
 
 // Deletar imagem por ID
 router.delete("/:id", verifyToken, galeriaController.deletarImagem);

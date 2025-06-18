@@ -20,3 +20,8 @@ export const atualizarOrdem = async (lista) => {
   const response = await api.put('/galeria/ordem', { ordem: lista });
   return response.data;
 };
+
+export const atualizarLegenda = async (id, legenda) => {
+  const response = await api.put(`/galeria/${id}`, { legenda });
+  return response.data;
+};

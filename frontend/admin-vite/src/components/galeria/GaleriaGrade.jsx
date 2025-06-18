@@ -1,20 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import GaleriaItem from "./GaleriaItem";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { atualizarOrdem } from "../../services/galeriaService";
+import { atualizarLegenda, atualizarOrdem } from "../../services/galeriaService";
 
 function GaleriaGrade({ imagens, setImagens, onRemover }) {
-  const [ordemEditada, setOrdemEditada] = React.useState(false);
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-
-    const novaOrdem = Array.from(imagens);
-    const [removido] = novaOrdem.splice(result.source.index, 1);
-    novaOrdem.splice(result.destination.index, 0, removido);
-
-    setImagens(novaOrdem);
-    setOrdemEditada(true);
-  };
+  const [ordemEditada, setOrdemEditada] = useState(false);
 
   const moverParaFrente = (index) => {
     if (index === 0) return;
@@ -24,6 +14,7 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
       novaOrdem[index - 1],
     ];
     setImagens(novaOrdem);
+    setOrdemEditada(true);
   };
 
   const moverParaTras = (index) => {
@@ -34,10 +25,24 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
       novaOrdem[index],
     ];
     setImagens(novaOrdem);
+    setOrdemEditada(true);
   };
 
-  const girarImagem = (index) => {
-    console.log("Girar imagem no índice:", index);
+  const handleEditarLegenda = async (img) => {
+    const novaLegenda = prompt("Editar legenda:", img.legenda || "");
+    if (novaLegenda === null) return;
+
+    try {
+      await atualizarLegenda(img.id, novaLegenda);
+      const atualizadas = imagens.map((item) =>
+        item.id === img.id ? { ...item, legenda: novaLegenda } : item
+      );
+      setImagens(atualizadas);
+      alert("Legenda atualizada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao atualizar legenda:", error);
+      alert("Erro ao atualizar legenda.");
+    }
   };
 
   const handleSalvarOrdem = async () => {
@@ -52,46 +57,58 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
       alert("Ordem salva com sucesso!");
     } catch (err) {
       console.error("Erro ao salvar ordem:", err);
-      alert("Erro ao salvar ordem");
+      alert("Erro ao salvar ordem.");
     }
   };
+
+  const handleOnDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const novaOrdem = Array.from(imagens);
+    const [reordenado] = novaOrdem.splice(result.source.index, 1);
+    novaOrdem.splice(result.destination.index, 0, reordenado);
+
+    setImagens(novaOrdem);
+    setOrdemEditada(true);
+  };
+
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId="galeria" direction="horizontal">
-        {(provided) => (
-          <div
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-          >
-            {imagens.map((img, index) => (
-              <Draggable
-                key={img.id}
-                draggableId={img.id.toString()}
-                index={index}
-              >
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                  >
-                    <GaleriaItem
-                      imagem={img}
-                      index={index}
-                      onRemover={onRemover}
-                      onMoverParaFrente={() => moverParaFrente(index)}
-                      onMoverParaTras={() => moverParaTras(index)}
-                      onGirar={() => girarImagem(index)}
-                    />
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
+    <div>
+      <DragDropContext onDragEnd={handleOnDragEnd}>
+        <Droppable droppableId="galeria" direction="horizontal">
+          {(provided) => (
+            <div
+              className="flex gap-4 overflow-x-auto"
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+            >
+              {imagens.map((img, index) => (
+                <Draggable key={img.id} draggableId={String(img.id)} index={index}>
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className="min-w-[150px]"
+                    >
+                      <GaleriaItem
+                        imagem={img}
+                        index={index}
+                        onRemover={onRemover}
+                        onEditarLegenda={() => handleEditarLegenda(img)}
+                        onMoverParaFrente={() => moverParaFrente(index)}
+                        onMoverParaTras={() => moverParaTras(index)}
+                      />
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+
       {ordemEditada && (
         <div className="mt-4">
           <button
@@ -102,7 +119,7 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
           </button>
         </div>
       )}
-    </DragDropContext>
+    </div>
   );
 }
 
