@@ -67,7 +67,7 @@ function GaleriaItem({
         onVer={() => window.open(imagem.imagem_url, "_blank")}
         onMoverParaFrente={() => onMoverParaFrente(index)}
         onMoverParaTras={() => onMoverParaTras(index)}
-        onEditarLegenda={() => onEditarLegenda(imagem)}
+        onEditarLegenda={onEditarLegenda}
         onExcluir={() => onRemover(imagem.id)}
       />
 
