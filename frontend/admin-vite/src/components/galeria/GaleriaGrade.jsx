@@ -6,7 +6,7 @@ import {
 } from "../../services/galeriaService";
 import ModalLegenda from "./ModalLegenda";
 
-function GaleriaGrade({ imagens, setImagens, onRemover, setCurrentIndex }) {
+function GaleriaGrade({ imagens, setImagens, onRemover, setCurrentIndex, setAutoplay }) {
   const [ordemEditada, setOrdemEditada] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [legendaTemp, setLegendaTemp] = useState("");
@@ -101,6 +101,7 @@ function GaleriaGrade({ imagens, setImagens, onRemover, setCurrentIndex }) {
                 handleMoverParaPosicao(index, toIndex)
               }
               setCurrentIndex={setCurrentIndex}
+              setAutoplay={setAutoplay}
             />
           </div>
         ))}

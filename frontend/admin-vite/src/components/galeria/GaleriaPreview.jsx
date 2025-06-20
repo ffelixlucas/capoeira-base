@@ -2,32 +2,37 @@ import React, { useState, useEffect } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 function GaleriaPreview({ imagens, currentIndex, setCurrentIndex }) {
+  const [autoplay, setAutoplay] = useState(true);
+
 
 
   if (!imagens || imagens.length === 0) return null;
 
   const handleNext = () => {
+    setAutoplay(false);
     setCurrentIndex((prevIndex) =>
       prevIndex === imagens.length - 1 ? 0 : prevIndex + 1
     );
   };
 
   const handlePrev = () => {
+    setAutoplay(false);
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? imagens.length - 1 : prevIndex - 1
     );
   };
-
+  
   // Slider automático a cada 5 segundos (com cleanup ✔️)
   useEffect(() => {
+    if (!autoplay) return;
+  
     const interval = setInterval(() => {
       handleNext();
     }, 5000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [imagens.length]); // ⬅️ roda sempre que muda a quantidade de imagens
+  
+    return () => clearInterval(interval);
+  }, [imagens.length, autoplay]);
+  
 
   const imagemAtual = imagens[currentIndex];
 

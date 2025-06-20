@@ -10,6 +10,7 @@ function GaleriaItem({
   onEditarLegenda,
   onMoverParaPosicao,
   setCurrentIndex,
+  setAutoplay,
 }) {
   const [editandoPosicao, setEditandoPosicao] = useState(false);
   const [valorPosicao, setValorPosicao] = useState(index + 1);
@@ -32,7 +33,10 @@ function GaleriaItem({
   return (
     <div
       className="relative border rounded-2xl bg-white/80 shadow-md p-3 group"
-      onClick={() => setCurrentIndex(index)}
+      onClick={() => {
+        setCurrentIndex(index);
+        setAutoplay(false);
+      }}
     >
       <img
         src={imagem.imagem_url}

@@ -19,6 +19,7 @@ function Galeria() {
     handleRemoverImagem,
   } = useGaleria();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [autoplay, setAutoplay] = useState(true);
 
   return (
     <div className="max-w-5xl mx-auto p-4 flex flex-col gap-6">
@@ -38,12 +39,17 @@ function Galeria() {
             imagens={imagens}
             currentIndex={currentIndex}
             setCurrentIndex={setCurrentIndex}
+            autoplay={autoplay}
+            setAutoplay={setAutoplay}
           />
+
           <GaleriaGrade
             imagens={imagens}
             setImagens={setImagens}
             onRemover={handleRemoverImagem}
+            currentIndex={currentIndex}
             setCurrentIndex={setCurrentIndex}
+            setAutoplay={setAutoplay}
           />
         </>
       )}
