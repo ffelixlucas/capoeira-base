@@ -14,13 +14,13 @@ export const AuthProvider = ({ children }) => {
     if (token && usuarioSalvo) {
       setUsuario(JSON.parse(usuarioSalvo));
     }
+
     setCarregando(false);
   }, []);
 
   const login = async (email, senha) => {
     try {
       const { token, usuario } = await fazerLogin(email, senha);
-  
       localStorage.setItem('token', token);
       localStorage.setItem('usuario', JSON.stringify(usuario));
       setUsuario(usuario);
@@ -33,7 +33,6 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
-  
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -41,7 +40,10 @@ export const AuthProvider = ({ children }) => {
     setUsuario(null);
   };
 
-  const isAutenticado = () => !!usuario;
+  const isAutenticado = () => {
+    const token = localStorage.getItem('token');
+    return !!token;
+  };
 
   return (
     <AuthContext.Provider value={{ usuario, login, logout, isAutenticado, carregando }}>
