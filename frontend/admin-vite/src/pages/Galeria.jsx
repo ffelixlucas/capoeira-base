@@ -1,76 +1,22 @@
-import React, { useState, useEffect } from "react";
-import {
-  uploadImagem,
-  listarImagens,
-  deletarImagem
-} from "../services/galeriaService.js";
-
+import React from "react";
 import {
   GaleriaUploader,
   GaleriaPreview,
   GaleriaGrade
-} from  "../components/galeria/index.jsx";
+} from "../components/galeria";
+
+import { useGaleria } from "../hooks/useGaleria";
 
 function Galeria() {
-  const [arquivo, setArquivo] = useState(null);
-  const [legenda, setLegenda] = useState("");
-  const [imagens, setImagens] = useState([]);
-
-  const carregarImagens = async () => {
-    try {
-      const data = await listarImagens();
-      const ordenadas = data.sort((a, b) => a.ordem - b.ordem);
-      setImagens(ordenadas);
-    } catch (err) {
-      console.error("Erro ao carregar imagens:", err);
-    }
-  };
-
-  useEffect(() => {
-    carregarImagens();
-  }, []);
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!arquivo) return;
-
-    const formData = new FormData();
-    formData.append("imagem", arquivo);
-    formData.append("legenda", legenda); // 🔥 Enviando legenda corretamente!
-
-    try {
-      await uploadImagem(formData);
-      setArquivo(null);
-      setLegenda("");
-      carregarImagens();
-    } catch (err) {
-      console.error("Erro ao enviar imagem:", err);
-    }
-  };
-
-  const handleRemoverImagem = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta imagem?')) return;
-  
-    try {
-      await deletarImagem(id);
-      setImagens((prev) => prev.filter((img) => img.id !== id));
-    } catch (err) {
-      console.error('Erro ao remover imagem:', err);
-      alert('Erro ao excluir a imagem. Tente novamente.');
-    }
-  };
-
-  const handleEditarLegenda = (imagem) => {
-    const novaLegenda = prompt("Editar legenda:", imagem.legenda || "");
-    if (novaLegenda !== null) {
-      const atualizadas = imagens.map((img) =>
-        img.id === imagem.id ? { ...img, legenda: novaLegenda } : img
-      );
-      setImagens(atualizadas);
-      // 🚀 Aqui opcionalmente pode chamar uma função que atualiza no backend.
-    }
-  };
-  
+  const {
+    arquivo,
+    setArquivo,
+    legenda,
+    setLegenda,
+    imagens,
+    handleUpload,
+    handleRemoverImagem
+  } = useGaleria();
 
   return (
     <div className="max-w-5xl mx-auto p-4 flex flex-col gap-6">
@@ -89,7 +35,6 @@ function Galeria() {
           <GaleriaPreview imagens={imagens} />
           <GaleriaGrade
             imagens={imagens}
-            setImagens={setImagens}
             onRemover={handleRemoverImagem}
           />
         </>
