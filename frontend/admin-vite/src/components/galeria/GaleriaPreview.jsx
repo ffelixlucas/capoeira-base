@@ -1,58 +1,59 @@
 import React, { useState, useEffect } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
-function GaleriaPreview({ imagens, currentIndex, setCurrentIndex }) {
-  const [autoplay, setAutoplay] = useState(true);
-
-
-
+function GaleriaPreview({
+  imagens,
+  currentIndex,
+  setCurrentIndex,
+  autoplay,
+  setAutoplay,
+}) {
   if (!imagens || imagens.length === 0) return null;
 
   const handleNext = () => {
-    setAutoplay(false);
     setCurrentIndex((prevIndex) =>
       prevIndex === imagens.length - 1 ? 0 : prevIndex + 1
     );
   };
 
   const handlePrev = () => {
-    setAutoplay(false);
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? imagens.length - 1 : prevIndex - 1
     );
   };
-  
-  // Slider automático a cada 5 segundos (com cleanup ✔️)
+
+  // Autoplay funcionando corretamente
   useEffect(() => {
     if (!autoplay) return;
-  
+
     const interval = setInterval(() => {
       handleNext();
     }, 5000);
-  
+
     return () => clearInterval(interval);
-  }, [imagens.length, autoplay]);
-  
+  }, [imagens.length, currentIndex, autoplay]);
 
   const imagemAtual = imagens[currentIndex];
 
   return (
     <div className="relative mb-6 rounded-lg overflow-hidden shadow-lg bg-white">
-      {/* Imagem principal */}
-      <img
-        src={imagemAtual.imagem_url}
-        alt={imagemAtual.legenda || "Imagem"}
-        className="w-full max-h-[400px] object-contain rounded-t-lg bg-gray-100"
-      />
+      {/* 🔥 Container fixo pra não pular */}
+      <div className="w-full h-[400px] bg-gray-100 flex items-center justify-center">
+        <img
+          src={imagemAtual.imagem_url}
+          alt={imagemAtual.legenda || "Imagem"}
+          className="object-contain max-h-full max-w-[800px]"
+        />
+      </div>
 
-      {/* Legenda */}
+      {/* 🔥 Legenda */}
       {imagemAtual.legenda && (
         <div className="p-3 border-t bg-black text-white text-center text-sm whitespace-pre-line">
           {imagemAtual.legenda}
         </div>
       )}
 
-      {/* Botões de navegação */}
+      {/* 🔥 Botões */}
       <div className="absolute inset-0 flex items-center justify-between px-4">
         <button
           onClick={handlePrev}
@@ -68,7 +69,7 @@ function GaleriaPreview({ imagens, currentIndex, setCurrentIndex }) {
         </button>
       </div>
 
-      {/* Indicador de posição */}
+      {/* 🔥 Dots indicador */}
       <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
         {imagens.map((_, index) => (
           <span
