@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import GaleriaItem from "./GaleriaItem";
-import { atualizarLegenda, atualizarOrdem } from "../../services/galeriaService";
+import {
+  atualizarLegenda,
+  atualizarOrdem,
+} from "../../services/galeriaService";
 
 function GaleriaGrade({ imagens, setImagens, onRemover }) {
   const [ordemEditada, setOrdemEditada] = useState(false);
@@ -10,10 +13,18 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
     if (novaLegenda === null) return;
 
     try {
+      // 🔥 Atualizar no backend
+      await atualizarLegenda(img.id, novaLegenda);
+
+      // 🔥 Verificar estado atual de imagens
+      console.log("imagens:", imagens);
+
+      // 🔥 Atualizar no estado local
       const atualizadas = imagens.map((item) =>
         item.id === img.id ? { ...item, legenda: novaLegenda } : item
       );
       setImagens(atualizadas);
+
       alert("Legenda atualizada com sucesso!");
     } catch (error) {
       console.error("Erro ao atualizar legenda:", error);

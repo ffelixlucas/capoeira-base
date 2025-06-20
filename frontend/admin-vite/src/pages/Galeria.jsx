@@ -2,7 +2,7 @@ import React from "react";
 import {
   GaleriaUploader,
   GaleriaPreview,
-  GaleriaGrade
+  GaleriaGrade,
 } from "../components/galeria";
 
 import { useGaleria } from "../hooks/useGaleria";
@@ -14,8 +14,9 @@ function Galeria() {
     legenda,
     setLegenda,
     imagens,
+    setImagens,
     handleUpload,
-    handleRemoverImagem
+    handleRemoverImagem,
   } = useGaleria();
 
   return (
@@ -35,6 +36,7 @@ function Galeria() {
           <GaleriaPreview imagens={imagens} />
           <GaleriaGrade
             imagens={imagens}
+            setImagens={setImagens}
             onRemover={handleRemoverImagem}
           />
         </>
