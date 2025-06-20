@@ -41,7 +41,7 @@ function GaleriaPreview({
         <img
           src={imagemAtual.imagem_url}
           alt={imagemAtual.legenda || "Imagem"}
-          className="object-contain max-h-full max-w-full"
+          className="object-contain max-h-full max-w-full transition-all duration-500 ease-in-out"
         />
       </div>
 
@@ -68,15 +68,20 @@ function GaleriaPreview({
         </button>
       </div>
 
-      {/* Dots indicador */}
+      {/* 🔥 Dots indicador (agora clicáveis) */}
       <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1 sm:gap-2">
         {imagens.map((_, index) => (
-          <span
+          <button
             key={index}
+            onClick={() => {
+              setCurrentIndex(index);
+              setAutoplay(false); // 🔥 Desativa autoplay quando usuário interage
+            }}
             className={`h-2 w-2 sm:h-3 sm:w-3 rounded-full ${
               index === currentIndex ? "bg-white" : "bg-white/50"
             }`}
-          ></span>
+            aria-label={`Ver imagem ${index + 1}`}
+          />
         ))}
       </div>
     </div>

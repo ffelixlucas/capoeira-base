@@ -1,13 +1,22 @@
 import React, { useState } from "react";
+import { toast } from "react-toastify";
+
 import GaleriaItem from "./GaleriaItem";
 import { atualizarLegenda, atualizarOrdem } from "../../services/galeriaService";
 import ModalLegenda from "./ModalLegenda";
 
-function GaleriaGrade({ imagens: initialImagens, setImagens, onRemover, setCurrentIndex, setAutoplay }) {
+function GaleriaGrade({
+  imagens: initialImagens,
+  setImagens,
+  onRemover,
+  setCurrentIndex,
+  setAutoplay,
+}) {
   const [ordemEditada, setOrdemEditada] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [legendaTemp, setLegendaTemp] = useState("");
   const [imagemSelecionada, setImagemSelecionada] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const abrirModalLegenda = (img) => {
     setImagemSelecionada(img);
@@ -16,6 +25,7 @@ function GaleriaGrade({ imagens: initialImagens, setImagens, onRemover, setCurre
   };
 
   const handleSalvarLegenda = async () => {
+    setLoading(true);
     try {
       await atualizarLegenda(imagemSelecionada.id, legendaTemp);
       const atualizadas = initialImagens.map((item) =>
@@ -24,16 +34,19 @@ function GaleriaGrade({ imagens: initialImagens, setImagens, onRemover, setCurre
           : item
       );
       setImagens(atualizadas);
+      toast.success("Legenda atualizada com sucesso.");
       setIsModalOpen(false);
     } catch (error) {
       console.error("Erro ao atualizar legenda:", error);
-      alert("Erro ao atualizar legenda. Tente novamente.");
+      toast.error("Erro ao atualizar legenda.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleMoverParaPosicao = (fromIndex, toIndex) => {
     if (toIndex < 0 || toIndex >= initialImagens.length) {
-      alert("Posição inválida.");
+      toast.warn("Posição inválida.");
       return;
     }
     const novaOrdem = [...initialImagens];
@@ -66,6 +79,7 @@ function GaleriaGrade({ imagens: initialImagens, setImagens, onRemover, setCurre
   };
 
   const handleSalvarOrdem = async () => {
+    setLoading(true);
     try {
       const ordemFinal = initialImagens.map((img, index) => ({
         id: img.id,
@@ -73,11 +87,13 @@ function GaleriaGrade({ imagens: initialImagens, setImagens, onRemover, setCurre
       }));
       await atualizarOrdem(ordemFinal);
       setOrdemEditada(false);
-      alert("Ordem salva com sucesso!");
+      toast.success("Ordem salva com sucesso.");
     } catch (error) {
       console.error("Erro ao salvar ordem:", error);
-      alert("Sessão expirada. Faça login novamente.");
-      setImagens([...initialImagens]);
+      toast.error("Erro ao salvar ordem. Verifique sua conexão ou login.");
+      setImagens([...initialImagens]); // opcional: restaura ordem anterior
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -107,9 +123,12 @@ function GaleriaGrade({ imagens: initialImagens, setImagens, onRemover, setCurre
         <div className="mt-4">
           <button
             onClick={handleSalvarOrdem}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow"
+            disabled={loading}
+            className={`${
+              loading ? "opacity-60 cursor-not-allowed" : ""
+            } bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow`}
           >
-            Salvar ordem
+            {loading ? "Salvando..." : "Salvar ordem"}
           </button>
         </div>
       )}
@@ -120,6 +139,7 @@ function GaleriaGrade({ imagens: initialImagens, setImagens, onRemover, setCurre
         legenda={legendaTemp}
         setLegenda={setLegendaTemp}
         onSalvar={handleSalvarLegenda}
+        loading={loading}
       />
     </>
   );

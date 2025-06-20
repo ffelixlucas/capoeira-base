@@ -6,11 +6,13 @@ import {
   atualizarLegenda,
   atualizarOrdem,
 } from "../services/galeriaService";
+import { toast } from "react-toastify";
 
 export function useGaleria() {
   const [arquivo, setArquivo] = useState(null);
   const [legenda, setLegenda] = useState("");
   const [imagens, setImagens] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // 🔥 Carrega as imagens do backend ordenadas
   const carregarImagens = async () => {
@@ -20,6 +22,7 @@ export function useGaleria() {
       setImagens(ordenadas);
     } catch (error) {
       console.error("Erro ao carregar imagens:", error);
+      toast.error("Erro ao carregar imagens.");
     }
   };
 
@@ -27,38 +30,67 @@ export function useGaleria() {
     carregarImagens();
   }, []);
 
-  // 🔼 Upload de imagem
+  // 🔼 Upload de imagem com validação
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!arquivo) return;
+    if (!arquivo) {
+      toast.error("Selecione uma imagem para enviar.");
+      return;
+    }
+
+    const tiposPermitidos = ["image/jpeg", "image/jpg", "image/png"];
+    const tamanhoMaximo = 5 * 1024 * 1024; // 5MB
+
+    if (!tiposPermitidos.includes(arquivo.type)) {
+      toast.error("Formato inválido. Envie JPG ou PNG.");
+      return;
+    }
+
+    if (arquivo.size > tamanhoMaximo) {
+      toast.error("Arquivo muito grande. Limite de 5MB.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("imagem", arquivo);
     formData.append("legenda", legenda);
 
+    setLoading(true);
     try {
       await uploadImagem(formData);
+      toast.success("Imagem enviada com sucesso!");
       setArquivo(null);
       setLegenda("");
       carregarImagens();
     } catch (error) {
       console.error("Erro ao enviar imagem:", error);
+      toast.error("Erro ao enviar imagem.");
+    } finally {
+      setLoading(false);
     }
   };
 
   // ❌ Deletar imagem
   const handleRemoverImagem = async (id) => {
-    if (!window.confirm("Deseja realmente excluir essa imagem?")) return;
+    const confirmar = window.confirm("Deseja realmente excluir essa imagem?");
+    if (!confirmar) return;
+
+    setLoading(true);
     try {
       await deletarImagem(id);
       setImagens((prev) => prev.filter((img) => img.id !== id));
+      toast.success("Imagem removida com sucesso.");
     } catch (error) {
       console.error("Erro ao remover imagem:", error);
+      toast.error("Erro ao remover imagem.");
+    } finally {
+      setLoading(false);
     }
   };
 
   // ✍️ Editar legenda
   const handleEditarLegenda = async (id, novaLegenda) => {
+    setLoading(true);
     try {
       await atualizarLegenda(id, novaLegenda);
       setImagens((prev) =>
@@ -66,18 +98,27 @@ export function useGaleria() {
           img.id === id ? { ...img, legenda: novaLegenda } : img
         )
       );
+      toast.success("Legenda atualizada com sucesso.");
     } catch (error) {
       console.error("Erro ao atualizar legenda:", error);
+      toast.error("Erro ao atualizar legenda.");
+    } finally {
+      setLoading(false);
     }
   };
 
   // 🔃 Atualizar ordem
   const handleSalvarOrdem = async (novaOrdem) => {
+    setLoading(true);
     try {
       await atualizarOrdem(novaOrdem);
+      toast.success("Ordem salva com sucesso.");
       carregarImagens();
     } catch (error) {
       console.error("Erro ao atualizar ordem:", error);
+      toast.error("Erro ao atualizar ordem.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,5 +134,6 @@ export function useGaleria() {
     handleRemoverImagem,
     handleEditarLegenda,
     handleSalvarOrdem,
+    loading, // 🔥 expose loading para os botões
   };
 }

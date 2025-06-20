@@ -14,23 +14,22 @@ function GaleriaMenu({
   const menuButtonRef = useRef(null);
 
   useEffect(() => {
-    const handleTouchOrClickOutside = (event) => {
+    const handleClickOutside = (event) => {
       if (
         menuRef.current &&
         !menuRef.current.contains(event.target) &&
         menuButtonRef.current &&
         !menuButtonRef.current.contains(event.target)
       ) {
-        console.log(`Evento fora detectado: ${event.type}`);
         setIsOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleTouchOrClickOutside);
-    document.addEventListener("touchstart", handleTouchOrClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleTouchOrClickOutside);
-      document.removeEventListener("touchstart", handleTouchOrClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, []);
 
@@ -39,14 +38,8 @@ function GaleriaMenu({
       <MenuButton
         ref={menuButtonRef}
         className="p-1 rounded-full bg-white shadow hover:bg-gray-100"
-        onClick={() => {
-          console.log("MenuButton clicado");
-          setIsOpen(true);
-        }}
-        onTouchStart={() => {
-          console.log("MenuButton tocado");
-          setIsOpen(true);
-        }}
+        onClick={() => setIsOpen(true)}
+        aria-label="Abrir menu de opções da imagem"
       >
         <EllipsisVerticalIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
       </MenuButton>
@@ -55,88 +48,93 @@ function GaleriaMenu({
         <MenuItems
           static
           className="absolute z-50 right-0 mt-2 w-40 sm:w-48 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
+          role="menu"
         >
           <div className="p-1 text-xs sm:text-sm text-gray-700">
             <MenuItem>
               {({ active }) => (
                 <button
-                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left ${
+                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left rounded ${
                     active ? "bg-gray-100" : ""
                   }`}
                   onClick={() => {
-                    console.log("Ação: Ver foto");
                     onVer();
                     setIsOpen(false);
                   }}
-                  onTouchStart={() => console.log("Toque: Ver foto")}
+                  aria-label="Ver foto em nova aba"
+                  role="menuitem"
                 >
                   Ver foto
                 </button>
               )}
             </MenuItem>
+
             <MenuItem>
               {({ active }) => (
                 <button
-                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left ${
+                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left rounded ${
                     active ? "bg-gray-100" : ""
                   }`}
                   onClick={() => {
-                    console.log("Ação: Mover para frente");
                     onMoverParaFrente();
                     setIsOpen(false);
                   }}
-                  onTouchStart={() => console.log("Toque: Mover para frente")}
+                  aria-label="Mover imagem para frente"
+                  role="menuitem"
                 >
                   Mover para frente
                 </button>
               )}
             </MenuItem>
+
             <MenuItem>
               {({ active }) => (
                 <button
-                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left ${
+                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left rounded ${
                     active ? "bg-gray-100" : ""
                   }`}
                   onClick={() => {
-                    console.log("Ação: Mover para trás");
                     onMoverParaTras();
                     setIsOpen(false);
                   }}
-                  onTouchStart={() => console.log("Toque: Mover para trás")}
+                  aria-label="Mover imagem para trás"
+                  role="menuitem"
                 >
                   Mover para trás
                 </button>
               )}
             </MenuItem>
+
             <MenuItem>
               {({ active }) => (
                 <button
-                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left ${
+                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left rounded ${
                     active ? "bg-gray-100" : ""
                   }`}
                   onClick={() => {
-                    console.log("Ação: Editar legenda");
                     onEditarLegenda();
                     setIsOpen(false);
                   }}
-                  onTouchStart={() => console.log("Toque: Editar legenda")}
+                  aria-label="Editar legenda da imagem"
+                  role="menuitem"
                 >
                   Editar legenda
                 </button>
               )}
             </MenuItem>
+
             <MenuItem>
               {({ active }) => (
                 <button
-                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left text-red-600 ${
+                  className={`w-full px-3 py-1 sm:px-4 sm:py-2 text-left text-red-600 rounded ${
                     active ? "bg-red-50" : ""
                   }`}
                   onClick={() => {
-                    console.log("Ação: Excluir");
                     onExcluir();
                     setIsOpen(false);
                   }}
-                  onTouchStart={() => console.log("Toque: Excluir")}
+                  aria-label="Excluir imagem da galeria"
+                  role="menuitem"
                 >
                   Excluir
                 </button>

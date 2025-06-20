@@ -6,6 +6,9 @@ import {
   Navigate,
 } from 'react-router-dom';
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/layout/PrivateRoute';
 import LayoutAdmin from './components/layout/LayoutAdmin';
@@ -45,6 +48,18 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
+
+      {/* 🔥 Toast Global */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnFocusLoss
+        pauseOnHover
+        theme="light"
+      />
     </AuthProvider>
   );
 }

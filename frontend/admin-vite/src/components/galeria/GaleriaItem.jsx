@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import GaleriaMenu from "./GaleriaMenu";
+import { toast } from "react-toastify";
 
 function GaleriaItem({
   imagem,
@@ -22,7 +23,7 @@ function GaleriaItem({
   const handleSubmitPosicao = () => {
     const novaPos = parseInt(valorPosicao, 10);
     if (isNaN(novaPos) || novaPos < 1) {
-      alert("Posição inválida.");
+      toast.warn("Posição inválida.");
       setValorPosicao(index + 1);
     } else {
       onMoverParaPosicao(novaPos - 1);
@@ -46,6 +47,7 @@ function GaleriaItem({
         />
       </div>
 
+      {/* 🔥 Overlay de legenda */}
       {imagem.legenda && (
         <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center p-2">
           <p className="text-xs sm:text-sm text-center text-cor-clara whitespace-pre-line">
@@ -54,7 +56,7 @@ function GaleriaItem({
         </div>
       )}
 
-      {/* Bolinha da posição */}
+      {/* 🔢 Bolinha da posição */}
       <div className="absolute top-2 left-2">
         {editandoPosicao ? (
           <input
@@ -67,6 +69,7 @@ function GaleriaItem({
             }}
             className="w-8 h-6 sm:w-10 sm:h-8 text-center text-xs font-bold border rounded-full shadow bg-white text-black"
             autoFocus
+            aria-label="Editar posição da imagem"
           />
         ) : (
           <button
@@ -74,14 +77,15 @@ function GaleriaItem({
               e.stopPropagation();
               setEditandoPosicao(true);
             }}
-            className="bg-white text-black text-xs font-semibold px-1 py-0.5 sm:px-2 sm:py-1 rounded-full shadow"
+            className="bg-white text-black text-xs font-semibold px-1 py-0.5 sm:px-2 sm:py-1 rounded-full shadow hover:bg-gray-200 active:scale-95 transition"
+            aria-label={`Editar posição da imagem ${index + 1}`}
           >
             {(index + 1).toString().padStart(2, "0")}
           </button>
         )}
       </div>
 
-      {/* Menu */}
+      {/* 📜 Menu */}
       <GaleriaMenu
         onVer={() => window.open(imagem.imagem_url, "_blank")}
         onMoverParaFrente={() => onMoverParaFrente(index)}
@@ -90,7 +94,7 @@ function GaleriaItem({
         onExcluir={() => onRemover(imagem.id)}
       />
 
-      {/* Selo Foto Principal */}
+      {/* ⭐ Selo Foto Principal */}
       {index === 0 && (
         <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
           Foto principal
