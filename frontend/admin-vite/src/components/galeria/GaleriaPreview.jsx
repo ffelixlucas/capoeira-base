@@ -37,7 +37,7 @@ function GaleriaPreview({ imagens }) {
       <img
         src={imagemAtual.imagem_url}
         alt={imagemAtual.legenda || "Imagem"}
-        className="w-full max-h-[500px] object-contain rounded-t-lg bg-gray-100"
+        className="w-full max-h-[400px] object-contain rounded-t-lg bg-gray-100"
       />
 
       {/* Legenda */}
