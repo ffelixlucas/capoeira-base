@@ -22,7 +22,6 @@ function GaleriaPreview({
     );
   };
 
-  // Autoplay funcionando corretamente
   useEffect(() => {
     if (!autoplay) return;
 
@@ -36,45 +35,45 @@ function GaleriaPreview({
   const imagemAtual = imagens[currentIndex];
 
   return (
-    <div className="relative mb-6 rounded-lg overflow-hidden shadow-lg bg-white">
-      {/* 🔥 Container fixo pra não pular */}
-      <div className="w-full h-[400px] bg-gray-100 flex items-center justify-center">
+    <div className="relative mb-6 rounded-lg overflow-hidden shadow-lg bg-white max-w-full">
+      {/* Container fixo para imagem */}
+      <div className="w-full h-[250px] sm:h-[400px] bg-gray-100 flex items-center justify-center">
         <img
           src={imagemAtual.imagem_url}
           alt={imagemAtual.legenda || "Imagem"}
-          className="object-contain max-h-full max-w-[800px]"
+          className="object-contain max-h-full max-w-full"
         />
       </div>
 
-      {/* 🔥 Legenda */}
+      {/* Legenda */}
       {imagemAtual.legenda && (
-        <div className="p-3 border-t bg-black text-white text-center text-sm whitespace-pre-line">
+        <div className="p-2 sm:p-3 border-t bg-black text-white text-center text-xs sm:text-sm whitespace-pre-line">
           {imagemAtual.legenda}
         </div>
       )}
 
-      {/* 🔥 Botões */}
-      <div className="absolute inset-0 flex items-center justify-between px-4">
+      {/* Botões de navegação */}
+      <div className="absolute inset-0 flex items-center justify-between px-2 sm:px-4">
         <button
           onClick={handlePrev}
-          className="bg-white/80 hover:bg-white p-3 rounded-full shadow"
+          className="bg-white/80 hover:bg-white p-2 sm:p-3 rounded-full shadow"
         >
-          <FaArrowLeft className="text-gray-700" />
+          <FaArrowLeft className="text-gray-700 w-4 h-4 sm:w-5 sm:h-5" />
         </button>
         <button
           onClick={handleNext}
-          className="bg-white/80 hover:bg-white p-3 rounded-full shadow"
+          className="bg-white/80 hover:bg-white p-2 sm:p-3 rounded-full shadow"
         >
-          <FaArrowRight className="text-gray-700" />
+          <FaArrowRight className="text-gray-700 w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
 
-      {/* 🔥 Dots indicador */}
-      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
+      {/* Dots indicador */}
+      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1 sm:gap-2">
         {imagens.map((_, index) => (
           <span
             key={index}
-            className={`h-3 w-3 rounded-full ${
+            className={`h-2 w-2 sm:h-3 sm:w-3 rounded-full ${
               index === currentIndex ? "bg-white" : "bg-white/50"
             }`}
           ></span>

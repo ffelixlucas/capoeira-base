@@ -18,12 +18,12 @@ function Galeria() {
     handleUpload,
     handleRemoverImagem,
   } = useGaleria();
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
 
   return (
-    <div className="max-w-5xl mx-auto p-4 flex flex-col gap-6">
-      <h2 className="text-2xl font-bold">Galeria</h2>
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
 
       <GaleriaUploader
         arquivo={arquivo}

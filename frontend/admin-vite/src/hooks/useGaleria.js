@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
-import { 
-  listarImagens, 
-  uploadImagem, 
-  deletarImagem 
+import {
+  listarImagens,
+  uploadImagem,
+  deletarImagem,
+  atualizarLegenda,
+  atualizarOrdem,
 } from "../services/galeriaService";
 
 export function useGaleria() {
-  // 🔧 Estados
   const [arquivo, setArquivo] = useState(null);
   const [legenda, setLegenda] = useState("");
   const [imagens, setImagens] = useState([]);
 
-  // 🔃 Função para carregar imagens
+  // 🔥 Carrega as imagens do backend ordenadas
   const carregarImagens = async () => {
     try {
       const data = await listarImagens();
@@ -22,12 +23,11 @@ export function useGaleria() {
     }
   };
 
-  // 🚀 Carregar na montagem
   useEffect(() => {
     carregarImagens();
   }, []);
 
-  // ⬆️ Upload de imagem
+  // 🔼 Upload de imagem
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!arquivo) return;
@@ -46,32 +46,41 @@ export function useGaleria() {
     }
   };
 
-  // ❌ Remover imagem
+  // ❌ Deletar imagem
   const handleRemoverImagem = async (id) => {
-    if (!window.confirm("Tem certeza que deseja excluir esta imagem?")) return;
-
+    if (!window.confirm("Deseja realmente excluir essa imagem?")) return;
     try {
       await deletarImagem(id);
       setImagens((prev) => prev.filter((img) => img.id !== id));
     } catch (error) {
       console.error("Erro ao remover imagem:", error);
-      alert("Erro ao excluir a imagem. Tente novamente.");
     }
   };
 
-  // 📝 Editar legenda (apenas local, opcional salvar no backend depois)
-  const handleEditarLegenda = (imagem) => {
-    const novaLegenda = prompt("Editar legenda:", imagem.legenda || "");
-    if (novaLegenda !== null) {
-      const atualizadas = imagens.map((img) =>
-        img.id === imagem.id ? { ...img, legenda: novaLegenda } : img
+  // ✍️ Editar legenda
+  const handleEditarLegenda = async (id, novaLegenda) => {
+    try {
+      await atualizarLegenda(id, novaLegenda);
+      setImagens((prev) =>
+        prev.map((img) =>
+          img.id === id ? { ...img, legenda: novaLegenda } : img
+        )
       );
-      setImagens(atualizadas);
-      // 🔥 Se quiser, aqui pode chamar API de atualização no backend
+    } catch (error) {
+      console.error("Erro ao atualizar legenda:", error);
     }
   };
 
-  // 🚚 Retornar tudo que o componente precisa
+  // 🔃 Atualizar ordem
+  const handleSalvarOrdem = async (novaOrdem) => {
+    try {
+      await atualizarOrdem(novaOrdem);
+      carregarImagens();
+    } catch (error) {
+      console.error("Erro ao atualizar ordem:", error);
+    }
+  };
+
   return {
     arquivo,
     setArquivo,
@@ -83,5 +92,6 @@ export function useGaleria() {
     handleUpload,
     handleRemoverImagem,
     handleEditarLegenda,
+    handleSalvarOrdem,
   };
 }
