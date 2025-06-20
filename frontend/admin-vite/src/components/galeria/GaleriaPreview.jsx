@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
-function GaleriaPreview({ imagens }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+function GaleriaPreview({ imagens, currentIndex, setCurrentIndex }) {
+
 
   if (!imagens || imagens.length === 0) return null;
 
@@ -42,7 +42,7 @@ function GaleriaPreview({ imagens }) {
 
       {/* Legenda */}
       {imagemAtual.legenda && (
-        <div className="p-3 border-t bg-black text-white text-center text-sm">
+        <div className="p-3 border-t bg-black text-white text-center text-sm whitespace-pre-line">
           {imagemAtual.legenda}
         </div>
       )}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   GaleriaUploader,
   GaleriaPreview,
@@ -18,6 +18,7 @@ function Galeria() {
     handleUpload,
     handleRemoverImagem,
   } = useGaleria();
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   return (
     <div className="max-w-5xl mx-auto p-4 flex flex-col gap-6">
@@ -33,11 +34,16 @@ function Galeria() {
 
       {imagens.length > 0 && (
         <>
-          <GaleriaPreview imagens={imagens} />
+          <GaleriaPreview
+            imagens={imagens}
+            currentIndex={currentIndex}
+            setCurrentIndex={setCurrentIndex}
+          />
           <GaleriaGrade
             imagens={imagens}
             setImagens={setImagens}
             onRemover={handleRemoverImagem}
+            setCurrentIndex={setCurrentIndex}
           />
         </>
       )}

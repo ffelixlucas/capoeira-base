@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import GaleriaMenu from "./GaleriaMenu";
 
-function GaleriaItem({ 
-  imagem, 
-  index, 
-  onRemover, 
-  onMoverParaFrente, 
-  onMoverParaTras, 
-  onEditarLegenda, 
-  onMoverParaPosicao
+function GaleriaItem({
+  imagem,
+  index,
+  onRemover,
+  onMoverParaFrente,
+  onMoverParaTras,
+  onEditarLegenda,
+  onMoverParaPosicao,
+  setCurrentIndex,
 }) {
   const [editandoPosicao, setEditandoPosicao] = useState(false);
   const [valorPosicao, setValorPosicao] = useState(index + 1);
@@ -29,13 +30,22 @@ function GaleriaItem({
   };
 
   return (
-    <div className="relative border rounded-2xl bg-white/80 shadow-md p-3">
+    <div
+      className="relative border rounded-2xl bg-white/80 shadow-md p-3 group"
+      onClick={() => setCurrentIndex(index)}
+    >
       <img
         src={imagem.imagem_url}
         alt={imagem.titulo || "imagem"}
         className="w-full h-36 object-contain"
       />
-
+      {imagem.legenda && (
+        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center p-2">
+          <p className="text-xs text-center text-cor-clara whitespace-pre-line">
+            {imagem.legenda}
+          </p>
+        </div>
+      )}
       {/* 🔥 Bolinha interativa */}
       <div className="absolute top-2 left-2">
         {editandoPosicao ? (
@@ -61,7 +71,6 @@ function GaleriaItem({
           </button>
         )}
       </div>
-
       {/* Menu de opções */}
       <GaleriaMenu
         onVer={() => window.open(imagem.imagem_url, "_blank")}
@@ -70,7 +79,6 @@ function GaleriaItem({
         onEditarLegenda={onEditarLegenda}
         onExcluir={() => onRemover(imagem.id)}
       />
-
       {/* Selo de foto principal */}
       {index === 0 && (
         <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">

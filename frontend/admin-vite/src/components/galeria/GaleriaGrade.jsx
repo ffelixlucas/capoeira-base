@@ -4,28 +4,32 @@ import {
   atualizarLegenda,
   atualizarOrdem,
 } from "../../services/galeriaService";
+import ModalLegenda from "./ModalLegenda";
 
-function GaleriaGrade({ imagens, setImagens, onRemover }) {
+function GaleriaGrade({ imagens, setImagens, onRemover, setCurrentIndex }) {
   const [ordemEditada, setOrdemEditada] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [legendaTemp, setLegendaTemp] = useState("");
+  const [imagemSelecionada, setImagemSelecionada] = useState(null);
 
-  const handleEditarLegenda = async (img) => {
-    const novaLegenda = prompt("Editar legenda:", img.legenda || "");
-    if (novaLegenda === null) return;
+  const abrirModalLegenda = (img) => {
+    setImagemSelecionada(img);
+    setLegendaTemp(img.legenda || "");
+    setIsModalOpen(true);
+  };
 
+  const handleSalvarLegenda = async () => {
     try {
-      // 🔥 Atualizar no backend
-      await atualizarLegenda(img.id, novaLegenda);
+      await atualizarLegenda(imagemSelecionada.id, legendaTemp);
 
-      // 🔥 Verificar estado atual de imagens
-      console.log("imagens:", imagens);
-
-      // 🔥 Atualizar no estado local
       const atualizadas = imagens.map((item) =>
-        item.id === img.id ? { ...item, legenda: novaLegenda } : item
+        item.id === imagemSelecionada.id
+          ? { ...item, legenda: legendaTemp }
+          : item
       );
       setImagens(atualizadas);
 
-      alert("Legenda atualizada com sucesso!");
+      setIsModalOpen(false);
     } catch (error) {
       console.error("Erro ao atualizar legenda:", error);
       alert("Erro ao atualizar legenda.");
@@ -90,12 +94,13 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
               imagem={img}
               index={index}
               onRemover={onRemover}
-              onEditarLegenda={() => handleEditarLegenda(img)}
+              onEditarLegenda={() => abrirModalLegenda(img)}
               onMoverParaFrente={() => moverParaFrente(index)}
               onMoverParaTras={() => moverParaTras(index)}
               onMoverParaPosicao={(toIndex) =>
                 handleMoverParaPosicao(index, toIndex)
               }
+              setCurrentIndex={setCurrentIndex}
             />
           </div>
         ))}
@@ -111,6 +116,14 @@ function GaleriaGrade({ imagens, setImagens, onRemover }) {
           </button>
         </div>
       )}
+
+      <ModalLegenda
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        legenda={legendaTemp}
+        setLegenda={setLegendaTemp}
+        onSalvar={handleSalvarLegenda}
+      />
     </>
   );
 }
