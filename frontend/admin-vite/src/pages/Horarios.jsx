@@ -1,10 +1,8 @@
-// src/pages/Horarios.jsx
-
-import React, { useState } from 'react';
-import useHorarios from '../hooks/useHorarios';
-import HorarioList from '../components/horarios/HorarioList';
-import HorarioForm from '../components/horarios/HorarioForm';
-import { toast } from 'react-toastify';
+import React, { useState } from "react";
+import useHorarios from "../hooks/useHorarios";
+import HorarioList from "../components/horarios/HorarioList";
+import HorarioForm from "../components/horarios/HorarioForm";
+import { toast } from "react-toastify";
 
 function Horarios() {
   const {
@@ -13,10 +11,16 @@ function Horarios() {
     adicionarHorario,
     editarHorario,
     removerHorario,
+    atualizarVariosHorarios, // 🔥 precisa existir no hook/useHorarios
   } = useHorarios();
 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [horarioSelecionado, setHorarioSelecionado] = useState(null);
+
+  // 🔥 Ordena os horários pela ordem
+  const horariosOrdenados = [...horarios].sort(
+    (a, b) => (a.ordem || 999) - (b.ordem || 999)
+  );
 
   // 🟢 Abrir form para criar novo
   const handleNovo = () => {
@@ -32,12 +36,12 @@ function Horarios() {
 
   // 🗑️ Remover
   const handleExcluir = async (id) => {
-    if (confirm('Deseja realmente excluir este horário?')) {
+    if (confirm("Deseja realmente excluir este horário?")) {
       try {
         await removerHorario(id);
-        toast.success('Horário excluído com sucesso');
+        toast.success("Horário excluído com sucesso");
       } catch (err) {
-        toast.error('Erro ao excluir horário');
+        toast.error("Erro ao excluir horário");
       }
     }
   };
@@ -47,15 +51,15 @@ function Horarios() {
     try {
       if (horarioSelecionado) {
         await editarHorario(horarioSelecionado.id, dados);
-        toast.success('Horário atualizado com sucesso');
+        toast.success("Horário atualizado com sucesso");
       } else {
         await adicionarHorario(dados);
-        toast.success('Horário criado com sucesso');
+        toast.success("Horário criado com sucesso");
       }
       setModoEdicao(false);
       setHorarioSelecionado(null);
     } catch (err) {
-      toast.error('Erro ao salvar horário');
+      toast.error("Erro ao salvar horário");
     }
   };
 
@@ -65,10 +69,47 @@ function Horarios() {
     setHorarioSelecionado(null);
   };
 
+  // 🔥 Gerenciar ordem de exibição
+
+  const moverParaCima = (index) => {
+    if (index === 0) return;
+    const novaOrdem = [...horariosOrdenados];
+    [novaOrdem[index - 1], novaOrdem[index]] = [
+      novaOrdem[index],
+      novaOrdem[index - 1],
+    ];
+    salvarNovaOrdem(novaOrdem);
+  };
+
+  const moverParaBaixo = (index) => {
+    if (index === horariosOrdenados.length - 1) return;
+    const novaOrdem = [...horariosOrdenados];
+    [novaOrdem[index], novaOrdem[index + 1]] = [
+      novaOrdem[index + 1],
+      novaOrdem[index],
+    ];
+    salvarNovaOrdem(novaOrdem);
+  };
+
+  const salvarNovaOrdem = async (lista) => {
+    const listaComOrdem = lista.map((item, index) => ({
+      ...item,
+      ordem: index + 1,
+    }));
+
+    try {
+      await atualizarVariosHorarios(listaComOrdem);
+      toast.success("Ordem atualizada com sucesso");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao atualizar ordem");
+    }
+  };
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold">Horários</h1>
+        <h1 className="text-xl font-bold">Ordem de Exibição</h1>
         {!modoEdicao && (
           <button
             onClick={handleNovo}
@@ -87,10 +128,12 @@ function Horarios() {
         />
       ) : (
         <HorarioList
-          horarios={horarios}
+          horarios={horariosOrdenados}
           carregando={carregando}
           onEditar={handleEditar}
           onExcluir={handleExcluir}
+          onMoverCima={moverParaCima}
+          onMoverBaixo={moverParaBaixo}
         />
       )}
     </div>

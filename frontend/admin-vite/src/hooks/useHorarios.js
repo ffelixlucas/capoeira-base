@@ -1,20 +1,19 @@
-// src/hooks/useHorarios.js
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   listarHorarios,
   obterHorario,
   criarHorario,
   atualizarHorario,
   excluirHorario,
-} from '../services/horariosService';
+  atualizarOrdemHorarios, // 🔥 nova função no service
+} from "../services/horariosService";
 
 export default function useHorarios() {
   const [horarios, setHorarios] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
 
-  // 🔄 Carregar os horários ao iniciar
+  // 🔄 Carregar os horários
   const carregarHorarios = async () => {
     setCarregando(true);
     setErro(null);
@@ -22,14 +21,14 @@ export default function useHorarios() {
       const data = await listarHorarios();
       setHorarios(data);
     } catch (err) {
-      setErro('Erro ao carregar horários');
+      setErro("Erro ao carregar horários");
       console.error(err);
     } finally {
       setCarregando(false);
     }
   };
 
-  // ➕ Criar novo horário
+  // ➕ Criar horário
   const adicionarHorario = async (dados) => {
     setCarregando(true);
     setErro(null);
@@ -38,7 +37,7 @@ export default function useHorarios() {
       await carregarHorarios();
       return novo;
     } catch (err) {
-      setErro('Erro ao criar horário');
+      setErro("Erro ao criar horário");
       console.error(err);
       throw err;
     } finally {
@@ -54,7 +53,7 @@ export default function useHorarios() {
       await atualizarHorario(id, dados);
       await carregarHorarios();
     } catch (err) {
-      setErro('Erro ao atualizar horário');
+      setErro("Erro ao atualizar horário");
       console.error(err);
       throw err;
     } finally {
@@ -70,7 +69,7 @@ export default function useHorarios() {
       await excluirHorario(id);
       await carregarHorarios();
     } catch (err) {
-      setErro('Erro ao excluir horário');
+      setErro("Erro ao excluir horário");
       console.error(err);
       throw err;
     } finally {
@@ -78,7 +77,23 @@ export default function useHorarios() {
     }
   };
 
-  // Carregar na primeira vez
+  // 🔥 Atualizar ordem dos horários
+  const atualizarVariosHorarios = async (lista) => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      await atualizarOrdemHorarios(lista); // → chama API
+      await carregarHorarios();
+    } catch (err) {
+      setErro("Erro ao atualizar ordem dos horários");
+      console.error(err);
+      throw err;
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  // 🚀 Carregar na primeira vez
   useEffect(() => {
     carregarHorarios();
   }, []);
@@ -91,5 +106,6 @@ export default function useHorarios() {
     adicionarHorario,
     editarHorario,
     removerHorario,
+    atualizarVariosHorarios, // 🔥 exportado para o pai usar
   };
 }

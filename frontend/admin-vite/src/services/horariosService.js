@@ -1,5 +1,3 @@
-// src/services/horariosService.js
-
 import api from './api'; // Usa nossa instância axios que já tem baseURL configurada
 
 // 🔍 Listar todos os horários
@@ -28,4 +26,9 @@ export async function atualizarHorario(id, dados) {
 // 🗑️ Excluir um horário
 export async function excluirHorario(id) {
   await api.delete(`/horarios/${id}`);
+}
+
+// 🔥 Atualizar a ordem dos horários
+export async function atualizarOrdemHorarios(lista) {
+  await api.put('/horarios/atualizar-ordem', lista);
 }
