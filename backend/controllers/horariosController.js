@@ -59,10 +59,31 @@ async function excluirHorario(req, res) {
   }
 }
 
+// PUT /api/horarios/atualizar-ordem
+async function atualizarOrdem(req, res) {
+  try {
+    const lista = req.body;
+
+    if (!Array.isArray(lista)) {
+      return res
+        .status(400)
+        .json({ erro: 'Formato inválido. Esperado um array de itens.' });
+    }
+
+    await horariosService.atualizarOrdemHorarios(lista);
+    res.json({ mensagem: 'Ordem atualizada com sucesso' });
+  } catch (err) {
+    console.error('Erro ao atualizar ordem:', err);
+    res.status(500).json({ erro: 'Erro ao atualizar ordem' });
+  }
+}
+
+
 module.exports = {
   listarHorarios,
   obterHorario,
   criarHorario,
   atualizarHorario,
   excluirHorario,
+  atualizarOrdem,
 };

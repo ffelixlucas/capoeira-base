@@ -56,6 +56,15 @@ async function excluirHorario(id) {
   if (!id) throw new Error('ID é obrigatório');
   return await horariosRepository.deleteHorario(id);
 }
+// 🔥 Atualizar ordem de múltiplos horários
+async function atualizarOrdemHorarios(lista) {
+  if (!Array.isArray(lista)) {
+    throw new Error('A lista de horários precisa ser um array');
+  }
+
+  return await horariosRepository.atualizarOrdemHorarios(lista);
+}
+
 
 module.exports = {
   listarHorarios,
@@ -63,4 +72,5 @@ module.exports = {
   criarHorario,
   atualizarHorario,
   excluirHorario,
+  atualizarOrdemHorarios,
 };

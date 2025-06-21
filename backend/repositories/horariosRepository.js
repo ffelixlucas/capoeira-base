@@ -39,10 +39,34 @@ async function deleteHorario(id) {
   await db.execute('DELETE FROM horarios_aula WHERE id = ?', [id]);
 }
 
+// Atualizar a ordem de múltiplos horários
+async function atualizarOrdemHorarios(lista) {
+  const conexao = await db.getConnection();
+  try {
+    await conexao.beginTransaction();
+
+    for (const item of lista) {
+      await conexao.execute(
+        'UPDATE horarios_aula SET ordem = ? WHERE id = ?',
+        [item.ordem, item.id]
+      );
+    }
+
+    await conexao.commit();
+  } catch (err) {
+    await conexao.rollback();
+    throw err;
+  } finally {
+    conexao.release();
+  }
+}
+
+
 module.exports = {
   getHorarios,
   getHorarioById,
   createHorario,
   updateHorario,
   deleteHorario,
+  atualizarOrdemHorarios,
 };
