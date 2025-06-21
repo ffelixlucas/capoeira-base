@@ -20,6 +20,7 @@ import Agenda from './pages/Agenda';
 import Alunos from './pages/Alunos';
 import Mensalidades from './pages/Mensalidades';
 import NotFound from './pages/NotFound';
+import Horarios from './pages/Horarios';
 
 function App() {
   return (
@@ -41,8 +42,8 @@ function App() {
             <Route path="/mensalidades" element={<Mensalidades />} />
             <Route path="/uniformes" element={<div>Uniformes</div>} />
             <Route path="/video-aulas" element={<div>Vídeo-aulas</div>} />
-            <Route path="/horarios" element={<div>Horários</div>} />
-          </Route>
+            <Route path="/horarios" element={<Horarios />} />
+            </Route>
 
           {/* Rota de fallback */}
           <Route path="*" element={<NotFound />} />
