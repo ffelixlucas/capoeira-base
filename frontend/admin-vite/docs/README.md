@@ -22,6 +22,7 @@ Sistema completo para gestão de projetos sociais de Capoeira.
 
 ## 📜 Documentação dos módulos
 - [`README-GALERIA.md`](./README-GALERIA.md) → Documentação completa do módulo Galeria.
+- [`README-HORARIOS.md`](./README-HORARIOS.md) → Documentação completa de módulo Horarios de aulas.
 - [`README-AGENDA.md`](./README-AGENDA.md) → Em desenvolvimento.
 - [`README-CONFIGURACOES.md`](./README-CONFIGURACOES.md) → Em desenvolvimento.
 
