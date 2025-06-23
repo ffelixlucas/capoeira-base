@@ -1,15 +1,16 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const userRepository = require('../repositories/userRepository');
-
-console.log("JWT usado:", process.env.JWT_SECRET);
-
+const equipeRepository = require('../repositories/equipeRepository');
 
 async function login(email, senha) {
-  const usuario = await userRepository.buscarUsuarioPorEmail(email);
+  const usuario = await equipeRepository.buscarUsuarioPorEmail(email);
 
   if (!usuario) {
     throw new Error('Usuário não encontrado');
+  }
+
+  if (!usuario.senha_hash) {
+    throw new Error('Usuário não possui acesso ao sistema');
   }
 
   const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
@@ -22,13 +23,21 @@ async function login(email, senha) {
       id: usuario.id,
       nome: usuario.nome,
       email: usuario.email,
-      role: usuario.role,
+      roles: usuario.roles,
     },
     process.env.JWT_SECRET,
     { expiresIn: '2h' }
   );
 
-  return { token, usuario: { id: usuario.id, nome: usuario.nome, role: usuario.role } };
+  return { 
+    token, 
+    usuario: { 
+      id: usuario.id, 
+      nome: usuario.nome, 
+      email: usuario.email,
+      roles: usuario.roles
+    } 
+  };
 }
 
 module.exports = {
