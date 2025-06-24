@@ -5,61 +5,82 @@
 ```
 capoeira-base/
 ├── backend/
-│   ├── controllers/        → Recebem as requisições (req, res)
-│   ├── services/           → Lógica de negócio, validações e chamadas aos repositórios
-│   ├── repositories/       → Responsáveis por interações com o banco de dados
-│   ├── routes/             → Define as rotas da API REST
-│   ├── middlewares/        → Autenticação, validações, logs
-│   ├── database/
-│   │   └── connection.js   → Conexão com o MySQL via pool
-│   ├── utils/              → Funções auxiliares reutilizáveis
-│   ├── app.js              → Configura o app Express (middlewares + rotas)
-│   └── server.js           → Inicia o servidor
+│ ├── modules/ → Cada módulo isolado (equipe, auth, galeria, agenda, horarios, etc.)
+│ │ ├── [modulo]/ → Ex.: galeria, horarios, equipe, auth
+│ │ │ ├── [modulo]Repository.js → Interação com banco
+│ │ │ ├── [modulo]Service.js → Regras de negócio
+│ │ │ ├── [modulo]Controller.js → Recebe req/res
+│ │ │ ├── [modulo]Routes.js → Define as rotas da API
+│ │ │ └── docs/README-[modulo].md → Documentação viva do módulo
+│ ├── middlewares/ → Autenticação, checkRole, validações, logs
+│ ├── database/
+│ │ └── connection.js → Conexão com o MySQL (pool)
+│ ├── utils/ → Funções auxiliares reutilizáveis
+│ ├── app.js → Configurações principais (Express, middlewares, rotas)
+│ └── server.js → Inicia o servidor
 │
 ├── frontend/
-│   ├── public/             → HTML estático do site
-│   └── admin/              → Painel administrativo (React)
+│ ├── public/ → Landing page (HTML + CSS + JS puro)
+│ └── admin/ → Painel administrativo (React + Vite)
 │
-└── docs/                   → Documentação do projeto
+└── docs/ → Documentação viva do projeto                → Documentação do projeto
 ```
 
----
-
-## Padrões utilizados
-
-- **Repository Pattern** → separa a lógica de banco do restante do sistema.
-- **Camadas bem definidas** → controller → service → repository.
-- **Modularização** → cada recurso (ex: alunos, agenda, galeria) tem seu próprio conjunto de arquivos.
-- **Rotas RESTful** → organizadas por recurso (ex: `/api/alunos`, `/api/agenda`)
-- **Autenticação via JWT** → tokens com expiração para proteger rotas sensíveis.
-- **Middlewares reutilizáveis** → verificação de token, validação de dados, logs.
 
 ---
 
-## Segurança e boas práticas
+## 📦 Padrões Utilizados
+
+- ✅ **Repository Pattern** → Interações com o banco isoladas.
+- ✅ **Camadas bem definidas por módulo:**  
+  → `controller → service → repository → routes`.
+- ✅ **Modularização real:**  
+  → Cada recurso tem sua própria pasta, isolado e escalável.
+- ✅ **Rotas RESTful organizadas por recurso:**  
+  → `/api/agenda`, `/api/galeria`, `/api/equipe`, `/api/auth`, etc.
+- ✅ **Autenticação JWT:**  
+  → Tokens seguros com controle de expiração.
+- ✅ **RBAC (Role-Based Access Control):**  
+  → Controle de acesso por papéis (em desenvolvimento e expansão).
+- ✅ **Middlewares reutilizáveis:**  
+  → Verificação de token, validações, permissões (checkRole), logs.
+
+---
+
+## 🔐 Segurança e Boas Práticas
 
 - Uso de variáveis de ambiente (`.env`)
-- Hash de senhas com `bcrypt`
-- JWT para login e proteção de rotas
-- CORS configurado por domínio
-- Uploads com validação de tipo e tamanho
-- Logs de ações administrativas (audit_log)
+- Hash seguro de senhas com `bcrypt`
+- JWT para autenticação e proteção de rotas sensíveis
+- CORS configurado corretamente
+- Validação de uploads (tipo, tamanho, extensão)
+- Logs completos de ações administrativas via `audit_log`
+- Organização limpa e escalável no padrão profissional
 
 ---
 
-## Fluxo de execução (exemplo)
+## 🔄 Fluxo de Execução (Exemplo Prático)
 
-1. Rota `POST /api/alunos`
-2. Controlador `alunoController.js` recebe os dados
-3. Chama `alunoService.js` para validação e regras de negócio
-4. Service chama `alunoRepository.js` para salvar no banco
-5. Banco retorna, e a resposta é enviada ao frontend
+1. Rota `POST /api/agenda`
+2. Arquivo `agendaRoutes.js` direciona para `agendaController.js`
+3. `agendaController.js` recebe a requisição (`req`, `res`)
+4. Chama `agendaService.js` para:
+   - Aplicar regras de negócio
+   - Validar dados
+5. `agendaService.js` acessa `agendaRepository.js` para:
+   - Executar comandos SQL no banco
+6. O banco responde e `agendaController.js` envia a resposta ao frontend
 
 ---
 
-## Possível expansão futura
+## 🔥 Possíveis Expansões Futuras
 
-- Adição de testes automatizados
-- CI/CD com GitHub Actions
-- Internacionalização
-- Suporte para multi-projetos (multi-capoeiras)
+- 🔧 Testes automatizados (unitários e integração)
+- 🔧 CI/CD (Integração e Deploy contínuos) com GitHub Actions, Railway Hooks ou Vercel
+- 🌎 Internacionalização (multi-idiomas)
+- 🏢 Suporte a múltiplos projetos (multi-capoeiras)
+- 📈 Dashboard com analytics e estatísticas
+- 🔐 Logs avançados (performance, erros, segurança)
+- 📦 Cache inteligente e otimização de queries
+
+---
