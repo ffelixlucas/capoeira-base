@@ -1,4 +1,4 @@
-const galeriaService = require('../services/galeriaService');
+const galeriaService = require('./galeriaService');
 
 async function uploadImagem(req, res) {
   try {

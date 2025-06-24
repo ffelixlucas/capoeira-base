@@ -1,4 +1,4 @@
-const db = require('../database/connection');
+const db = require('../../database/connection');
 
 async function contarTotalItens() {
   const [rows] = await db.execute('SELECT COUNT(*) as total FROM galeria');

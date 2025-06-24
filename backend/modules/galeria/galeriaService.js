@@ -1,6 +1,6 @@
-const bucket = require('../config/firebase');
+const bucket = require('../../config/firebase');
 const { v4: uuidv4 } = require('uuid');
-const galeriaRepository = require('../repositories/galeriaRepository');
+const galeriaRepository = require('./galeriaRepository');
 
 async function processarUpload(imagem, titulo = null, criadoPor = null, legenda = null) {
   const totalItens = await galeriaRepository.contarTotalItens();
