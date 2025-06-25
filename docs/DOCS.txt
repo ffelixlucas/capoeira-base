@@ -1,0 +1,505 @@
+# Arquitetura do Sistema – Capoeira Base
+
+## Estrutura geral do projeto
+
+```
+capoeira-base/
+├── backend/
+│ ├── modules/ → Cada módulo isolado (equipe, auth, galeria, agenda, horarios, etc.)
+│ │ ├── [modulo]/ → Ex.: galeria, horarios, equipe, auth
+│ │ │ ├── [modulo]Repository.js → Interação com banco
+│ │ │ ├── [modulo]Service.js → Regras de negócio
+│ │ │ ├── [modulo]Controller.js → Recebe req/res
+│ │ │ ├── [modulo]Routes.js → Define as rotas da API
+│ │ │ └── docs/README-[modulo].md → Documentação viva do módulo
+│ ├── middlewares/ → Autenticação, checkRole, validações, logs
+│ ├── database/
+│ │ └── connection.js → Conexão com o MySQL (pool)
+│ ├── utils/ → Funções auxiliares reutilizáveis
+│ ├── app.js → Configurações principais (Express, middlewares, rotas)
+│ └── server.js → Inicia o servidor
+│
+├── frontend/
+│ ├── public/ → Landing page (HTML + CSS + JS puro)
+│ └── admin/ → Painel administrativo (React + Vite)
+│
+└── docs/ → Documentação viva do projeto                → Documentação do projeto
+```
+
+
+---
+
+## 📦 Padrões Utilizados
+
+- ✅ **Repository Pattern** → Interações com o banco isoladas.
+- ✅ **Camadas bem definidas por módulo:**  
+  → `controller → service → repository → routes`.
+- ✅ **Modularização real:**  
+  → Cada recurso tem sua própria pasta, isolado e escalável.
+- ✅ **Rotas RESTful organizadas por recurso:**  
+  → `/api/agenda`, `/api/galeria`, `/api/equipe`, `/api/auth`, etc.
+- ✅ **Autenticação JWT:**  
+  → Tokens seguros com controle de expiração.
+- ✅ **RBAC (Role-Based Access Control):**  
+  → Controle de acesso por papéis (em desenvolvimento e expansão).
+- ✅ **Middlewares reutilizáveis:**  
+  → Verificação de token, validações, permissões (checkRole), logs.
+
+---
+
+## 🔐 Segurança e Boas Práticas
+
+- Uso de variáveis de ambiente (`.env`)
+- Hash seguro de senhas com `bcrypt`
+- JWT para autenticação e proteção de rotas sensíveis
+- CORS configurado corretamente
+- Validação de uploads (tipo, tamanho, extensão)
+- Logs completos de ações administrativas via `audit_log`
+- Organização limpa e escalável no padrão profissional
+
+---
+
+## 🔄 Fluxo de Execução (Exemplo Prático)
+
+1. Rota `POST /api/agenda`
+2. Arquivo `agendaRoutes.js` direciona para `agendaController.js`
+3. `agendaController.js` recebe a requisição (`req`, `res`)
+4. Chama `agendaService.js` para:
+   - Aplicar regras de negócio
+   - Validar dados
+5. `agendaService.js` acessa `agendaRepository.js` para:
+   - Executar comandos SQL no banco
+6. O banco responde e `agendaController.js` envia a resposta ao frontend
+
+---
+
+## 🔥 Possíveis Expansões Futuras
+
+- 🔧 Testes automatizados (unitários e integração)
+- 🔧 CI/CD (Integração e Deploy contínuos) com GitHub Actions, Railway Hooks ou Vercel
+- 🌎 Internacionalização (multi-idiomas)
+- 🏢 Suporte a múltiplos projetos (multi-capoeiras)
+- 📈 Dashboard com analytics e estatísticas
+- 🔐 Logs avançados (performance, erros, segurança)
+- 📦 Cache inteligente e otimização de queries
+
+---
+
+# ✅ Checklist Técnico de Desenvolvimento – Capoeira Base (Atualizado)
+
+---
+
+## 🔷 Bloco 1 – Setup
+- [x] Criar repositório no GitHub
+- [x] Criar estrutura de pastas `/backend` e `/frontend` (landing + admin)
+- [x] Iniciar backend Node.js com Express
+- [x] Criar `app.js` e `server.js`
+- [x] Criar rota teste: `GET /api/teste`
+- [x] Subir backend no Railway
+- [x] Subir frontend (landing) no Vercel
+
+---
+
+## 🔷 Bloco 2 – Site Público (Landing Page)
+- [] Criar `index.html` com seções:
+  - Sobre
+  - Agenda de Aulas
+  - Galeria
+  - Loja Virtual *(Novo)*
+  - Aulas Online *(Novo)*
+  - Contato
+- [ ] Fazer fetch dos dados da API:
+  - Agenda
+  - Galeria
+  - Loja (produtos)
+  - Aulas (vídeos)
+- [ ] Estilizar com CSS (mobile first)
+- [ ] Testar navegação e responsividade
+
+---
+
+## 🔷 Bloco 3 – Backend API (Node + MySQL)
+- [x] Criar tabelas:
+  - `equipe`
+  - `roles` + `equipe_roles`
+  - `permissions` + `role_permissions` *(futuro)*
+  - `horarios_aula`
+  - `agenda`
+  - `galeria`
+  - `audit_log`
+- [ ] Criar módulo de autenticação (`/modules/auth`) com JWT
+- [ ] CRUD de:
+  - Agenda
+  - Galeria
+  - Equipe (Cadastro de membros)
+  - Roles e permissões *(futuro)*
+  - Loja (produtos) *(novo)*
+  - Aulas (conteúdos) *(novo)*
+- [ ] Middleware de autenticação (`verifyToken`)
+- [ ] Middleware de permissões (`checkRole`) *(futuro)*
+- [x] Criar repositórios, serviços, controllers e rotas para cada módulo
+
+---
+
+## 🔷 Bloco 4 – Painel Admin (React)
+- [x] Criar projeto React em `/admin`
+- [x] Tela de login com JWT
+- [ ] Dashboard principal
+- [ ] CRUD:
+  - Agenda
+  - Galeria
+  - Loja *(novo)*
+  - Aulas *(novo)*
+  - Equipe e Roles
+- [ ] Tela de histórico (audit log)
+- [ ] Aplicar controle de acesso visual baseado em roles *(futuro)*
+
+---
+
+## 🔷 Bloco 5 – Auditoria (Logs)
+- [x] Criar tabela `audit_log`
+- [ ] Registrar automaticamente ações sensíveis no backend:
+  - Criação, edição, deleção de dados
+  - Login, logout
+- [ ] Criar página no painel admin para exibir histórico (visível apenas para admin master)
+
+---
+
+## 🔷 Finalização
+- [ ] Criar README e documentação viva (`/docs`)
+- [ ] Fazer deploy final:
+  - Backend → Railway
+  - Landing → Vercel
+  - Admin → Vercel ou Railway
+- [ ] Apresentar e entregar para o professor
+- [ ] Validar feedback para a evolução futura (fase 2)
+
+---
+
+# 🗄️ Modelagem de Banco de Dados – Capoeira Base (Atualizado)
+
+---
+
+## 🧠 Tabela `equipe`
+
+| Campo         | Tipo           | Observação                                 |
+|----------------|----------------|---------------------------------------------|
+| id             | INT (PK)       | auto_increment                             |
+| nome           | VARCHAR(100)   | Nome completo                              |
+| telefone       | VARCHAR(20)    | Opcional                                   |
+| whatsapp       | VARCHAR(20)    | Opcional                                   |
+| email          | VARCHAR(100)   | Opcional (usado para login)                |
+| status         | VARCHAR(20)    | Default: 'ativo'                           |
+| observacoes    | TEXT           | Observações gerais                         |
+| senha_hash     | VARCHAR(255)   | Hash da senha (para login)                 |
+| criado_em      | DATETIME       | Default CURRENT_TIMESTAMP                  |
+| atualizado_em  | DATETIME       | Atualiza automaticamente em alterações     |
+
+---
+
+## 🏷️ Tabela `roles`
+
+| Campo       | Tipo           | Observação                                  |
+|--------------|----------------|----------------------------------------------|
+| id           | INT (PK)       | auto_increment                              |
+| nome         | VARCHAR(50)    | Único (admin, instrutor, loja, etc.)        |
+| descricao    | VARCHAR(255)   | Descrição opcional                          |
+| criado_em    | DATETIME       | Default CURRENT_TIMESTAMP                   |
+
+---
+
+## 🔗 Tabela `equipe_roles`
+
+| Campo       | Tipo      | Observação                       |
+|--------------|-----------|----------------------------------|
+| equipe_id    | INT (PK)  | FK para equipe                   |
+| role_id      | INT (PK)  | FK para roles                    |
+
+---
+
+## 🔐 Tabela `permissions` *(RBAC avançado – futuro)*
+
+| Campo       | Tipo           | Observação                               |
+|--------------|----------------|-------------------------------------------|
+| id           | INT (PK)       | auto_increment                           |
+| nome         | VARCHAR(100)   | Único                                     |
+| descricao    | VARCHAR(255)   | Descrição opcional                        |
+| criado_em    | DATETIME       | Default CURRENT_TIMESTAMP                 |
+
+---
+
+## 🔗 Tabela `role_permissions` *(RBAC avançado – futuro)*
+
+| Campo           | Tipo      | Observação                      |
+|-----------------|-----------|---------------------------------|
+| role_id         | INT (PK)  | FK para roles                   |
+| permission_id   | INT (PK)  | FK para permissions             |
+
+---
+
+## 🕒 Tabela `horarios_aula`
+
+| Campo                | Tipo               | Observação                            |
+|----------------------|--------------------|----------------------------------------|
+| id                   | BIGINT (PK)        | auto_increment                         |
+| turma                | VARCHAR(50)        | Nome da turma                          |
+| dias                 | VARCHAR(100)       | Dias da semana                         |
+| horario              | VARCHAR(50)        | Ex.: 19:00–20:00                       |
+| faixa_etaria         | VARCHAR(100)       | Faixa etária (ex.: 5 a 10 anos)        |
+| ordem                | INT                | Ordem de exibição                      |
+| instrutor            | VARCHAR(255)       | (Antigo – será migrado para equipe)    |
+| whatsapp_instrutor   | VARCHAR(20)        | (Antigo – será migrado para equipe)    |
+
+---
+
+## 🖼️ Tabela `galeria`
+
+| Campo       | Tipo           | Observação                                |
+|--------------|----------------|--------------------------------------------|
+| id           | INT (PK)       | auto_increment                            |
+| titulo       | VARCHAR(100)   | Opcional                                  |
+| legenda      | TEXT           | Opcional                                  |
+| imagem_url   | TEXT           | URL da imagem                             |
+| ordem        | INT            | Ordem de exibição                         |
+| criado_em    | DATETIME       | Default CURRENT_TIMESTAMP                 |
+| criado_por   | INT (FK)       | FK para equipe (quem subiu a imagem)      |
+
+---
+
+## 📅 Tabela `agenda`
+
+| Campo               | Tipo            | Observação                               |
+|---------------------|-----------------|-------------------------------------------|
+| id                  | INT (PK)        | auto_increment                           |
+| titulo              | VARCHAR(100)    | Nome do evento                           |
+| descricao_curta     | VARCHAR(200)    | Curta (exibida na landing)               |
+| descricao_completa  | TEXT            | Descrição detalhada                      |
+| local               | VARCHAR(200)    | Bairro ou local                          |
+| endereco            | VARCHAR(255)    | Endereço completo (opcional)             |
+| telefone_contato    | VARCHAR(20)     | Opcional                                 |
+| data_inicio         | DATETIME        | Início do evento                         |
+| data_fim            | DATETIME        | Término (opcional)                       |
+| imagem_url          | TEXT            | Banner ou foto do evento (opcional)      |
+| criado_em           | DATETIME        | Default CURRENT_TIMESTAMP                |
+| criado_por          | INT (FK)        | FK para equipe (quem criou)              |
+
+---
+
+## 🚫 Tabela `usuarios` (LEGADO - OBSOLETA)
+
+| ⚠️ Observação: Esta tabela não será mais utilizada. Está sendo substituída pela tabela `equipe` com controle de `roles` e `permissions`.
+
+---
+
+## 🔥 Status da Modelagem
+
+- ✅ Modelagem atualizada e validada.
+- ✅ Tabelas alinhadas ao backend com arquitetura modular.
+- ✅ Prontas para expansão futura (permissions, RBAC completo, gestão de alunos, loja, aulas online).
+
+---
+
+
+# 🚀 Evolução Futura – Capoeira Base
+
+Esta lista contém ideias e funcionalidades planejadas para versões futuras do sistema, além do MVP.
+
+---
+
+## 🌟 Funcionalidades Futuras Sugeridas
+
+- [ ] ✅ **Controle de presença por aluno**
+- [ ] ✅ **Emissão de recibos ou comprovantes de pagamento**
+- [ ] ✅ **Relatórios PDF de frequência, pagamentos e inadimplência**
+- [ ] ✅ **Login por aluno** → Acesso para visualizar histórico pessoal de frequência, pagamentos e materiais.
+- [ ] ✅ **Upload de vídeos na galeria** (não só links, mas hospedagem própria se desejado)
+- [ ] ✅ **Sistema de notificações internas** → Avisos gerais ou direcionados aos alunos (ex.: lembrete de pagamentos, eventos, trocas de corda)
+- [ ] ✅ **Suporte a múltiplos projetos** → *Multi-capoeira*: um único sistema para vários projetos sociais diferentes, cada um com sua identidade.
+- [ ] ✅ **Configurações visuais personalizadas por grupo** (cores, logotipo, informações)
+- [ ] ✅ **Exportação de dados (.csv)** → Lista de alunos, pagamentos, frequência, etc.
+
+---
+
+## 🔭 Visão de Longo Prazo
+
+Transformar o **Capoeira Base** em uma plataforma **gratuita, profissional e personalizável**, pensada especialmente para apoiar **projetos sociais de capoeira em todo o Brasil**, ajudando na organização, divulgação e sustentabilidade dessas iniciativas culturais.
+
+---
+
+## 💎 Observação
+
+> Todas essas funcionalidades serão priorizadas conforme a evolução do projeto, o feedback dos usuários (professores, alunos e administradores) e a disponibilidade dos recursos.
+
+---
+
+
+# 🔥 MVP – Capoeira Base – Atualizado
+
+---
+
+## 🎯 Objetivo do MVP
+
+Entregar uma versão funcional mínima do sistema, com foco nas funcionalidades essenciais que geram valor imediato para o projeto social de capoeira.
+
+---
+
+## 📦 Escopo do MVP
+
+---
+
+### 1. 🌐 Site Público (Visitantes)
+- Página inicial com logo e apresentação do projeto
+- Seção **"Sobre o Projeto"**
+- Seção **"Agenda de Aulas e Eventos"**
+- Seção **"Galeria de Fotos"**
+- Seção **"Aulas Online"** (lista de vídeos e materiais) *(Em desenvolvimento)*
+- Seção **"Loja Virtual"** (venda de agasalhos, roupas, materiais) *(Em desenvolvimento)*
+- Seção **"Contato"** com mapa, WhatsApp e redes sociais
+
+---
+
+### 2. 🛠️ Painel Administrativo (/admin)
+- Login seguro com JWT
+- Dashboard com acesso a:
+  - ✅ Atualizar a agenda de aulas e eventos
+  - ✅ Gerenciar a galeria de imagens (upload, legenda, ordem)
+  - ✅ Editar informações de contato e redes sociais
+  - ✅ Gerenciar produtos da **Loja Virtual**
+  - ✅ Gerenciar conteúdos das **Aulas Online** (títulos, links de vídeos, materiais)
+
+---
+
+### 3. 👥 Gestão de Equipe (RBAC)
+- Cadastro e edição de membros da equipe (professores, administradores, etc.)
+- Atribuição de papéis (**roles**):
+  - Admin Master
+  - Instrutor
+  - Administrativo
+  - Loja
+- Controle de permissões baseado nos papéis
+
+---
+
+### 4. 🔒 Log de Ações (Auditoria)
+- Registro de todas as ações realizadas no painel:
+  - ✔️ Quem fez
+  - ✔️ O que fez
+  - ✔️ Quando fez
+- Apenas o **Admin Master (Professor)** pode visualizar o log completo.
+
+---
+
+## 🔥 Funcionalidades planejadas para Pós-MVP (Fase 2)
+- 📚 Gestão de Alunos:
+  - Cadastro, edição e lista de alunos ativos
+  - Controle de mensalidades por mês (**status: pago / não pago**)
+  - Lançamento de cobranças adicionais (eventos, uniformes, materiais)
+- 📑 Relatórios simples (alunos ativos, inadimplentes, pagamentos pendentes)
+- ✔️ Controle de presença nas aulas (futuro)
+- ✔️ Sistema de feedback dos alunos (futuro)
+
+---
+
+## 🏆 Status do MVP
+✔️ Documentação concluída  
+✔️ Banco modelado e rodando  
+✔️ Login com RBAC implementado  
+✔️ Landing page (em desenvolvimento)  
+✔️ Galeria, Agenda e Contato integrados no MVP  
+✔️ Loja e Aulas Online **em desenvolvimento** no frontend
+
+---
+
+# 🥋 Visão do Produto – Capoeira Base – Atualizado
+
+---
+
+## ✅ Propósito
+
+O propósito deste sistema é ajudar projetos de capoeira a se organizarem e se divulgarem de forma simples, acessível e profissional.
+
+O sistema oferece uma ferramenta digital que permite apresentar o projeto, compartilhar a agenda de eventos, exibir fotos, disponibilizar conteúdos educacionais (aulas online) e manter os contatos sempre atualizados — sem depender de conhecimentos técnicos ou programação.
+
+Agora também permite que o projeto monetize seus produtos (como agasalhos, uniformes e materiais de capoeira) através de uma **loja virtual integrada na página pública, mas 100% gerenciada pelo painel admin.**
+
+---
+
+## 👥 Usuários do Sistema
+
+### 1. Visitantes (público externo)
+Pessoas interessadas em conhecer o projeto de capoeira.  
+Acessam o site para:
+- Ver horários de aulas presenciais
+- Consultar os próximos eventos
+- Ver fotos, vídeos e conteúdos educacionais (aulas online)
+- Comprar produtos na loja virtual (agasalhos, roupas, etc.)
+- Encontrar meios de contato e localização
+
+---
+
+### 2. Administrador de conteúdo (geralmente o professor)
+Pessoa que cuida do conteúdo visível no site.
+
+Funções:
+- Atualizar textos, fotos, agenda e galeria
+- Gerenciar os conteúdos das **aulas online**
+- Gerenciar os produtos da **loja virtual**
+- Editar redes sociais e contatos
+
+---
+
+### 3. Gestores administrativos (apoio ao professor) *(Futuro)*
+Pessoas de confiança que auxiliarão no controle interno do projeto.
+
+Funções futuras:
+- Cadastro e edição de alunos
+- Controle de mensalidades
+- Lançamento de cobranças pontuais (eventos, uniformes, etc.)
+- Relatórios simples (alunos ativos, pagamentos pendentes)
+- Logs e auditoria das ações administrativas
+
+---
+
+## 🏹 Problema que estamos resolvendo
+
+Projetos de capoeira frequentemente enfrentam desafios para:
+- Organizar e divulgar suas atividades de forma profissional
+- Oferecer materiais educacionais online aos seus alunos
+- Vender produtos (agasalhos, roupas, uniformes) de forma simples, sem depender de plataformas externas
+- Manter um canal de comunicação atualizado com a comunidade
+
+---
+
+## 💎 Valor entregue
+
+- **Autonomia:** o projeto pode manter seu site, loja e conteúdos educacionais atualizados sem depender de terceiros.
+- **Organização centralizada:** controle total de eventos, fotos, aulas e produtos em um único painel.
+- **Monetização:** geração de receita com a venda de produtos da capoeira na loja virtual.
+- **Acessibilidade real:** site responsivo, acessível de qualquer dispositivo.
+- **Valorização institucional:** presença digital moderna, profissional e alinhada com a identidade do grupo.
+- **Preparado para crescer:** estrutura pronta para futuras funcionalidades como controle de alunos, mensalidades, relatórios e mais.
+
+---
+
+## 🚀 Diferenciais
+
+- ✔️ Feito sob medida para projetos sociais de capoeira, respeitando sua identidade visual, cultural e educacional.
+- ✔️ Painel administrativo simples, seguro e com permissões personalizadas.
+- ✔️ **Galeria multimídia:** controle total de fotos e vídeos.
+- ✔️ **Seção de Aulas Online:** publicação de vídeos, materiais, comentários e conteúdos de apoio *(em desenvolvimento)*.
+- ✔️ **Loja Virtual Integrada:** venda de produtos diretamente na landing page, com gestão feita no painel admin.
+- ✔️ Pronto para evoluir com novos módulos (controle de alunos, mensalidades, relatórios, etc.).
+
+---
+
+## 🏗️ Observação Importante
+> As funcionalidades de **aulas online** e **loja virtual** estão no roadmap atual do projeto.  
+> As funcionalidades de **controle de alunos, mensalidades e relatórios administrativos** estão planejadas para a **Fase 2**, após a consolidação do MVP (Landing page + Agenda + Galeria + Loja + Aulas + Gestão de Equipe).
+
+---
+
+## ✅ Status da Visão do Produto
+✔️ 100% alinhado com o que estamos construindo.  
+✔️ Documento atualizado e pronto para estar dentro da pasta `/docs` do projeto.
+
+---
