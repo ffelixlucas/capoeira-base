@@ -2,31 +2,30 @@ const express = require("express");
 const multer = require("multer");
 const galeriaController = require("./galeriaController");
 const verifyToken = require("../../middlewares/verifyToken");
+const checkRole = require("../../middlewares/checkRole");
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Listar imagens
+// ✅ Rota pública
 router.get("/", galeriaController.listarImagens);
 
-// Upload de imagem
+// ✅ Upload de imagem
 router.post(
   "/upload",
   verifyToken,
+  checkRole(["admin", "midia"]),
   upload.single("imagem"),
   galeriaController.uploadImagem
 );
 
+// ✅ Atualizar ordem
+router.put("/ordem", verifyToken, checkRole(["admin", "midia"]), galeriaController.atualizarOrdem);
 
+// ✅ Atualizar legenda
+router.put("/:id", verifyToken, checkRole(["admin", "midia"]), galeriaController.atualizarLegenda);
 
-
-// Atualizar ordem das imagens
-router.put("/ordem", verifyToken, galeriaController.atualizarOrdem);
-
-// Atualizar legenda da imagem
-router.put('/:id', verifyToken, galeriaController.atualizarLegenda);
-
-// Deletar imagem por ID
-router.delete("/:id", verifyToken, galeriaController.deletarImagem);
+// ✅ Deletar imagem
+router.delete("/:id", verifyToken, checkRole(["admin", "midia"]), galeriaController.deletarImagem);
 
 module.exports = router;

@@ -2,11 +2,14 @@ const express = require('express');
 const router = express.Router();
 const agendaController = require('./agendaController');
 const verifyToken = require('../../middlewares/verifyToken');
+const checkRole = require('../../middlewares/checkRole');
 
+// Rota pública (qualquer um pode ver os eventos)
 router.get('/', agendaController.listarEventos);
-router.post('/', verifyToken, agendaController.criarEvento);
-router.delete('/:id', verifyToken, agendaController.excluirEvento);
-router.put('/:id', verifyToken, agendaController.atualizarEvento);
 
+// Rota protegida – somente admin ou instrutor pode criar, editar e excluir eventos
+router.post('/', verifyToken, checkRole(['admin', 'instrutor']), agendaController.criarEvento);
+router.put('/:id', verifyToken, checkRole(['admin', 'instrutor']), agendaController.atualizarEvento);
+router.delete('/:id', verifyToken, checkRole(['admin', 'instrutor']), agendaController.excluirEvento);
 
 module.exports = router;

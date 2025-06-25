@@ -1,16 +1,17 @@
-// backend/modules/roles/rolesRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const rolesController = require('./rolesController');
-const verifyToken = require('../../middlewares/verifyToken'); // Proteção JWT
+const verifyToken = require('../../middlewares/verifyToken');
+const checkRole = require('../../middlewares/checkRole');
 
-// Todas as rotas protegidas por token
+// ✅ Todas as rotas protegidas por token + verificação de role
 router.use(verifyToken);
+router.use(checkRole(['admin'])); // ← só admin pode mexer com roles
 
-router.get('/', rolesController.getAll);          // GET /api/roles → listar papéis
-router.post('/', rolesController.create);         // POST /api/roles → criar papel
-router.put('/:id', rolesController.update);       // PUT /api/roles/:id → editar papel
-router.delete('/:id', rolesController.remove);    // DELETE /api/roles/:id → deletar papel
+// Rotas
+router.get('/', rolesController.getAll);
+router.post('/', rolesController.create);
+router.put('/:id', rolesController.update);
+router.delete('/:id', rolesController.remove);
 
 module.exports = router;
