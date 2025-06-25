@@ -6,12 +6,13 @@ async function listarEquipe() {
 }
 
 async function criarEquipe(dados) {
-  if (dados.senha) {
+    if (!dados.nome || !dados.email || !dados.senha) {
+      throw new Error("Nome, email e senha são obrigatórios");
+    }
+  
     dados.senha_hash = await bcrypt.hash(dados.senha, 10);
+    return await equipeRepository.createEquipe(dados);
   }
-  return await equipeRepository.createEquipe(dados);
-}
-
 async function atualizarEquipe(id, dados) {
   return await equipeRepository.updateEquipe(id, dados);
 }

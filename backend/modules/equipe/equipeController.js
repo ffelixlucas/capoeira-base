@@ -11,14 +11,15 @@ async function getEquipe(req, res) {
 }
 
 async function criarEquipe(req, res) {
-  try {
-    const id = await equipeService.criarEquipe(req.body);
-    res.status(201).json({ id, message: "Membro criado com sucesso" });
-  } catch (error) {
-    console.error("Erro ao criar membro:", error);
-    res.status(500).json({ message: "Erro ao criar membro" });
+    try {
+      const id = await equipeService.criarEquipe(req.body);
+      res.status(201).json({ id, message: "Membro criado com sucesso" });
+    } catch (error) {
+      console.error("Erro ao criar membro:", error.message);
+      res.status(400).json({ message: error.message });
+    }
   }
-}
+  
 
 async function atualizarEquipe(req, res) {
   try {

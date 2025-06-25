@@ -1,12 +1,11 @@
-// backend/modules/equipe/equipeRoutes.js
-
 const express = require("express");
 const router = express.Router();
 const equipeController = require("./equipeController");
+const verifyToken = require("../../middlewares/verifyToken");
 
-router.get("/", equipeController.getEquipe);              // Listar todos
-router.post("/", equipeController.criarEquipe);           // Criar novo membro
-router.put("/:id", equipeController.atualizarEquipe);     // Editar membro
-router.delete("/:id", equipeController.removerEquipe);    // Remover membro
+router.get("/", verifyToken, equipeController.getEquipe);     
+router.post("/", verifyToken, equipeController.criarEquipe);
+router.put("/:id", verifyToken, equipeController.atualizarEquipe);
+router.delete("/:id", verifyToken, equipeController.removerEquipe);
 
 module.exports = router;

@@ -1,9 +1,13 @@
 const db = require("../../database/connection");
 
 async function getAllEquipe() {
-  const [rows] = await db.query("SELECT * FROM equipe ORDER BY nome ASC");
-  return rows;
-}
+    const [rows] = await db.query(`
+      SELECT id, nome, telefone, whatsapp, email, status, observacoes, criado_em, atualizado_em
+      FROM equipe
+      ORDER BY nome ASC
+    `);
+    return rows;
+  }
 
 async function createEquipe({ nome, telefone, whatsapp, email, status, observacoes, senha_hash }) {
   const [result] = await db.query(
