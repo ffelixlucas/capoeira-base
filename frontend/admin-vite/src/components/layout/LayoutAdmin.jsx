@@ -1,6 +1,8 @@
+// LayoutAdmin.jsx
 import React, { useState } from "react";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePermissao } from "../../hooks/usePermissao";
 import {
   PhotoIcon,
   CalendarIcon,
@@ -40,10 +42,11 @@ function NavItem({ to, label, Icon, onClick, isActive }) {
 }
 
 function LayoutAdmin() {
-  const { logout, usuario } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuAberto, setMenuAberto] = useState(false);
+  const { temPapel } = usePermissao();
 
   const handleLogout = () => {
     logout();
@@ -52,15 +55,19 @@ function LayoutAdmin() {
 
   const toggleMenu = () => setMenuAberto(!menuAberto);
 
-  const navItems = [
-    { to: "/dashboard", label: "Início", Icon: HomeIcon },
-    { to: "/galeria", label: "Galeria", Icon: PhotoIcon },
-    { to: "/agenda", label: "Eventos", Icon: CalendarIcon },
-    { to: "/uniformes", label: "Loja", Icon: TagIcon },
-    { to: "/video-aulas", label: "Aulas", Icon: VideoCameraIcon },
-    { to: "/horarios", label: "Horários", Icon: ClockIcon },
-    { to: "/alunos", label: "Alunos", Icon: UserGroupIcon },
+  const todosItens = [
+    { to: "/dashboard", label: "Início", Icon: HomeIcon, roles: [] },
+    { to: "/galeria", label: "Galeria", Icon: PhotoIcon, roles: ["admin", "midia"] },
+    { to: "/agenda", label: "Eventos", Icon: CalendarIcon, roles: ["admin", "instrutor"] },
+    { to: "/uniformes", label: "Loja", Icon: TagIcon, roles: ["admin", "loja"] },
+    { to: "/video-aulas", label: "Aulas", Icon: VideoCameraIcon, roles: ["admin", "instrutor", "midia"] },
+    { to: "/horarios", label: "Horários", Icon: ClockIcon, roles: ["admin", "instrutor"] },
+    { to: "/alunos", label: "Alunos", Icon: UserGroupIcon, roles: ["admin"] },
   ];
+
+  const navItems = todosItens.filter(
+    (item) => item.roles.length === 0 || temPapel(item.roles)
+  );
 
   return (
     <div className="flex bg-cor-fundo text-cor-texto">

@@ -1,5 +1,7 @@
 // src/pages/Dashboard.jsx
 import React from 'react';
+import { useAuth } from "../contexts/AuthContext";
+import { usePermissao } from "../hooks/usePermissao";
 import {
   UserGroupIcon,
   CalendarIcon,
@@ -9,13 +11,24 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
-  const usuario = { nome: 'Formando Clone' }; // depois pode puxar do contexto
+  const { usuario } = useAuth();
+  const { temPapel } = usePermissao();
+
+  const botoes = [
+    { to: "/galeria", label: "Galeria", roles: ["admin", "midia"] },
+    { to: "/agenda", label: "Eventos", roles: ["admin", "instrutor"] },
+    { to: "/alunos", label: "Alunos", roles: ["admin"] },
+    { to: "/mensalidades", label: "Mensalidades", roles: ["financeiro", "admin"] },
+    { to: "/uniformes", label: "Loja", roles: ["loja", "admin"] },
+    { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
+    { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] }, // Definido agora
+  ];
 
   return (
     <div className="space-y-6">
       {/* Boas-vindas */}
       <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
-        <h2 className="text-2xl font-bold text-cor-titulo">Olá, {usuario.nome}!</h2>
+        <h2 className="text-2xl font-bold text-cor-titulo">Olá, {usuario?.nome || "Usuário"}!</h2>
         <p className="text-sm text-cor-texto/80 mt-1">Bem-vindo ao painel de administração</p>
       </div>
 
@@ -39,12 +52,11 @@ export default function Dashboard() {
 
       {/* Acesso Rápido */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <BotaoModulo to="/galeria" label="Galeria" />
-        <BotaoModulo to="/agenda" label="Eventos" />
-        <BotaoModulo to="/alunos" label="Alunos" />
-        <BotaoModulo to="/mensalidades" label="Mensalidades" />
-        <BotaoModulo to="/uniformes" label="Loja" />
-        <BotaoModulo to="/horarios" label="Horários" />
+        {botoes
+          .filter((botao) => temPapel(botao.roles))
+          .map((botao) => (
+            <BotaoModulo key={botao.to} to={botao.to} label={botao.label} />
+          ))}
       </div>
 
       {/* Aviso Interno */}
