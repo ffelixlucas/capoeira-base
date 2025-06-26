@@ -1,13 +1,28 @@
 const db = require("../../database/connection");
 
 async function getAllEquipe() {
-    const [rows] = await db.query(`
-      SELECT id, nome, telefone, whatsapp, email, status, observacoes, criado_em, atualizado_em
-      FROM equipe
-      ORDER BY nome ASC
-    `);
-    return rows;
+  const [rows] = await db.query(`
+    SELECT id, nome, telefone, whatsapp, email, status, observacoes, criado_em, atualizado_em
+    FROM equipe
+    ORDER BY nome ASC
+  `);
+
+  // Para cada membro, buscar seus papéis (roles)
+  for (const membro of rows) {
+    const [roles] = await db.query(
+      `
+      SELECT r.id, r.nome
+      FROM equipe_roles er
+      JOIN roles r ON er.role_id = r.id
+      WHERE er.equipe_id = ?
+      `,
+      [membro.id]
+    );
+    membro.roles = roles; // adiciona a propriedade `roles`
   }
+
+  return rows;
+}
 
 async function createEquipe({ nome, telefone, whatsapp, email, status, observacoes, senha_hash }) {
   const [result] = await db.query(
