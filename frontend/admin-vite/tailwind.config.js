@@ -9,7 +9,7 @@ module.exports = {
         "cor-primaria": "#f3c849",
         "cor-secundaria": "#1f4032",
         "cor-destaque": "#a28012",
-        "cor-clara": "#d9d9d6", // Um cinza-claro sofisticado
+        "cor-clara": "#d9d9d6", 
         "cor-escura": "#000",
       },
     },
