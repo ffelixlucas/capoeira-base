@@ -24,8 +24,31 @@ async function removerRoleDeMembro(equipeId, roleId) {
   await db.query(query, [equipeId, roleId]);
 }
 
+// Remover todos os papéis de um membro
+async function removerTodosOsRoles(equipeId) {
+  const sql = 'DELETE FROM equipe_roles WHERE equipe_id = ?';
+  const [result] = await db.query(sql, [equipeId]); // ← aqui estava o erro
+  return result;
+}
+
+async function checarSePapelExiste(membroId, roleId) {
+  const query = `
+    SELECT 1 FROM equipe_roles
+    WHERE equipe_id = ? AND role_id = ?
+    LIMIT 1
+  `;
+  const [rows] = await db.query(query, [membroId, roleId]);
+  return rows.length > 0;
+}
+
+
+
+
 module.exports = {
   buscarRolesPorMembro,
   atribuirRoleAMembro,
   removerRoleDeMembro,
+  removerTodosOsRoles,
+  checarSePapelExiste
+
 };

@@ -33,11 +33,16 @@ async function createEquipe({ nome, telefone, whatsapp, email, status, observaco
 }
 
 async function updateEquipe(id, { nome, telefone, whatsapp, email, status, observacoes }) {
-  const [result] = await db.query(
-    "UPDATE equipe SET nome = ?, telefone = ?, whatsapp = ?, email = ?, status = ?, observacoes = ? WHERE id = ?",
-    [nome, telefone, whatsapp, email, status, observacoes, id]
-  );
-  return result.affectedRows;
+  try {
+    const [result] = await db.query(
+      "UPDATE equipe SET nome = ?, telefone = ?, whatsapp = ?, email = ?, status = ?, observacoes = ? WHERE id = ?",
+      [nome, telefone, whatsapp, email, status, observacoes, id]
+    );
+    return result.affectedRows;
+  } catch (err) {
+    console.error("❌ ERRO SQL AO ATUALIZAR MEMBRO:", err.message); // ← ESSENCIAL
+    throw err;
+  }
 }
 
 async function deleteEquipe(id) {

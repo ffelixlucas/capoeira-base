@@ -8,5 +8,8 @@ const checkRole = require('../../../middlewares/checkRole');
 router.get('/:id/roles', verifyToken, checkRole(['admin']), equipeRolesController.listarRoles);
 router.post('/:id/roles', verifyToken, checkRole(['admin']), equipeRolesController.adicionarRole);
 router.delete('/:id/roles/:roleId', verifyToken, checkRole(['admin']), equipeRolesController.removerRole);
+// Remover TODOS os papéis de um membro
+router.delete('/:id/roles', verifyToken, checkRole(['admin']), equipeRolesController.removerTodosOsRoles);
+
 
 module.exports = router;

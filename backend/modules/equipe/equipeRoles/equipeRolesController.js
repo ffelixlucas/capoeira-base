@@ -39,8 +39,21 @@ async function removerRole(req, res) {
   }
 }
 
+async function removerTodosOsRoles(req, res) {
+  try {
+    const equipeId = req.params.id;
+    await equipeRolesService.removerTodosOsRoles(equipeId);
+    res.status(204).send(); // No content
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao remover papéis do membro" });
+  }
+}
+
+
 module.exports = {
   listarRoles,
   adicionarRole,
   removerRole,
+  removerTodosOsRoles,
 };

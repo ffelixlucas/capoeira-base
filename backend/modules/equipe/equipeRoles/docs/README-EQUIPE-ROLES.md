@@ -25,6 +25,7 @@ Este módulo é responsável por **atribuir** e **remover papéis (roles)** de m
 | GET    | `/api/equipe/:id/roles`         | Lista todos os papéis atribuídos a um membro  | ✅ JWT     |
 | POST   | `/api/equipe/:id/roles`         | Atribui um papel a um membro                  | ✅ JWT     |
 | DELETE | `/api/equipe/:id/roles/:roleId` | Remove um papel de um membro                  | ✅ JWT     |
+| DELETE | `/api/equipe/:id/roles`         | Remove **todos** os papéis do membro          | ✅ JWT     |
 
 ---
 
@@ -39,13 +40,15 @@ Este módulo é responsável por **atribuir** e **remover papéis (roles)** de m
 
 ## 🧪 Testes Realizados
 
-| Ação                         | Resultado |
-|------------------------------|-----------|
-| Criar membro via POST        | ✅ Ok      |
-| Criar papel "instrutor"      | ✅ Ok      |
-| Atribuir papel via POST      | ✅ Ok      |
-| Verificar papéis com GET     | ✅ Ok      |
-| Remover papel com DELETE     | ✅ Testado |
+| Ação                                     | Resultado  |
+|------------------------------------------|------------|
+| Criar membro via POST                    | ✅ Ok      |
+| Criar papel "instrutor"                  | ✅ Ok      |
+| Atribuir papel via POST                  | ✅ Ok      |
+| Verificar papéis com GET                 | ✅ Ok      |
+| Remover papel com DELETE                 | ✅ Testado |
+| Remover todos os papéis via DELETE       | ✅ Testado |
+
 
 ---
 
@@ -61,7 +64,6 @@ CREATE TABLE equipe_roles (
 );
 
 🔄 Melhorias Futuras
- Middleware checkRole(['admin']) para restringir acesso à atribuição.
 
  Endpoint GET /api/equipe trazendo papéis embutidos.
 
