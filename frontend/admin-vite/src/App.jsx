@@ -23,6 +23,7 @@ import Mensalidades from "./pages/Mensalidades";
 import NotFound from "./pages/NotFound";
 import Horarios from "./pages/Horarios";
 import NaoAutorizado from "./pages/NaoAutorizado";
+import Equipe from "./pages/Equipe";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/equipe" element={<Equipe />} />
             <Route path="/galeria" element={<Galeria />} />
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/alunos" element={<Alunos />} />
