@@ -175,16 +175,18 @@ function EquipeForm({ onClose, membroSelecionado }) {
             />
           </div>
 
-          <div>
-            <label className="block font-medium">Senha</label>
-            <input
-              type="password"
-              name="senha"
-              value={form.senha}
-              onChange={handleChange}
-              className="w-full border border-cor-clara rounded px-3 py-2 bg-transparent text-cor-texto"
-            />
-          </div>
+          {!membroSelecionado && (
+            <div>
+              <label className="block font-medium">Senha</label>
+              <input
+                type="password"
+                name="senha"
+                value={form.senha}
+                onChange={handleChange}
+                className="w-full border border-cor-clara rounded px-3 py-2 bg-transparent text-cor-texto"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block font-medium">Papéis *</label>

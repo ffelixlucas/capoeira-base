@@ -13,10 +13,19 @@ async function criarEquipe(dados) {
   dados.senha_hash = await bcrypt.hash(dados.senha, 10);
   return await equipeRepository.createEquipe(dados);
 }
+
 async function atualizarEquipe(id, dados) {
+  // ⚠️ Remover senha se ela estiver vazia ou inexistente
+  if (!dados.senha || dados.senha.trim() === "") {
+    delete dados.senha;
+  } else {
+    // Se quiser permitir trocar senha por aqui (não recomendado nesse fluxo)
+    dados.senha_hash = await bcrypt.hash(dados.senha, 10);
+    delete dados.senha;
+  }
+
   return await equipeRepository.updateEquipe(id, dados);
 }
-
 async function removerEquipe(id) {
   return await equipeRepository.deleteEquipe(id);
 }
