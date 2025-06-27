@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useEquipe } from "../../hooks/useEquipe";
 import EquipeForm from "./EquipeForm";
+import { useAuth } from "../../contexts/AuthContext";
 
 function EquipeList() {
+  const { usuario } = useAuth();
   const { membros, loading, erro } = useEquipe();
   const [expandido, setExpandido] = useState(null);
   const [membroEditando, setMembroEditando] = useState(null);
@@ -20,7 +22,9 @@ function EquipeList() {
           <div className="flex-1">
             <div
               className="flex items-center justify-between cursor-pointer"
-              onClick={() => setExpandido(expandido === membro.id ? null : membro.id)}
+              onClick={() =>
+                setExpandido(expandido === membro.id ? null : membro.id)
+              }
             >
               <h2 className="text-lg font-bold text-gray-800">{membro.nome}</h2>
               <div className="flex flex-wrap gap-2">
@@ -34,19 +38,26 @@ function EquipeList() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-gray-400 italic text-sm">Sem papel</span>
+                  <span className="text-gray-400 italic text-sm">
+                    Sem papel
+                  </span>
                 )}
               </div>
             </div>
 
             {expandido === membro.id && (
               <div className="mt-4 space-y-2 text-sm text-gray-700">
-                <p><strong>Telefone:</strong> {membro.telefone || "-"}</p>
+                <p>
+                  <strong>Telefone:</strong> {membro.telefone || "-"}
+                </p>
                 <p>
                   <strong>WhatsApp:</strong>{" "}
                   {membro.whatsapp ? (
                     <a
-                      href={`https://wa.me/${membro.whatsapp.replace(/\D/g, "")}`}
+                      href={`https://wa.me/${membro.whatsapp.replace(
+                        /\D/g,
+                        ""
+                      )}`}
                       target="_blank"
                       rel="noreferrer"
                       className="text-blue-600 underline"
@@ -57,7 +68,9 @@ function EquipeList() {
                     "-"
                   )}
                 </p>
-                <p><strong>Email:</strong> {membro.email || "-"}</p>
+                <p>
+                  <strong>Email:</strong> {membro.email || "-"}
+                </p>
                 <p>
                   <strong>Status:</strong>{" "}
                   <span
@@ -79,7 +92,9 @@ function EquipeList() {
                   >
                     Editar
                   </button>
-                  <button className="text-red-600 hover:underline">Excluir</button>
+                  <button className="text-red-600 hover:underline">
+                    Excluir
+                  </button>
                 </div>
               </div>
             )}
@@ -89,10 +104,10 @@ function EquipeList() {
 
       {membroEditando && (
         <EquipeForm
-        membroSelecionado={membroEditando} 
-        onClose={() => setMembroEditando(null)}
-      />
-      
+          membroSelecionado={membroEditando}
+          onClose={() => setMembroEditando(null)}
+          usuarioLogado={usuario} // 👈 AQUI
+        />
       )}
     </div>
   );

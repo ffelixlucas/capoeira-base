@@ -8,7 +8,9 @@ import {
 } from "../../services/equipeService";
 import { toast } from "react-toastify";
 
-function EquipeForm({ onClose, membroSelecionado }) {
+function EquipeForm({ onClose, membroSelecionado, usuarioLogado }) {
+  console.log("usuarioLogado", usuarioLogado);
+
   const [form, setForm] = useState({
     nome: "",
     telefone: "",
@@ -90,6 +92,9 @@ function EquipeForm({ onClose, membroSelecionado }) {
           status: form.status,
           observacoes: form.observacoes,
         };
+        if (form.senha.trim()) {
+          dados.senha = form.senha;
+        }
 
         await atualizarMembro(membroSelecionado.id, dados);
         membroId = membroSelecionado.id;
@@ -175,9 +180,11 @@ function EquipeForm({ onClose, membroSelecionado }) {
             />
           </div>
 
-          {!membroSelecionado && (
+          {(!membroSelecionado || usuarioLogado?.roles?.includes("admin")) && (
             <div>
-              <label className="block font-medium">Senha</label>
+              <label className="block font-medium">
+                Senha {membroSelecionado ? "(nova senha opcional)" : "*"}
+              </label>
               <input
                 type="password"
                 name="senha"

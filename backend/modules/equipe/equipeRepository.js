@@ -32,18 +32,54 @@ async function createEquipe({ nome, telefone, whatsapp, email, status, observaco
   return result.insertId;
 }
 
-async function updateEquipe(id, { nome, telefone, whatsapp, email, status, observacoes }) {
+async function updateEquipe(id, dados) {
   try {
-    const [result] = await db.query(
-      "UPDATE equipe SET nome = ?, telefone = ?, whatsapp = ?, email = ?, status = ?, observacoes = ? WHERE id = ?",
-      [nome, telefone, whatsapp, email, status, observacoes, id]
-    );
+    const campos = [];
+    const valores = [];
+
+    if (dados.nome) {
+      campos.push("nome = ?");
+      valores.push(dados.nome);
+    }
+    if (dados.telefone) {
+      campos.push("telefone = ?");
+      valores.push(dados.telefone);
+    }
+    if (dados.whatsapp) {
+      campos.push("whatsapp = ?");
+      valores.push(dados.whatsapp);
+    }
+    if (dados.email) {
+      campos.push("email = ?");
+      valores.push(dados.email);
+    }
+    if (dados.status) {
+      campos.push("status = ?");
+      valores.push(dados.status);
+    }
+    if (dados.observacoes) {
+      campos.push("observacoes = ?");
+      valores.push(dados.observacoes);
+    }
+    if (dados.senha_hash) {
+      campos.push("senha_hash = ?");
+      valores.push(dados.senha_hash);
+    }
+
+    // Nada pra atualizar
+    if (campos.length === 0) return 0;
+
+    const sql = `UPDATE equipe SET ${campos.join(", ")} WHERE id = ?`;
+    valores.push(id);
+
+    const [result] = await db.query(sql, valores);
     return result.affectedRows;
   } catch (err) {
-    console.error("❌ ERRO SQL AO ATUALIZAR MEMBRO:", err.message); // ← ESSENCIAL
+    console.error("❌ ERRO SQL AO ATUALIZAR MEMBRO:", err.message);
     throw err;
   }
 }
+
 
 async function deleteEquipe(id) {
   const [result] = await db.query("DELETE FROM equipe WHERE id = ?", [id]);
