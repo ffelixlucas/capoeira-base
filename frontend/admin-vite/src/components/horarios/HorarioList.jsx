@@ -38,7 +38,7 @@ function HorarioList({
             </p>
             <p className="text-sm">Faixa etária: {item.faixa_etaria}</p>
             {item.instrutor && (
-              <p className="text-sm">Instrutor: {item.instrutor}</p>
+              <p className="text-sm">Instrutor(a): {item.instrutor}</p>
             )}
             {item.whatsapp_instrutor && (
               <p className="text-sm">WhatsApp: {item.whatsapp_instrutor}</p>
