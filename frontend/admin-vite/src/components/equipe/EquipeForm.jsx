@@ -8,11 +8,7 @@ import {
 } from "../../services/equipeService";
 import { toast } from "react-toastify";
 
-function EquipeForm({
-  onClose,
-  membroSelecionado,
-  usuarioLogado,
-  onSave,}) {
+function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
   const [form, setForm] = useState({
     nome: "",
     telefone: "",
@@ -26,6 +22,7 @@ function EquipeForm({
 
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [mostrarDescricao, setMostrarDescricao] = useState(false);
 
   useEffect(() => {
     async function fetchRoles() {
@@ -198,7 +195,33 @@ function EquipeForm({
           )}
 
           <div>
-            <label className="block font-medium">Papéis *</label>
+            <div className="flex items-center gap-2">
+              <label className="block font-medium">Papéis *</label>
+              <button
+                type="button"
+                onClick={() => setMostrarDescricao(!mostrarDescricao)}
+                className="text-blue-500 text-xl font-bold"
+              >
+                ?
+              </button>
+            </div>
+
+            {mostrarDescricao && (
+              <div className="bg-white text-gray-800 p-2 rounded text-sm mt-2 shadow">
+                ✅ admin: Acesso total a todas as áreas.
+                <br />
+                ✅ instrutor: Gerencia horários de aulas e eventos.
+                <br />
+                ✅ midia: Gerencia galeria e eventos.
+                <br />
+                ✅ loja: Gerencia produtos e pedidos na loja virtual.
+                <br />
+                <br />
+                Observação: Um membro pode ter **mais de um papel** atribuído ao
+                mesmo tempo.
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2 mt-1">
               {roles.map((role) => {
                 const ativo = form.role_ids.includes(role.id);
