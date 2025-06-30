@@ -1,4 +1,3 @@
-// src/hooks/useEquipe.js
 import { useEffect, useState } from "react";
 import { listarEquipe } from "../services/equipeService";
 
@@ -7,21 +6,23 @@ export function useEquipe() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
-  useEffect(() => {
-    async function fetchEquipe() {
-      try {
-        const dados = await listarEquipe();
-        setMembros(dados);
-      } catch (err) {
-        console.error("Erro ao buscar equipe:", err);
-        setErro("Erro ao carregar equipe");
-      } finally {
-        setLoading(false);
-      }
+  const carregarEquipe = async () => {
+    setLoading(true);
+    try {
+      const dados = await listarEquipe();
+      setMembros(dados);
+      setErro(null);
+    } catch (err) {
+      console.error("Erro ao buscar equipe:", err);
+      setErro("Erro ao carregar equipe");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    fetchEquipe();
+  useEffect(() => {
+    carregarEquipe();
   }, []);
 
-  return { membros, loading, erro };
+  return { membros, loading, erro, carregarEquipe };
 }

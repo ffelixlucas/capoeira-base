@@ -14,19 +14,20 @@ export async function listarRoles() {
 }
 
 export async function atribuirPapel(equipeId, roleId) {
-    return api.post(`/equipe/${equipeId}/roles`, { roleId }); // ← CORRETO
+    return api.post(`/equipe/${equipeId}/roles`, { roleId }); 
   }
   
 
 export async function atualizarMembro(id, dados) {
     return api.put(`/equipe/${id}`, dados);
   }
+
+export async function removerMembro(id) {
+   return await api.delete(`/equipe/${id}`);
+}
   
   export async function removerTodosOsPapeis(equipeId) {
     return api.delete(`/equipe/${equipeId}/roles`);
   }
 
-export async function deletarMembro(id) {
-    return api.delete(`/equipe/${id}`);
-  }
   

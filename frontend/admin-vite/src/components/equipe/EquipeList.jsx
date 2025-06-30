@@ -2,12 +2,26 @@ import React, { useState } from "react";
 import { useEquipe } from "../../hooks/useEquipe";
 import EquipeForm from "./EquipeForm";
 import { useAuth } from "../../contexts/AuthContext";
+import { removerMembro } from "../../services/equipeService";
+import { toast } from "react-toastify";
 
-function EquipeList() {
+function EquipeList({ membros, loading, erro, onAtualizar }) {
   const { usuario } = useAuth();
-  const { membros, loading, erro } = useEquipe();
   const [expandido, setExpandido] = useState(null);
   const [membroEditando, setMembroEditando] = useState(null);
+
+  const handleExcluir = async (membro) => {
+    if (!window.confirm(`Tem certeza que deseja excluir ${membro.nome}?`))
+      return;
+    try {
+      await removerMembro(membro.id);
+      toast.success("Membro excluído com sucesso");
+      onAtualizar();
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao excluir membro");
+    }
+  };
 
   if (loading) return <p className="text-gray-600">Carregando equipe...</p>;
   if (erro) return <p className="text-red-600">{erro}</p>;
@@ -51,39 +65,13 @@ function EquipeList() {
                   <strong>Telefone:</strong> {membro.telefone || "-"}
                 </p>
                 <p>
-                  <strong>WhatsApp:</strong>{" "}
-                  {membro.whatsapp ? (
-                    <a
-                      href={`https://wa.me/${membro.whatsapp.replace(
-                        /\D/g,
-                        ""
-                      )}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      {membro.whatsapp}
-                    </a>
-                  ) : (
-                    "-"
-                  )}
+                  <strong>WhatsApp:</strong> {membro.whatsapp || "-"}
                 </p>
                 <p>
                   <strong>Email:</strong> {membro.email || "-"}
                 </p>
                 <p>
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                      membro.status === "ativo"
-                        ? "bg-green-100 text-green-700"
-                        : membro.status === "inativo"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {membro.status}
-                  </span>
+                  <strong>Status:</strong> {membro.status}
                 </p>
                 <div className="flex gap-4 pt-2">
                   <button
@@ -92,7 +80,10 @@ function EquipeList() {
                   >
                     Editar
                   </button>
-                  <button className="text-red-600 hover:underline">
+                  <button
+                    className="text-red-600 hover:underline"
+                    onClick={() => handleExcluir(membro)}
+                  >
                     Excluir
                   </button>
                 </div>
@@ -106,7 +97,7 @@ function EquipeList() {
         <EquipeForm
           membroSelecionado={membroEditando}
           onClose={() => setMembroEditando(null)}
-          usuarioLogado={usuario} // 👈 AQUI
+          usuarioLogado={usuario}
         />
       )}
     </div>

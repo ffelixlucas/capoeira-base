@@ -8,9 +8,11 @@ import {
 } from "../../services/equipeService";
 import { toast } from "react-toastify";
 
-function EquipeForm({ onClose, membroSelecionado, usuarioLogado }) {
-  console.log("usuarioLogado", usuarioLogado);
-
+function EquipeForm({
+  onClose,
+  membroSelecionado,
+  usuarioLogado,
+  onSave,}) {
   const [form, setForm] = useState({
     nome: "",
     telefone: "",
@@ -112,7 +114,7 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado }) {
       }
 
       toast.success("Membro salvo com sucesso!");
-      onClose();
+      if (onSave) onSave();
     } catch (err) {
       console.error(err);
       toast.error("Erro ao salvar membro");
