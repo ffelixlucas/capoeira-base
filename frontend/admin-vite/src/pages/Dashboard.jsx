@@ -1,10 +1,9 @@
 // src/pages/Dashboard.jsx
 import React from "react";
 import { useEffect, useState } from "react";
-
 import { listarEventos } from "../services/agendaService";
 import { listarImagens } from "../services/galeriaService";
-
+import { listarLembretes } from "../services/lembretesService";
 import { useAuth } from "../contexts/AuthContext";
 import { usePermissao } from "../hooks/usePermissao";
 import {
@@ -15,14 +14,12 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import ModalLembretes from "../components/lembretes/ModalLembretes";
-import { useLembretes } from "../hooks/useLembretes";
 
 export default function Dashboard() {
   const { usuario } = useAuth();
   const { temPapel } = usePermissao();
   const [qtdEventos, setQtdEventos] = useState(0);
   const [abrirModal, setAbrirModal] = useState(false);
-  const { lembretes } = useLembretes({ status: "pendente" });
 
   const botoes = [
     { to: "/galeria", label: "Galeria", roles: ["admin", "midia"] },
@@ -49,6 +46,21 @@ export default function Dashboard() {
     };
 
     fetchEventos();
+  }, []);
+
+  const [lembretes, setLembretes] = useState([]);
+
+  async function buscarLembretes() {
+    try {
+      const lista = await listarLembretes("pendente");
+      setLembretes(lista);
+    } catch (err) {
+      console.error("Erro ao buscar lembretes:", err);
+    }
+  }
+
+  useEffect(() => {
+    buscarLembretes();
   }, []);
 
   const [qtdFotos, setQtdFotos] = useState(0);
@@ -171,7 +183,10 @@ export default function Dashboard() {
       </div>
       <ModalLembretes
         aberto={abrirModal}
-        aoFechar={() => setAbrirModal(false)}
+        aoFechar={() => {
+          setAbrirModal(false);
+          buscarLembretes();
+        }}
       />
     </>
   );

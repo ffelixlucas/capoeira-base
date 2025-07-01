@@ -43,6 +43,8 @@ export default function ModalLembretes({ aberto, aoFechar }) {
                 if (modoForm === "novo") await adicionar(dados);
                 else await editar(modoForm.id, dados);
                 setModoForm(null);
+                await atualizar(); 
+
               }}
             />
           ) : (

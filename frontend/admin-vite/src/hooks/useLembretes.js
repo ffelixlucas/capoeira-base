@@ -40,7 +40,7 @@ export function useLembretes({ status = "" } = {}) {
       descricao: dados.descricao,
       prioridade: dados.prioridade,
       status: dados.status,
-      data: dados.data ? dados.data.split("T")[0] : null, // 👈 converte ISO para '2025-07-01'
+      data: dados.data ? dados.data.split("T")[0] : null, 
     };
 
     console.log("Enviando dados para atualização:", dadosFiltrados);
