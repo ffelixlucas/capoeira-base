@@ -15,6 +15,7 @@ import {
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import logo from "../../assets/images/logo.png";
 
 function NavItem({ to, label, Icon, onClick, isActive }) {
   return (
@@ -57,12 +58,37 @@ function LayoutAdmin() {
 
   const todosItens = [
     { to: "/dashboard", label: "Início", Icon: HomeIcon, roles: [] },
-    { to: "/equipe", label: "Equipe", Icon: UserGroupIcon, roles: ["admin"] }, 
-    { to: "/galeria", label: "Galeria", Icon: PhotoIcon, roles: ["admin", "midia"] },
-    { to: "/agenda", label: "Eventos", Icon: CalendarIcon, roles: ["admin", "instrutor"] },
-    { to: "/uniformes", label: "Loja", Icon: TagIcon, roles: ["admin", "loja"] },
-    { to: "/video-aulas", label: "Aulas", Icon: VideoCameraIcon, roles: ["admin", "instrutor", "midia"] },
-    { to: "/horarios", label: "Horários", Icon: ClockIcon, roles: ["admin", "instrutor"] },
+    { to: "/equipe", label: "Equipe", Icon: UserGroupIcon, roles: ["admin"] },
+    {
+      to: "/galeria",
+      label: "Galeria",
+      Icon: PhotoIcon,
+      roles: ["admin", "midia"],
+    },
+    {
+      to: "/agenda",
+      label: "Eventos",
+      Icon: CalendarIcon,
+      roles: ["admin", "instrutor"],
+    },
+    {
+      to: "/uniformes",
+      label: "Loja",
+      Icon: TagIcon,
+      roles: ["admin", "loja"],
+    },
+    {
+      to: "/video-aulas",
+      label: "Aulas",
+      Icon: VideoCameraIcon,
+      roles: ["admin", "instrutor", "midia"],
+    },
+    {
+      to: "/horarios",
+      label: "Horários",
+      Icon: ClockIcon,
+      roles: ["admin", "instrutor"],
+    },
     { to: "/alunos", label: "Alunos", Icon: UserGroupIcon, roles: ["admin"] },
   ];
 
@@ -75,13 +101,20 @@ function LayoutAdmin() {
       {/* ============== MENU ============== */}
       {/* Mobile */}
       {menuAberto && (
-        <div className="fixed inset-0 z-50 bg-cor-secundaria/95 p-6 flex flex-col w-72">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-cor-titulo">Capoeira</h2>
-            <button onClick={toggleMenu}>
+        <div className="fixed inset-0 z-50 bg-cor-secundaria/95 p-6 flex flex-col w-72 overflow-y-auto">
+        <div className="flex justify-center mb-6 relative">
+            <div className="w-20 h-20">
+              <img
+                src={logo}
+                alt="Ícone Capoeira"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <button onClick={toggleMenu} className="absolute right-0 top-1">
               <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
+
           <nav className="flex-1 space-y-2">
             {navItems.map((item) => (
               <NavItem
@@ -94,8 +127,8 @@ function LayoutAdmin() {
               />
             ))}
           </nav>
-          <div className="border-t border-cor-secundaria pt-4">
-            <button
+          <div className="border-t border-cor-secundaria pt-4 shrink-0">
+          <button
               onClick={handleLogout}
               className="w-full flex items-center justify-center space-x-2 rounded-lg px-4 py-3 text-red-400 hover:bg-red-400/10 transition"
             >
@@ -108,12 +141,16 @@ function LayoutAdmin() {
 
       {/* Desktop */}
       <aside className="hidden sm:flex flex-col w-72 h-screen fixed left-0 top-0 z-40 bg-cor-secundaria/90 backdrop-blur-md p-6">
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="p-2 rounded-lg bg-cor-primaria text-cor-escura">
-            <HomeIcon className="h-5 w-5" />
+        <div className="flex justify-center mb-8">
+          <div className="w-24 h-24">
+            <img
+              src={logo}
+              alt="Ícone Capoeira"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h2 className="text-xl font-bold text-cor-titulo">Capoeira</h2>
         </div>
+
         <nav className="flex-1 space-y-2">
           {navItems.map((item) => (
             <NavItem

@@ -9,11 +9,12 @@ import { usePermissao } from "../hooks/usePermissao";
 import {
   UserGroupIcon,
   CalendarIcon,
-  CurrencyDollarIcon,
+  BellAlertIcon,
   PhotoIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import ModalLembretes from "../components/lembretes/ModalLembretes";
+import logo from "../assets/images/logo.png";
 
 export default function Dashboard() {
   const { usuario } = useAuth();
@@ -80,7 +81,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24">
         {/* Boas-vindas */}
         <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
           <h2 className="text-2xl font-bold text-cor-titulo">
@@ -100,11 +101,19 @@ export default function Dashboard() {
             cor="green"
           />
           <CardEstat
-            valor="5"
+            valor={lembretes.length}
             label="Pendências"
-            Icon={CurrencyDollarIcon}
+            Icon={BellAlertIcon}
             cor="red"
+            onClick={() => {
+              const target = document.getElementById("lembretes-section");
+              if (target) {
+                target.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            cursor="pointer"
           />
+
           <CardEstat
             valor={qtdEventos}
             label="Eventos"
@@ -142,6 +151,7 @@ export default function Dashboard() {
 
         {/* Aviso Interno (Lembretes Dinâmicos) */}
         <div
+          id="lembretes-section"
           onClick={() => setAbrirModal(true)}
           className="cursor-pointer bg-yellow-100/10 text-yellow-400 border border-yellow-400/20 p-4 rounded-xl hover:bg-yellow-100/20 transition space-y-1"
         >
@@ -169,7 +179,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Atividades Recentes */}
+        {/* Atividades Recentes 
         <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
           <h3 className="text-lg font-semibold text-cor-titulo mb-4">
             📝 Atividades Recentes
@@ -179,7 +189,7 @@ export default function Dashboard() {
             <li>✔️ Foto adicionada por Assistente Maria</li>
             <li>✔️ 2 alunos cadastrados</li>
           </ul>
-        </div>
+        </div>*/}
       </div>
       <ModalLembretes
         aberto={abrirModal}
@@ -188,20 +198,32 @@ export default function Dashboard() {
           buscarLembretes();
         }}
       />
+      <div className="flex flex-col items-center pt-10">
+        <img src={logo} alt="Logo da associação" className="h-36" />
+        <p className="mt-1 text-sm text-cor-texto/60 tracking-wide font-semibold">
+          CAPOEIRA NOTA 10
+        </p>
+      </div>
     </>
   );
 }
 
 // COMPONENTES INTERNOS
-function CardEstat({ valor, label, Icon, cor }) {
+function CardEstat({ valor, label, Icon, cor, onClick, cursor }) {
   const cores = {
     green: "bg-green-500/20 text-green-400",
     red: "bg-red-500/20 text-red-400",
     blue: "bg-blue-500/20 text-blue-400",
     amber: "bg-amber-500/20 text-amber-400",
   };
+
   return (
-    <div className="p-4 rounded-xl bg-cor-card border border-cor-secundaria/30 flex items-center gap-4">
+    <div
+      onClick={onClick}
+      className={`p-4 rounded-xl bg-cor-card border border-cor-secundaria/30 flex items-center gap-4 ${
+        cursor ? "cursor-pointer" : ""
+      }`}
+    >
       <div className={`p-2 rounded-lg ${cores[cor]}`}>
         <Icon className="h-5 w-5" />
       </div>
