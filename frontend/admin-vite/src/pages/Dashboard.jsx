@@ -79,9 +79,24 @@ export default function Dashboard() {
     fetchFotos();
   }, []);
 
+  const [botaoDestaque, setBotaoDestaque] = useState(null);
+
+  useEffect(() => {
+    if (botaoDestaque) {
+      const el = document.getElementById(`botao-${botaoDestaque}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        // dispara evento customizado para sinalizar destaque
+        el.dispatchEvent(new CustomEvent("destacar"));
+      }
+      setBotaoDestaque(null);
+    }
+  }, [botaoDestaque]);
+
   return (
     <>
-      <div className="space-y-6 pb-24">
+      <div className="space-y-6 pb-10">
         {/* Boas-vindas */}
         <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
           <h2 className="text-2xl font-bold text-cor-titulo">
@@ -99,7 +114,16 @@ export default function Dashboard() {
             label="Alunos ativos"
             Icon={UserGroupIcon}
             cor="green"
+            onClick={() => {
+              const target = document.getElementById("botao-alunos");
+              if (target) {
+                target.scrollIntoView({ behavior: "smooth", block: "center" });
+                target.dispatchEvent(new CustomEvent("destacar"));
+              }
+            }}
+            cursor="pointer"
           />
+
           <CardEstat
             valor={lembretes.length}
             label="Pendências"
@@ -107,9 +131,8 @@ export default function Dashboard() {
             cor="red"
             onClick={() => {
               const target = document.getElementById("lembretes-section");
-              if (target) {
-                target.scrollIntoView({ behavior: "smooth" });
-              }
+              if (target)
+                target.scrollIntoView({ behavior: "smooth", block: "center" });
             }}
             cursor="pointer"
           />
@@ -119,12 +142,23 @@ export default function Dashboard() {
             label="Eventos"
             Icon={CalendarIcon}
             cor="blue"
+            onClick={() => setBotaoDestaque("agenda")}
+            cursor="pointer"
           />
+
           <CardEstat
             valor={qtdFotos}
             label="Fotos"
             Icon={PhotoIcon}
             cor="amber"
+            onClick={() => {
+              const target = document.getElementById("botao-galeria");
+              if (target) {
+                target.scrollIntoView({ behavior: "smooth", block: "center" });
+                target.dispatchEvent(new CustomEvent("destacar"));
+              }
+            }}
+            cursor="pointer"
           />
         </div>
 
@@ -141,7 +175,10 @@ export default function Dashboard() {
         </div>
 
         {/* Acesso Rápido */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 gap-4"
+          id="buttons-section"
+        >
           {botoes
             .filter((botao) => temPapel(botao.roles))
             .map((botao) => (
@@ -236,10 +273,34 @@ function CardEstat({ valor, label, Icon, cor, onClick, cursor }) {
 }
 
 function BotaoModulo({ to, label }) {
+  const [ativo, setAtivo] = React.useState(false);
+
+  React.useEffect(() => {
+    if (ativo) {
+      const timeout = setTimeout(() => setAtivo(false), 1000); // remove após 1s
+      return () => clearTimeout(timeout);
+    }
+  }, [ativo]);
+
+  React.useEffect(() => {
+    const id = `botao-${to.replace("/", "")}`;
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const handler = () => setAtivo(true);
+    el.addEventListener("destacar", handler);
+
+    return () => el.removeEventListener("destacar", handler);
+  }, [to]);
+
   return (
     <a
+      id={`botao-${to.replace("/", "")}`}
       href={to}
-      className="bg-cor-card hover:bg-cor-secundaria border border-cor-secundaria/30 text-cor-titulo text-sm font-medium rounded-xl p-4 text-center transition-all"
+      onClick={() => setAtivo(false)} // remove se clicar direto
+      className={`bg-cor-card border border-cor-secundaria/30 text-cor-titulo text-sm font-medium rounded-xl p-4 text-center transition-all ${
+        ativo ? "bg-cor-secundaria" : "hover:bg-cor-secundaria"
+      }`}
     >
       {label}
     </a>

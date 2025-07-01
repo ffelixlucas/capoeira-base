@@ -25,6 +25,7 @@ import Horarios from "./pages/Horarios";
 import NaoAutorizado from "./pages/NaoAutorizado";
 import Equipe from "./pages/Equipe";
 
+
 function App() {
   return (
     <AuthProvider>

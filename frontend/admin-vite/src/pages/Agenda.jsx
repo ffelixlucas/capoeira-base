@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { listarEventos } from "../services/agendaService";
 import AgendaItem from "../components/agenda/AgendaItem";
 import AgendaForm from "../components/agenda/AgendaForm";
+import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
+
 
 function Agenda() {
   const [eventos, setEventos] = useState([]);
@@ -18,6 +20,7 @@ function Agenda() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+      <BotaoVoltarDashboard className="mb-4" />
       <h1 className="text-2xl font-bold mb-4">Gerenciar Agenda</h1>
 
       <AgendaForm
