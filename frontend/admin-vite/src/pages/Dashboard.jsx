@@ -1,5 +1,10 @@
 // src/pages/Dashboard.jsx
 import React from 'react';
+import { useEffect, useState } from 'react';
+
+import { listarEventos } from '../services/agendaService';
+import { listarImagens } from '../services/galeriaService'; 
+
 import { useAuth } from "../contexts/AuthContext";
 import { usePermissao } from "../hooks/usePermissao";
 import {
@@ -13,6 +18,8 @@ import {
 export default function Dashboard() {
   const { usuario } = useAuth();
   const { temPapel } = usePermissao();
+  const [qtdEventos, setQtdEventos] = useState(0);
+
 
   const botoes = [
     { to: "/galeria", label: "Galeria", roles: ["admin", "midia"] },
@@ -23,6 +30,36 @@ export default function Dashboard() {
     { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
     { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] }, // Definido agora
   ];
+
+
+useEffect(() => {
+  const fetchEventos = async () => {
+    try {
+      const eventos = await listarEventos();
+      setQtdEventos(eventos.length);
+    } catch (error) {
+      console.error('Erro ao buscar eventos:', error);
+    }
+  };
+
+  fetchEventos();
+}, []);
+
+const [qtdFotos, setQtdFotos] = useState(0);
+
+useEffect(() => {
+  const fetchFotos = async () => {
+    try {
+      const imagens = await listarImagens();
+      setQtdFotos(imagens.length);
+    } catch (error) {
+      console.error('Erro ao buscar fotos:', error);
+    }
+  };
+
+  fetchFotos();
+}, []);
+
 
   return (
     <div className="space-y-6">
@@ -36,9 +73,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <CardEstat valor="24" label="Alunos ativos" Icon={UserGroupIcon} cor="green" />
         <CardEstat valor="5" label="Pendências" Icon={CurrencyDollarIcon} cor="red" />
-        <CardEstat valor="3" label="Eventos" Icon={CalendarIcon} cor="blue" />
-        <CardEstat valor="12" label="Fotos novas" Icon={PhotoIcon} cor="amber" />
-      </div>
+        <CardEstat valor={qtdEventos} label="Eventos" Icon={CalendarIcon} cor="blue" />
+        <CardEstat valor={qtdFotos} label="Fotos" Icon={PhotoIcon} cor="amber" />
+        </div>
 
       {/* Agenda da Semana */}
       <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
