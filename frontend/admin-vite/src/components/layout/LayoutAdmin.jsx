@@ -58,13 +58,7 @@ function LayoutAdmin() {
 
   const todosItens = [
     { to: "/dashboard", label: "Início", Icon: HomeIcon, roles: [] },
-    { to: "/equipe", label: "Equipe", Icon: UserGroupIcon, roles: ["admin"] },
-    {
-      to: "/galeria",
-      label: "Galeria",
-      Icon: PhotoIcon,
-      roles: ["admin", "midia"],
-    },
+    { to: "/alunos", label: "Alunos", Icon: UserGroupIcon, roles: ["admin"] },
     {
       to: "/agenda",
       label: "Eventos",
@@ -72,10 +66,23 @@ function LayoutAdmin() {
       roles: ["admin", "instrutor"],
     },
     {
+      to: "/galeria",
+      label: "Galeria",
+      Icon: PhotoIcon,
+      roles: ["admin", "midia"],
+    },
+    { to: "/equipe", label: "Equipe", Icon: UserGroupIcon, roles: ["admin"] },
+    {
       to: "/uniformes",
       label: "Loja",
       Icon: TagIcon,
       roles: ["admin", "loja"],
+    },
+    {
+    to: "/horarios",
+    label: "Horários de aulas",
+      Icon: ClockIcon,
+      roles: ["admin", "instrutor"],
     },
     {
       to: "/video-aulas",
@@ -83,13 +90,6 @@ function LayoutAdmin() {
       Icon: VideoCameraIcon,
       roles: ["admin", "instrutor", "midia"],
     },
-    {
-      to: "/horarios",
-      label: "Horários de aulas",
-      Icon: ClockIcon,
-      roles: ["admin", "instrutor"],
-    },
-    { to: "/alunos", label: "Alunos", Icon: UserGroupIcon, roles: ["admin"] },
   ];
 
   const navItems = todosItens.filter(
