@@ -85,7 +85,7 @@ function LayoutAdmin() {
     },
     {
       to: "/horarios",
-      label: "Horários",
+      label: "Horários de aulas",
       Icon: ClockIcon,
       roles: ["admin", "instrutor"],
     },
