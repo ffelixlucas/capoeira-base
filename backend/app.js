@@ -18,6 +18,11 @@ const equipeRolesRoutes = require('./modules/equipe/equipeRoles/equipeRolesRoute
 const lembretesRoutes = require('./modules/lembretes/lembretesRoutes');
 // Configurações do servidor
 
+// Teste de rota
+app.get('/api/teste', (req, res) => {
+    res.json({ mensagem: 'API no ar!' });
+  });
+
 app.use('/api/auth', authRoutes);
 app.use('/api/galeria', galeriaRoutes);
 app.use('/api/agenda', agendaRoutes);
