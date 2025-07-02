@@ -17,7 +17,6 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
     "axios": "^1.9.0",
-    "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.18.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
