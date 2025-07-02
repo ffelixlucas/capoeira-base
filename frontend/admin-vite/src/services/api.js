@@ -2,6 +2,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const api = axios.create({
+  
   baseURL: import.meta.env.VITE_API_URL,
 });
 
@@ -12,6 +13,8 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
+    console.log("🔗 URL da API:", import.meta.env.VITE_API_URL);
+
   },
   (error) => Promise.reject(error)
 );
@@ -31,6 +34,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
+    
   }
 );
 

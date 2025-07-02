@@ -3,7 +3,7 @@ import api from './api';
 // Listar todos ou só pendentes
 export const listarLembretes = async (status = '') => {
   const response = await api.get(`/lembretes${status ? `?status=${status}` : ''}`);
-  return response.data;
+  return Array.isArray(response.data) ? response.data : [];
 };
 
 // Criar novo lembrete
