@@ -23,24 +23,27 @@ export default function Dashboard() {
   const [abrirModal, setAbrirModal] = useState(false);
 
   const botoes = [
-    { to: "/galeria", label: "Galeria", roles: ["admin", "midia"] },
-    { to: "/agenda", label: "Eventos", roles: ["admin", "instrutor"] },
     { to: "/alunos", label: "Alunos", roles: ["admin"] },
+    { to: "/agenda", label: "Eventos", roles: ["admin", "instrutor"] },
+    { to: "/galeria", label: "Galeria", roles: ["admin", "midia"] },
+    { to: "/uniformes", label: "Loja", roles: ["loja", "admin"] },
+    { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
     {
       to: "/mensalidades",
       label: "Mensalidades",
       roles: ["financeiro", "admin"],
     },
-    { to: "/uniformes", label: "Loja", roles: ["loja", "admin"] },
-    { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
     { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] }, // Definido agora
   ];
+
+  const [eventosResumo, setEventosResumo] = useState([]);
 
   useEffect(() => {
     const fetchEventos = async () => {
       try {
         const eventos = await listarEventos();
         setQtdEventos(eventos.length);
+        setEventosResumo(eventos);
       } catch (error) {
         console.error("Erro ao buscar eventos:", error);
       }
@@ -93,6 +96,12 @@ export default function Dashboard() {
       setBotaoDestaque(null);
     }
   }, [botaoDestaque]);
+
+  const eventosOrdenados = [...eventosResumo].sort((a, b) => {
+    const dataA = new Date(a.data_inicio);
+    const dataB = new Date(b.data_inicio);
+    return dataA - dataB;
+  });
 
   return (
     <>
@@ -162,15 +171,31 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Agenda da Semana */}
+        {/* Agenda */}
         <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
           <h3 className="text-lg font-semibold text-cor-titulo mb-4">
-            📅 Agenda da Semana
+            📅 Agenda
           </h3>
           <ul className="space-y-2 text-sm text-cor-texto/80">
-            <li>• Segunda 19h – Aula Infantil</li>
-            <li>• Terça 20h – Roda Cultural</li>
-            <li>• Quinta 18h – Aula Adulto</li>
+            {eventosOrdenados.length > 0 ? (
+              eventosOrdenados.slice(0, 5).map((evento) => (
+                <li key={evento.id}>
+                  <a
+                    href="/agenda"
+                    className="block hover:text-cor-primaria transition"
+                  >
+                    <span className="text-sm text-cor-texto/80">
+                      • <strong>{evento.titulo}</strong> <br />
+                      <span className="text-xs text-cor-texto/60">
+                        {evento.data_formatada} às {evento.horario_formatado}
+                      </span>
+                    </span>
+                  </a>
+                </li>
+              ))
+            ) : (
+              <li>Sem eventos cadastrados.</li>
+            )}
           </ul>
         </div>
 

@@ -1,13 +1,43 @@
 const agendaService = require('./agendaService');
 
+const formatarDataHora = (data) => {
+  if (!data) return { data: null, horario: null };
+  const d = new Date(data);
+  return {
+    data: d.toLocaleDateString("pt-BR"),
+    horario: d.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+};
+
+
 const listarEventos = async (req, res) => {
   try {
     const eventos = await agendaService.listarEventos();
-    res.json(eventos);
+
+    const eventosFormatados = eventos.map((evento) => {
+      const raw = typeof evento.data_inicio === "string"
+      ? evento.data_inicio.replace(" ", "T")
+      : evento.data_inicio?.toISOString?.() ?? null;
+          const { data, horario } = formatarDataHora(raw);
+
+      return {
+        ...evento,
+        data_inicio: raw, 
+        data_formatada: data,
+        horario_formatado: horario,
+      };
+    });
+
+    res.json(eventosFormatados);
   } catch (error) {
     res.status(500).json({ erro: 'Erro ao listar eventos.' });
   }
 };
+
+
 
 const criarEvento = async (req, res) => {
   try {
