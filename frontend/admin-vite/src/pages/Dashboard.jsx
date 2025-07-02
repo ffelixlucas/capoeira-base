@@ -26,14 +26,14 @@ export default function Dashboard() {
     { to: "/alunos", label: "Alunos", roles: ["admin"] },
     { to: "/agenda", label: "Eventos", roles: ["admin", "instrutor"] },
     { to: "/galeria", label: "Galeria", roles: ["admin", "midia"] },
+    {
+      to: "/equipe",
+      label: "Equipe",
+      roles: ["admin"],
+    },
     { to: "/uniformes", label: "Loja", roles: ["loja", "admin"] },
     { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
-    {
-      to: "/mensalidades",
-      label: "Mensalidades",
-      roles: ["financeiro", "admin"],
-    },
-    { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] }, // Definido agora
+    { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] },
   ];
 
   const [eventosResumo, setEventosResumo] = useState([]);
