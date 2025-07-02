@@ -51,7 +51,7 @@ export default function LembreteForm({
 
       <div className="flex gap-4">
         <div className="flex-1">
-          <label className="block text-sm font-semibold mb-1">Data</label>
+          <label className="block text-sm font-semibold mb-1">Dia</label>
           <input
             type="date"
             name="data"

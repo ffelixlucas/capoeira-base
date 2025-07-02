@@ -57,7 +57,7 @@ export default function LembreteCard({
           )}
           {lembrete.data && (
             <p className="text-xs text-cor-escura/60 mt-1">
-              📅 {lembrete.data?.split("T")[0]}
+              📅 Dia: {new Date(lembrete.data).toLocaleDateString("pt-BR")}
             </p>
           )}
         </div>
