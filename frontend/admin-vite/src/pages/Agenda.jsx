@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { listarEventos } from "../services/agendaService";
-import AgendaItem from "../components/agenda/AgendaItem";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import ModalEvento from "../components/agenda/ModalEvento";
+import CarrosselEventos from "../components/agenda/CarrosselEventos";
 
 function Agenda() {
   const [eventos, setEventos] = useState([]);
@@ -46,19 +46,14 @@ function Agenda() {
         + Novo Evento
       </button>
 
-      {/* Lista de eventos */}
-      <div className="flex flex-wrap gap-4 justify-center">
-        {eventos.map((evento) => (
-          <AgendaItem
-            key={evento.id}
-            evento={evento}
-            onExcluir={carregarEventos}
-            onEditar={() => abrirEdicaoEvento(evento)}
-          />
-        ))}
-      </div>
+      {/* Carrossel com snapping via Embla */}
+      <CarrosselEventos
+        eventos={eventos}
+        onEditar={abrirEdicaoEvento}
+        onExcluir={carregarEventos}
+      />
 
-      {/* Modal para criar ou editar evento */}
+      {/* Modal de evento (criar/editar) */}
       {mostrarModal && (
         <ModalEvento
           eventoEditando={eventoEditando}
