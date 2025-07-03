@@ -10,12 +10,13 @@ API REST responsável pela gestão dos **Próximos Eventos**, exibidos na landin
 ## 🔗 Endpoints
 
 | Método | Endpoint                         | Descrição                                  |
-|--------|-----------------------------------|---------------------------------------------|
+|--------|----------------------------------|--------------------------------------------|
 | GET    | `/api/agenda`                    | Listar todos os eventos                    |
 | GET    | `/api/agenda/:id` (futuro)       | Obter dados de um evento específico        |
 | POST   | `/api/agenda`                    | Criar um novo evento                       |
 | PUT    | `/api/agenda/:id`                | Editar um evento existente                 |
 | DELETE | `/api/agenda/:id`                | Excluir um evento                          |
+| POST   | `/api/agenda/upload-imagem`      | Criar um novo evento com imagem (Firebase) |
 
 ---
 
@@ -44,7 +45,7 @@ API REST responsável pela gestão dos **Próximos Eventos**, exibidos na landin
 | data_inicio         | DATE       | Data de início                               |
 | data_fim            | DATE       | (Opcional) Data de término                   |
 | horario             | VARCHAR    | (Planejado) Horário                          |
-| imagem_url          | VARCHAR    | (Futuro) Imagem do evento                    |
+| imagem_url          | VARCHAR    | URL pública da imagem (armazenada no Firebase)
 | criado_por          | INT (FK)   | (Futuro) ID do usuário que criou (opcional)  |
 | criado_em           | DATETIME   | Data de criação                              |
 | atualizado_em       | DATETIME   | Data de atualização                          |
@@ -75,9 +76,17 @@ API REST responsável pela gestão dos **Próximos Eventos**, exibidos na landin
 
 ---
 
+## 🖼️ Upload de Imagem de Evento
+
+- O endpoint `/api/agenda/upload-imagem` permite que um evento seja criado junto com o upload da imagem.
+- A imagem é enviada via `multipart/form-data` e armazenada na pasta `eventos/` do Firebase Storage.
+- O link da imagem gerado é salvo automaticamente no campo `imagem_url`.
+
+---
+
 ## 🛠️ Melhorias Futuras (Sugeridas)
 
-- [ ] Adicionar upload de imagem do evento (`imagem_url`).
+- [x] Upload de imagem do evento (`imagem_url`) com armazenamento no Firebase.
 - [ ] Campo de horário separado (`horario`).
 - [ ] Checkbox para **"Evento visível/oculto"** na landing.
 - [ ] Logs de ações: criação, edição e exclusão.
