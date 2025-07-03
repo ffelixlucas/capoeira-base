@@ -10,30 +10,24 @@ async function processarUpload(imagem, titulo = null, criadoPor = null, legenda 
   }
 
   const nomeArquivo = `galeria/${uuidv4()}-${imagem.originalname}`;
-  const blob = bucket.file(nomeArquivo);
+  const file = bucket.file(nomeArquivo);
 
-  return new Promise((resolve, reject) => {
-    const blobStream = blob.createWriteStream({
+  try {
+    // ✅ Upload rápido e direto
+    await file.save(imagem.buffer, {
       metadata: {
         contentType: imagem.mimetype
       }
     });
 
-    blobStream.on('error', (err) => reject(err));
-
-    blobStream.on('finish', async () => {
-      try {
-        const url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
-        const id = await galeriaRepository.salvarImagem(url, titulo, criadoPor, legenda);
-        const novaImagem = await galeriaRepository.buscarPorId(id);
-        resolve(novaImagem);
-      } catch (error) {
-        reject(error);
-      }
-    });
-
-    blobStream.end(imagem.buffer);
-  });
+    const url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
+    const id = await galeriaRepository.salvarImagem(url, titulo, criadoPor, legenda);
+    const novaImagem = await galeriaRepository.buscarPorId(id);
+    return novaImagem;
+  } catch (error) {
+    console.error('Erro no upload direto:', error);
+    throw error;
+  }
 }
 
 
