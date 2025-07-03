@@ -28,7 +28,7 @@ if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && proc
 if (serviceAccount && serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    storageBucket: 'capoeira-base.appspot.com'
+    storageBucket: 'capoeira-base.firebaseapp.com' // 
   });
   console.log('Firebase Admin SDK inicializado com sucesso!');
 } else {
