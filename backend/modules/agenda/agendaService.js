@@ -22,34 +22,36 @@ const criarEvento = async (dados, usuarioId) => {
 
 async function processarUploadEvento(imagem, dados, usuarioId) {
   if (!imagem) {
-    throw new Error('Imagem não encontrada no corpo da requisição.');
+    throw new Error("Imagem não encontrada no corpo da requisição.");
   }
 
-  // 1. Gerar nome único no Firebase
   const nomeArquivo = `eventos/${uuidv4()}-${imagem.originalname}`;
   const file = bucket.file(nomeArquivo);
 
-  // 2. Upload direto com .save()
   await file.save(imagem.buffer, {
     metadata: { contentType: imagem.mimetype },
   });
 
   const imagem_url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
 
-  // 3. Cria o evento passando a imagem
+  // ⬇️ Garante tipos corretos e campos esperados
   const evento = {
-    ...dados,
-    imagem_url
+    titulo: dados.titulo || "",
+    descricao_curta: dados.descricao_curta || "",
+    descricao_completa: dados.descricao_completa || "",
+    local: dados.local || "",
+    endereco: dados.endereco || "",
+    telefone_contato: dados.telefone_contato || "",
+    data_inicio: dados.data_inicio || null,
+    data_fim: dados.data_fim || null,
+    imagem_url,
+    criado_por: usuarioId || null,
   };
 
-  const id = await agendaRepository.criarEvento({
-    ...evento,
-    criado_por: usuarioId || null
-  });
+  const id = await agendaRepository.criarEvento(evento);
 
   return { id, imagem_url };
 }
-
 const excluirEvento = async (id) => {
   const sucesso = await agendaRepository.excluirEvento(id);
   if (!sucesso) {

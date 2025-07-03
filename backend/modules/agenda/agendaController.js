@@ -52,9 +52,11 @@ const criarEvento = async (req, res) => {
 const criarEventoComImagem = async (req, res) => {
   try {
     const usuarioId = req.usuario?.id || null;
-
     const imagem = req.file;
     const dados = req.body;
+
+    console.log("📦 Imagem recebida:", imagem?.originalname);
+    console.log("📝 Dados recebidos:", dados);
 
     if (!imagem) {
       return res.status(400).json({ erro: 'Imagem do evento não enviada.' });
@@ -62,14 +64,14 @@ const criarEventoComImagem = async (req, res) => {
 
     const resultado = await agendaService.processarUploadEvento(imagem, dados, usuarioId);
 
-    res.status(201).json({
+    return res.status(201).json({
       mensagem: 'Evento criado com imagem com sucesso.',
       id: resultado.id,
       imagem_url: resultado.imagem_url
     });
   } catch (error) {
-    console.error('Erro ao criar evento com imagem:', error.message);
-    res.status(500).json({ erro: 'Erro ao criar evento com imagem.' });
+    console.error('❌ Erro ao criar evento com imagem:', error);
+    return res.status(500).json({ erro: 'Erro ao criar evento com imagem.' });
   }
 };
 
