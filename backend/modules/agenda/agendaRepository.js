@@ -63,10 +63,17 @@ async function atualizar(id, dados) {
   return result;
 }
 
+const buscarPorId = async (id) => {
+  const [rows] = await db.execute(`SELECT * FROM agenda WHERE id = ?`, [id]);
+  return rows[0] || null;
+};
+
+
 
 module.exports = {
   listarEventos,
   criarEvento,
   excluirEvento,
-  atualizar
+  atualizar,
+  buscarPorId
 };

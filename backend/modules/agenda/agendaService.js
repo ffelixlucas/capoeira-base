@@ -52,12 +52,30 @@ async function processarUploadEvento(imagem, dados, usuarioId) {
 
   return { id, imagem_url };
 }
+
 const excluirEvento = async (id) => {
-  const sucesso = await agendaRepository.excluirEvento(id);
-  if (!sucesso) {
+  const evento = await agendaRepository.buscarPorId(id);
+
+  if (!evento) {
     throw new Error("Evento não encontrado ou já removido.");
   }
-  return true;
+
+  // 🔥 Se houver imagem, deletar do Firebase
+  if (evento.imagem_url) {
+    const caminho = decodeURIComponent(
+      new URL(evento.imagem_url).pathname.replace(/^\/[^/]+\//, "")
+    );
+
+    try {
+      await bucket.file(caminho).delete();
+      console.log("🗑️ Imagem do evento excluída do Firebase:", caminho);
+    } catch (error) {
+      console.warn("⚠️ Erro ao excluir imagem do evento:", error.message);
+    }
+  }
+
+  const sucesso = await agendaRepository.excluirEvento(id);
+  return sucesso;
 };
 
 async function atualizarEvento(id, dados) {
