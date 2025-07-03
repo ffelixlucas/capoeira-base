@@ -13,7 +13,6 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
-    console.log("🔗 URL da API:", import.meta.env.VITE_API_URL);
 
   },
   (error) => Promise.reject(error)

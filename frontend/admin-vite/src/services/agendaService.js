@@ -12,6 +12,16 @@ export const criarEvento = async (dados, token) => {
   return response.data;
 };
 
+export const criarEventoComImagem = async (formData, token) => {
+  const response = await api.post('/agenda/upload-imagem', formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
+};
+
 export const excluirEvento = async (id, token) => {
   const response = await api.delete(`/agenda/${id}`, {
     headers: { Authorization: `Bearer ${token}` }

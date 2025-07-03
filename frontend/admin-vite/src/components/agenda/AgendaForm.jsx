@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { criarEvento, atualizarEvento } from "../../services/agendaService";
+import { criarEventoComImagem, atualizarEvento } from "../../services/agendaService";
 import AgendaPreview from "./AgendaPreview";
 
 function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
@@ -14,7 +14,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
     hora_inicio: "",
     data_fim: "",
     hora_fim: "",
-    imagem_url: "",
+    imagem: null,
   });
 
   const [mostrarDataFim, setMostrarDataFim] = useState(false);
@@ -22,9 +22,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
   useEffect(() => {
     if (eventoEditando) {
       const dataInicio = new Date(eventoEditando.data_inicio);
-      const dataFim = eventoEditando.data_fim
-        ? new Date(eventoEditando.data_fim)
-        : null;
+      const dataFim = eventoEditando.data_fim ? new Date(eventoEditando.data_fim) : null;
 
       setForm({
         ...eventoEditando,
@@ -32,6 +30,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         hora_inicio: dataInicio.toISOString().slice(11, 16),
         data_fim: dataFim ? dataFim.toISOString().slice(0, 10) : "",
         hora_fim: dataFim ? dataFim.toISOString().slice(11, 16) : "",
+        imagem: null,
       });
 
       setMostrarDataFim(!!eventoEditando.data_fim);
@@ -39,7 +38,8 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
   }, [eventoEditando]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -48,21 +48,25 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
 
     const data_inicio = `${form.data_inicio} ${form.hora_inicio}:00`;
     const data_fim =
-      form.data_fim && form.hora_fim
-        ? `${form.data_fim} ${form.hora_fim}:00`
-        : null;
-
-    const dados = {
-      ...form,
-      data_inicio,
-      data_fim,
-    };
+      form.data_fim && form.hora_fim ? `${form.data_fim} ${form.hora_fim}:00` : null;
 
     try {
       if (eventoEditando) {
+        const dados = { ...form, data_inicio, data_fim };
         await atualizarEvento(eventoEditando.id, dados, token);
       } else {
-        await criarEvento(dados, token);
+        const formData = new FormData();
+        formData.append("titulo", form.titulo);
+        formData.append("descricao_curta", form.descricao_curta);
+        formData.append("descricao_completa", form.descricao_completa);
+        formData.append("local", form.local);
+        formData.append("endereco", form.endereco);
+        formData.append("telefone_contato", form.telefone_contato);
+        formData.append("data_inicio", data_inicio);
+        if (data_fim) formData.append("data_fim", data_fim);
+        if (form.imagem) formData.append("imagem", form.imagem);
+
+        await criarEventoComImagem(formData, token);
       }
 
       setForm({
@@ -76,28 +80,26 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         hora_inicio: "",
         data_fim: "",
         hora_fim: "",
-        imagem_url: "",
+        imagem: null,
       });
+
       setMostrarDataFim(false);
-      if (onCriado) onCriado();
-      if (onLimparEdicao) onLimparEdicao();
+      onCriado?.();
+      onLimparEdicao?.();
     } catch (err) {
       console.error("Erro ao salvar evento:", err);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <form
-        onSubmit={handleSubmit}
-        className="grid gap-3 bg-white p-4 rounded shadow mb-6"
-      >
+    <div className="w-full max-w-sm bg-white rounded shadow max-h-screen overflow-y-auto p-4">
+      <form onSubmit={handleSubmit} className="grid gap-3">
         <input
           name="titulo"
           placeholder="Título"
           value={form.titulo}
           onChange={handleChange}
-          className="border p-2"
+          className="border p-2 bg-white text-black"
           required
         />
         <input
@@ -105,35 +107,35 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
           placeholder="Descrição Curta"
           value={form.descricao_curta}
           onChange={handleChange}
-          className="border p-2"
+          className="border p-2 bg-white text-black"
         />
         <textarea
           name="descricao_completa"
           placeholder="Descrição Completa"
           value={form.descricao_completa}
           onChange={handleChange}
-          className="border p-2"
+          className="border p-2 bg-white text-black"
         />
         <input
           name="local"
           placeholder="Local"
           value={form.local}
           onChange={handleChange}
-          className="border p-2"
+          className="border p-2 bg-white text-black"
         />
         <input
           name="endereco"
           placeholder="Endereço"
           value={form.endereco}
           onChange={handleChange}
-          className="border p-2"
+          className="border p-2 bg-white text-black"
         />
         <input
           name="telefone_contato"
           placeholder="Telefone/WhatsApp"
           value={form.telefone_contato}
           onChange={handleChange}
-          className="border p-2"
+          className="border p-2 bg-white text-black"
         />
 
         <div className="grid grid-cols-2 gap-2">
@@ -142,7 +144,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
             name="data_inicio"
             value={form.data_inicio}
             onChange={handleChange}
-            className="border p-2"
+            className="border p-2 bg-white text-black"
             required
           />
           <input
@@ -150,7 +152,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
             name="hora_inicio"
             value={form.hora_inicio}
             onChange={handleChange}
-            className="border p-2"
+            className="border p-2 bg-white text-black"
             required
           />
         </div>
@@ -172,25 +174,27 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
               name="data_fim"
               value={form.data_fim}
               onChange={handleChange}
-              className="border p-2"
+              className="border p-2 bg-white text-black"
             />
             <input
               type="time"
               name="hora_fim"
               value={form.hora_fim}
               onChange={handleChange}
-              className="border p-2"
+              className="border p-2 bg-white text-black"
             />
           </div>
         )}
 
         <input
-          name="imagem_url"
-          placeholder="URL da imagem/banner"
-          value={form.imagem_url}
-          onChange={handleChange}
-          className="border p-2"
+          type="file"
+          accept="image/*"
+          onChange={(e) =>
+            setForm((prev) => ({ ...prev, imagem: e.target.files[0] }))
+          }
+          className="border p-2 bg-white text-black"
         />
+
         <button type="submit" className="bg-green-600 text-white py-2 rounded">
           {eventoEditando ? "Atualizar Evento" : "Salvar Evento"}
         </button>
