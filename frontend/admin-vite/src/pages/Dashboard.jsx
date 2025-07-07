@@ -34,6 +34,8 @@ export default function Dashboard() {
     { to: "/uniformes", label: "Loja", roles: ["loja", "admin"] },
     { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
     { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] },
+    { to: "/contatos", label: "Contatos", roles: ["admin"] },
+
   ];
 
   const [eventosResumo, setEventosResumo] = useState([]);

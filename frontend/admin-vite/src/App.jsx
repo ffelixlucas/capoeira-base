@@ -24,7 +24,7 @@ import NotFound from "./pages/NotFound";
 import Horarios from "./pages/Horarios";
 import NaoAutorizado from "./pages/NaoAutorizado";
 import Equipe from "./pages/Equipe";
-
+import Contatos from "./pages/Contatos";
 
 function App() {
   return (
@@ -40,29 +40,31 @@ function App() {
 
           {/* Rotas protegidas com layout administrativo */}
           <Route
-            element={
-              <PrivateRoute>
-                <LayoutAdmin />
-              </PrivateRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/equipe" element={<Equipe />} />
-            <Route path="/galeria" element={<Galeria />} />
-            <Route path="/agenda" element={<Agenda />} />
-            <Route path="/alunos" element={<Alunos />} />
-            <Route path="/mensalidades" element={<Mensalidades />} />
-            <Route path="/uniformes" element={<div>Uniformes</div>} />
-            <Route path="/video-aulas" element={<div>Vídeo-aulas</div>} />
-            <Route
-              path="/horarios"
-              element={
-                <RoleRoute permitido={["admin", "instrutor"]}>
-                  <Horarios />
-                </RoleRoute>
-              }
-            />
-          </Route>
+  element={
+    <PrivateRoute>
+      <LayoutAdmin />
+    </PrivateRoute>
+  }
+>
+  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/equipe" element={<Equipe />} />
+  <Route path="/galeria" element={<Galeria />} />
+  <Route path="/agenda" element={<Agenda />} />
+  <Route path="/alunos" element={<Alunos />} />
+  <Route path="/mensalidades" element={<Mensalidades />} />
+  <Route path="/uniformes" element={<div>Uniformes</div>} />
+  <Route path="/video-aulas" element={<div>Vídeo-aulas</div>} />
+  <Route path="/contatos" element={<Contatos />} /> {/* ✅ AQUI, no lugar certo */}
+
+  <Route
+    path="/horarios"
+    element={
+      <RoleRoute permitido={["admin", "instrutor"]}>
+        <Horarios />
+      </RoleRoute>
+    }
+  />
+</Route>
 
           {/* Rota de fallback */}
           <Route path="*" element={<NotFound />} />
