@@ -32,7 +32,7 @@ app.use('/api/galeria', galeriaRoutes);
 app.use('/api/agenda', agendaRoutes);
 app.use('/api/horarios', horariosRoutes);
 app.use('/api/lembretes', lembretesRoutes);
-app.use('/api/whatsapp-destinos', require('./modules/whatsappDestinos/whatsappDestinosRoutes'));
+app.use('/api/whatsapp-destinos', require('./modules/whatsappdestinos/whatsappDestinosRoutes'));
 
 
 
