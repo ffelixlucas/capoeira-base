@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { criarEventoComImagem, atualizarEvento } from "../../services/agendaService";
+import {
+  criarEventoComImagem,
+  atualizarEvento,
+} from "../../services/agendaService";
 import AgendaPreview from "./AgendaPreview";
 
 function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
@@ -22,7 +25,9 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
   useEffect(() => {
     if (eventoEditando) {
       const dataInicio = new Date(eventoEditando.data_inicio);
-      const dataFim = eventoEditando.data_fim ? new Date(eventoEditando.data_fim) : null;
+      const dataFim = eventoEditando.data_fim
+        ? new Date(eventoEditando.data_fim)
+        : null;
 
       setForm({
         ...eventoEditando,
@@ -48,7 +53,9 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
 
     const data_inicio = `${form.data_inicio} ${form.hora_inicio}:00`;
     const data_fim =
-      form.data_fim && form.hora_fim ? `${form.data_fim} ${form.hora_fim}:00` : null;
+      form.data_fim && form.hora_fim
+        ? `${form.data_fim} ${form.hora_fim}:00`
+        : null;
 
     try {
       if (eventoEditando) {
@@ -92,7 +99,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
   };
 
   return (
-    <div className="w-full max-w-sm bg-white rounded shadow max-h-screen overflow-y-auto p-4">
+    <div className="w-full bg-white max-h-screen overflow-y-auto px-2 py-4">
       <form onSubmit={handleSubmit} className="grid gap-3">
         <input
           name="titulo"
