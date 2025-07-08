@@ -21,3 +21,7 @@ async function getDestinosFormatados() {
 
   return resultado;
 }
+module.exports = {
+  getDestinosFormatados,
+  atualizarDestino,
+};
