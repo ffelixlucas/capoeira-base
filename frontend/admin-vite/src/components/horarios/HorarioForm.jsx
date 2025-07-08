@@ -15,11 +15,12 @@ function HorarioForm({ onSubmit, onCancel, dadosIniciais = {} }) {
   const [responsavelId, setResponsavelId] = useState("");
 
   useEffect(() => {
-    fetch("/api/equipe", {
+    fetch(`${import.meta.env.VITE_API_URL}/equipe`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
+    
       .then((res) => res.json())
       .then((data) => setEquipe(data))
       .catch((err) => console.error("Erro ao buscar equipe:", err));
