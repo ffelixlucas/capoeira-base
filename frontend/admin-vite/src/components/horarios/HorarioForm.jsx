@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useContext } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 
 function HorarioForm({ onSubmit, onCancel, dadosIniciais = {} }) {
+  const { token } = useAuth();
+
   const [turma, setTurma] = useState("");
   const [diasSelecionados, setDiasSelecionados] = useState([]);
   const [horarioInicio, setHorarioInicio] = useState("");
@@ -11,12 +15,16 @@ function HorarioForm({ onSubmit, onCancel, dadosIniciais = {} }) {
   const [responsavelId, setResponsavelId] = useState("");
 
   useEffect(() => {
-    fetch("/api/equipe") // ajuste a URL da sua API real
+    fetch("/api/equipe", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((res) => res.json())
       .then((data) => setEquipe(data))
       .catch((err) => console.error("Erro ao buscar equipe:", err));
-  }, []);
-
+  }, [token]);
+  
   const diasSemana = [
     "Segunda",
     "Terça",
@@ -49,7 +57,6 @@ function HorarioForm({ onSubmit, onCancel, dadosIniciais = {} }) {
       }
 
       setResponsavelId(dadosIniciais.responsavel_id || "");
-
     }
   }, [dadosIniciais]);
 
@@ -89,7 +96,6 @@ function HorarioForm({ onSubmit, onCancel, dadosIniciais = {} }) {
     )}-${numeros.slice(7, 11)}`;
   };
 
-
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -113,7 +119,7 @@ function HorarioForm({ onSubmit, onCancel, dadosIniciais = {} }) {
       dias: diasSelecionados.join(", "),
       horario: `${horarioInicio} - ${horarioFim}`,
       faixa_etaria: faixaEtaria,
-      responsavel_id: responsavelId || null, 
+      responsavel_id: responsavelId || null,
     };
 
     onSubmit(dados);
