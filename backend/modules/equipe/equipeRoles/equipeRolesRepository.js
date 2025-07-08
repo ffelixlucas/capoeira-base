@@ -26,8 +26,13 @@ async function removerRoleDeMembro(equipeId, roleId) {
 
 // Remover todos os papéis de um membro
 async function removerTodosOsRoles(equipeId) {
+  if (!equipeId || typeof equipeId !== "number") {
+    console.warn("🚫 ID inválido em removerTodosOsRoles:", equipeId);
+    return;
+  }
+
   const sql = 'DELETE FROM equipe_roles WHERE equipe_id = ?';
-  const [result] = await db.query(sql, [equipeId]); // ← aqui estava o erro
+  const [result] = await db.query(sql, [equipeId]);
   return result;
 }
 
