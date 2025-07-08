@@ -1,4 +1,5 @@
 const repo = require("./whatsappDestinosRepository");
+const db = require("../../database/connection");
 
 async function getDestinosFormatados() {
   const destinos = await repo.listarDestinos();
@@ -21,7 +22,35 @@ async function getDestinosFormatados() {
 
   return resultado;
 }
+
+async function atualizarDestino(horarioId, membroId, membroBackupId = null) {
+  const [rows] = await db.query(
+    "SELECT id FROM whatsapp_destinos WHERE horario_id = ?",
+    [horarioId]
+  );
+
+  if (rows.length > 0) {
+    // Já existe destino para essa turma → atualiza
+    await db.query(
+      `UPDATE whatsapp_destinos 
+       SET 
+         membro_id = COALESCE(?, membro_id),
+         membro_backup_id = COALESCE(?, membro_backup_id),
+         atualizado_em = NOW()
+       WHERE horario_id = ?`,
+      [membroId, membroBackupId, horarioId]
+    );
+  } else {
+    // Não existe destino ainda → insere
+    await db.query(
+      `INSERT INTO whatsapp_destinos (horario_id, membro_id, membro_backup_id)
+       VALUES (?, ?, ?)`,
+      [horarioId, membroId, membroBackupId]
+    );
+  }
+}
+
 module.exports = {
   getDestinosFormatados,
-  
+  atualizarDestino,
 };

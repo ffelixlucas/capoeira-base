@@ -11,14 +11,20 @@ async function listar(req, res) {
 }
 
 async function atualizar(req, res) {
-  const horarioId = parseInt(req.params.horarioId);
+  const horarioId = Number(req.params.horarioId);
   const { membro_id, membro_backup_id } = req.body;
 
-  if (!horarioId || (!membro_id && !membro_backup_id)) {
+  if (isNaN(horarioId) || (!membro_id && !membro_backup_id)) {
     return res.status(400).json({ erro: "Dados inválidos para atualização" });
   }
 
   try {
+    console.log("🔄 Atualizando destino:", {
+      horarioId,
+      membro_id,
+      membro_backup_id,
+    });
+
     await service.atualizarDestino(horarioId, membro_id, membro_backup_id);
     res.json({ sucesso: true });
   } catch (err) {

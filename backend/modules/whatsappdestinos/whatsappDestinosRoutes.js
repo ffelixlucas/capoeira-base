@@ -2,7 +2,11 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./whatsappDestinosController");
 
-router.get("/", controller.listar);
-router.put("/:horarioId", controller.atualizar);
+const verifyToken = require("../../middlewares/verifyToken");
+const checkRole = require("../../middlewares/checkRole");
+
+// Apenas admin pode listar e atualizar os destinos
+router.get("/", verifyToken, checkRole(["admin"]), controller.listar);
+router.put("/:horarioId", verifyToken, checkRole(["admin"]), controller.atualizar);
 
 module.exports = router;
