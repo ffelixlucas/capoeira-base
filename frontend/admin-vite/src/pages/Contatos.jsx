@@ -41,9 +41,10 @@ export default function Contatos() {
         ...prev,
         [horarioId]: {
           ...prev[horarioId],
-          id: Number(membroId),
+          membro_id: Number(membroId),
         },
       }));
+
       toast.success("Responsável atualizado!");
     } catch (err) {
       toast.error("Erro ao salvar contato.");
@@ -77,8 +78,11 @@ export default function Contatos() {
 
           <select
             className="w-full p-2 border rounded bg-gray-100 text-black"
-            value={destinos[turma.id]?.id || ""}
-            onChange={(e) => salvar(turma.id, e.target.value)}
+            value={destinos[turma.id]?.membro_id || ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              salvar(turma.id, value ? Number(value) : null);
+            }}
           >
             <option value="">-- Selecione --</option>
             {membros.map((m) => (
@@ -98,7 +102,10 @@ export default function Contatos() {
         <select
           className="w-full p-2 border rounded bg-gray-100 text-black"
           value={backupGlobal}
-          onChange={(e) => salvarBackupGlobal(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            salvarBackupGlobal(value ? Number(value) : null);
+          }}
         >
           <option value="">-- Nenhum --</option>
           {membros.map((m) => (
