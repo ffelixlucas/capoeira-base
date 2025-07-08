@@ -35,7 +35,6 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
     }
     fetchRoles();
   }, []);
-  
 
   useEffect(() => {
     if (membroSelecionado) {
@@ -71,17 +70,18 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    const editando = Boolean(membroSelecionado);
+  
     if (!form.nome.trim()) {
       toast.warning("Nome é obrigatório");
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
       let membroId;
-
+  
       // Atualizar membro
       if (membroSelecionado) {
         const dados = {
@@ -95,23 +95,36 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
         if (form.senha.trim()) {
           dados.senha = form.senha;
         }
-      
+  
         await atualizarMembro(membroSelecionado.id, dados);
         membroId = membroSelecionado.id;
       } else {
-        const { id } = await criarMembro(form); // ← correto agora
-        membroId = id;
-      }
-      
-
-      // Só mexe nos papéis se houver pelo menos 1 selecionado
-      if (form.role_ids && form.role_ids.length > 0) {
-        await removerTodosOsPapeis(membroId);
-        for (let roleId of form.role_ids) {
-          await atribuirPapel(membroId, roleId); // ← lembrando que precisa estar com `{ roleId }`
+        const resultado = await criarMembro(form);
+        membroId = resultado?.id?.id;
+  
+        if (!membroId) {
+          throw new Error("ID inválido retornado do criarMembro");
         }
       }
-
+  
+      // Só mexe nos papéis se houver pelo menos 1 selecionado
+      if (form.role_ids && form.role_ids.length > 0) {
+        if (editando) {
+          await removerTodosOsPapeis(membroId).catch((err) => {
+            console.warn(
+              "⚠️ Ignorando erro ao remover papéis (edição):",
+              err.message
+            );
+          });
+        }
+  
+        for (let roleId of form.role_ids) {
+          await atribuirPapel(membroId, roleId).catch((err) => {
+            console.error("❌ Erro ao atribuir papel:", err.message);
+          });
+        }
+      }
+  
       toast.success("Membro salvo com sucesso!");
       if (onSave) onSave();
     } catch (err) {
@@ -121,6 +134,7 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
       setLoading(false);
     }
   };
+  
 
   console.log("roles:", roles);
   console.log("form.role_ids:", form.role_ids);
