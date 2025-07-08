@@ -29,7 +29,7 @@ async function createEquipe({ nome, telefone, whatsapp, email, status, observaco
     "INSERT INTO equipe (nome, telefone, whatsapp, email, status, observacoes, senha_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
     [nome, telefone, whatsapp, email, status, observacoes, senha_hash]
   );
-  return result.insertId;
+  return { id: result.insertId };
 }
 
 async function updateEquipe(id, dados) {
