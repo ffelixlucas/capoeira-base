@@ -10,12 +10,15 @@ async function listarRoles(req, res) {
     res.status(500).json({ erro: 'Erro ao listar papéis.' });
   }
 }
-
 // POST /api/equipe/:id/roles
 async function adicionarRole(req, res) {
   try {
     const { id } = req.params;
     const { roleId } = req.body;
+
+    console.log("📥 Requisição recebida para atribuir papel:");
+    console.log("ID do membro:", id);
+    console.log("Payload recebido:", req.body);
 
     if (!roleId) {
       return res.status(400).json({ erro: 'roleId é obrigatório.' });
@@ -24,9 +27,11 @@ async function adicionarRole(req, res) {
     await equipeRolesService.adicionarRole(id, roleId);
     res.status(201).json({ mensagem: 'Papel atribuído com sucesso.' });
   } catch (error) {
+    console.error("❌ Erro no adicionarRole:", error.message);
     res.status(400).json({ erro: error.message || 'Erro ao atribuir papel.' });
   }
 }
+
 
 // DELETE /api/equipe/:id/roles/:roleId
 async function removerRole(req, res) {
