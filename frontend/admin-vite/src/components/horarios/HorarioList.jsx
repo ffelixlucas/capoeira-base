@@ -10,6 +10,7 @@ import {
 
 function HorarioList({
   horarios,
+  equipe = [],
   onEditar,
   onExcluir,
   carregando,
@@ -26,74 +27,86 @@ function HorarioList({
 
   return (
     <div className="space-y-4">
-      {horarios.map((item, index) => (
-        <div
-          key={item.id}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center border border-cor-primaria rounded-lg p-4 shadow-sm bg-cor-secundaria text-cor-texto"
-        >
-          <div className="flex-1">
-            <h2 className="text-lg font-bold">{item.turma}</h2>
-            <p className="text-sm">
-              {item.dias} • {item.horario}
-            </p>
-            <p className="text-sm">Faixa etária: {item.faixa_etaria}</p>
-            {item.instrutor && (
-              <p className="text-sm">Instrutor(a): {item.instrutor}</p>
-            )}
-            {item.whatsapp_instrutor && (
-              <p className="text-sm">WhatsApp: {item.whatsapp_instrutor}</p>
-            )}
+      {horarios.map((item, index) => {
+        const responsavel = equipe.find((m) => m.id === item.responsavel_id);
+
+        return (
+          <div
+            key={item.id}
+            className="flex flex-col md:flex-row justify-between items-start md:items-center border border-cor-primaria rounded-lg p-4 shadow-sm bg-cor-secundaria text-cor-texto"
+          >
+            <div className="flex-1">
+              <h2 className="text-lg font-bold">{item.turma}</h2>
+              <p className="text-sm">
+                {item.dias} • {item.horario}
+              </p>
+              <p className="text-sm">Faixa etária: {item.faixa_etaria}</p>
+
+              {item.instrutor && (
+                <p className="text-sm">Instrutor(a): {item.instrutor}</p>
+              )}
+              {item.whatsapp_instrutor && (
+                <p className="text-sm">WhatsApp: {item.whatsapp_instrutor}</p>
+              )}
+
+              {responsavel && (
+                <p className="text-sm">
+                  Responsável: {responsavel.nome}
+                  {responsavel.whatsapp && ` (${responsavel.whatsapp})`}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-4 md:mt-0">
+              {/* Botão subir */}
+              <button
+                onClick={() => onMoverCima(index)}
+                disabled={index === 0}
+                className={`p-2 rounded ${
+                  index === 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-cor-primaria hover:bg-cor-destaque"
+                }`}
+                title="Mover para cima"
+              >
+                <ArrowUpIcon className="h-5 w-5 text-cor-escura" />
+              </button>
+
+              {/* Botão descer */}
+              <button
+                onClick={() => onMoverBaixo(index)}
+                disabled={index === horarios.length - 1}
+                className={`p-2 rounded ${
+                  index === horarios.length - 1
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-cor-primaria hover:bg-cor-destaque"
+                }`}
+                title="Mover para baixo"
+              >
+                <ArrowDownIcon className="h-5 w-5 text-cor-escura" />
+              </button>
+
+              {/* Botão editar */}
+              <button
+                onClick={() => onEditar(item)}
+                className="p-2 rounded bg-blue-500 hover:bg-blue-600"
+                title="Editar"
+              >
+                <PencilIcon className="h-5 w-5 text-white" />
+              </button>
+
+              {/* Botão excluir */}
+              <button
+                onClick={() => onExcluir(item.id)}
+                className="p-2 rounded bg-red-500 hover:bg-red-600"
+                title="Excluir"
+              >
+                <TrashIcon className="h-5 w-5 text-white" />
+              </button>
+            </div>
           </div>
-
-          <div className="flex gap-2 mt-4 md:mt-0">
-            {/* Botão subir */}
-            <button
-              onClick={() => onMoverCima(index)}
-              disabled={index === 0}
-              className={`p-2 rounded ${
-                index === 0
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-cor-primaria hover:bg-cor-destaque"
-              }`}
-              title="Mover para cima"
-            >
-              <ArrowUpIcon className="h-5 w-5 text-cor-escura" />
-            </button>
-
-            {/* Botão descer */}
-            <button
-              onClick={() => onMoverBaixo(index)}
-              disabled={index === horarios.length - 1}
-              className={`p-2 rounded ${
-                index === horarios.length - 1
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-cor-primaria hover:bg-cor-destaque"
-              }`}
-              title="Mover para baixo"
-            >
-              <ArrowDownIcon className="h-5 w-5 text-cor-escura" />
-            </button>
-
-            {/* Botão editar */}
-            <button
-              onClick={() => onEditar(item)}
-              className="p-2 rounded bg-blue-500 hover:bg-blue-600"
-              title="Editar"
-            >
-              <PencilIcon className="h-5 w-5 text-white" />
-            </button>
-
-            {/* Botão excluir */}
-            <button
-              onClick={() => onExcluir(item.id)}
-              className="p-2 rounded bg-red-500 hover:bg-red-600"
-              title="Excluir"
-            >
-              <TrashIcon className="h-5 w-5 text-white" />
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

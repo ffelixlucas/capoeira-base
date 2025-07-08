@@ -1,10 +1,11 @@
 import React, { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { useEffect } from "react";
 import useHorarios from "../hooks/useHorarios";
 import HorarioList from "../components/horarios/HorarioList";
 import HorarioForm from "../components/horarios/HorarioForm";
 import { toast } from "react-toastify";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
-
 
 function Horarios() {
   const {
@@ -18,6 +19,18 @@ function Horarios() {
 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [horarioSelecionado, setHorarioSelecionado] = useState(null);
+
+  const { token } = useAuth();
+  const [equipe, setEquipe] = useState([]);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/equipe`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setEquipe(data))
+      .catch((err) => console.error("Erro ao buscar equipe:", err));
+  }, [token]);
 
   // 🔥 Ordena os horários pela ordem
   const horariosOrdenados = [...horarios].sort(
@@ -134,6 +147,7 @@ function Horarios() {
       ) : (
         <HorarioList
           horarios={horariosOrdenados}
+          equipe={equipe} 
           carregando={carregando}
           onEditar={handleEditar}
           onExcluir={handleExcluir}
