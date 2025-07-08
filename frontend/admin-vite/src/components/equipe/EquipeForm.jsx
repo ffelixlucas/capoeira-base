@@ -27,14 +27,15 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
   useEffect(() => {
     async function fetchRoles() {
       try {
-        const res = await listarRoles();
-        setRoles(res.data);
+        const data = await listarRoles(); // <- aqui recebe direto o array
+        setRoles(data); // <- ajusta aqui também
       } catch (err) {
         toast.error("Erro ao carregar papéis");
       }
     }
     fetchRoles();
   }, []);
+  
 
   useEffect(() => {
     if (membroSelecionado) {
@@ -94,13 +95,14 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
         if (form.senha.trim()) {
           dados.senha = form.senha;
         }
-
+      
         await atualizarMembro(membroSelecionado.id, dados);
         membroId = membroSelecionado.id;
       } else {
-        const res = await criarMembro(form);
-        membroId = res.data.insertId || res.data.id;
+        const { id } = await criarMembro(form); // ← correto agora
+        membroId = id;
       }
+      
 
       // Só mexe nos papéis se houver pelo menos 1 selecionado
       if (form.role_ids && form.role_ids.length > 0) {
@@ -119,6 +121,9 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
       setLoading(false);
     }
   };
+
+  console.log("roles:", roles);
+  console.log("form.role_ids:", form.role_ids);
 
   return (
     <div
@@ -223,23 +228,24 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
             )}
 
             <div className="flex flex-wrap gap-2 mt-1">
-              {roles.map((role) => {
-                const ativo = form.role_ids.includes(role.id);
-                return (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() => toggleRole(role.id)}
-                    className={`px-3 py-1 rounded-full border transition text-sm ${
-                      ativo
-                        ? "bg-cor-primaria text-cor-escura border-cor-primaria"
-                        : "bg-cor-secundaria text-cor-texto border-cor-clara hover:border-cor-primaria"
-                    }`}
-                  >
-                    {role.nome}
-                  </button>
-                );
-              })}
+              {Array.isArray(roles) &&
+                roles.map((role) => {
+                  const ativo = form.role_ids.includes(role.id);
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => toggleRole(role.id)}
+                      className={`px-3 py-1 rounded-full border transition text-sm ${
+                        ativo
+                          ? "bg-cor-primaria text-cor-escura border-cor-primaria"
+                          : "bg-cor-secundaria text-cor-texto border-cor-clara hover:border-cor-primaria"
+                      }`}
+                    >
+                      {role.nome}
+                    </button>
+                  );
+                })}
             </div>
           </div>
 
