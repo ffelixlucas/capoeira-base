@@ -24,3 +24,6 @@ async function listarDestinos() {
   const [rows] = await db.query(query);
   return rows;
 }
+module.exports = {
+  listarDestinos,
+};
