@@ -1,42 +1,51 @@
-const db = require('../../database/connection');
+const db = require("../../database/connection");
 
 // Buscar todos os horários
 async function getHorarios() {
   const [rows] = await db.execute(
-    'SELECT * FROM horarios_aula ORDER BY ordem ASC, id ASC'
+    "SELECT * FROM horarios_aula ORDER BY ordem ASC, id ASC"
   );
   return rows;
 }
 
 // Buscar um horário específico por ID
 async function getHorarioById(id) {
-  const [rows] = await db.execute(
-    'SELECT * FROM horarios_aula WHERE id = ?',
-    [id]
-  );
+  const [rows] = await db.execute("SELECT * FROM horarios_aula WHERE id = ?", [
+    id,
+  ]);
   return rows[0];
 }
 
 // Criar um novo horário
-async function createHorario({ turma, dias, horario, faixa_etaria, ordem = null, instrutor = null, whatsapp_instrutor = null }) {
+async function createHorario({
+  turma,
+  dias,
+  horario,
+  faixa_etaria,
+  ordem = null,
+  responsavel_id = null,
+}) {
   const [result] = await db.execute(
-    'INSERT INTO horarios_aula (turma, dias, horario, faixa_etaria, ordem, instrutor, whatsapp_instrutor) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [turma, dias, horario, faixa_etaria, ordem, instrutor, whatsapp_instrutor]
+    "INSERT INTO horarios_aula (turma, dias, horario, faixa_etaria, ordem, responsavel_id) VALUES (?, ?, ?, ?, ?, ?)",
+    [turma, dias, horario, faixa_etaria, ordem, responsavel_id]
   );
   return result.insertId;
 }
 
 // Atualizar um horário existente
-async function updateHorario(id, { turma, dias, horario, faixa_etaria, ordem = null, instrutor = null, whatsapp_instrutor = null }) {
+async function updateHorario(
+  id,
+  { turma, dias, horario, faixa_etaria, ordem = null, responsavel_id = null }
+) {
   await db.execute(
-    'UPDATE horarios_aula SET turma = ?, dias = ?, horario = ?, faixa_etaria = ?, ordem = ?, instrutor = ?, whatsapp_instrutor = ? WHERE id = ?',
-    [turma, dias, horario, faixa_etaria, ordem, instrutor, whatsapp_instrutor, id]
+    "UPDATE horarios_aula SET turma = ?, dias = ?, horario = ?, faixa_etaria = ?, ordem = ?, responsavel_id = ? WHERE id = ?",
+    [turma, dias, horario, faixa_etaria, ordem, responsavel_id, id]
   );
 }
 
 // Excluir um horário
 async function deleteHorario(id) {
-  await db.execute('DELETE FROM horarios_aula WHERE id = ?', [id]);
+  await db.execute("DELETE FROM horarios_aula WHERE id = ?", [id]);
 }
 
 // Atualizar a ordem de múltiplos horários
@@ -46,10 +55,10 @@ async function atualizarOrdemHorarios(lista) {
     await conexao.beginTransaction();
 
     for (const item of lista) {
-      await conexao.execute(
-        'UPDATE horarios_aula SET ordem = ? WHERE id = ?',
-        [item.ordem, item.id]
-      );
+      await conexao.execute("UPDATE horarios_aula SET ordem = ? WHERE id = ?", [
+        item.ordem,
+        item.id,
+      ]);
     }
 
     await conexao.commit();
@@ -60,7 +69,6 @@ async function atualizarOrdemHorarios(lista) {
     conexao.release();
   }
 }
-
 
 module.exports = {
   getHorarios,
