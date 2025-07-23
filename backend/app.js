@@ -36,6 +36,8 @@ app.use('/api/horarios', horariosRoutes);
 app.use('/api/lembretes', lembretesRoutes);
 app.use('/api/whatsapp-destinos', require('./modules/whatsappdestinos/whatsappDestinosRoutes'));
 app.use('/api/alunos', alunosRoutes);
+app.use("/api/notas-aluno", require("./modules/notasAluno/notasAlunoRoutes"));
+
 
 
 
