@@ -16,6 +16,8 @@ const equipeRoutes = require('./modules/equipe/equipeRoutes');
 const rolesRoutes = require('./modules/roles/rolesRoutes'); 
 const equipeRolesRoutes = require('./modules/equipe/equipeRoles/equipeRolesRoutes');
 const lembretesRoutes = require('./modules/lembretes/lembretesRoutes');
+const alunosRoutes = require('./modules/alunos/alunosRoutes');
+
 // Configurações do servidor
 
 // Rotas públicas
@@ -33,6 +35,8 @@ app.use('/api/agenda', agendaRoutes);
 app.use('/api/horarios', horariosRoutes);
 app.use('/api/lembretes', lembretesRoutes);
 app.use('/api/whatsapp-destinos', require('./modules/whatsappdestinos/whatsappDestinosRoutes'));
+app.use('/api/alunos', alunosRoutes);
+
 
 
 
