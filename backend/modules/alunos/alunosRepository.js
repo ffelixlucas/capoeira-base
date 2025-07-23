@@ -20,52 +20,86 @@ async function listarAlunosComTurmaAtual() {
 
 // Lista alunos filtrando por instrutor (equipe_id)
 async function listarAlunosPorInstrutor(equipe_id) {
-  const [rows] = await connection.execute(`
+  const [rows] = await connection.execute(
+    `
     SELECT a.id, a.nome, a.apelido, t.nome AS turma, t.id AS turma_id
     FROM alunos a
     JOIN matriculas m ON m.aluno_id = a.id AND m.data_fim IS NULL
     JOIN turmas t ON t.id = m.turma_id
     WHERE t.equipe_id = ?
     ORDER BY a.nome
-  `, [equipe_id]);
+  `,
+    [equipe_id]
+  );
   return rows;
 }
 
 // Busca aluno por ID
 async function buscarPorId(id) {
-  const [rows] = await connection.execute(
-    `SELECT * FROM alunos WHERE id = ?`,
-    [id]
-  );
+  const [rows] = await connection.execute(`SELECT * FROM alunos WHERE id = ?`, [
+    id,
+  ]);
   return rows[0];
 }
 
 // Cria novo aluno
 async function criarAluno(dados) {
+
   const {
-    nome, apelido, nascimento, telefone_responsavel, nome_responsavel,
-    endereco, graduacao, observacoes_medicas, foto_url, criado_por
+    nome,
+    apelido,
+    nascimento,
+    telefone_responsavel,
+    nome_responsavel,
+    endereco,
+    graduacao,
+    observacoes_medicas,
+    turma_id,
   } = dados;
 
   const [result] = await connection.execute(
     `INSERT INTO alunos
-    (nome, apelido, nascimento, telefone_responsavel, nome_responsavel, endereco, graduacao, observacoes_medicas, foto_url, criado_por)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [nome, apelido, nascimento, telefone_responsavel, nome_responsavel, endereco, graduacao, observacoes_medicas, foto_url, criado_por]
+    (nome, apelido, nascimento, telefone_responsavel, nome_responsavel, endereco, graduacao, observacoes_medicas)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      nome ?? null,
+      apelido ?? null,
+      nascimento ?? null,
+      telefone_responsavel ?? null,
+      nome_responsavel ?? null,
+      endereco ?? null,
+      graduacao ?? null,
+      observacoes_medicas ?? null,
+    ]
   );
 
-  return result.insertId;
+  const aluno_id = result.insertId;
+
+  // Criar matrícula inicial vinculando à turma
+  await connection.execute(
+    `INSERT INTO matriculas (aluno_id, turma_id, data_inicio) VALUES (?, ?, CURDATE())`,
+    [aluno_id, turma_id]
+  );
+
+  return aluno_id;
 }
 
 // Edita aluno existente
 async function editarAluno(id, dados) {
   const campos = [
-    "nome", "apelido", "nascimento", "telefone_responsavel", "nome_responsavel",
-    "endereco", "graduacao", "observacoes_medicas", "foto_url"
+    "nome",
+    "apelido",
+    "nascimento",
+    "telefone_responsavel",
+    "nome_responsavel",
+    "endereco",
+    "graduacao",
+    "observacoes_medicas",
+    "foto_url",
   ];
 
-  const sets = campos.map(c => `${c} = ?`).join(", ");
-  const valores = campos.map(c => dados[c]);
+  const sets = campos.map((c) => `${c} = ?`).join(", ");
+  const valores = campos.map((c) => dados[c]);
 
   valores.push(id);
 
@@ -107,5 +141,5 @@ module.exports = {
   editarAluno,
   excluirAluno,
   buscarMatriculaAtual,
-  trocarTurma
+  trocarTurma,
 };
