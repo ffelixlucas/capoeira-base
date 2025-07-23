@@ -105,6 +105,12 @@ Gerenciar os alunos de forma segura e flexível, permitindo:
 
 ---
 
+### 🗒️ Notas Internas
+
+- Cada instrutor pode adicionar observações pessoais por aluno.
+- Admin pode ver todas.
+- Visível no `ModalAluno` do painel admin.
+
 ## ✅ Status: FUNCIONAL
 - Estrutura profissional e modular
 - Segurança aplicada (JWT + RBAC)
