@@ -1,8 +1,24 @@
-// backend/modules/turmas/turmasService.js
-const repo = require("./turmasRepository.js");
+const turmasRepository = require("./turmasRepository");
 
-async function listarAtivas() {
-  return await repo.listarAtivas();
+async function listarTurmasAtivas() {
+  return await turmasRepository.buscarTodasComInstrutor();
 }
 
-module.exports = { listarAtivas };
+async function criarTurma(data) {
+  return await turmasRepository.inserirTurma(data);
+}
+
+async function atualizarTurma(id, data) {
+  return await turmasRepository.atualizarTurma(id, data);
+}
+
+async function excluirTurma(id) {
+  return await turmasRepository.deletarTurma(id);
+}
+
+module.exports = {
+  listarTurmasAtivas,
+  criarTurma,
+  atualizarTurma,
+  excluirTurma,
+};
