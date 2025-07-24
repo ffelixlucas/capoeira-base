@@ -42,11 +42,26 @@ async function listarTurmasPorEquipe(equipe_id) {
   return rows;
 }
 
+async function listarPorEquipe(equipe_id) {
+  const [rows] = await connection.execute(
+    `
+    SELECT t.*, e.nome AS nome_instrutor
+    FROM turmas t
+    JOIN equipe e ON e.id = t.equipe_id
+    WHERE t.equipe_id = ?
+    ORDER BY t.nome
+    `,
+    [equipe_id]
+  );
+  return rows;
+}
 
 module.exports = {
   buscarTodasComInstrutor,
   inserirTurma,
   atualizarTurma,
   deletarTurma,
-  listarTurmasPorEquipe
+  listarTurmasPorEquipe,
+  listarPorEquipe
+
 };

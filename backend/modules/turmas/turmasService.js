@@ -16,9 +16,15 @@ async function excluirTurma(id) {
   return await turmasRepository.deletarTurma(id);
 }
 
+async function listarTurmasPorEquipe(equipe_id) {
+  return await turmasRepository.listarPorEquipe(equipe_id);
+}
+
 module.exports = {
   listarTurmasAtivas,
   criarTurma,
   atualizarTurma,
   excluirTurma,
+  listarTurmasPorEquipe,
+
 };

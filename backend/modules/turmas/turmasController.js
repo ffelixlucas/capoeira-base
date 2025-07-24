@@ -49,10 +49,22 @@ async function excluirTurma(req, res) {
     res.status(500).json({ erro: "Erro ao excluir turma" });
   }
 }
+async function listarMinhasTurmas(req, res) {
+  try {
+    const usuarioId = req.usuario.id;
+    const turmas = await turmasService.listarTurmasPorEquipe(usuarioId);
+    res.json(turmas);
+  } catch (error) {
+    console.error("Erro ao listar turmas do instrutor:", error);
+    res.status(500).json({ erro: "Erro ao buscar turmas do instrutor." });
+  }
+}
+
 
 module.exports = {
   listarTurmasAtivas,
   criarTurma,
   atualizarTurma,
   excluirTurma,
+  listarMinhasTurmas
 };

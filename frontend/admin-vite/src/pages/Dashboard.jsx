@@ -23,7 +23,7 @@ export default function Dashboard() {
   const [abrirModal, setAbrirModal] = useState(false);
 
   const botoes = [
-    { to: "/alunos", label: "Alunos", roles: ["admin"] },
+    { to: "/alunos", label: "Alunos", roles: ["admin", "instrutor"] },
     { to: "/agenda", label: "Eventos", roles: ["admin", "instrutor"] },
     { to: "/galeria", label: "Galeria", roles: ["admin", "midia"] },
     {
@@ -137,7 +137,7 @@ export default function Dashboard() {
 
           <CardEstat
             valor={lembretes.length}
-            label="Pendências"
+            label="Lembretes"
             Icon={BellAlertIcon}
             cor="red"
             onClick={() => {
@@ -220,7 +220,7 @@ export default function Dashboard() {
           className="cursor-pointer bg-yellow-100/10 text-yellow-400 border border-yellow-400/20 p-4 rounded-xl hover:bg-yellow-100/20 transition space-y-1"
         >
           <ExclamationTriangleIcon className="h-5 w-5 inline mr-1" />
-          <strong className="text-yellow-300 block">Pendências:</strong>
+          <strong className="text-yellow-300 block">Lembretes :</strong>
           {lembretes.length > 0 ? (
             lembretes.map((item) => (
               <p
