@@ -23,5 +23,5 @@ export function useTurmas() {
     carregarTurmas();
   }, []);
 
-  return { turmas, carregando };
+  return { turmas, carregando, carregarTurmas };
 }
