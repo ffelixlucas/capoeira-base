@@ -12,7 +12,7 @@ function Alunos() {
   const [alunoSelecionado, setAlunoSelecionado] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
 
-  const usuario = JSON.parse(localStorage.getItem("usuario"));
+  const [usuario] = useState(() => JSON.parse(localStorage.getItem("usuario")));
   const { alunos, carregando, carregarAlunos } = useAlunos();
   const {
     turmas,
@@ -34,10 +34,11 @@ function Alunos() {
     }
   }
 
-  const alunosFiltrados =
-    turmaSelecionada === "todos" || !turmaSelecionada
-      ? alunos
-      : alunos.filter((a) => a.turma_id === Number(turmaSelecionada));
+  const alunosFiltrados = alunos.filter((a) => {
+    if (turmaSelecionada === "todos" || !turmaSelecionada) return true;
+    if (turmaSelecionada === "sem_turma") return a.turma_id === null;
+    return a.turma_id === Number(turmaSelecionada);
+  });
 
   return (
     <div className="p-6 text-center">
@@ -89,6 +90,16 @@ function Alunos() {
           carregarAlunos();
         }}
       />
+      {mostrarForm && (
+        <AlunoForm
+          onCriado={() => {
+            carregarAlunos();
+            setMostrarForm(false);
+            setModoEdicao(false);
+          }}
+          alunoParaEdicao={modoEdicao}
+        />
+      )}
     </div>
   );
 }

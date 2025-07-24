@@ -10,6 +10,8 @@ router.post("/", verifyToken, checkRole(["admin"]), controller.criarTurma);
 router.put("/:id", verifyToken, checkRole(["admin"]), controller.atualizarTurma);
 router.delete("/:id", verifyToken, checkRole(["admin"]), controller.excluirTurma);
 router.get("/minhas", verifyToken, controller.listarMinhasTurmas);
+router.post("/:id/encerrar", verifyToken, checkRole(["admin"]), controller.encerrarTurma);
+
 
 
 module.exports = router;

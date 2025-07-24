@@ -17,10 +17,14 @@ export function useMinhasTurmas(usuario) {
         let lista = [];
 
         if (usuario?.roles?.includes("admin")) {
-          lista = await listarTurmas(); // Admin vê todas
-          lista = [{ id: "todos", nome: "Todos" }, ...lista];
+          const todas = await listarTurmas(); 
+          lista = [
+            { id: "todos", nome: "Todas" },
+            ...todas,
+            { id: "sem_turma", nome: "Sem turma" },
+          ];
         } else {
-          lista = await getMinhasTurmas(); // Instrutor só as suas
+          lista = await getMinhasTurmas(); 
         }
 
         setTurmas(lista);

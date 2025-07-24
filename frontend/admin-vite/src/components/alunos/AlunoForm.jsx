@@ -3,7 +3,7 @@ import { criarAluno, editarAluno } from "../../services/alunoService";
 import { useTurmas } from "../../hooks/useTurmas";
 import { toast } from "react-toastify";
 
-export default function AlunoForm({ onCriado, aluno }) {
+export default function AlunoForm({ onCriado, alunoParaEdicao }) {
   const { turmas, carregando: carregandoTurmas } = useTurmas();
 
   const [form, setForm] = useState({
@@ -21,20 +21,20 @@ export default function AlunoForm({ onCriado, aluno }) {
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    if (aluno) {
+    if (alunoParaEdicao) {
       setForm({
-        nome: aluno.nome || "",
-        apelido: aluno.apelido || "",
-        nascimento: aluno.nascimento?.slice(0, 10) || "",
-        telefone_responsavel: aluno.telefone_responsavel || "",
-        nome_responsavel: aluno.nome_responsavel || "",
-        endereco: aluno.endereco || "",
-        graduacao: aluno.graduacao || "",
-        observacoes_medicas: aluno.observacoes_medicas || "",
-        turma_id: aluno.turma_id || "",
+        nome: alunoParaEdicao.nome || "",
+        apelido: alunoParaEdicao.apelido || "",
+        nascimento: alunoParaEdicao.nascimento?.slice(0, 10) || "",
+        telefone_responsavel: alunoParaEdicao.telefone_responsavel || "",
+        nome_responsavel: alunoParaEdicao.nome_responsavel || "",
+        endereco: alunoParaEdicao.endereco || "",
+        graduacao: alunoParaEdicao.graduacao || "",
+        observacoes_medicas: alunoParaEdicao.observacoes_medicas || "",
+        turma_id: alunoParaEdicao.turma_id || "",
       });
     }
-  }, [aluno]);
+  }, [alunoParaEdicao]);
 
   const inputBase =
     "w-full px-3 py-2 rounded-md bg-cor-clara text-cor-escura placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-cor-primaria";
@@ -56,8 +56,8 @@ export default function AlunoForm({ onCriado, aluno }) {
         Object.entries(form).map(([key, value]) => [key, value === "" ? null : value])
       );
 
-      if (aluno) {
-        await editarAluno(aluno.id, dadosSanitizados);
+      if (alunoParaEdicao) {
+        await editarAluno(alunoParaEdicao.id, dadosSanitizados);
         toast.success("Aluno atualizado com sucesso!");
       } else {
         await criarAluno(dadosSanitizados);
@@ -78,7 +78,7 @@ export default function AlunoForm({ onCriado, aluno }) {
       className="bg-cor-secundaria rounded-xl p-4 shadow space-y-3 max-w-md mx-auto text-cor-texto"
     >
       <h2 className="text-lg font-bold text-center text-cor-titulo">
-        {aluno ? "Editar Aluno" : "Cadastrar Aluno"}
+        {alunoParaEdicao ? "Editar Aluno" : "Cadastrar Aluno"}
       </h2>
 
       <input
@@ -143,6 +143,7 @@ export default function AlunoForm({ onCriado, aluno }) {
         onChange={handleChange}
         className={inputBase}
       ></textarea>
+
       <select
         name="turma_id"
         value={form.turma_id}
@@ -167,7 +168,7 @@ export default function AlunoForm({ onCriado, aluno }) {
         disabled={salvando}
         className="w-full bg-cor-primaria hover:bg-cor-destaque text-cor-escura font-semibold rounded-md py-2 transition"
       >
-        {salvando ? "Salvando..." : aluno ? "Salvar alterações" : "Cadastrar"}
+        {salvando ? "Salvando..." : alunoParaEdicao ? "Salvar alterações" : "Cadastrar"}
       </button>
     </form>
   );

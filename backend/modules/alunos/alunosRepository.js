@@ -44,7 +44,6 @@ async function buscarPorId(id) {
 
 // Cria novo aluno
 async function criarAluno(dados) {
-
   const {
     nome,
     apelido,
@@ -99,13 +98,21 @@ async function editarAluno(id, dados) {
   ];
 
   const sets = campos.map((c) => `${c} = ?`).join(", ");
-  const valores = campos.map((c) => dados[c] ?? null); // <- aqui está a correção
-
+  const valores = campos.map((c) => dados[c] ?? null);
   valores.push(id);
 
   await connection.execute(`UPDATE alunos SET ${sets} WHERE id = ?`, valores);
-}
 
+  // ✅ Se turma_id foi enviado → verificar se precisa trocar matrícula
+  if (dados.turma_id) {
+    const matriculaAtual = await buscarMatriculaAtual(id);
+    const turmaAtualId = matriculaAtual?.turma_id;
+
+    if (!turmaAtualId || turmaAtualId !== parseInt(dados.turma_id)) {
+      await trocarTurma(id, dados.turma_id);
+    }
+  }
+}
 
 // Exclui aluno
 async function excluirAluno(id) {
@@ -158,6 +165,13 @@ async function listarAlunosPorTurmas(turmaIds) {
   return rows;
 }
 
+async function migrarAlunosDeTurma(origemId, destinoId) {
+  await connection.execute(
+    `UPDATE alunos SET turma_id = ? WHERE turma_id = ?`,
+    [destinoId, origemId]
+  );
+}
+
 module.exports = {
   listarAlunosComTurmaAtual,
   listarAlunosPorInstrutor,
@@ -168,4 +182,5 @@ module.exports = {
   buscarMatriculaAtual,
   trocarTurma,
   listarAlunosPorTurmas,
+  migrarAlunosDeTurma,
 };

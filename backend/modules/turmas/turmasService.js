@@ -20,11 +20,24 @@ async function listarTurmasPorEquipe(equipe_id) {
   return await turmasRepository.listarPorEquipe(equipe_id);
 }
 
+const alunosRepository = require("../alunos/alunosRepository");
+
+async function encerrarTurmaComMigracao(origemId, destinoId) {
+  // 1. Atualiza todos os alunos para nova turma
+  await alunosRepository.migrarAlunosDeTurma(origemId, destinoId);
+
+  // 2. Deleta a turma original
+  await turmasRepository.deletarTurma(origemId);
+}
+
+
 module.exports = {
   listarTurmasAtivas,
   criarTurma,
   atualizarTurma,
   excluirTurma,
   listarTurmasPorEquipe,
+  encerrarTurmaComMigracao,
+
 
 };

@@ -59,6 +59,8 @@ function LayoutAdmin() {
   const todosItens = [
     { to: "/dashboard", label: "Início", Icon: HomeIcon, roles: [] },
     { to: "/alunos", label: "Alunos", Icon: UserGroupIcon, roles: ["admin"] },
+    { to: "/turmas", label: "Turmas", Icon: UserGroupIcon, roles: ["admin"] },
+
     {
       to: "/agenda",
       label: "Eventos",

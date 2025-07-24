@@ -60,11 +60,31 @@ async function listarMinhasTurmas(req, res) {
   }
 }
 
+async function encerrarTurma(req, res) {
+  const origemId = parseInt(req.params.id);
+  const { destino_id } = req.body;
+
+  if (origemId === 1 || destino_id === 1) {
+    return res.status(400).json({ erro: "A turma 'Sem turma' não pode ser encerrada ou usada como origem." });
+  }
+
+  try {
+    await turmasService.encerrarTurmaComMigracao(origemId, destino_id || 1);
+    res.json({ sucesso: true });
+  } catch (error) {
+    console.error("Erro ao encerrar turma:", error);
+    res.status(500).json({ erro: "Erro ao encerrar turma" });
+  }
+}
+
+
 
 module.exports = {
   listarTurmasAtivas,
   criarTurma,
   atualizarTurma,
   excluirTurma,
-  listarMinhasTurmas
+  listarMinhasTurmas,
+  encerrarTurma,
+
 };

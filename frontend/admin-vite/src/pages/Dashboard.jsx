@@ -244,17 +244,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Atividades Recentes 
-        <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
-          <h3 className="text-lg font-semibold text-cor-titulo mb-4">
-            📝 Atividades Recentes
-          </h3>
-          <ul className="text-sm text-cor-texto/80 space-y-1">
-            <li>✔️ Evento "Roda Cultural" atualizado</li>
-            <li>✔️ Foto adicionada por Assistente Maria</li>
-            <li>✔️ 2 alunos cadastrados</li>
-          </ul>
-        </div>*/}
+        
       </div>
       <ModalLembretes
         aberto={abrirModal}

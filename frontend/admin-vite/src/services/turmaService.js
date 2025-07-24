@@ -19,3 +19,8 @@ export async function atualizarTurma(id, dados) {
   const res = await api.put(`/turmas/${id}`, dados);
   return res.data;
 }
+
+export async function encerrarTurma(id, destinoId) {
+  const res = await api.post(`/turmas/${id}/encerrar`, { destinoId });
+  return res.data;
+}

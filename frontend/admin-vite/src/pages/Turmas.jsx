@@ -4,10 +4,12 @@ import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import { useTurmas } from "../hooks/useTurmas";
 import TurmaList from "../components/turmas/TurmaList";
 import TurmaForm from "../components/turmas/TurmaForm";
+import ModalEncerrarTurma from "../components/turmas/ModalEncerrarTurma";
 
 export default function Turmas() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [turmaSelecionada, setTurmaSelecionada] = useState(null);
+  const [modalEncerrarAberto, setModalEncerrarAberto] = useState(false);
   const { turmas, carregando, carregarTurmas } = useTurmas();
 
   useEffect(() => {
@@ -45,6 +47,10 @@ export default function Turmas() {
             setTurmaSelecionada(turma);
             setMostrarForm(true);
           }}
+          onExcluir={(turma) => {
+            setTurmaSelecionada(turma);
+            setModalEncerrarAberto(true);
+          }}
         />
       )}
 
@@ -59,6 +65,20 @@ export default function Turmas() {
             }}
           />
         </div>
+      )}
+
+      {modalEncerrarAberto && turmaSelecionada && (
+        <ModalEncerrarTurma
+          turma={turmaSelecionada}
+          turmas={turmas}
+          onClose={() => {
+            setModalEncerrarAberto(false);
+            setTurmaSelecionada(null);
+          }}
+          onSucesso={() => {
+            carregarTurmas();
+          }}
+        />
       )}
     </div>
   );
