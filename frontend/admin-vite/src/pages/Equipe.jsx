@@ -5,7 +5,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { useEquipe } from "../hooks/useEquipe";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 
-
 function Equipe() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [membroSelecionado, setMembroSelecionado] = useState(null);
@@ -16,15 +15,23 @@ function Equipe() {
       <BotaoVoltarDashboard className="mb-4" />
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
-        <button
-          onClick={() => {
-            setMembroSelecionado(null);
-            setMostrarForm(true);
-          }}
-          className="bg-cor-primaria text-white px-4 py-2 rounded-lg text-sm hover:bg-cor-primaria/90 transition"
-        >
-          + Novo Membro
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setMembroSelecionado(null);
+              setMostrarForm(true);
+            }}
+            className="bg-cor-primaria text-white px-4 py-2 rounded-lg text-sm hover:bg-cor-primaria/90 transition"
+          >
+            + Novo Membro
+          </button>
+          <a
+            href="/turmas"
+            className="bg-white border border-cor-primaria text-cor-primaria px-4 py-2 rounded-lg text-sm hover:bg-cor-primaria hover:text-white transition"
+          >
+            Turmas
+          </a>
+        </div>
       </div>
 
       <EquipeList

@@ -3,6 +3,7 @@ import { IoMdAdd } from "react-icons/io";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import { useTurmas } from "../hooks/useTurmas";
 import TurmaList from "../components/turmas/TurmaList";
+import TurmaForm from "../components/turmas/TurmaForm";
 
 export default function Turmas() {
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -33,10 +34,12 @@ export default function Turmas() {
 
       {mostrarForm && (
         <div className="mt-4">
-          {/* Aqui entra o formulário TurmaForm futuramente */}
-          <p className="text-center text-sm text-gray-400">
-            [Formulário será exibido aqui]
-          </p>
+          <TurmaForm
+            onCriado={() => {
+              carregarTurmas();
+              setMostrarForm(false);
+            }}
+          />
         </div>
       )}
     </div>
