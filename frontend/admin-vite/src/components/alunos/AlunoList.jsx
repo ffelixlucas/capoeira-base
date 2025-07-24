@@ -1,25 +1,16 @@
-import { useEffect, useState } from "react";
-import { useAlunos } from "../../hooks/useAlunos";
-import { buscarAluno } from "../../services/alunoService";
+// src/components/alunos/AlunoList.jsx
 import AlunoLinha from "./AlunoLinha";
 import ModalAluno from "./ModalAluno";
 
-export default function AlunoList() {
-  const { alunos, carregarAlunos, carregando } = useAlunos();
-  const [alunoSelecionado, setAlunoSelecionado] = useState(null);
-
-  useEffect(() => {
-    carregarAlunos();
-  }, []);
-  async function abrirFichaCompleta(aluno) {
-    try {
-      const alunoCompleto = await buscarAluno(aluno.id);
-      setAlunoSelecionado(alunoCompleto);
-    } catch (err) {
-      toast.error("Erro ao carregar ficha do aluno");
-    }
-  }
-
+export default function AlunoList({
+  alunos,
+  carregando,
+  onVerMais,
+  onEditar,
+  alunoSelecionado,
+  fecharModal,
+  onExcluido,
+}) {
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4 text-gray-900">Alunos</h1>
@@ -31,11 +22,7 @@ export default function AlunoList() {
       ) : (
         <div className="rounded-xl border bg-white divide-y">
           {alunos.map((aluno) => (
-            <AlunoLinha
-              key={aluno.id}
-              aluno={aluno}
-              onVerMais={abrirFichaCompleta}
-            />
+            <AlunoLinha key={aluno.id} aluno={aluno} onVerMais={onVerMais} />
           ))}
         </div>
       )}
@@ -43,7 +30,9 @@ export default function AlunoList() {
       <ModalAluno
         aberto={!!alunoSelecionado}
         aluno={alunoSelecionado}
-        onClose={() => setAlunoSelecionado(null)}
+        onClose={fecharModal}
+        onEditar={onEditar}
+        onExcluido={onExcluido}
       />
     </div>
   );

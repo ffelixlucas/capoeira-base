@@ -99,12 +99,13 @@ async function editarAluno(id, dados) {
   ];
 
   const sets = campos.map((c) => `${c} = ?`).join(", ");
-  const valores = campos.map((c) => dados[c]);
+  const valores = campos.map((c) => dados[c] ?? null); // <- aqui está a correção
 
   valores.push(id);
 
   await connection.execute(`UPDATE alunos SET ${sets} WHERE id = ?`, valores);
 }
+
 
 // Exclui aluno
 async function excluirAluno(id) {

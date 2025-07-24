@@ -1,10 +1,11 @@
 // src/components/alunos/ModalAluno.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { excluirAluno } from "../../services/alunoService";
+import { toast } from "react-toastify";
 import NotasAluno from "./NotasAluno";
 
-export default function ModalAluno({ aberto, onClose, aluno }) {
-
+export default function ModalAluno({ aberto, onClose, aluno, onEditar, onExcluido }) {
   if (!aluno) return null;
 
   return (
@@ -125,14 +126,48 @@ export default function ModalAluno({ aberto, onClose, aluno }) {
                 </div>
                 <NotasAluno alunoId={aluno.id} />
 
-                {/* BOTÃO FECHAR */}
-                <div className="mt-6 text-right">
+                {/* AÇÕES */}
+                <div className="mt-6 flex justify-between items-center gap-2">
                   <button
-                    onClick={onClose}
-                    className="px-4 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded"
+                    onClick={async () => {
+                      const confirmado = window.confirm(
+                        "Tem certeza que deseja excluir este aluno?"
+                      );
+                      if (!confirmado) return;
+
+                      try {
+                        await excluirAluno(aluno.id);
+                        toast.success("Aluno excluído com sucesso!");
+                        onExcluido?.(); // isso agora vai funcionar
+                      } catch (err) {
+                        console.error("Erro ao excluir:", err);
+                        toast.error("Erro ao excluir aluno.");
+                      }
+                      
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
                   >
-                    Fechar
+                    Excluir
                   </button>
+
+                  <div className="ml-auto flex gap-2">
+                    <button
+                      onClick={() => {
+                        onEditar?.(aluno);
+                        onClose();
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={onClose}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm"
+                    >
+                      Fechar
+                    </button>
+                  </div>
                 </div>
               </Dialog.Panel>
             </Transition.Child>
