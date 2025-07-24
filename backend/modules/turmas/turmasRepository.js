@@ -34,9 +34,19 @@ async function deletarTurma(id) {
   await connection.execute(`DELETE FROM turmas WHERE id = ?`, [id]);
 }
 
+async function listarTurmasPorEquipe(equipe_id) {
+  const [rows] = await connection.execute(
+    `SELECT id FROM turmas WHERE equipe_id = ?`,
+    [equipe_id]
+  );
+  return rows;
+}
+
+
 module.exports = {
   buscarTodasComInstrutor,
   inserirTurma,
   atualizarTurma,
   deletarTurma,
+  listarTurmasPorEquipe
 };

@@ -1,11 +1,19 @@
 // alunosService.js
 const alunoRepo = require("./alunosRepository");
+const turmaRepo = require("../turmas/turmasRepository");
+
 
 async function listarTodos(usuario) {
   if (usuario.roles.includes("admin")) {
     return await alunoRepo.listarAlunosComTurmaAtual();
   }
-  return await alunoRepo.listarAlunosPorInstrutor(usuario.id);
+
+  const turmas = await turmaRepo.listarTurmasPorEquipe(usuario.id);
+
+  if (!turmas || turmas.length === 0) return [];
+
+  const turmaIds = turmas.map(t => t.id);
+  return await alunoRepo.listarAlunosPorTurmas(turmaIds);
 }
 
 async function buscarPorId(id) {

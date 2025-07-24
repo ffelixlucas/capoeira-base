@@ -134,6 +134,30 @@ async function trocarTurma(aluno_id, nova_turma_id) {
   );
 }
 
+async function listarAlunosPorTurmas(turmaIds) {
+  if (!turmaIds || turmaIds.length === 0) return [];
+
+  const placeholders = turmaIds.map(() => "?").join(",");
+  const [rows] = await connection.execute(
+    `
+    SELECT 
+      a.id,
+      a.nome,
+      a.apelido,
+      t.nome AS turma,
+      t.id AS turma_id
+    FROM alunos a
+    JOIN matriculas m ON m.aluno_id = a.id AND m.data_fim IS NULL
+    JOIN turmas t ON t.id = m.turma_id
+    WHERE t.id IN (${placeholders})
+    ORDER BY a.nome
+    `,
+    turmaIds
+  );
+
+  return rows;
+}
+
 module.exports = {
   listarAlunosComTurmaAtual,
   listarAlunosPorInstrutor,
@@ -143,4 +167,5 @@ module.exports = {
   excluirAluno,
   buscarMatriculaAtual,
   trocarTurma,
+  listarAlunosPorTurmas,
 };
