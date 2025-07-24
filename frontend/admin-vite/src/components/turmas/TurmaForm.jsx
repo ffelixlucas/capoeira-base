@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { criarTurma } from "../../services/turmaService";
+import { criarTurma, atualizarTurma } from "../../services/turmaService";
 import { useEquipe } from "../../hooks/useEquipe";
 
-export default function TurmaForm({ onCriado }) {
+export default function TurmaForm({ onCriado, turmaEditando = null }) {
   const { membros, loading: carregandoEquipe, carregarEquipe } = useEquipe();
 
   const [form, setForm] = useState({
@@ -17,6 +17,17 @@ export default function TurmaForm({ onCriado }) {
   useEffect(() => {
     carregarEquipe();
   }, []);
+
+  // Preenche campos se estiver em modo edição
+  useEffect(() => {
+    if (turmaEditando) {
+      setForm({
+        nome: turmaEditando.nome || "",
+        faixa_etaria: turmaEditando.faixa_etaria || "",
+        equipe_id: turmaEditando.equipe_id?.toString() || "",
+      });
+    }
+  }, [turmaEditando]);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -32,12 +43,19 @@ export default function TurmaForm({ onCriado }) {
 
     try {
       setSalvando(true);
-      await criarTurma(form);
-      toast.success("Turma criada com sucesso!");
+
+      if (turmaEditando) {
+        await atualizarTurma(turmaEditando.id, form);
+        toast.success("Turma atualizada com sucesso!");
+      } else {
+        await criarTurma(form);
+        toast.success("Turma criada com sucesso!");
+      }
+
       onCriado?.();
       setForm({ nome: "", faixa_etaria: "", equipe_id: "" });
     } catch (error) {
-      toast.error("Erro ao criar turma.");
+      toast.error("Erro ao salvar turma.");
     } finally {
       setSalvando(false);
     }
@@ -103,7 +121,13 @@ export default function TurmaForm({ onCriado }) {
         disabled={salvando}
         className="w-full bg-cor-primaria text-white py-2 rounded-md hover:opacity-90"
       >
-        {salvando ? "Salvando..." : "Salvar turma"}
+        {salvando
+          ? turmaEditando
+            ? "Salvando alterações..."
+            : "Salvando..."
+          : turmaEditando
+          ? "Salvar alterações"
+          : "Salvar turma"}
       </button>
     </form>
   );
