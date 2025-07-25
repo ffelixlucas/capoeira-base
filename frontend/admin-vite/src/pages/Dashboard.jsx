@@ -15,13 +15,27 @@ import {
 } from "@heroicons/react/24/outline";
 import ModalLembretes from "../components/lembretes/ModalLembretes";
 import logo from "../assets/images/logo.png";
+import { listarAlunos } from "../services/alunoService";
 
 export default function Dashboard() {
   const { usuario } = useAuth();
   const { temPapel } = usePermissao();
   const [qtdEventos, setQtdEventos] = useState(0);
   const [abrirModal, setAbrirModal] = useState(false);
+  const [qtdAlunos, setQtdAlunos] = useState(0);
+  useEffect(() => {
+    const fetchAlunos = async () => {
+      try {
+        const alunos = await listarAlunos();
+        setQtdAlunos(alunos.length);
+      } catch (error) {
+        console.error("Erro ao buscar alunos:", error);
+      }
+    };
 
+    fetchAlunos();
+  }
+  , []);
   const botoes = [
     { to: "/alunos", label: "Alunos", roles: ["admin", "instrutor"] },
     { to: "/agenda", label: "Eventos", roles: ["admin", "instrutor"] },
@@ -122,8 +136,8 @@ export default function Dashboard() {
         {/* Estatísticas Rápidas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <CardEstat
-            valor="24"
-            label="Alunos ativos"
+            valor={qtdAlunos}
+            label="Alunos"
             Icon={UserGroupIcon}
             cor="green"
             onClick={() => {
