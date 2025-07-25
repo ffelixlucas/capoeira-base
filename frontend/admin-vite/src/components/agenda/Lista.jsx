@@ -1,8 +1,12 @@
-import AgendaItem from './AgendaItem';
+import AgendaItem from "./Item";
 
 function AgendaLista({ eventos, onExcluir }) {
   if (eventos.length === 0) {
-    return <p className="text-center text-gray-500">Nenhum evento cadastrado ainda.</p>;
+    return (
+      <p className="text-center text-gray-500">
+        Nenhum evento cadastrado ainda.
+      </p>
+    );
   }
 
   return (

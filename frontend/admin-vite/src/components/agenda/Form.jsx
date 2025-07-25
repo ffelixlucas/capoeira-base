@@ -3,7 +3,7 @@ import {
   criarEventoComImagem,
   atualizarEvento,
 } from "../../services/agendaService";
-import AgendaPreview from "./AgendaPreview";
+import AgendaPreview from "./Preview";
 
 function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
   const [form, setForm] = useState({

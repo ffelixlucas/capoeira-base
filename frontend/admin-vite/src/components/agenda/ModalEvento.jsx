@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import AgendaForm from "./AgendaForm";
+import AgendaForm from "./Form";
 
 function ModalEvento({ eventoEditando, onFechar, onCriado }) {
   useEffect(() => {

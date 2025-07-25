@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import AgendaDetalhe from "./AgendaDetalhe";
+import AgendaDetalhe from "./Detalhe";
 import ImageModal from "./ImageModal";
 import { excluirEvento } from "../../services/agendaService";
 

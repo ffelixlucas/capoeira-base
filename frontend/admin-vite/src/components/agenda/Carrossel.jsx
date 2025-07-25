@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AgendaItem from "./AgendaItem";
+import AgendaItem from "./Item";
 
 function CarrosselEventos({ eventos, onEditar, onExcluir }) {
   const [index, setIndex] = useState(0);

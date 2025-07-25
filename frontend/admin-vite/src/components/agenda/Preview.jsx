@@ -1,4 +1,4 @@
-import AgendaItem from './AgendaItem';
+import AgendaItem from "./Item";
 
 function AgendaPreview({ evento }) {
   if (!evento || !evento.titulo) return null;

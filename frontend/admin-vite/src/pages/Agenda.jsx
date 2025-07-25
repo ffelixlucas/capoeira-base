@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useAgenda } from "../hooks/useAgenda";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
-import ModalEvento from "../components/agenda/ModalEvento";
-import CarrosselEventos from "../components/agenda/CarrosselEventos";
+import { ModalEvento as ModalEvento, Carrossel as CarrosselEventos } from "../components/agenda";
+
 
 function Agenda() {
-  const { eventos, carregarEventos } = useAgenda();
+  const { eventos, carregarEventos, carregando } = useAgenda();
   const [eventoEditando, setEventoEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
 
@@ -36,11 +36,19 @@ function Agenda() {
         + Novo Evento
       </button>
 
-      <CarrosselEventos
-        eventos={eventos}
-        onEditar={abrirEdicaoEvento}
-        onExcluir={carregarEventos}
-      />
+      {/* Loading */}
+      {carregando && (
+        <p className="text-center text-gray-500 my-6">Carregando eventos...</p>
+      )}
+
+      {/* Carrossel */}
+      {!carregando && (
+        <CarrosselEventos
+          eventos={eventos}
+          onEditar={abrirEdicaoEvento}
+          onExcluir={carregarEventos}
+        />
+      )}
 
       {mostrarModal && (
         <ModalEvento
