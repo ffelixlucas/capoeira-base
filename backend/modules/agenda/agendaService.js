@@ -3,7 +3,16 @@ const { v4: uuidv4 } = require("uuid");
 const agendaRepository = require("./agendaRepository");
 
 const listarEventos = async () => {
-  return await agendaRepository.listarEventos();
+  const eventos = await agendaRepository.listarEventos();
+
+  return eventos.map((e) => ({
+    ...e,
+    configuracoes: e.configuracoes
+      ? typeof e.configuracoes === "string"
+        ? JSON.parse(e.configuracoes)
+        : e.configuracoes
+      : {}, // se for null, devolve objeto vazio
+  }));
 };
 
 const criarEvento = async (dados, usuarioId) => {

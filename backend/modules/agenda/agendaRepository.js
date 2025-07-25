@@ -23,12 +23,22 @@ const listarEventos = async () => {
     ORDER BY data_inicio ASC
   `);
 
-  // Parse do JSON (configuracoes)
-  return rows.map(evento => ({
+  // Parse seguro do JSON (configuracoes)
+  return rows.map((evento) => ({
     ...evento,
-    configuracoes: evento.configuracoes 
-      ? JSON.parse(evento.configuracoes) 
-      : {}
+    configuracoes: (() => {
+      // Se está nulo → retorna {}
+      if (!evento.configuracoes) return {};
+      // Se já é objeto → retorna direto
+      if (typeof evento.configuracoes === "object") return evento.configuracoes;
+      // Se é string → tenta parsear
+      try {
+        return JSON.parse(evento.configuracoes);
+      } catch (err) {
+        console.warn(`⚠️ Erro ao parsear configuracoes do evento ${evento.id}`);
+        return {};
+      }
+    })(),
   }));
 };
 
