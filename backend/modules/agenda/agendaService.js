@@ -11,8 +11,21 @@ const criarEvento = async (dados, usuarioId) => {
     throw new Error("Título e data de início são obrigatórios.");
   }
 
+  // Garantimos que os campos novos estejam presentes
   const evento = {
-    ...dados,
+    titulo: dados.titulo,
+    descricao_curta: dados.descricao_curta || "",
+    descricao_completa: dados.descricao_completa || "",
+    local: dados.local || "",
+    endereco: dados.endereco || "",
+    telefone_contato: dados.telefone_contato || "",
+    data_inicio: dados.data_inicio,
+    data_fim: dados.data_fim || null,
+    imagem_url: dados.imagem_url || null,
+    com_inscricao: dados.com_inscricao || false,
+    valor: dados.valor || 0,
+    responsavel_id: dados.responsavel_id || null,
+    configuracoes: dados.configuracoes || {},
     criado_por: usuarioId || null,
   };
 
@@ -34,7 +47,6 @@ async function processarUploadEvento(imagem, dados, usuarioId) {
 
   const imagem_url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
 
-  // ⬇️ Garante tipos corretos e campos esperados
   const evento = {
     titulo: dados.titulo || "",
     descricao_curta: dados.descricao_curta || "",
@@ -45,11 +57,14 @@ async function processarUploadEvento(imagem, dados, usuarioId) {
     data_inicio: dados.data_inicio || null,
     data_fim: dados.data_fim || null,
     imagem_url,
+    com_inscricao: dados.com_inscricao || false,
+    valor: dados.valor || 0,
+    responsavel_id: dados.responsavel_id || null,
+    configuracoes: dados.configuracoes || {},
     criado_por: usuarioId || null,
   };
 
   const id = await agendaRepository.criarEvento(evento);
-
   return { id, imagem_url };
 }
 
@@ -60,7 +75,7 @@ const excluirEvento = async (id) => {
     throw new Error("Evento não encontrado ou já removido.");
   }
 
-  // 🔥 Se houver imagem, deletar do Firebase
+  // Deletar imagem do Firebase se houver
   if (evento.imagem_url) {
     const caminho = decodeURIComponent(
       new URL(evento.imagem_url).pathname.replace(/^\/[^/]+\//, "")
@@ -74,12 +89,28 @@ const excluirEvento = async (id) => {
     }
   }
 
-  const sucesso = await agendaRepository.excluirEvento(id);
-  return sucesso;
+  return await agendaRepository.excluirEvento(id);
 };
 
 async function atualizarEvento(id, dados) {
-  return agendaRepository.atualizar(id, dados);
+  // Garante que todos os campos tenham valor padrão
+  const evento = {
+    titulo: dados.titulo ?? "",
+    descricao_curta: dados.descricao_curta ?? "",
+    descricao_completa: dados.descricao_completa ?? "",
+    local: dados.local ?? "",
+    endereco: dados.endereco ?? "",
+    telefone_contato: dados.telefone_contato ?? "",
+    data_inicio: dados.data_inicio ?? null,
+    data_fim: dados.data_fim ?? null,
+    imagem_url: dados.imagem_url ?? null,
+    com_inscricao: dados.com_inscricao ?? false,
+    valor: dados.valor ?? 0,
+    responsavel_id: dados.responsavel_id ?? null,
+    configuracoes: dados.configuracoes ?? {},
+  };
+
+  return agendaRepository.atualizar(id, evento);
 }
 
 module.exports = {
