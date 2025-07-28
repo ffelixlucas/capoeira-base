@@ -71,6 +71,11 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         formData.append("telefone_contato", form.telefone_contato);
         formData.append("data_inicio", data_inicio);
         if (data_fim) formData.append("data_fim", data_fim);
+        formData.append("com_inscricao", form.com_inscricao ? 1 : 0);
+        if (form.com_inscricao) {
+          formData.append("valor", form.valor || 0);
+        }
+
         if (form.imagem) formData.append("imagem", form.imagem);
 
         await criarEventoComImagem(formData, token);
@@ -175,20 +180,68 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         )}
 
         {mostrarDataFim && (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                name="data_fim"
+                value={form.data_fim}
+                onChange={handleChange}
+                className="border p-2 bg-white text-black"
+              />
+              <input
+                type="time"
+                name="hora_fim"
+                value={form.hora_fim}
+                onChange={handleChange}
+                className="border p-2 bg-white text-black"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                // Limpa os campos e esconde novamente
+                setForm((prev) => ({ ...prev, data_fim: "", hora_fim: "" }));
+                setMostrarDataFim(false);
+              }}
+              className="text-red-600 underline text-sm self-start"
+            >
+              Remover data final
+            </button>
+          </div>
+        )}
+
+        {/* Checkbox para inscrição obrigatória */}
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="com_inscricao"
+            name="com_inscricao"
+            checked={form.com_inscricao || false}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, com_inscricao: e.target.checked }))
+            }
+            className="w-5 h-5"
+          />
+          <label htmlFor="com_inscricao" className="text-sm text-gray-800">
+            Evento com inscrição obrigatória
+          </label>
+        </div>
+
+        {/* Campo de valor só aparece se o checkbox estiver marcado */}
+        {form.com_inscricao && (
+          <div className="flex items-center gap-2">
+            <span className="text-gray-700 font-medium">R$</span>
             <input
-              type="date"
-              name="data_fim"
-              value={form.data_fim}
+              type="number"
+              name="valor"
+              placeholder="0,00"
+              value={form.valor || ""}
               onChange={handleChange}
-              className="border p-2 bg-white text-black"
-            />
-            <input
-              type="time"
-              name="hora_fim"
-              value={form.hora_fim}
-              onChange={handleChange}
-              className="border p-2 bg-white text-black"
+              className="border p-2 bg-white text-black flex-1"
+              min="0"
+              step="0.01"
             />
           </div>
         )}
