@@ -26,6 +26,8 @@ import NaoAutorizado from "./pages/NaoAutorizado";
 import Equipe from "./pages/Equipe";
 import Turmas from "./pages/Turmas";
 import Contatos from "./pages/Contatos";
+import Inscricoes from "./pages/Inscricoes";
+import InscritosEvento from "./pages/InscritosEvento.jsx"; 
 
 function App() {
   return (
@@ -65,6 +67,10 @@ function App() {
             <Route path="/uniformes" element={<div>Uniformes</div>} />
             <Route path="/video-aulas" element={<div>Vídeo-aulas</div>} />
             <Route path="/contatos" element={<Contatos />} />
+            <Route path="/inscricoes" element={<Inscricoes />} />
+            <Route path="/inscricoes/:eventoId" element={<InscritosEvento />} />
+
+
             <Route
               path="/horarios"
               element={
@@ -72,7 +78,7 @@ function App() {
                   <Horarios />
                 </RoleRoute>
               }
-            />
+            />              
           </Route>
 
           {/* Rota de fallback */}

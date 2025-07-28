@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; 
 import { useAgenda } from "../hooks/useAgenda";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import { ModalEvento as ModalEvento, Carrossel as CarrosselEventos } from "../components/agenda";
 
-
 function Agenda() {
+  const navigate = useNavigate();
   const { eventos, carregarEventos, carregando } = useAgenda();
   const [eventoEditando, setEventoEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -29,12 +30,21 @@ function Agenda() {
       <BotaoVoltarDashboard className="mb-4" />
       <h1 className="text-2xl font-bold mb-4">Gerenciar Agenda</h1>
 
-      <button
-        onClick={abrirNovoEvento}
-        className="mb-4 bg-green-600 text-white px-4 py-2 rounded"
-      >
-        + Novo Evento
-      </button>
+      {/* Botões principais */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={abrirNovoEvento}
+          className="bg-green-600 text-white px-4 py-2 rounded"
+        >
+          + Novo Evento
+        </button>
+        <button
+          onClick={() => navigate("/inscricoes")}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          📋 Gerenciar Inscrições
+        </button>
+      </div>
 
       {/* Loading */}
       {carregando && (

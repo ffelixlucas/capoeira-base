@@ -72,10 +72,11 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
               setMostrarImagem(true);
             }}
           />
+
           {mostrarImagem && (
             <ImageModal
-              imagemUrl={imagem_url}
-              onClose={() => setMostrarImagem(false)}
+            imagemUrl={imagem_url}
+            onClose={() => setMostrarImagem(false)}
             />
           )}
         </>
@@ -86,12 +87,19 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
           📅{" "}
           {data_fim
             ? `${formatarDataHora(data_inicio)} até ${formatarDataHora(
-                data_fim
-              )}`
+              data_fim
+            )}`
             : formatarDataHora(data_inicio)}
         </span>
 
         <h3 className="text-lg font-bold mb-2">{titulo}</h3>
+            {evento.com_inscricao ? (
+              <span className="text-green-600 text-xs font-semibold mb-2">
+                🔔 Evento com inscrição obrigatória
+                {evento.valor > 0 &&
+                  ` - R$ ${parseFloat(evento.valor).toFixed(2)}`}
+              </span>
+            ) : null}
 
         {descricao_curta && (
           <p className="text-sm text-gray-700 mb-3">{descricao_curta}</p>
