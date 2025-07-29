@@ -22,5 +22,12 @@ router.post(
 router.post('/', verifyToken, checkRole(['admin', 'instrutor', 'midia']), agendaController.criarEvento);
 router.put('/:id', verifyToken, checkRole(['admin', 'instrutor', 'midia']), agendaController.atualizarEvento);
 router.delete('/:id', verifyToken, checkRole(['admin', 'instrutor', 'midia']), agendaController.excluirEvento);
+// Atualizar status (ativo, concluido, cancelado)
+router.put(
+  '/:id/status',
+  verifyToken,
+  checkRole(['admin']),
+  agendaController.atualizarStatus
+);
 
 module.exports = router;

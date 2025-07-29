@@ -2,8 +2,8 @@ const bucket = require("../../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 const agendaRepository = require("./agendaRepository");
 
-const listarEventos = async () => {
-  const eventos = await agendaRepository.listarEventos();
+const listarEventos = async (status) => {
+  const eventos = await agendaRepository.listarEventos(status);
 
   return eventos.map((e) => ({
     ...e,
@@ -14,6 +14,7 @@ const listarEventos = async () => {
       : {}, // se for null, devolve objeto vazio
   }));
 };
+
 
 const criarEvento = async (dados, usuarioId) => {
   if (!dados.titulo || !dados.data_inicio) {
@@ -122,10 +123,15 @@ async function atualizarEvento(id, dados) {
   return agendaRepository.atualizar(id, evento);
 }
 
+async function atualizarStatus(id, status) {
+  return agendaRepository.atualizarStatus(id, status);
+}
+
 module.exports = {
   listarEventos,
   criarEvento,
   processarUploadEvento,
   excluirEvento,
   atualizarEvento,
+  atualizarStatus
 };

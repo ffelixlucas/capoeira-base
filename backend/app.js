@@ -17,7 +17,7 @@ const rolesRoutes = require('./modules/roles/rolesRoutes');
 const equipeRolesRoutes = require('./modules/equipe/equipeRoles/equipeRolesRoutes');
 const lembretesRoutes = require('./modules/lembretes/lembretesRoutes');
 const alunosRoutes = require('./modules/alunos/alunosRoutes');
-
+const inscricoesRoutes = require('./modules/inscricoes/inscricoesRoutes');
 // Configurações do servidor
 
 // Rotas públicas
@@ -38,6 +38,7 @@ app.use('/api/whatsapp-destinos', require('./modules/whatsappdestinos/whatsappDe
 app.use('/api/alunos', alunosRoutes);
 app.use("/api/notas-aluno", require("./modules/notasAluno/notasAlunoRoutes"));
 app.use("/api/turmas", require("./modules/turmas/turmasRoutes.js"));
+app.use('/api/inscricoes', inscricoesRoutes);
 
 
 

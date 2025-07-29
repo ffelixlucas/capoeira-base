@@ -1,7 +1,7 @@
 const db = require('../../database/connection');
 
-const listarEventos = async () => {
-  const [rows] = await db.execute(`
+const listarEventos = async (status) => {
+  let query = `
     SELECT 
       id,
       titulo,
@@ -17,21 +17,27 @@ const listarEventos = async () => {
       valor,
       responsavel_id,
       configuracoes,
+      status,
       criado_em,
       criado_por
     FROM agenda
-    ORDER BY data_inicio ASC
-  `);
+  `;
 
-  // Parse seguro do JSON (configuracoes)
+  const params = [];
+  if (status) {
+    query += ` WHERE status = ?`;
+    params.push(status);
+  }
+
+  query += ` ORDER BY data_inicio ASC`;
+
+  const [rows] = await db.execute(query, params);
+
   return rows.map((evento) => ({
     ...evento,
     configuracoes: (() => {
-      // Se está nulo → retorna {}
       if (!evento.configuracoes) return {};
-      // Se já é objeto → retorna direto
       if (typeof evento.configuracoes === "object") return evento.configuracoes;
-      // Se é string → tenta parsear
       try {
         return JSON.parse(evento.configuracoes);
       } catch (err) {
@@ -153,10 +159,19 @@ const buscarPorId = async (id) => {
   return rows[0] || null;
 };
 
+async function atualizarStatus(id, status) {
+  const [result] = await db.execute(
+    `UPDATE agenda SET status = ? WHERE id = ?`,
+    [status, id]
+  );
+  return result.affectedRows > 0;
+}
+
 module.exports = {
   listarEventos,
   criarEvento,
   excluirEvento,
   atualizar,
-  buscarPorId
+  buscarPorId,
+  atualizarStatus
 };

@@ -15,27 +15,31 @@ const formatarDataHora = (data) => {
 
 const listarEventos = async (req, res) => {
   try {
-    const eventos = await agendaService.listarEventos();
+    const { status } = req.query;
+    const eventos = await agendaService.listarEventos(status);
 
+    // Aqui ainda formatamos a data, se necessário
     const eventosFormatados = eventos.map((evento) => {
       const raw = typeof evento.data_inicio === "string"
-      ? evento.data_inicio.replace(" ", "T")
-      : evento.data_inicio?.toISOString?.() ?? null;
-          const { data, horario } = formatarDataHora(raw);
+        ? evento.data_inicio.replace(" ", "T")
+        : evento.data_inicio?.toISOString?.() ?? null;
+
+      const { data, horario } = formatarDataHora(raw);
 
       return {
         ...evento,
-        data_inicio: raw, 
+        data_inicio: raw,
         data_formatada: data,
-        horario_formatado: horario,
+        horario_formatado: horario
       };
     });
 
-    res.json(eventosFormatados);
+    return res.status(200).json({ sucesso: true, data: eventosFormatados });
   } catch (error) {
-    res.status(500).json({ erro: 'Erro ao listar eventos.' });
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao listar eventos.' });
   }
 };
+
 
 
 
@@ -100,11 +104,31 @@ async function atualizarEvento(req, res) {
   }
 }
 
+const atualizarStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!['ativo', 'concluido', 'cancelado'].includes(status)) {
+    return res.status(400).json({ sucesso: false, erro: 'Status inválido' });
+  }
+
+  try {
+    const ok = await agendaService.atualizarStatus(id, status);
+    if (!ok) {
+      return res.status(404).json({ sucesso: false, erro: 'Evento não encontrado' });
+    }
+    return res.status(200).json({ sucesso: true, mensagem: `Evento marcado como ${status}` });
+  } catch (error) {
+    return res.status(500).json({ sucesso: false, erro: error.message });
+  }
+};
+
 
 module.exports = {
   listarEventos,
   criarEvento,
   criarEventoComImagem,
   excluirEvento,
-  atualizarEvento
+  atualizarEvento,
+  atualizarStatus
 };

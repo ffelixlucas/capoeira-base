@@ -17,6 +17,7 @@ API REST responsável pela gestão dos **Próximos Eventos**, exibidos na landin
 | GET    | `/api/agenda/:id` (futuro)  | Obter dados de um evento específico        |
 | POST   | `/api/agenda`               | Criar um novo evento                       |
 | PUT    | `/api/agenda/:id`           | Editar um evento existente                 |
+| PUT    | `/api/agenda/:id/status`    | Atualizar status do evento (ativo, concluido, cancelado) |
 | DELETE | `/api/agenda/:id`           | Excluir um evento                          |
 | POST   | `/api/agenda/upload-imagem` | Criar um novo evento com imagem (Firebase) |
 
@@ -62,7 +63,10 @@ API REST responsável pela gestão dos **Próximos Eventos**, exibidos na landin
 1. O admin acessa o painel e preenche os dados do evento (título, data, local, inscrições, etc.).
 2. O backend salva no banco MySQL, incluindo as configurações opcionais no campo `configuracoes` (JSON).
 3. A página pública consome o endpoint `/api/agenda` para exibir a lista dos eventos.
-4. Alterações (edição ou exclusão) são refletidas automaticamente na landing page.
+4. Alterações (edição ou exclusão) são refletidas automaticamente na landing page.  
+   - O admin pode **editar** dados do evento (`PUT /api/agenda/:id`).  
+   - O admin pode **marcar como concluído/cancelado** (`PUT /api/agenda/:id/status`), bloqueando novas inscrições e mantendo os dados no histórico.
+
 
 ---
 
