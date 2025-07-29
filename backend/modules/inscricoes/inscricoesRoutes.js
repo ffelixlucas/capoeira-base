@@ -23,4 +23,15 @@ router.get(
   inscricoesController.listarPorEvento
 );
 
+// Rotas protegidas (Apenas Admin )
+
+router.put(
+    '/:id',
+    verifyToken,
+    checkRole(['admin']),
+    inscricoesController.atualizarInscricao
+  );
+  
+
+
 module.exports = router;

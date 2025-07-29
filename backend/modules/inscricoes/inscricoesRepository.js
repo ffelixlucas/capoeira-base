@@ -96,6 +96,31 @@ async function criarInscricao(dados) {
   return { id: result.insertId };
 }
 
+// Atualiza os dados de uma inscrição (apenas campos permitidos)
+async function atualizarInscricao(id, dados) {
+  const campos = Object.keys(dados);
+  const valores = Object.values(dados);
+
+  if (campos.length === 0) {
+    throw new Error("Nenhum campo válido para atualização");
+  }
+
+  const setClause = campos.map(campo => `${campo} = ?`).join(', ');
+
+  const [result] = await db.execute(
+    `UPDATE inscricoes_evento 
+     SET ${setClause}, atualizado_em = NOW() 
+     WHERE id = ?`,
+    [...valores, id]
+  );
+
+  if (result.affectedRows === 0) {
+    return null;
+  }
+
+  return buscarPorId(id); // retorna a inscrição atualizada
+}
+
 async function atualizarStatus(payload) {
   return { atualizado: true, payload };
 }
@@ -104,5 +129,6 @@ module.exports = {
   listarPorEvento,
   buscarPorId,
   criarInscricao,
-  atualizarStatus
+  atualizarStatus,
+  atualizarInscricao 
 };

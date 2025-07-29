@@ -27,7 +27,6 @@ const webhookPagamento = async (req, res) => {
   }
 };
 
-
 const buscarPorId = async (req, res) => {
   try {
     const inscrito = await inscricoesService.buscarPorId(req.params.id);
@@ -40,11 +39,27 @@ const buscarPorId = async (req, res) => {
   }
 };
 
+// NOVO: atualizar inscrição
+const atualizarInscricao = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const dadosAtualizados = req.body;
+
+    const inscricao = await inscricoesService.atualizarInscricao(id, dadosAtualizados);
+    if (!inscricao) {
+      return res.status(404).json({ sucesso: false, erro: "Inscrição não encontrada" });
+    }
+
+    return res.status(200).json({ sucesso: true, data: inscricao });
+  } catch (error) {
+    return res.status(500).json({ sucesso: false, erro: error.message });
+  }
+};
+
 module.exports = {
   listarPorEvento,
   buscarPorId,
   criarInscricao,
-  webhookPagamento
+  webhookPagamento,
+  atualizarInscricao 
 };
-
-
