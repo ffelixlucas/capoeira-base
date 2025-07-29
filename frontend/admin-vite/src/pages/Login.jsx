@@ -12,11 +12,7 @@ function Login() {
   const [senha, setSenha] = useState('');
   const [carregando, setCarregando] = useState(false);
 
-  useEffect(() => {
-    if (isAutenticado()) {
-      navigate('/dashboard');
-    }
-  }, [isAutenticado, navigate]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -1,19 +1,34 @@
-// Esse é só um mock por enquanto para testar a lista
+// src/services/inscricaoService.js
+import api from "./api";
+
 export async function buscarInscritosPorEvento(eventoId) {
-    // Simula chamada ao backend
-    return Promise.resolve([
-      {
-        id: 1,
-        nome: "João Silva",
-        telefone: "41999999999",
-        status: "pago",
-      },
-      {
-        id: 2,
-        nome: "Maria Souza",
-        telefone: "41988888888",
-        status: "pendente",
-      },
-    ]);
-  }
-  
+  const token = localStorage.getItem("token");
+
+  const response = await api.get(`/inscricoes/${eventoId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  // O backend retorna { sucesso: true, data: [lista de inscritos] }
+  return response.data.data;
+}
+export async function buscarInscritoPorId(id) {
+  const token = localStorage.getItem("token");
+
+  const response = await api.get(`/inscricoes/detalhes/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return response.data.data;
+}
+export async function atualizarInscrito(id, dados) {
+  const token = localStorage.getItem("token");
+
+  const response = await api.put(`/inscricoes/${id}`, dados, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  // O backend retorna { sucesso: true, data: {...} }
+  return response.data.data;
+}

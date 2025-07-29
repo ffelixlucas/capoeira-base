@@ -4,6 +4,7 @@ import ImageModal from "./ImageModal";
 import { excluirEvento } from "../../services/agendaService";
 
 function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
+  if (!evento) return null; 
   const [expandido, setExpandido] = useState(false);
   const [mostrarImagem, setMostrarImagem] = useState(false);
   const cardRef = useRef(null);

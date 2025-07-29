@@ -1,5 +1,5 @@
 // src/components/alunos/AlunoList.jsx
-import AlunoLinha from "./AlunoLinha";
+import ListagemItem from "../listagem/ListagemItem";
 import ModalAluno from "./ModalAluno";
 
 export default function AlunoList({
@@ -22,7 +22,18 @@ export default function AlunoList({
       ) : (
         <div className="rounded-xl border bg-white divide-y">
           {alunos.map((aluno) => (
-            <AlunoLinha key={aluno.id} aluno={aluno} onVerMais={onVerMais} />
+            <ListagemItem
+              key={aluno.id}
+              titulo={
+                <>
+                  <span className="font-bold text-base text-gray-800">
+                    {aluno.apelido}</span>
+                  <span className="text-sm text-gray-500">- {aluno.nome}</span>
+                </>
+              }
+              subtitulo={aluno.telefone}
+              onVerMais={() => onVerMais(aluno)}
+            />
           ))}
         </div>
       )}

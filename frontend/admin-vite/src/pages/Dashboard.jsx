@@ -34,8 +34,7 @@ export default function Dashboard() {
     };
 
     fetchAlunos();
-  }
-  , []);
+  }, []);
   const botoes = [
     { to: "/alunos", label: "Alunos", roles: ["admin", "instrutor"] },
     { to: "/agenda", label: "Eventos", roles: ["admin", "instrutor"] },
@@ -50,7 +49,6 @@ export default function Dashboard() {
     { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
     { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] },
     { to: "/contatos", label: "Contatos", roles: ["admin"] },
-
   ];
 
   const [eventosResumo, setEventosResumo] = useState([]);
@@ -59,8 +57,8 @@ export default function Dashboard() {
     const fetchEventos = async () => {
       try {
         const eventos = await listarEventos();
-        setQtdEventos(eventos.length);
-        setEventosResumo(eventos);
+        setQtdEventos(Array.isArray(eventos) ? eventos.length : 0);
+        setEventosResumo(Array.isArray(eventos) ? eventos : []);
       } catch (error) {
         console.error("Erro ao buscar eventos:", error);
       }
@@ -114,11 +112,14 @@ export default function Dashboard() {
     }
   }, [botaoDestaque]);
 
-  const eventosOrdenados = [...eventosResumo].sort((a, b) => {
-    const dataA = new Date(a.data_inicio);
-    const dataB = new Date(b.data_inicio);
-    return dataA - dataB;
-  });
+  const eventosOrdenados = Array.isArray(eventosResumo)
+  ? [...eventosResumo].sort((a, b) => {
+      const dataA = new Date(a.data_inicio);
+      const dataB = new Date(b.data_inicio);
+      return dataA - dataB;
+    })
+  : [];
+    
 
   return (
     <>
@@ -257,8 +258,6 @@ export default function Dashboard() {
             </p>
           )}
         </div>
-
-        
       </div>
       <ModalLembretes
         aberto={abrirModal}

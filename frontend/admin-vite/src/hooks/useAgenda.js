@@ -9,8 +9,7 @@ export function useAgenda() {
     setCarregando(true);
     try {
       const dados = await listarEventos();
-      setEventos(dados);
-    } catch (error) {
+      setEventos(Array.isArray(dados) ? dados : []);    } catch (error) {
       console.error("Erro ao carregar eventos:", error);
     } finally {
       setCarregando(false);

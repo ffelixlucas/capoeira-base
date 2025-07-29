@@ -2,7 +2,7 @@ import api from './api';
 
 export const listarEventos = async () => {
   const response = await api.get('/agenda');
-  return response.data;
+  return response.data.data;
 };
 
 export const criarEvento = async (dados, token) => {

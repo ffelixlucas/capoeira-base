@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 import { fazerLogin } from '../services/authService';
 
 export const AuthContext = createContext(null);
@@ -9,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
 
   useEffect(() => {
+    // Recupera dados salvos ao carregar
     const tokenSalvo = localStorage.getItem('token');
     const usuarioSalvo = localStorage.getItem('usuario');
 
@@ -20,12 +22,30 @@ export const AuthProvider = ({ children }) => {
     setCarregando(false);
   }, []);
 
+  useEffect(() => {
+    // Interceptor para capturar erros 401/403 e deslogar
+    const interceptor = axios.interceptors.response.use(
+      (res) => res,
+      (err) => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          logout(); // limpa token e usuário
+          window.location.href = "/login"; // redireciona pro login
+        }
+        return Promise.reject(err);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
+
   const login = async (email, senha) => {
     try {
       const { token, usuario } = await fazerLogin(email, senha);
       localStorage.setItem('token', token);
       localStorage.setItem('usuario', JSON.stringify(usuario));
-      setToken(token);        // atualiza o state
+      setToken(token);
       setUsuario(usuario);
       return { sucesso: true };
     } catch (error) {
