@@ -54,7 +54,7 @@ function Inscricoes() {
             key={evento.id}
             className="bg-white rounded-lg p-4 shadow-md flex flex-col"
           >
-            <h2 className="text-lg font-semibold mb-1">{evento.titulo}</h2>
+            <h2 className="text-lg font-semibold mb-1 text-black">{evento.titulo}</h2>
             <span className="text-sm text-gray-600 mb-2">
               {new Date(evento.data_inicio).toLocaleDateString("pt-BR")} - R${" "}
               {parseFloat(evento.valor).toFixed(2)}

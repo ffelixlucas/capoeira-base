@@ -160,6 +160,10 @@ function InscritosEvento() {
           </Menu.Items>
         </Menu>
       </div>
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-lg font-semibold text-white">Inscritos</h2>
+        <p className="text-sm text-white">{inscritos.length} encontrados</p>
+      </div>
 
       <InscritoList
         inscritos={inscritos}
