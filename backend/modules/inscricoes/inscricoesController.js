@@ -2,17 +2,21 @@ const inscricoesService = require('./inscricoesService');
 
 const listarPorEvento = async (req, res) => {
   try {
-    // Pega ?busca= do query params
     const busca = req.query.busca || "";
+    const dados = await inscricoesService.listarPorEvento(req.params.eventoId, busca);
 
-    // Passa para o service
-    const inscritos = await inscricoesService.listarPorEvento(req.params.eventoId, busca);
+    // Caso o evento não exista
+    if (!dados) {
+      return res.status(404).json({ sucesso: false, erro: "Evento não encontrado" });
+    }
 
-    return res.status(200).json({ sucesso: true, data: inscritos });
+    // Agora retornamos a estrutura { evento, inscritos }
+    return res.status(200).json({ sucesso: true, data: dados });
   } catch (error) {
     return res.status(500).json({ sucesso: false, erro: error.message });
   }
 };
+
 
 
 const criarInscricao = async (req, res) => {

@@ -1,7 +1,28 @@
 const db = require('../../database/connection');
 
-// Lista todos os inscritos de um evento
+// Lista evento e todos os inscritos de um evento
 async function listarPorEvento(eventoId, busca = "") {
+  // 1. Buscar os dados do evento
+  const [eventoRows] = await db.execute(
+    `SELECT id, titulo, valor, data_inicio 
+     FROM agenda 
+     WHERE id = ?`,
+    [eventoId]
+  );
+
+  const evento = eventoRows[0];
+  if (!evento) {
+    return null; // evento não encontrado
+  }
+
+  // 2. Buscar total de inscritos SEM filtro
+  const [totalRows] = await db.execute(
+    `SELECT COUNT(*) AS total FROM inscricoes_evento WHERE evento_id = ?`,
+    [eventoId]
+  );
+  evento.total_inscritos = totalRows[0].total;
+
+  // 3. Buscar os inscritos (APLICANDO o filtro, se houver)
   let query = `
     SELECT 
       id, 
@@ -19,7 +40,6 @@ async function listarPorEvento(eventoId, busca = "") {
 
   const params = [eventoId];
 
-  // Se veio parâmetro de busca, adiciona os filtros
   if (busca) {
     query += `
       AND (
@@ -30,17 +50,18 @@ async function listarPorEvento(eventoId, busca = "") {
         cpf LIKE ?
       )
     `;
-
-    // Valor do filtro com wildcard
     const like = `%${busca}%`;
     params.push(like, like, like, like, like);
   }
 
   query += " ORDER BY criado_em DESC";
 
-  const [rows] = await db.execute(query, params);
-  return rows;
+  const [inscritos] = await db.execute(query, params);
+
+  // 4. Retornar objeto com evento + inscritos filtrados
+  return { evento, inscritos };
 }
+
 
 
 // Busca os detalhes completos de um inscrito

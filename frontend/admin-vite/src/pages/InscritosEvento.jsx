@@ -5,18 +5,20 @@ import InscritoList from "../components/ui/InscritoList";
 import ModalInscrito from "../components/inscricoes/ModalInscrito";
 import Busca from "../components/ui/Busca";
 import ContadorLista from "../components/ui/ContadorLista";
+import CardEstat from "../components/ui/CardEstat";
+import { UserGroupIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline";
 import {
   buscarInscritosPorEvento,
   buscarInscritoPorId,
 } from "../services/inscricaoService";
 import { Menu } from "@headlessui/react";
-import { FaDownload, FaFilePdf, FaFileExcel, FaPrint } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 
 function InscritosEvento() {
   const { eventoId } = useParams();
 
+  const [evento, setEvento] = useState(null);
   const [inscritos, setInscritos] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [busca, setBusca] = useState("");
@@ -32,9 +34,10 @@ function InscritosEvento() {
   async function carregarInscritos() {
     setCarregando(true);
     try {
-      // Passa a busca para a API
+      // Agora a API retorna { evento, inscritos }
       const dados = await buscarInscritosPorEvento(eventoId, busca);
-      setInscritos(dados);
+      setEvento(dados.evento);
+      setInscritos(dados.inscritos);
     } catch (err) {
       console.error("Erro ao carregar inscritos:", err);
     } finally {
@@ -59,7 +62,6 @@ function InscritosEvento() {
         i.id === inscritoAtualizado.id ? { ...i, ...inscritoAtualizado } : i
       )
     );
-    // Atualiza também o inscrito do modal aberto
     setInscritoSelecionado((atual) =>
       atual && atual.id === inscritoAtualizado.id
         ? { ...atual, ...inscritoAtualizado }
@@ -105,7 +107,7 @@ function InscritosEvento() {
           </style>
         </head>
         <body>
-          <h2>Lista de Inscritos - Evento ${eventoId}</h2>
+          <h2>Lista de Inscritos - Evento ${evento?.titulo || ""}</h2>
           <p>${conteudo}</p>
         </body>
       </html>
@@ -118,17 +120,36 @@ function InscritosEvento() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+      {/* Estatísticas */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <CardEstat
+          valor={evento?.total_inscritos || 0}
+          label="Total de Inscritos"
+          Icon={UserGroupIcon}
+          cor="blue"
+        />
+
+        <CardEstat
+          valor={`R$ ${(evento?.total_inscritos * (evento?.valor || 0)).toFixed(2)}`}
+          label="Valor Arrecadado"
+          Icon={CurrencyDollarIcon}
+          cor="green"
+        />
+      </div>
+
       <div className="flex justify-between mb-4">
         <BotaoVoltarDashboard />
         <Menu as="div" className="relative text-black">
-          {/* Botão de ações igual */}
+          {/* Botão de ações */}
         </Menu>
       </div>
 
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold text-white">Inscritos</h2>
+        <h2 className="text-lg font-semibold text-white">
+          Inscritos {evento?.titulo ? `- ${evento.titulo}` : ""}
+        </h2>
         <ContadorLista total={inscritos.length} />
-        </div>
+      </div>
 
       <div className="mb-3">
         <Busca

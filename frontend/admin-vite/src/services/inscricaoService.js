@@ -6,11 +6,14 @@ export async function buscarInscritosPorEvento(eventoId, busca = "") {
 
   const response = await api.get(`/inscricoes/${eventoId}`, {
     headers: { Authorization: `Bearer ${token}` },
-    params: { busca }, // envia a busca como query param
+    params: { busca },
   });
 
+  // Agora retorna { evento, inscritos }
   return response.data.data;
 }
+
+
 
 export async function buscarInscritoPorId(id) {
   const token = localStorage.getItem("token");
