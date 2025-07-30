@@ -2,12 +2,18 @@ const inscricoesService = require('./inscricoesService');
 
 const listarPorEvento = async (req, res) => {
   try {
-    const inscritos = await inscricoesService.listarPorEvento(req.params.eventoId);
+    // Pega ?busca= do query params
+    const busca = req.query.busca || "";
+
+    // Passa para o service
+    const inscritos = await inscricoesService.listarPorEvento(req.params.eventoId, busca);
+
     return res.status(200).json({ sucesso: true, data: inscritos });
   } catch (error) {
     return res.status(500).json({ sucesso: false, erro: error.message });
   }
 };
+
 
 const criarInscricao = async (req, res) => {
   try {

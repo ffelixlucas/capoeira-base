@@ -1,7 +1,7 @@
 const inscricoesRepository = require('./inscricoesRepository');
 
-async function listarPorEvento(eventoId) {
-  return inscricoesRepository.listarPorEvento(eventoId);
+async function listarPorEvento(eventoId, busca = "") {
+  return inscricoesRepository.listarPorEvento(eventoId, busca);
 }
 
 async function buscarPorId(id) {

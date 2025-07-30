@@ -1,16 +1,17 @@
 // src/services/inscricaoService.js
 import api from "./api";
 
-export async function buscarInscritosPorEvento(eventoId) {
+export async function buscarInscritosPorEvento(eventoId, busca = "") {
   const token = localStorage.getItem("token");
 
   const response = await api.get(`/inscricoes/${eventoId}`, {
     headers: { Authorization: `Bearer ${token}` },
+    params: { busca }, // envia a busca como query param
   });
 
-  // O backend retorna { sucesso: true, data: [lista de inscritos] }
   return response.data.data;
 }
+
 export async function buscarInscritoPorId(id) {
   const token = localStorage.getItem("token");
 

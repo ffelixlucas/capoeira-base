@@ -1,9 +1,9 @@
 const db = require('../../database/connection');
 
 // Lista todos os inscritos de um evento
-async function listarPorEvento(eventoId) {
-  const [rows] = await db.execute(
-    `SELECT 
+async function listarPorEvento(eventoId, busca = "") {
+  let query = `
+    SELECT 
       id, 
       nome, 
       telefone, 
@@ -13,14 +13,35 @@ async function listarPorEvento(eventoId) {
       apelido,
       responsavel_nome,
       tamanho_camiseta
-     FROM inscricoes_evento
-     WHERE evento_id = ?
-     ORDER BY criado_em DESC`,
-    [eventoId]
-  );
+    FROM inscricoes_evento
+    WHERE evento_id = ?
+  `;
 
+  const params = [eventoId];
+
+  // Se veio parâmetro de busca, adiciona os filtros
+  if (busca) {
+    query += `
+      AND (
+        nome LIKE ? OR
+        apelido LIKE ? OR
+        email LIKE ? OR
+        telefone LIKE ? OR
+        cpf LIKE ?
+      )
+    `;
+
+    // Valor do filtro com wildcard
+    const like = `%${busca}%`;
+    params.push(like, like, like, like, like);
+  }
+
+  query += " ORDER BY criado_em DESC";
+
+  const [rows] = await db.execute(query, params);
   return rows;
 }
+
 
 // Busca os detalhes completos de um inscrito
 async function buscarPorId(id) {
