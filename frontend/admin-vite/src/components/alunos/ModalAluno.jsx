@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ModalFicha from "../listagem/ModalFicha";
+import ModalFicha from "../ui/ModalFicha";
 import NotasAluno from "./NotasAluno";
 import { excluirAluno } from "../../services/alunoService";
 import { toast } from "react-toastify";

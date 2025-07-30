@@ -1,5 +1,5 @@
 // src/components/alunos/AlunoList.jsx
-import ListagemItem from "../listagem/ListagemItem";
+import ListagemItem from "../ui/ListagemItem";
 import ModalAluno from "./ModalAluno";
 
 export default function AlunoList({

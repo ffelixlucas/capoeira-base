@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
-import InscritoList from "../components/inscricoes/InscritoList";
+import InscritoList from "../components/ui/InscritoList";
 import ModalInscrito from "../components/inscricoes/ModalInscrito";
 import {
   buscarInscritosPorEvento,
