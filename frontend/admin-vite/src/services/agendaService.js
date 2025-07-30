@@ -1,8 +1,29 @@
 import api from './api';
 
+/* ============================
+   ROTAS PÚBLICAS (somente leitura)
+============================ */
+export const listarEventosPublicos = async () => {
+  const response = await api.get('/public/agenda');
+  return response.data.data; // apenas eventos com inscrição pública
+};
+
+export const buscarEventoPublicoPorId = async (id) => {
+  const response = await api.get(`/public/agenda/${id}`);
+  return response.data; // apenas campos públicos
+};
+
+/* ============================
+   ROTAS ADMIN (mantidas 100% como estavam)
+============================ */
 export const listarEventos = async () => {
   const response = await api.get('/agenda');
   return response.data.data;
+};
+
+export const buscarEventoPorId = async (id) => {
+  const response = await api.get(`/agenda/${id}`);
+  return response.data;
 };
 
 export const criarEvento = async (dados, token) => {

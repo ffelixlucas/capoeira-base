@@ -14,6 +14,8 @@ import PrivateRoute from "./components/layout/PrivateRoute";
 import RoleRoute from "./components/RoleRoute";
 import LayoutAdmin from "./components/layout/LayoutAdmin";
 
+// Imports de páginas administrativas
+
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Galeria from "./pages/Galeria";
@@ -27,7 +29,12 @@ import Equipe from "./pages/Equipe";
 import Turmas from "./pages/Turmas";
 import Contatos from "./pages/Contatos";
 import Inscricoes from "./pages/Inscricoes";
-import InscritosEvento from "./pages/InscritosEvento.jsx"; 
+import InscritosEvento from "./pages/InscritosEvento.jsx";
+
+// Imports de páginas públicas
+import LayoutPublic from "./components/layout/LayoutPublic";
+import InscricoesPublic from "./pages/public/InscricoesPublic";
+import InscricaoEventoPublic from "./pages/public/InscricaoEventoPublic";
 
 function App() {
   return (
@@ -70,7 +77,6 @@ function App() {
             <Route path="/inscricoes" element={<Inscricoes />} />
             <Route path="/inscricoes/:eventoId" element={<InscritosEvento />} />
 
-
             <Route
               path="/horarios"
               element={
@@ -78,11 +84,20 @@ function App() {
                   <Horarios />
                 </RoleRoute>
               }
-            />              
+            />
           </Route>
 
           {/* Rota de fallback */}
           <Route path="*" element={<NotFound />} />
+
+          <Route element={<LayoutPublic />}>
+            {/* 🔹 NOVAS ROTAS PÚBLICAS (usando outro nome) */}
+            <Route path="/inscrever" element={<InscricoesPublic />} />
+            <Route
+              path="/inscrever/:eventoId"
+              element={<InscricaoEventoPublic />}
+            />
+          </Route>
         </Routes>
       </Router>
 

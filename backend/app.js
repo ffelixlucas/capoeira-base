@@ -40,6 +40,9 @@ app.use("/api/notas-aluno", require("./modules/notasAluno/notasAlunoRoutes"));
 app.use("/api/turmas", require("./modules/turmas/turmasRoutes.js"));
 app.use('/api/inscricoes', inscricoesRoutes);
 
+// Rotas públicas
+app.use('/api/public/agenda', require('./modules/public/agenda/publicAgendaRoutes'));
+
 
 
 
