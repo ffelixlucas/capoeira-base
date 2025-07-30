@@ -4,6 +4,7 @@ import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import InscritoList from "../components/ui/InscritoList";
 import ModalInscrito from "../components/inscricoes/ModalInscrito";
 import Busca from "../components/ui/Busca";
+import ContadorLista from "../components/ui/ContadorLista";
 import {
   buscarInscritosPorEvento,
   buscarInscritoPorId,
@@ -126,8 +127,8 @@ function InscritosEvento() {
 
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-lg font-semibold text-white">Inscritos</h2>
-        <p className="text-sm text-white">{inscritos.length} encontrados</p>
-      </div>
+        <ContadorLista total={inscritos.length} />
+        </div>
 
       <div className="mb-3">
         <Busca

@@ -1,6 +1,7 @@
 // src/components/alunos/AlunoList.jsx
 import ListagemItem from "../ui/ListagemItem";
 import ModalAluno from "./ModalAluno";
+import ContadorLista from "../ui/ContadorLista";
 
 export default function AlunoList({
   alunos,
@@ -13,7 +14,10 @@ export default function AlunoList({
 }) {
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Lista de Alunos</h2>
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-lg font-semibold text-white">Lista de alunos</h2>
+        <ContadorLista total={alunos.length} />
+        </div>
 
       {carregando ? (
         <p className="text-gray-500">Carregando...</p>

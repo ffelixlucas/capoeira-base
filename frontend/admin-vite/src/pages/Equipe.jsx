@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import EquipeList from "../components/equipe/EquipeList";
 import EquipeForm from "../components/equipe/EquipeForm";
 import Busca from "../components/ui/Busca";
+import ContadorLista from "../components/ui/ContadorLista";
 import { useAuth } from "../contexts/AuthContext";
 import { useEquipe } from "../hooks/useEquipe";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
@@ -50,6 +51,9 @@ function Equipe() {
           placeholder="Buscar por nome, e-mail ou telefone"
           onBuscar={setBusca}
         />
+      </div>
+      <div className="mb-4">
+        <ContadorLista total={membrosFiltrados.length} label="membros encontrados" />
       </div>
 
       <EquipeList
