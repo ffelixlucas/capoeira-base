@@ -13,7 +13,7 @@ export default function AlunoList({
 }) {
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-4 text-gray-900">Alunos</h1>
+      <h2 className="text-lg font-semibold mb-4">Lista de Alunos</h2>
 
       {carregando ? (
         <p className="text-gray-500">Carregando...</p>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import AlunoList from "../components/alunos/AlunoList";
 import AlunoForm from "../components/alunos/AlunoForm";
+import Busca from "../components/ui/Busca";
 import { useAlunos } from "../hooks/useAlunos";
 import { buscarAluno } from "../services/alunoService";
 import { toast } from "react-toastify";
@@ -13,6 +14,7 @@ function Alunos() {
   const [modoEdicao, setModoEdicao] = useState(false);
 
   const [usuario] = useState(() => JSON.parse(localStorage.getItem("usuario")));
+  const [busca, setBusca] = useState("");
   const { alunos, carregando, carregarAlunos } = useAlunos();
   const {
     turmas,
@@ -34,17 +36,27 @@ function Alunos() {
     }
   }
 
-  const alunosFiltrados = alunos.filter((a) => {
-    if (turmaSelecionada === "todos" || !turmaSelecionada) return true;
-    if (turmaSelecionada === "sem_turma") return a.turma_id === null;
-    return a.turma_id === Number(turmaSelecionada);
-  });
+  const alunosFiltrados = alunos
+    .filter((a) => {
+      if (turmaSelecionada === "todos" || !turmaSelecionada) return true;
+      if (turmaSelecionada === "sem_turma") return a.turma_id === null;
+      return a.turma_id === Number(turmaSelecionada);
+    })
+    .filter((a) => {
+      if (!busca) return true;
+      const termo = busca.toLowerCase();
+      return (
+        a.nome.toLowerCase().includes(termo) ||
+        (a.apelido && a.apelido.toLowerCase().includes(termo)) ||
+        (a.turma && a.turma.toLowerCase().includes(termo))
+      );
+    });
 
   return (
     <div className="p-6 text-center">
       <BotaoVoltarDashboard />
 
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-3">
         <div className="w-full sm:w-auto text-left">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Filtrar por turma:
@@ -66,15 +78,19 @@ function Alunos() {
             ))}
           </select>
         </div>
-
+      
         <button
           onClick={() => setMostrarForm(!mostrarForm)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition"
         >
           {mostrarForm ? "Fechar" : "Cadastrar Aluno"}
         </button>
+        
       </div>
-
+      <Busca
+          placeholder="Buscar por nome, apelido ou turma"
+          onBuscar={setBusca}
+        />
       <AlunoList
         alunos={alunosFiltrados}
         carregando={carregando}

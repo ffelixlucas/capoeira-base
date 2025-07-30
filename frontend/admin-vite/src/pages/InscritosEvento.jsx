@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import InscritoList from "../components/ui/InscritoList";
 import ModalInscrito from "../components/inscricoes/ModalInscrito";
+import Busca from "../components/ui/Busca";
 import {
   buscarInscritosPorEvento,
   buscarInscritoPorId,
@@ -129,12 +130,9 @@ function InscritosEvento() {
       </div>
 
       {/* NOVO: Campo de busca */}
-      <input
-        type="text"
+      <Busca
         placeholder="Buscar por nome, apelido, CPF, e-mail ou telefone"
-        value={busca}
-        onChange={(e) => setBusca(e.target.value)}
-        className="w-full border px-3 py-2 rounded-md text-sm text-black placeholder-gray-500 mb-3"
+        onBuscar={setBusca}
       />
 
       <InscritoList
