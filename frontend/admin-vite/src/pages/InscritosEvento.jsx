@@ -129,11 +129,12 @@ function InscritosEvento() {
         <p className="text-sm text-white">{inscritos.length} encontrados</p>
       </div>
 
-      {/* NOVO: Campo de busca */}
-      <Busca
-        placeholder="Buscar por nome, apelido, CPF, e-mail ou telefone"
-        onBuscar={setBusca}
-      />
+      <div className="mb-3">
+        <Busca
+          placeholder="Buscar por nome, e-mail ou telefone"
+          onBuscar={setBusca}
+        />
+      </div>
 
       <InscritoList
         inscritos={inscritos}

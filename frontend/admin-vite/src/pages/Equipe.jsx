@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import EquipeList from "../components/equipe/EquipeList";
 import EquipeForm from "../components/equipe/EquipeForm";
+import Busca from "../components/ui/Busca";
 import { useAuth } from "../contexts/AuthContext";
 import { useEquipe } from "../hooks/useEquipe";
 import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
@@ -8,12 +9,23 @@ import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 function Equipe() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [membroSelecionado, setMembroSelecionado] = useState(null);
+  const [busca, setBusca] = useState("");
   const { membros, loading, erro, carregarEquipe } = useEquipe();
+
+  const membrosFiltrados = membros.filter((membro) => {
+    if (!busca) return true;
+    const termo = busca.toLowerCase();
+    return (
+      membro.nome.toLowerCase().includes(termo) ||
+      (membro.email && membro.email.toLowerCase().includes(termo)) ||
+      (membro.telefone && membro.telefone.toLowerCase().includes(termo))
+    );
+  });
 
   return (
     <div className="p-4">
       <BotaoVoltarDashboard className="mb-4" />
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
         <div className="flex gap-2">
           <button
@@ -33,9 +45,15 @@ function Equipe() {
           </a>
         </div>
       </div>
+      <div className="mb-3">
+        <Busca
+          placeholder="Buscar por nome, e-mail ou telefone"
+          onBuscar={setBusca}
+        />
+      </div>
 
       <EquipeList
-        membros={membros}
+        membros={membrosFiltrados}
         loading={loading}
         erro={erro}
         onEditar={(membro) => {
