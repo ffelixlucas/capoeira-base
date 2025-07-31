@@ -42,6 +42,7 @@ app.use('/api/inscricoes', inscricoesRoutes);
 
 // Rotas públicas
 app.use('/api/public/agenda', require('./modules/public/agenda/publicAgendaRoutes'));
+app.use('/api/public/inscricoes', require('./modules/public/inscricoes/inscricoesRoutes'));
 
 
 
