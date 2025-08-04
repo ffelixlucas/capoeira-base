@@ -5,5 +5,10 @@ export default defineConfig({
   plugins: [react()],
   css: {
     postcss: './postcss.config.cjs'
-  }
+  },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000',
+    },
+  },
 })

@@ -5,7 +5,8 @@ const {
   buscarInscricaoPendente,
   criarInscricaoPendente,
   atualizarInscricaoComPix,
-  atualizarInscricaoParaPago
+  atualizarInscricaoParaPago,
+  atualizarInscricaoPendente,
 } = require("./inscricoesRepository");
 
 const client = new MercadoPagoConfig({
@@ -24,14 +25,20 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   // 1️⃣ Verifica inscrição pendente pelo CPF
   const pendente = await buscarInscricaoPendente(cpf);
   if (pendente) {
+    // 🛠️ Atualiza dados básicos (camiseta, responsável, etc.)
+    await atualizarInscricaoPendente(pendente.id, dadosFormulario);
+  
     return {
       ticket_url: pendente.ticket_url,
       qr_code_base64: pendente.qr_code_base64,
+      qr_code: pendente.qr_code,
+      valor: pendente.valor,
       pagamento_id: pendente.pagamento_id,
       status: "pendente",
       date_of_expiration: pendente.date_of_expiration,
     };
   }
+  
 
   // 2️⃣ Cria inscrição pendente no banco
   const inscricaoId = await criarInscricaoPendente(dadosFormulario);
@@ -61,20 +68,25 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   // 4️⃣ Extrai dados do PIX
   const qrCode = result.point_of_interaction.transaction_data.qr_code_base64;
   const ticketUrl = result.point_of_interaction.transaction_data.ticket_url;
-  const expirationDate = result.date_of_expiration; // <-- Data de expiração do PIX
+  const expirationDate = result.date_of_expiration;
 
   // 5️⃣ Atualiza a inscrição com dados do PIX e a data de expiração
   await atualizarInscricaoComPix(inscricaoId, {
     pagamento_id: result.id,
     ticket_url: ticketUrl,
     qr_code_base64: qrCode,
+    qr_code:result.point_of_interaction.transaction_data.qr_code, 
     date_of_expiration: expirationDate,
+    valor: result.transaction_amount,
   });
+  
 
   // 6️⃣ Retorna dados para o frontend
   return {
     ticket_url: ticketUrl,
     qr_code_base64: qrCode,
+    qr_code: result.point_of_interaction.transaction_data.qr_code, // <- este estava faltando
+    valor: result.transaction_amount,
     pagamento_id: result.id,
     status: "pendente",
     date_of_expiration: expirationDate,
@@ -92,7 +104,9 @@ const processarWebhookService = async (payload) => {
   const response = await axios.get(
     `https://api.mercadopago.com/v1/payments/${paymentId}`,
     {
-      headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` },
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
     }
   );
 

@@ -2,8 +2,11 @@ import { useEffect, useState, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { buscarEventoPublicoPorId } from "../../services/agendaService";
 import { Dialog, Transition } from "@headlessui/react";
+import { gerarPagamentoPix } from "../../services/public/inscricaoPublicService";
+
 import EventoInfo from "../../components/public/EventoInfo.jsx";
 import FormInscricaoPublic from "../../components/public/FormInscricaoPublic.jsx";
+import ModalPagamentoPix from "../../components/public/ModalPagamentoPix.jsx";
 
 export default function InscricaoEventoPublic() {
   const { eventoId } = useParams();
@@ -12,6 +15,8 @@ export default function InscricaoEventoPublic() {
   const [carregando, setCarregando] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [modalLGPD, setModalLGPD] = useState(false);
+  const [modalPagamento, setModalPagamento] = useState(false);
+  const [dadosPagamento, setDadosPagamento] = useState(null);
 
   const [form, setForm] = useState({
     nome: "",
@@ -25,7 +30,7 @@ export default function InscricaoEventoPublic() {
     responsavel_contato: "",
     responsavel_parentesco: "",
     tamanho_camiseta: "",
-    tem_restricoes: false, // 👈 NOVO CHECK
+    tem_restricoes: false,
     alergias_restricoes: "",
     aceite_lgpd: false,
     autorizacao_imagem: false,
@@ -95,23 +100,26 @@ export default function InscricaoEventoPublic() {
       alert("Descreva as restrições médicas.");
       return;
     }
-
     setEnviando(true);
     try {
-      console.log("Dados enviados:", form);
-      alert("Inscrição realizada com sucesso! (integração pendente)");
-      navigate("/inscrever");
+      const resultado = await gerarPagamentoPix({
+        ...form,
+        evento_id: evento.id,
+        valor: evento.valor,
+      });
+
+      // Abrir modal
+      setDadosPagamento(resultado);
+      setModalPagamento(true);
     } catch (err) {
       console.error("Erro ao salvar inscrição:", err);
+      alert("Erro ao gerar pagamento. Tente novamente mais tarde.");
     } finally {
       setEnviando(false);
     }
   }
-
   if (carregando) {
-    return (
-      <p className="text-center text-white/80">Carregando evento...</p>
-    );
+    return <p className="text-center text-white/80">Carregando evento...</p>;
   }
 
   if (!evento) {
@@ -173,6 +181,15 @@ export default function InscricaoEventoPublic() {
           </div>
         </Dialog>
       </Transition>
+
+      <ModalPagamentoPix
+        isOpen={modalPagamento}
+        onClose={() => {
+          setModalPagamento(false);
+          navigate("/inscrever"); // só redireciona ao fechar o modal
+        }}
+        pagamento={dadosPagamento}
+      />
     </div>
   );
 }

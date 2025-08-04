@@ -5,7 +5,7 @@ const db = require("../../../database/connection");
  */
 const buscarInscricaoPendente = async (cpf) => {
   const [rows] = await db.execute(
-    `SELECT id, pagamento_id, ticket_url, qr_code_base64, date_of_expiration
+    `SELECT id, pagamento_id, ticket_url, qr_code_base64, qr_code, valor, date_of_expiration
      FROM inscricoes_evento 
      WHERE cpf = ? AND status = 'pendente' 
      LIMIT 1`,
@@ -26,19 +26,21 @@ const criarInscricaoPendente = async (dados) => {
     email,
     telefone,
     cpf,
-    autorizacao_participacao,
-    autorizacao_imagem,
-    documento_autorizacao_url,
     responsavel_nome,
     responsavel_documento,
     responsavel_contato,
     responsavel_parentesco,
     tamanho_camiseta,
     alergias_restricoes,
-    aceite_imagem,
-    aceite_responsabilidade,
     aceite_lgpd,
   } = dados;
+
+  // Definindo valores assumidos como verdadeiros
+  const autorizacao_participacao = true;
+  const autorizacao_imagem = true;
+  const aceite_imagem = true;
+  const aceite_responsabilidade = true;
+  const documento_autorizacao_url = null; // por enquanto não usamos
 
   const [result] = await db.execute(
     `INSERT INTO inscricoes_evento (
@@ -80,14 +82,21 @@ const criarInscricaoPendente = async (dados) => {
 const atualizarInscricaoComPix = async (id, pagamento) => {
   await db.execute(
     `UPDATE inscricoes_evento 
-     SET pagamento_id = ?, ticket_url = ?, qr_code_base64 = ?, date_of_expiration = ?
+     SET pagamento_id = ?, 
+         ticket_url = ?, 
+         qr_code_base64 = ?, 
+         qr_code = ?, 
+         valor = ?, 
+         date_of_expiration = ?
      WHERE id = ?`,
     [
-      pagamento.pagamento_id,
-      pagamento.ticket_url,
-      pagamento.qr_code_base64,
-      pagamento.date_of_expiration,
-      id
+      pagamento.pagamento_id ?? null,
+      pagamento.ticket_url ?? null,
+      pagamento.qr_code_base64 ?? null,
+      pagamento.qr_code ?? null,
+      pagamento.valor ?? null,
+      pagamento.date_of_expiration ?? null,
+      id,
     ]
   );
 };
@@ -104,9 +113,37 @@ const atualizarInscricaoParaPago = async (id, valor) => {
   );
 };
 
+const atualizarInscricaoPendente = async (id, dados) => {
+  await db.execute(
+    `UPDATE inscricoes_evento 
+     SET nome = ?, apelido = ?, data_nascimento = ?, email = ?, telefone = ?, 
+         responsavel_nome = ?, responsavel_documento = ?, responsavel_contato = ?, 
+         responsavel_parentesco = ?, tamanho_camiseta = ?, alergias_restricoes = ?, 
+         aceite_lgpd = ?, atualizado_em = NOW()
+     WHERE id = ? AND status = 'pendente'`,
+    [
+      dados.nome,
+      dados.apelido || null,
+      dados.data_nascimento || null,
+      dados.email,
+      dados.telefone,
+      dados.responsavel_nome || null,
+      dados.responsavel_documento || null,
+      dados.responsavel_contato || null,
+      dados.responsavel_parentesco || null,
+      dados.tamanho_camiseta || null,
+      dados.alergias_restricoes || null,
+      dados.aceite_lgpd,
+      id,
+    ]
+  );
+};
+
+
 module.exports = {
   buscarInscricaoPendente,
   criarInscricaoPendente,
   atualizarInscricaoComPix,
   atualizarInscricaoParaPago,
+  atualizarInscricaoPendente,
 };
