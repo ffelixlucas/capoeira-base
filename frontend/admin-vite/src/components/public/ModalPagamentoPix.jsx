@@ -1,8 +1,27 @@
+import { useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { FiCopy } from "react-icons/fi";
+import { useMonitorarPagamento } from "../../hooks/public/useMonitorarPagamento";
+import ModalConfirmacaoPagamento from "./ModalConfirmacaoPagamento.jsx";
 
 export default function ModalPagamentoPix({ isOpen, onClose, pagamento }) {
+  const [showSucesso, setShowSucesso] = useState(false);
+  const [showErro, setShowErro] = useState(false);
+  const [dados, setDados] = useState(null);
+
+  useMonitorarPagamento(
+    pagamento?.id, // 
+    (data) => {
+      setDados(data);
+      setShowSucesso(true);
+    },
+    (data) => {
+      setDados(data);
+      setShowErro(true);
+    }
+  );
+
   if (!pagamento) return null;
 
   return (
@@ -37,6 +56,15 @@ export default function ModalPagamentoPix({ isOpen, onClose, pagamento }) {
                   : "Valor indisponível"}
               </p>
             </div>
+
+            {pagamento.codigo_inscricao && (
+              <div className="mb-4">
+                <p className="text-sm font-medium">Código da Inscrição:</p>
+                <p className="bg-gray-100 px-3 py-2 rounded text-sm font-mono text-blue-700 tracking-widest">
+                  {pagamento.codigo_inscricao}
+                </p>
+              </div>
+            )}
 
             <div className="mb-4">
               <p className="text-sm font-medium mb-1">
@@ -95,6 +123,22 @@ export default function ModalPagamentoPix({ isOpen, onClose, pagamento }) {
               </button>
             </div>
           </Dialog.Panel>
+          {/* MODAIS DE RESPOSTA */}
+          {showSucesso && (
+            <ModalConfirmacaoPagamento
+              isOpen={showSucesso}
+              onClose={() => setShowSucesso(false)}
+              dados={dados}
+            />
+          )}
+
+          {showErro && (
+            <ModalErroPagamento
+              isOpen={showErro}
+              onClose={() => setShowErro(false)}
+              dados={dados}
+            />
+          )}
         </div>
       </Dialog>
     </Transition>

@@ -113,8 +113,17 @@ export default function InscricaoEventoPublic() {
       setModalPagamento(true);
     } catch (err) {
       console.error("Erro ao salvar inscrição:", err);
-      alert("Erro ao gerar pagamento. Tente novamente mais tarde.");
-    } finally {
+      let mensagemErro = "Erro ao gerar pagamento. Tente novamente.";
+
+      if (err.response?.data?.error) {
+        mensagemErro = err.response.data.error;
+      } else if (err.message) {
+        mensagemErro = err.message;
+      }
+      
+      alert(mensagemErro);
+      
+      } finally {
       setEnviando(false);
     }
   }

@@ -1,7 +1,14 @@
-const { gerarPagamentoPixService, processarWebhookService } = require("./inscricoesService");
+const { gerarPagamentoPixService, processarWebhookService, buscarInscricaoDetalhadaService, verificarInscricaoPaga } = require("./inscricoesService");
 
 const gerarPagamentoPix = async (req, res) => {
   try {
+    const { cpf, evento_id } = req.body;
+
+    const jaPago = await verificarInscricaoPaga(cpf, evento_id);
+    if (jaPago) {
+      return res.status(400).json({ error: "Inscrição já realizada e paga." });
+    }
+
     const pagamento = await gerarPagamentoPixService(req.body);
     res.status(201).json(pagamento);
   } catch (error) {
@@ -20,4 +27,18 @@ const webhookPagamento = async (req, res) => {
   }
 };
 
-module.exports = { gerarPagamentoPix, webhookPagamento };
+
+const buscarInscricaoPorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const inscricao = await buscarInscricaoDetalhadaService(id);
+    if (!inscricao) return res.status(404).json({ error: "Inscrição não encontrada" });
+    res.json(inscricao);
+  } catch (error) {
+    console.error("Erro buscarInscricaoPorId:", error);
+    res.status(500).json({ error: "Erro ao buscar inscrição" });
+  }
+};
+
+
+module.exports = { gerarPagamentoPix, webhookPagamento, buscarInscricaoPorId };

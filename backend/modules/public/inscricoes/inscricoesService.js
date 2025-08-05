@@ -7,6 +7,8 @@ const {
   atualizarInscricaoComPix,
   atualizarInscricaoParaPago,
   atualizarInscricaoPendente,
+  buscarInscricaoComEvento,
+  verificarInscricaoPaga,
 } = require("./inscricoesRepository");
 
 const client = new MercadoPagoConfig({
@@ -22,13 +24,22 @@ const payment = new Payment(client);
 const gerarPagamentoPixService = async (dadosFormulario) => {
   const { cpf, nome, apelido, valor, evento_id } = dadosFormulario;
 
+  // 🔒 Verifica se já tem uma inscrição paga para este CPF no mesmo evento
+  const jaPago = await verificarInscricaoPaga(cpf, evento_id);
+  if (jaPago) {
+    throw new Error("Este CPF já possui inscrição confirmada neste evento.");
+  }
+
   // 1️⃣ Verifica inscrição pendente pelo CPF
   const pendente = await buscarInscricaoPendente(cpf);
   if (pendente) {
     // 🛠️ Atualiza dados básicos (camiseta, responsável, etc.)
     await atualizarInscricaoPendente(pendente.id, dadosFormulario);
-  
+
+    const codigo_inscricao = gerarCodigoInscricao(pendente.id, evento_id);
+
     return {
+      id: pendente.id,
       ticket_url: pendente.ticket_url,
       qr_code_base64: pendente.qr_code_base64,
       qr_code: pendente.qr_code,
@@ -36,12 +47,14 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
       pagamento_id: pendente.pagamento_id,
       status: "pendente",
       date_of_expiration: pendente.date_of_expiration,
+      codigo_inscricao,
     };
   }
-  
 
   // 2️⃣ Cria inscrição pendente no banco
   const inscricaoId = await criarInscricaoPendente(dadosFormulario);
+
+  const codigo_inscricao = gerarCodigoInscricao(inscricaoId, evento_id);
 
   // 3️⃣ Gera PIX no Mercado Pago
   const body = {
@@ -75,14 +88,14 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
     pagamento_id: result.id,
     ticket_url: ticketUrl,
     qr_code_base64: qrCode,
-    qr_code:result.point_of_interaction.transaction_data.qr_code, 
+    qr_code: result.point_of_interaction.transaction_data.qr_code,
     date_of_expiration: expirationDate,
     valor: result.transaction_amount,
   });
-  
 
   // 6️⃣ Retorna dados para o frontend
   return {
+    id: inscricaoId,
     ticket_url: ticketUrl,
     qr_code_base64: qrCode,
     qr_code: result.point_of_interaction.transaction_data.qr_code, // <- este estava faltando
@@ -90,6 +103,7 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
     pagamento_id: result.id,
     status: "pendente",
     date_of_expiration: expirationDate,
+    codigo_inscricao,
   };
 };
 
@@ -119,4 +133,37 @@ const processarWebhookService = async (payload) => {
   }
 };
 
-module.exports = { gerarPagamentoPixService, processarWebhookService };
+const buscarInscricaoDetalhadaService = async (id) => {
+  const inscricao = await buscarInscricaoComEvento(id);
+  if (!inscricao) return null;
+
+  const codigo_inscricao = gerarCodigoInscricao(
+    inscricao.id,
+    inscricao.evento_id
+  );
+
+  return {
+    status: inscricao.status,
+    nome: inscricao.nome,
+    codigo_inscricao,
+    evento: {
+      titulo: inscricao.titulo,
+      data: inscricao.data,
+      local: inscricao.local,
+    },
+  };
+};
+
+module.exports = {
+  gerarPagamentoPixService,
+  processarWebhookService,
+  buscarInscricaoDetalhadaService,
+  verificarInscricaoPaga,
+};
+
+function gerarCodigoInscricao(idInscricao, idEvento) {
+  const anoAtual = new Date().getFullYear();
+  return `GCB-${anoAtual}-EVT${idEvento}-${idInscricao
+    .toString()
+    .padStart(4, "0")}`;
+}

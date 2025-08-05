@@ -36,6 +36,7 @@ import LayoutPublic from "./components/layout/LayoutPublic";
 import InscricoesPublic from "./pages/public/InscricoesPublic";
 import InscricaoEventoPublic from "./pages/public/InscricaoEventoPublic";
 
+
 function App() {
   return (
     <AuthProvider>
@@ -47,6 +48,7 @@ function App() {
           {/* Rota pública */}
           <Route path="/login" element={<Login />} />
           <Route path="/nao-autorizado" element={<NaoAutorizado />} />
+
 
           {/* Rotas protegidas com layout administrativo */}
           <Route

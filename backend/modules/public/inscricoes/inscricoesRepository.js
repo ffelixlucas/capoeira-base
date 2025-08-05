@@ -139,6 +139,33 @@ const atualizarInscricaoPendente = async (id, dados) => {
   );
 };
 
+const buscarInscricaoComEvento = async (id) => {
+  const [rows] = await db.execute(
+    `SELECT 
+      i.status, 
+      i.nome, 
+      i.evento_id, 
+      i.id, 
+      a.titulo, 
+      a.data_inicio AS data, 
+      a.local
+     FROM inscricoes_evento i
+     JOIN agenda a ON i.evento_id = a.id
+     WHERE i.id = ?`,
+    [id]
+  );
+  return rows[0];
+};
+
+const verificarInscricaoPaga = async (cpf, eventoId) => {
+  const [rows] = await db.execute(
+    `SELECT id FROM inscricoes_evento
+     WHERE cpf = ? AND evento_id = ? AND status = 'pago'
+     LIMIT 1`,
+    [cpf, eventoId]
+  );
+  return rows.length > 0;
+};
 
 module.exports = {
   buscarInscricaoPendente,
@@ -146,4 +173,6 @@ module.exports = {
   atualizarInscricaoComPix,
   atualizarInscricaoParaPago,
   atualizarInscricaoPendente,
+  buscarInscricaoComEvento,
+  verificarInscricaoPaga,
 };

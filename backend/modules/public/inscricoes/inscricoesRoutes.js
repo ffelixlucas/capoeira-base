@@ -8,4 +8,6 @@ router.post("/pagamento", gerarPagamentoPix);
 // Rota chamada pelo Mercado Pago quando o pagamento muda de status
 router.post("/webhook", webhookPagamento);
 
+const { buscarInscricaoPorId } = require("./inscricoesController");
+router.get("/:id", buscarInscricaoPorId);
 module.exports = router;
