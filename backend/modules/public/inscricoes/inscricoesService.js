@@ -10,6 +10,7 @@ const {
   buscarInscricaoComEvento,
   verificarInscricaoPaga,
 } = require("./inscricoesRepository");
+const { enviarEmailConfirmacao } = require("../../../services/emailService.js");
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
@@ -130,6 +131,12 @@ const processarWebhookService = async (payload) => {
   if (pagamento.status === "approved") {
     const inscricaoId = pagamento.external_reference;
     await atualizarInscricaoParaPago(inscricaoId, pagamento.transaction_amount);
+
+        // 🔔 Envia e-mail de confirmação
+        const inscricao = await buscarInscricaoDetalhadaService(inscricaoId);
+        if (inscricao) {
+          await enviarEmailConfirmacao(inscricao);
+        }
   }
 };
 

@@ -11,7 +11,7 @@ export default function ModalPagamentoPix({ isOpen, onClose, pagamento }) {
   const [dados, setDados] = useState(null);
 
   useMonitorarPagamento(
-    pagamento?.id, // 
+    pagamento?.id, //
     (data) => {
       setDados(data);
       setShowSucesso(true);
@@ -127,7 +127,10 @@ export default function ModalPagamentoPix({ isOpen, onClose, pagamento }) {
           {showSucesso && (
             <ModalConfirmacaoPagamento
               isOpen={showSucesso}
-              onClose={() => setShowSucesso(false)}
+              onClose={() => {
+                setShowSucesso(false);
+                onClose();
+              }}
               dados={dados}
             />
           )}
