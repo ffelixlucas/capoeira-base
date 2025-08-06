@@ -21,7 +21,12 @@ async function listarEventosPublicos() {
 async function buscarEventoPublicoPorId(id) {
   const evento = await agendaRepository.buscarPorId(id);
 
-  if (!evento || evento.com_inscricao !== 1 && evento.com_inscricao !== true) {
+  const inscricaoAtiva =
+    evento?.com_inscricao === 1 ||
+    evento?.com_inscricao === true ||
+    evento?.com_inscricao === "1";
+
+  if (!evento || !inscricaoAtiva || evento.status !== "ativo") {
     return null;
   }
 
@@ -35,6 +40,7 @@ async function buscarEventoPublicoPorId(id) {
     valor: evento.valor,
     imagem_url: evento.imagem_url,
     local: evento.local,
+    possui_camiseta: evento.possui_camiseta,
   };
 }
 

@@ -148,7 +148,8 @@ const buscarInscricaoComEvento = async (id) => {
       i.id, 
       a.titulo, 
       a.data_inicio AS data, 
-      a.local
+      a.local,
+      a.possui_camiseta
      FROM inscricoes_evento i
      JOIN agenda a ON i.evento_id = a.id
      WHERE i.id = ?`,

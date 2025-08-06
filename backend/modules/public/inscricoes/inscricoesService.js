@@ -157,6 +157,8 @@ const buscarInscricaoDetalhadaService = async (id) => {
       titulo: inscricao.titulo,
       data: inscricao.data,
       local: inscricao.local,
+      possui_camiseta: inscricao.possui_camiseta
+
     },
   };
 };

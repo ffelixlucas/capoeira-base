@@ -10,6 +10,7 @@ export default function FormInscricaoPublic({
   setModalLGPD,
   formatarTelefone,
   formatarCPF,
+  evento,
 }) {
   function handleChange(e) {
     const { name, type, value, checked } = e.target;
@@ -118,19 +119,20 @@ export default function FormInscricaoPublic({
       )}
 
       {/* Outros campos */}
-      <select
-        name="tamanho_camiseta"
-        value={form.tamanho_camiseta}
-        onChange={handleChange}
-        className="w-full border rounded-lg px-3 py-2 text-black text-sm"
-        required
-      >
-        <option value="">Tamanho da camiseta</option>
-        <option value="P">P</option>
-        <option value="M">M</option>
-        <option value="G">G</option>
-        <option value="GG">GG</option>
-      </select>      
+      {evento && Number(evento.possui_camiseta) === 1 && (
+        <select
+          name="tamanho_camiseta"
+          value={form.tamanho_camiseta}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2 text-black text-sm"
+          required
+        >
+          <option value="">Tamanho da camiseta</option>
+          <option value="P">P</option>
+          <option value="M">M</option>
+          <option value="G">G</option>
+        </select>
+      )}
 
       {/* Aceites obrigatórios */}
       <label className="flex items-center gap-2 text-black text-sm">

@@ -179,6 +179,7 @@ export default function InscricaoEventoPublic() {
         setModalLGPD={setModalLGPD}
         formatarTelefone={formatarTelefone}
         formatarCPF={formatarCPF}
+        evento={evento}
       />
 
       {/* Modal LGPD */}
