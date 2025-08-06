@@ -18,6 +18,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
     data_fim: "",
     hora_fim: "",
     imagem: null,
+    possui_camiseta: false,
   });
 
   const [mostrarDataFim, setMostrarDataFim] = useState(false);
@@ -36,6 +37,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         data_fim: dataFim ? dataFim.toISOString().slice(0, 10) : "",
         hora_fim: dataFim ? dataFim.toISOString().slice(11, 16) : "",
         imagem: null,
+        possui_camiseta: eventoEditando.possui_camiseta ?? false,
       });
 
       setMostrarDataFim(!!eventoEditando.data_fim);
@@ -75,6 +77,8 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         if (form.com_inscricao) {
           formData.append("valor", form.valor || 0);
         }
+        formData.append("possui_camiseta", form.possui_camiseta ? 1 : 0);
+
 
         if (form.imagem) formData.append("imagem", form.imagem);
 
@@ -243,6 +247,27 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
               min="0"
               step="0.01"
             />
+          </div>
+        )}
+        {/* Checkbox para camiseta */}
+        {form.com_inscricao && (
+          <div className="flex items-center gap-2 ml-4">
+            <input
+              type="checkbox"
+              id="possui_camiseta"
+              name="possui_camiseta"
+              checked={form.possui_camiseta || false}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  possui_camiseta: e.target.checked,
+                }))
+              }
+              className="w-5 h-5"
+            />
+            <label htmlFor="possui_camiseta" className="text-sm text-gray-800">
+              Evento terá distribuição de camisetas
+            </label>
           </div>
         )}
 
