@@ -51,6 +51,7 @@ export default function FormInscricaoPublic({
         placeholder="E-mail"
         value={form.email}
         onChange={handleChange}
+        required
       />
       <InputBase
         type="tel"
@@ -60,12 +61,14 @@ export default function FormInscricaoPublic({
         onChange={(e) =>
           setForm({ ...form, telefone: formatarTelefone(e.target.value) })
         }
+        required
       />
       <InputBase
         name="cpf"
         placeholder="CPF"
         value={form.cpf}
         onChange={(e) => setForm({ ...form, cpf: formatarCPF(e.target.value) })}
+        required
       />
 
       {/* Dados do responsável */}
@@ -120,36 +123,14 @@ export default function FormInscricaoPublic({
         value={form.tamanho_camiseta}
         onChange={handleChange}
         className="w-full border rounded-lg px-3 py-2 text-black text-sm"
+        required
       >
         <option value="">Tamanho da camiseta</option>
         <option value="P">P</option>
         <option value="M">M</option>
         <option value="G">G</option>
         <option value="GG">GG</option>
-      </select>
-
-      {/* Restrições médicas */}
-      <label className="flex items-center gap-2 text-black text-sm">
-        <input
-          type="checkbox"
-          name="tem_restricoes"
-          checked={form.tem_restricoes || false}
-          onChange={handleChange}
-          className="h-4 w-4"
-        />
-        Possui alguma restrição médica?
-      </label>
-
-      {form.tem_restricoes && (
-        <InputBase
-          as="textarea"
-          name="alergias_restricoes"
-          placeholder="Descreva a restrição médica"
-          value={form.alergias_restricoes}
-          onChange={handleChange}
-          rows={2}
-        />
-      )}
+      </select>      
 
       {/* Aceites obrigatórios */}
       <label className="flex items-center gap-2 text-black text-sm">

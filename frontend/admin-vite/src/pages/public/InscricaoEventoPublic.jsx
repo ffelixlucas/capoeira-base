@@ -120,10 +120,9 @@ export default function InscricaoEventoPublic() {
       } else if (err.message) {
         mensagemErro = err.message;
       }
-      
+
       alert(mensagemErro);
-      
-      } finally {
+    } finally {
       setEnviando(false);
     }
   }
@@ -142,6 +141,27 @@ export default function InscricaoEventoPublic() {
           className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
           Voltar para inscrições
+        </button>
+      </div>
+    );
+  }
+
+  // ⛔ Bloquear se o evento já passou
+  const dataHoje = new Date();
+  const dataEvento = new Date(evento.data_inicio);
+  // const dataLimite = new Date(evento.inscricao_ate); // (quando existir no backend)
+
+  if (dataEvento < dataHoje) {
+    return (
+      <div className="text-center text-white">
+        <p className="mb-4">
+          As inscrições para este evento já estão encerradas.
+        </p>
+        <button
+          onClick={() => navigate("/inscrever")}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+        >
+          Ver outros eventos
         </button>
       </div>
     );
