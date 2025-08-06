@@ -37,6 +37,7 @@ const criarEvento = async (dados, usuarioId) => {
     responsavel_id: dados.responsavel_id || null,
     configuracoes: dados.configuracoes || {},
     criado_por: usuarioId || null,
+    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0
   };
 
   const id = await agendaRepository.criarEvento(evento);
@@ -44,18 +45,18 @@ const criarEvento = async (dados, usuarioId) => {
 };
 
 async function processarUploadEvento(imagem, dados, usuarioId) {
-  if (!imagem) {
-    throw new Error("Imagem não encontrada no corpo da requisição.");
+  let imagem_url = null;
+
+  if (imagem) {
+    const nomeArquivo = `eventos/${uuidv4()}-${imagem.originalname}`;
+    const file = bucket.file(nomeArquivo);
+  
+    await file.save(imagem.buffer, {
+      metadata: { contentType: imagem.mimetype },
+    });
+  
+    imagem_url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
   }
-
-  const nomeArquivo = `eventos/${uuidv4()}-${imagem.originalname}`;
-  const file = bucket.file(nomeArquivo);
-
-  await file.save(imagem.buffer, {
-    metadata: { contentType: imagem.mimetype },
-  });
-
-  const imagem_url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
 
   const evento = {
     titulo: dados.titulo || "",
@@ -72,6 +73,7 @@ async function processarUploadEvento(imagem, dados, usuarioId) {
     responsavel_id: dados.responsavel_id || null,
     configuracoes: dados.configuracoes || {},
     criado_por: usuarioId || null,
+    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0
   };
 
   const id = await agendaRepository.criarEvento(evento);
@@ -118,6 +120,7 @@ async function atualizarEvento(id, dados) {
     valor: dados.valor ?? 0,
     responsavel_id: dados.responsavel_id ?? null,
     configuracoes: dados.configuracoes ?? {},
+    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0
   };
 
   return agendaRepository.atualizar(id, evento);

@@ -19,7 +19,8 @@ const listarEventos = async (status) => {
       configuracoes,
       status,
       criado_em,
-      criado_por
+      criado_por,
+      possui_camiseta
     FROM agenda
   `;
 
@@ -64,14 +65,16 @@ const criarEvento = async (evento) => {
     responsavel_id = null,
     configuracoes = {},
     criado_por,
+    possui_camiseta = false
   } = evento;
 
   const [result] = await db.execute(`
     INSERT INTO agenda (
       titulo, descricao_curta, descricao_completa, local, endereco,
       telefone_contato, data_inicio, data_fim, imagem_url,
-      com_inscricao, valor, responsavel_id, configuracoes, criado_por
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      com_inscricao, valor, responsavel_id, configuracoes, criado_por,
+      possui_camiseta
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     titulo,
     descricao_curta,
@@ -86,7 +89,8 @@ const criarEvento = async (evento) => {
     valor,
     responsavel_id,
     JSON.stringify(configuracoes),
-    criado_por
+    criado_por,
+    possui_camiseta
   ]);
 
   return result.insertId;
@@ -114,7 +118,8 @@ const atualizar = async (id, dados) => {
     com_inscricao = false,
     valor = 0,
     responsavel_id = null,
-    configuracoes = {}
+    configuracoes = {},
+    possui_camiseta = false
   } = dados;
 
   const [result] = await db.execute(
@@ -131,7 +136,8 @@ const atualizar = async (id, dados) => {
       com_inscricao = ?,
       valor = ?,
       responsavel_id = ?,
-      configuracoes = ?
+      configuracoes = ?,
+      possui_camiseta = ?
     WHERE id = ?`,
     [
       titulo,
@@ -147,6 +153,7 @@ const atualizar = async (id, dados) => {
       valor,
       responsavel_id,
       JSON.stringify(configuracoes),
+      possui_camiseta,
       id
     ]
   );

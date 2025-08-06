@@ -97,7 +97,11 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         data_fim: "",
         hora_fim: "",
         imagem: null,
+        com_inscricao: false,
+        valor: "",
+        possui_camiseta: false
       });
+      
 
       setMostrarDataFim(false);
       onCriado?.();

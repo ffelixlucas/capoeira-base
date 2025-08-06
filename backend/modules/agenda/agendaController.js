@@ -57,14 +57,14 @@ const criarEventoComImagem = async (req, res) => {
   try {
     const usuarioId = req.usuario?.id || null;
     const imagem = req.file;
-    const dados = req.body;
+    const dados = {
+      ...req.body,
+      possui_camiseta: parseInt(req.body.possui_camiseta) === 1 ? 1 : 0
+    };
 
     console.log("📦 Imagem recebida:", imagem?.originalname);
     console.log("📝 Dados recebidos:", dados);
 
-    if (!imagem) {
-      return res.status(400).json({ erro: 'Imagem do evento não enviada.' });
-    }
 
     const resultado = await agendaService.processarUploadEvento(imagem, dados, usuarioId);
 
@@ -95,11 +95,16 @@ const excluirEvento = async (req, res) => {
 
 async function atualizarEvento(req, res) {
   const { id } = req.params;
-  const dados = req.body;
+  const dados = {
+    ...req.body,
+    possui_camiseta: parseInt(req.body.possui_camiseta) === 1 ? 1 : 0
+  };
+
   try {
     await agendaService.atualizarEvento(id, dados);
     res.status(200).json({ message: "Evento atualizado com sucesso" });
   } catch (error) {
+    console.error("❌ Erro ao atualizar evento:", error);
     res.status(500).json({ message: "Erro ao atualizar evento" });
   }
 }
