@@ -2,16 +2,13 @@ const bucket = require("../../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 const agendaRepository = require("./agendaRepository");
 
-const listarEventos = async (status) => {
-  const eventos = await agendaRepository.listarEventos(status);
-
+const listarEventos = async (status, situacao) => {
+  const eventos = await agendaRepository.listarEventos(status, situacao);
   return eventos.map((e) => ({
     ...e,
     configuracoes: e.configuracoes
-      ? typeof e.configuracoes === "string"
-        ? JSON.parse(e.configuracoes)
-        : e.configuracoes
-      : {}, // se for null, devolve objeto vazio
+      ? (typeof e.configuracoes === "string" ? JSON.parse(e.configuracoes) : e.configuracoes)
+      : {},
   }));
 };
 
@@ -130,11 +127,40 @@ async function atualizarStatus(id, status) {
   return agendaRepository.atualizarStatus(id, status);
 }
 
+async function arquivarEvento(id) {
+  const evento = await agendaRepository.buscarPorId(id);
+  if (!evento) return false;
+
+  // Apaga imagem do Firebase, se existir
+  if (evento.imagem_url) {
+    try {
+      const caminho = decodeURIComponent(
+        new URL(evento.imagem_url).pathname.replace(/^\/[^/]+\//, "")
+      );
+      await bucket.file(caminho).delete();
+      console.log("🗑️ Imagem do evento excluída:", caminho);
+    } catch (error) {
+      console.warn("⚠️ Erro ao excluir imagem:", error.message);
+    }
+  }
+
+  // Atualiza no banco
+  const dataFim = evento.data_fim || new Date();
+  return agendaRepository.atualizar(id, {
+    ...evento,
+    status: 'concluido',
+    data_fim: dataFim,
+    imagem_url: null
+  });
+}
+
+
 module.exports = {
   listarEventos,
   criarEvento,
   processarUploadEvento,
   excluirEvento,
   atualizarEvento,
-  atualizarStatus
+  atualizarStatus,
+  arquivarEvento
 };

@@ -1,10 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import AgendaDetalhe from "./Detalhe";
 import ImageModal from "./ImageModal";
-import { excluirEvento } from "../../services/agendaService";
+import { excluirEvento, arquivarEvento } from "../../services/agendaService";
+import { toast } from "react-toastify";
 
 function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
-  if (!evento) return null; 
+  if (!evento) return null;
+  const navigate = useNavigate();
+
   const [expandido, setExpandido] = useState(false);
   const [mostrarImagem, setMostrarImagem] = useState(false);
   const cardRef = useRef(null);
@@ -18,7 +22,19 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
     local,
     endereco,
     telefone_contato,
+    com_inscricao,
+    valor,
   } = evento;
+
+  // Encerrado = agora > (data_fim || data_inicio)
+  const encerrado = useMemo(() => {
+    const fimOuInicio = data_fim || data_inicio;
+    if (!fimOuInicio) return false;
+    return Date.now() > new Date(fimOuInicio).getTime();
+  }, [data_inicio, data_fim]);
+
+  // Label do botão conforme existência de inscrição
+  const labelAcao = com_inscricao == 1 ? "Arquivar" : "Excluir";
 
   const formatarDataHora = (dataISO) => {
     if (!dataISO) return "";
@@ -33,15 +49,41 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
       .toUpperCase();
   };
 
-  const handleExcluir = async () => {
+  const handleAcao = async () => {
     const token = localStorage.getItem("token");
-    if (confirm(`Deseja realmente excluir o evento "${titulo}"?`)) {
+
+    // Se tem inscrição → arquivar (status=concluido)
+    if (com_inscricao == 1) {
+      const ok = confirm(
+        `Arquivar o evento "${titulo}"?\n\n` +
+          "- O card sai da lista de próximos;\n" +
+          "- As inscrições são mantidas em segurança;\n" +
+          "- Você acessa em Encerrados."
+      );
+      if (!ok) return;
+
       try {
-        await excluirEvento(evento.id, token);
-        if (onExcluir) onExcluir();
+        await arquivarEvento(evento.id, token);
+        toast.success("Evento arquivado. Inscrições mantidas com segurança.");
+        onExcluir && onExcluir(); // recarrega lista no pai
       } catch (err) {
-        console.error("Erro ao excluir evento:", err);
+        console.error("Erro ao arquivar evento:", err);
+        toast.error("Não foi possível arquivar o evento.");
       }
+      return;
+    }
+
+    // Sem inscrição → excluir de verdade
+    const ok = confirm(`Deseja realmente excluir o evento "${titulo}"?`);
+    if (!ok) return;
+
+    try {
+      await excluirEvento(evento.id, token);
+      toast.success("Evento excluído com sucesso.");
+      onExcluir && onExcluir();
+    } catch (err) {
+      console.error("Erro ao excluir evento:", err);
+      toast.error("Não foi possível excluir o evento.");
     }
   };
 
@@ -56,12 +98,46 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
     return () => document.removeEventListener("mousedown", handleClickFora);
   }, []);
 
+  // Clique no card:
+  // - se tem inscrição → navega para /inscricoes/:id
+  // - se não tem → alterna expandido (comportamento antigo)
+  const handleClickCard = () => {
+    if (com_inscricao == 1) {
+      navigate(`/inscricoes/${evento.id}`);
+    } else {
+      setExpandido((prev) => !prev);
+    }
+  };
+
   return (
     <div
       ref={cardRef}
-      onClick={() => setExpandido((prev) => !prev)}
-      className="bg-white text-black rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl w-full max-w-[350px] flex flex-col cursor-pointer"
+      onClick={handleClickCard}
+      className={`bg-white text-black rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl w-full max-w-[350px] flex flex-col ${
+        com_inscricao == 1 ? "cursor-pointer" : "cursor-pointer"
+      }`}
+      title={
+        com_inscricao == 1
+          ? "Abrir gestão de inscritos"
+          : "Ver mais informações"
+      }
+      aria-label={com_inscricao == 1 ? "Abrir gestão de inscritos" : "Evento"}
+      role="group"
     >
+      {/* Badges no topo */}
+      <div className="flex justify-between items-center px-4 pt-3">
+        {encerrado && (
+          <span className="inline-block text-xs font-semibold px-2 py-1 rounded bg-red-100 text-red-700">
+            Encerrado
+          </span>
+        )}
+        {com_inscricao == 1 && (
+          <span className="inline-block text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-700 ml-auto">
+            Inscrição obrigatória
+          </span>
+        )}
+      </div>
+
       {imagem_url && (
         <>
           <img
@@ -73,11 +149,10 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
               setMostrarImagem(true);
             }}
           />
-
           {mostrarImagem && (
             <ImageModal
-            imagemUrl={imagem_url}
-            onClose={() => setMostrarImagem(false)}
+              imagemUrl={imagem_url}
+              onClose={() => setMostrarImagem(false)}
             />
           )}
         </>
@@ -88,19 +163,19 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
           📅{" "}
           {data_fim
             ? `${formatarDataHora(data_inicio)} até ${formatarDataHora(
-              data_fim
-            )}`
+                data_fim
+              )}`
             : formatarDataHora(data_inicio)}
         </span>
 
         <h3 className="text-lg font-bold mb-2">{titulo}</h3>
-            {evento.com_inscricao ? (
-              <span className="text-green-600 text-xs font-semibold mb-2">
-                🔔 Evento com inscrição obrigatória
-                {evento.valor > 0 &&
-                  ` - R$ ${parseFloat(evento.valor).toFixed(2)}`}
-              </span>
-            ) : null}
+
+        {com_inscricao == 1 && (
+          <span className="text-green-600 text-xs font-semibold mb-2">
+            🔔 Evento com inscrição
+            {Number(valor) > 0 ? ` - R$ ${parseFloat(valor).toFixed(2)}` : ""}
+          </span>
+        )}
 
         {descricao_curta && (
           <p className="text-sm text-gray-700 mb-3">{descricao_curta}</p>
@@ -147,7 +222,7 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setExpandido(!expandido);
+                setExpandido((prev) => !prev);
               }}
               className="text-blue-600 text-sm mt-3 underline self-start"
             >
@@ -157,12 +232,13 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleExcluir();
+                handleAcao();
               }}
               className="mt-1 text-red-600 text-sm underline self-start"
             >
-              Excluir
+              {labelAcao}
             </button>
+
             <button
               onClick={(e) => {
                 e.stopPropagation();

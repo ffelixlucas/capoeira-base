@@ -16,8 +16,10 @@ export const buscarEventoPublicoPorId = async (id) => {
 /* ============================
    ROTAS ADMIN (mantidas 100% como estavam)
 ============================ */
-export const listarEventos = async () => {
-  const response = await api.get('/agenda');
+export const listarEventos = async (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  const url = qs ? `/agenda?${qs}` : `/agenda`;
+  const response = await api.get(url);
   return response.data.data;
 };
 
@@ -55,4 +57,18 @@ export const atualizarEvento = async (id, dados, token) => {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
+};
+
+export const atualizarStatusEvento = async (id, status, token) => {
+  const resp = await api.put(`/agenda/${id}/status`, { status }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return resp.data;
+};
+
+export const arquivarEvento = async (id, token) => {
+  const resp = await api.put(`/agenda/${id}/arquivar`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return resp.data;
 };

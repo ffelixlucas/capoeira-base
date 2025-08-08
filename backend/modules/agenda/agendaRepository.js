@@ -1,35 +1,28 @@
-const db = require('../../database/connection');
+const db = require("../../database/connection");
 
-const listarEventos = async (status) => {
+const listarEventos = async (status, situacao) => {
   let query = `
     SELECT 
-      id,
-      titulo,
-      descricao_curta,
-      descricao_completa,
-      local,
-      endereco,
-      telefone_contato,
-      data_inicio,
-      data_fim,
-      imagem_url,
-      com_inscricao,
-      valor,
-      responsavel_id,
-      configuracoes,
-      status,
-      criado_em,
-      criado_por,
-      possui_camiseta
+      id, titulo, descricao_curta, descricao_completa, local, endereco,
+      telefone_contato, data_inicio, data_fim, imagem_url, com_inscricao,
+      valor, responsavel_id, configuracoes, status, criado_em, criado_por, possui_camiseta
     FROM agenda
   `;
-
+  const where = [];
   const params = [];
+
   if (status) {
-    query += ` WHERE status = ?`;
+    where.push(`status = ?`);
     params.push(status);
   }
 
+  if (situacao === "ativos") {
+    where.push(`NOW() <= COALESCE(data_fim, data_inicio)`);
+  } else if (situacao === "concluidos") {
+    where.push(`NOW() > COALESCE(data_fim, data_inicio)`);
+  }
+
+  if (where.length) query += ` WHERE ` + where.join(" AND ");
   query += ` ORDER BY data_inicio ASC`;
 
   const [rows] = await db.execute(query, params);
@@ -41,14 +34,12 @@ const listarEventos = async (status) => {
       if (typeof evento.configuracoes === "object") return evento.configuracoes;
       try {
         return JSON.parse(evento.configuracoes);
-      } catch (err) {
-        console.warn(`⚠️ Erro ao parsear configuracoes do evento ${evento.id}`);
+      } catch {
         return {};
       }
     })(),
   }));
 };
-
 const criarEvento = async (evento) => {
   const {
     titulo,
@@ -65,41 +56,47 @@ const criarEvento = async (evento) => {
     responsavel_id = null,
     configuracoes = {},
     criado_por,
-    possui_camiseta = false
+    possui_camiseta = false,
   } = evento;
 
-  const [result] = await db.execute(`
+  const [result] = await db.execute(
+    `
     INSERT INTO agenda (
       titulo, descricao_curta, descricao_completa, local, endereco,
       telefone_contato, data_inicio, data_fim, imagem_url,
       com_inscricao, valor, responsavel_id, configuracoes, criado_por,
       possui_camiseta
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [
-    titulo,
-    descricao_curta,
-    descricao_completa,
-    local,
-    endereco,
-    telefone_contato,
-    data_inicio,
-    data_fim,
-    imagem_url,
-    com_inscricao,
-    valor,
-    responsavel_id,
-    JSON.stringify(configuracoes),
-    criado_por,
-    possui_camiseta
-  ]);
+  `,
+    [
+      titulo,
+      descricao_curta,
+      descricao_completa,
+      local,
+      endereco,
+      telefone_contato,
+      data_inicio,
+      data_fim,
+      imagem_url,
+      com_inscricao,
+      valor,
+      responsavel_id,
+      JSON.stringify(configuracoes),
+      criado_por,
+      possui_camiseta,
+    ]
+  );
 
   return result.insertId;
 };
 
 const excluirEvento = async (id) => {
-  const [result] = await db.execute(`
+  const [result] = await db.execute(
+    `
     DELETE FROM agenda WHERE id = ?
-  `, [id]);
+  `,
+    [id]
+  );
 
   return result.affectedRows > 0;
 };
@@ -119,7 +116,8 @@ const atualizar = async (id, dados) => {
     valor = 0,
     responsavel_id = null,
     configuracoes = {},
-    possui_camiseta = false
+    possui_camiseta = false,
+    status = 'ativo', 
   } = dados;
 
   const [result] = await db.execute(
@@ -137,7 +135,8 @@ const atualizar = async (id, dados) => {
       valor = ?,
       responsavel_id = ?,
       configuracoes = ?,
-      possui_camiseta = ?
+      possui_camiseta = ?,
+      status = ?           
     WHERE id = ?`,
     [
       titulo,
@@ -154,12 +153,14 @@ const atualizar = async (id, dados) => {
       responsavel_id,
       JSON.stringify(configuracoes),
       possui_camiseta,
-      id
+      status,              
+      id,
     ]
   );
 
-  return result;
+  return result.affectedRows > 0;
 };
+
 
 const buscarPorId = async (id) => {
   const [rows] = await db.execute(`SELECT * FROM agenda WHERE id = ?`, [id]);
@@ -180,5 +181,5 @@ module.exports = {
   excluirEvento,
   atualizar,
   buscarPorId,
-  atualizarStatus
+  atualizarStatus,
 };

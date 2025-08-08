@@ -15,8 +15,8 @@ const formatarDataHora = (data) => {
 
 const listarEventos = async (req, res) => {
   try {
-    const { status } = req.query;
-    const eventos = await agendaService.listarEventos(status);
+    const { status, situacao } = req.query;
+    const eventos = await agendaService.listarEventos(status, situacao);
 
     // Aqui ainda formatamos a data, se necessário
     const eventosFormatados = eventos.map((evento) => {
@@ -127,6 +127,20 @@ const atualizarStatus = async (req, res) => {
     return res.status(500).json({ sucesso: false, erro: error.message });
   }
 };
+const arquivarEvento = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ok = await agendaService.arquivarEvento(id);
+    if (!ok) {
+      return res.status(404).json({ sucesso: false, erro: 'Evento não encontrado' });
+    }
+    return res.status(200).json({ sucesso: true, mensagem: 'Evento arquivado com sucesso' });
+  } catch (error) {
+    console.error("Erro ao arquivar evento:", error);
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao arquivar evento' });
+  }
+};
+
 
 
 module.exports = {
@@ -135,5 +149,6 @@ module.exports = {
   criarEventoComImagem,
   excluirEvento,
   atualizarEvento,
-  atualizarStatus
+  atualizarStatus,
+  arquivarEvento
 };

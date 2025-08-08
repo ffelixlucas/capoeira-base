@@ -29,5 +29,12 @@ router.put(
   checkRole(['admin']),
   agendaController.atualizarStatus
 );
+router.put(
+  '/:id/arquivar',
+  verifyToken,
+  checkRole(['admin', 'instrutor', 'midia']),
+  agendaController.arquivarEvento
+);
+
 
 module.exports = router;
