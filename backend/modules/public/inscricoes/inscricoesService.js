@@ -108,37 +108,46 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   };
 };
 
-/**
- * Processa o webhook do Mercado Pago
- */
+
 const processarWebhookService = async (payload) => {
-  if (payload.type !== "payment") return;
+  if (payload?.type !== "payment") return;
 
-  const paymentId = payload.data.id;
+  try {
+    const paymentId = payload.data.id;
 
-  const response = await axios.get(
-    `https://api.mercadopago.com/v1/payments/${paymentId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
-      },
+    const { data: pagamento } = await axios.get(
+      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+      { headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` } }
+    );
+
+    if (pagamento.status !== "approved") return;
+
+    const inscricaoId = Number(pagamento.external_reference); // foi salvo como string no create
+    const bruto = Number(pagamento.transaction_amount); // valor cobrado
+    const liquido = Number(pagamento.transaction_details?.net_received_amount || 0);
+    const taxa_valor = Math.max(0, bruto - liquido);
+    const taxa_percentual = bruto > 0 ? Number(((taxa_valor / bruto) * 100).toFixed(2)) : 0;
+
+    // Atualiza a inscrição com bruto + líquido + taxas (uma única query)
+    await atualizarInscricaoParaPago(inscricaoId, {
+      status: "pago",
+      pagamento_id: pagamento.id,
+      valor_bruto: bruto,
+      valor_liquido: liquido,
+      taxa_valor,
+      taxa_percentual,
+    });
+
+    // Envia e-mail de confirmação
+    const inscricao = await buscarInscricaoDetalhadaService(inscricaoId);
+    if (inscricao) {
+      await enviarEmailConfirmacao(inscricao);
     }
-  );
-
-  const pagamento = response.data;
-
-  // 7️⃣ Se o pagamento foi aprovado → atualiza inscrição para pago
-  if (pagamento.status === "approved") {
-    const inscricaoId = pagamento.external_reference;
-    await atualizarInscricaoParaPago(inscricaoId, pagamento.transaction_amount);
-
-        // 🔔 Envia e-mail de confirmação
-        const inscricao = await buscarInscricaoDetalhadaService(inscricaoId);
-        if (inscricao) {
-          await enviarEmailConfirmacao(inscricao);
-        }
+  } catch (err) {
+    console.error("Erro no webhook do Mercado Pago:", err?.response?.data || err);
   }
 };
+
 
 const buscarInscricaoDetalhadaService = async (id) => {
   const inscricao = await buscarInscricaoComEvento(id);
@@ -157,8 +166,7 @@ const buscarInscricaoDetalhadaService = async (id) => {
       titulo: inscricao.titulo,
       data: inscricao.data,
       local: inscricao.local,
-      possui_camiseta: inscricao.possui_camiseta
-
+      possui_camiseta: inscricao.possui_camiseta,
     },
   };
 };

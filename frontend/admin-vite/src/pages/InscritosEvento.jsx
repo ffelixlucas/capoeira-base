@@ -129,12 +129,13 @@ function InscritosEvento() {
           cor="blue"
         />
 
-        <CardEstat
-          valor={`R$ ${(evento?.total_inscritos * (evento?.valor || 0)).toFixed(2)}`}
-          label="Valor Arrecadado"
-          Icon={CurrencyDollarIcon}
-          cor="green"
-        />
+<CardEstat
+  valor={`R$ ${Number(evento?.valor_liquido_total ?? 0).toFixed(2)}`}
+  label="Total (líquido após taxas)"
+  Icon={CurrencyDollarIcon}
+  cor="green"
+/>
+
       </div>
 
       <div className="flex justify-between mb-4">

@@ -103,13 +103,27 @@ const atualizarInscricaoComPix = async (id, pagamento) => {
 
 /**
  * Atualiza inscrição para pago quando o webhook confirmar
+ * Salva status, id do pagamento, bruto, líquido e taxas (uma única query)
  */
-const atualizarInscricaoParaPago = async (id, valor) => {
+const atualizarInscricaoParaPago = async (id, dados) => {
   await db.execute(
     `UPDATE inscricoes_evento 
-     SET status = 'pago', valor = ?, atualizado_em = NOW()
+       SET status = 'pago',
+           pagamento_id = ?,
+           valor_bruto = ?,
+           valor_liquido = ?,
+           taxa_valor = ?,
+           taxa_percentual = ?,
+           atualizado_em = NOW()
      WHERE id = ?`,
-    [valor, id]
+    [
+      dados.pagamento_id ?? null,
+      dados.valor_bruto ?? null,
+      dados.valor_liquido ?? null,
+      dados.taxa_valor ?? null,
+      dados.taxa_percentual ?? null,
+      id,
+    ]
   );
 };
 
