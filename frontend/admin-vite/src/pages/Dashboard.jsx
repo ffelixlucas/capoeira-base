@@ -1,5 +1,6 @@
 // src/pages/Dashboard.jsx
 import React from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { listarEventos } from "../services/agendaService";
 import { listarImagens } from "../services/galeriaService";
@@ -20,6 +21,7 @@ import logo from "../assets/images/logo.png";
 import { listarAlunos } from "../services/alunoService";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { usuario } = useAuth();
   const { temPapel } = usePermissao();
   const [qtdEventos, setQtdEventos] = useState(0);
@@ -38,9 +40,6 @@ export default function Dashboard() {
     fetchAlunos();
   }, []);
   const botoes = [
-    { to: "/alunos", label: "Alunos", roles: ["admin", "instrutor"] },
-    { to: "/agenda", label: "Eventos", roles: ["admin", "instrutor"] },
-    { to: "/galeria", label: "Galeria", roles: ["admin", "midia"] },
     {
       to: "/equipe",
       label: "Equipe",
@@ -99,29 +98,14 @@ export default function Dashboard() {
     fetchFotos();
   }, []);
 
-  const [botaoDestaque, setBotaoDestaque] = useState(null);
-
-  useEffect(() => {
-    if (botaoDestaque) {
-      const el = document.getElementById(`botao-${botaoDestaque}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-
-        // dispara evento customizado para sinalizar destaque
-        el.dispatchEvent(new CustomEvent("destacar"));
-      }
-      setBotaoDestaque(null);
-    }
-  }, [botaoDestaque]);
 
   const eventosOrdenados = Array.isArray(eventosResumo)
-  ? [...eventosResumo].sort((a, b) => {
-      const dataA = new Date(a.data_inicio);
-      const dataB = new Date(b.data_inicio);
-      return dataA - dataB;
-    })
-  : [];
-    
+    ? [...eventosResumo].sort((a, b) => {
+        const dataA = new Date(a.data_inicio);
+        const dataB = new Date(b.data_inicio);
+        return dataA - dataB;
+      })
+    : [];
 
   return (
     <>
@@ -144,11 +128,7 @@ export default function Dashboard() {
             Icon={UserGroupIcon}
             cor="green"
             onClick={() => {
-              const target = document.getElementById("botao-alunos");
-              if (target) {
-                target.scrollIntoView({ behavior: "smooth", block: "center" });
-                target.dispatchEvent(new CustomEvent("destacar"));
-              }
+              navigate("/alunos");
             }}
             cursor="pointer"
           />
@@ -158,11 +138,7 @@ export default function Dashboard() {
             label="Lembretes"
             Icon={BellAlertIcon}
             cor="red"
-            onClick={() => {
-              const target = document.getElementById("lembretes-section");
-              if (target)
-                target.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
+            onClick={() => setAbrirModal(true)}
             cursor="pointer"
           />
 
@@ -171,8 +147,10 @@ export default function Dashboard() {
             label="Eventos"
             Icon={CalendarIcon}
             cor="blue"
-            onClick={() => setBotaoDestaque("agenda")}
-            cursor="pointer"
+            onClick={() => {
+              navigate("/agenda");
+            }}
+            cursor={"pointer"}
           />
 
           <CardEstat
@@ -181,11 +159,7 @@ export default function Dashboard() {
             Icon={PhotoIcon}
             cor="amber"
             onClick={() => {
-              const target = document.getElementById("botao-galeria");
-              if (target) {
-                target.scrollIntoView({ behavior: "smooth", block: "center" });
-                target.dispatchEvent(new CustomEvent("destacar"));
-              }
+              navigate("/galeria");
             }}
             cursor="pointer"
           />
@@ -200,8 +174,8 @@ export default function Dashboard() {
             {eventosOrdenados.length > 0 ? (
               eventosOrdenados.slice(0, 5).map((evento) => (
                 <li key={evento.id}>
-                  <a
-                    href="/agenda"
+                  <Link
+                    to="/agenda"
                     className="block hover:text-cor-primaria transition"
                   >
                     <span className="text-sm text-cor-texto/80">
@@ -210,7 +184,7 @@ export default function Dashboard() {
                         {evento.data_formatada} às {evento.horario_formatado}
                       </span>
                     </span>
-                  </a>
+                  </Link>
                 </li>
               ))
             ) : (
@@ -278,8 +252,6 @@ export default function Dashboard() {
   );
 }
 
-
-
 function BotaoModulo({ to, label }) {
   const [ativo, setAtivo] = React.useState(false);
 
@@ -290,27 +262,16 @@ function BotaoModulo({ to, label }) {
     }
   }, [ativo]);
 
-  React.useEffect(() => {
-    const id = `botao-${to.replace("/", "")}`;
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    const handler = () => setAtivo(true);
-    el.addEventListener("destacar", handler);
-
-    return () => el.removeEventListener("destacar", handler);
-  }, [to]);
 
   return (
-    <a
-      id={`botao-${to.replace("/", "")}`}
-      href={to}
+    <Link
+      to={to}
       onClick={() => setAtivo(false)} // remove se clicar direto
       className={`bg-cor-card border border-cor-secundaria/30 text-cor-titulo text-sm font-medium rounded-xl p-4 text-center transition-all ${
         ativo ? "bg-cor-secundaria" : "hover:bg-cor-secundaria"
       }`}
     >
       {label}
-    </a>
+    </Link>
   );
 }
