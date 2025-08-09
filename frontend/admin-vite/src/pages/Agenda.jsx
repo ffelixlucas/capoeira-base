@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { useAgenda } from "../hooks/useAgenda";
-import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import { ModalEvento as ModalEvento, Carrossel as CarrosselEventos } from "../components/agenda";
 
 function Agenda() {
@@ -27,7 +26,6 @@ function Agenda() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <BotaoVoltarDashboard className="mb-4" />
       <h1 className="text-2xl font-bold mb-4">Gerenciar Agenda</h1>
 
       {/* Botões principais */}

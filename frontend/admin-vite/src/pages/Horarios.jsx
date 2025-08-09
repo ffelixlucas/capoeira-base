@@ -5,7 +5,6 @@ import useHorarios from "../hooks/useHorarios";
 import HorarioList from "../components/horarios/HorarioList";
 import HorarioForm from "../components/horarios/HorarioForm";
 import { toast } from "react-toastify";
-import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 
 function Horarios() {
   const {
@@ -123,7 +122,6 @@ function Horarios() {
 
   return (
     <div className="p-4 space-y-4">
-      <BotaoVoltarDashboard className="mb-4" />
 
       {/* Título e botão de novo horário */}
       <div className="flex justify-between items-center">

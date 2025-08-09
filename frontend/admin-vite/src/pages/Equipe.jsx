@@ -5,7 +5,6 @@ import Busca from "../components/ui/Busca";
 import ContadorLista from "../components/ui/ContadorLista";
 import { useAuth } from "../contexts/AuthContext";
 import { useEquipe } from "../hooks/useEquipe";
-import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 
 function Equipe() {
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -25,7 +24,6 @@ function Equipe() {
 
   return (
     <div className="p-4">
-      <BotaoVoltarDashboard className="mb-4" />
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold">Gestão da Equipe</h1>
         <div className="flex gap-2">

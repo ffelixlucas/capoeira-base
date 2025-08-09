@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { IoMdAdd } from "react-icons/io";
-import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import { useTurmas } from "../hooks/useTurmas";
 import TurmaList from "../components/turmas/TurmaList";
 import TurmaForm from "../components/turmas/TurmaForm";
@@ -18,7 +17,6 @@ export default function Turmas() {
 
   return (
     <div className="p-4 max-w-md mx-auto">
-      <BotaoVoltarDashboard />
       <h1 className="text-2xl font-bold text-cor-primaria mb-4">Turmas</h1>
 
       <button

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import { listarEventos } from "../services/agendaService";
 
 function Inscricoes() {
@@ -33,7 +32,6 @@ function Inscricoes() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <BotaoVoltarDashboard className="mb-4" />
       <h1 className="text-2xl font-bold mb-3">Gerenciar Inscrições</h1>
 
       <button

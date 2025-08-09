@@ -6,7 +6,6 @@ import {
 } from "../components/galeria";
 
 import { useGaleria } from "../hooks/useGaleria";
-import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 
 
 function Galeria() {
@@ -26,7 +25,6 @@ function Galeria() {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
-            <BotaoVoltarDashboard />
 
 
       <GaleriaUploader

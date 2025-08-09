@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import AlunoList from "../components/alunos/AlunoList";
 import AlunoForm from "../components/alunos/AlunoForm";
 import Busca from "../components/ui/Busca";
@@ -54,7 +53,6 @@ function Alunos() {
 
   return (
     <div className="p-6 text-center">
-      <BotaoVoltarDashboard />
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-3">
         <div className="w-full sm:w-auto text-left">

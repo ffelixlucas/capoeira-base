@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import BotaoVoltarDashboard from "../components/ui/BotaoVoltarDashboard";
 import InscritoList from "../components/ui/InscritoList";
 import ModalInscrito from "../components/inscricoes/ModalInscrito";
 import Busca from "../components/ui/Busca";
@@ -139,7 +138,6 @@ function InscritosEvento() {
       </div>
 
       <div className="flex justify-between mb-4">
-        <BotaoVoltarDashboard />
         <Menu as="div" className="relative text-black">
           {/* Botão de ações */}
         </Menu>

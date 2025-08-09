@@ -1,6 +1,6 @@
 // LayoutAdmin.jsx
 import React, { useState } from "react";
-import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation, matchPath } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { usePermissao } from "../../hooks/usePermissao";
 import {
@@ -16,6 +16,11 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import logo from "../../assets/images/logo.png";
+
+// 🔹 NOVO: Back e meta das rotas
+import BackButton from "./BackButton";
+import { routeMeta } from "../../routes/routeMeta";
+import { useRouteHistory } from "../../hooks/useRouteHistory";
 
 function NavItem({ to, label, Icon, onClick, isActive }) {
   return (
@@ -49,6 +54,9 @@ function LayoutAdmin() {
   const [menuAberto, setMenuAberto] = useState(false);
   const { temPapel } = usePermissao();
 
+    // 🔹 registra cada navegação dentro do admin
+    useRouteHistory(location.pathname);
+
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
@@ -81,8 +89,8 @@ function LayoutAdmin() {
       roles: ["admin", "loja"],
     },
     {
-    to: "/horarios",
-    label: "Horários de aulas",
+      to: "/horarios",
+      label: "Horários de aulas",
       Icon: ClockIcon,
       roles: ["admin", "instrutor"],
     },
@@ -98,13 +106,26 @@ function LayoutAdmin() {
     (item) => item.roles.length === 0 || temPapel(item.roles)
   );
 
+  // 🔹 NOVO: Título baseado no pattern (suporta rotas com :params)
+  const getTitle = () => {
+    for (const meta of routeMeta) {
+      if (matchPath({ path: meta.pattern, end: true }, location.pathname)) {
+        return meta.title;
+      }
+    }
+    // fallback antigo por compatibilidade
+    return (
+      navItems.find((item) => item.to === location.pathname)?.label || "Painel"
+    );
+  };
+
   return (
     <div className="flex bg-cor-fundo text-cor-texto">
       {/* ============== MENU ============== */}
       {/* Mobile */}
       {menuAberto && (
         <div className="fixed inset-0 z-50 bg-cor-secundaria/95 p-6 flex flex-col w-72 overflow-y-auto">
-        <div className="flex justify-center mb-6 relative">
+          <div className="flex justify-center mb-6 relative">
             <div className="w-20 h-20">
               <img
                 src={logo}
@@ -130,7 +151,7 @@ function LayoutAdmin() {
             ))}
           </nav>
           <div className="border-t border-cor-secundaria pt-4 shrink-0">
-          <button
+            <button
               onClick={handleLogout}
               className="w-full flex items-center justify-center space-x-2 rounded-lg px-4 py-3 text-red-400 hover:bg-red-400/10 transition"
             >
@@ -180,10 +201,13 @@ function LayoutAdmin() {
       <div className="flex flex-col flex-1 sm:ml-72 min-h-screen">
         {/* Header */}
         <header className="flex items-center justify-between bg-cor-secundaria/50 backdrop-blur p-4 sm:p-6 border-b border-cor-secundaria">
-          <h2 className="text-xl font-semibold text-cor-titulo">
-            {navItems.find((item) => item.to === location.pathname)?.label ||
-              "Painel"}
-          </h2>
+          <div className="flex items-center gap-3">
+            {/* 🔹 NOVO: Back sempre visível (mobile-first) */}
+            <BackButton />
+            <h2 className="text-xl font-semibold text-cor-titulo">
+              {getTitle()}
+            </h2>
+          </div>
           <button
             className="sm:hidden p-2 rounded-lg hover:bg-cor-secundaria"
             onClick={toggleMenu}
