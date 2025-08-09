@@ -39,7 +39,7 @@ app.use('/api/alunos', alunosRoutes);
 app.use("/api/notas-aluno", require("./modules/notasAluno/notasAlunoRoutes"));
 app.use("/api/turmas", require("./modules/turmas/turmasRoutes.js"));
 app.use('/api/inscricoes', inscricoesRoutes);
-
+app.use('/api/presencas', require('./modules/presencas/presencasRoutes'));
 // Rotas públicas
 app.use('/api/public/agenda', require('./modules/public/agenda/publicAgendaRoutes'));
 app.use('/api/public/inscricoes', require('./modules/public/inscricoes/inscricoesRoutes'));
