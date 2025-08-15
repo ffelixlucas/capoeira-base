@@ -8,6 +8,10 @@ import { listarLembretes } from "../services/lembretesService";
 import { useAuth } from "../contexts/AuthContext";
 import { usePermissao } from "../hooks/usePermissao";
 import CardEstat from "../components/ui/CardEstat";
+import {
+  ClipboardDocumentListIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 
 import {
   UserGroupIcon,
@@ -19,6 +23,7 @@ import {
 import ModalLembretes from "../components/lembretes/ModalLembretes";
 import logo from "../assets/images/logo.png";
 import { listarAlunos } from "../services/alunoService";
+import { getMinhasTurmas } from "../services/turmaService";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -27,6 +32,29 @@ export default function Dashboard() {
   const [qtdEventos, setQtdEventos] = useState(0);
   const [abrirModal, setAbrirModal] = useState(false);
   const [qtdAlunos, setQtdAlunos] = useState(0);
+  const [minhasTurmas, setMinhasTurmas] = useState([]);
+  const [temTurmaResponsavel, setTemTurmaResponsavel] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      try {
+        const lista = await getMinhasTurmas();
+        if (!ativo) return;
+        const arr = Array.isArray(lista) ? lista : [];
+        setMinhasTurmas(arr);
+        setTemTurmaResponsavel(arr.length > 0);
+      } catch (e) {
+        console.error("Erro ao buscar minhas turmas:", e);
+        setMinhasTurmas([]);
+        setTemTurmaResponsavel(false);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
   useEffect(() => {
     const fetchAlunos = async () => {
       try {
@@ -98,7 +126,6 @@ export default function Dashboard() {
     fetchFotos();
   }, []);
 
-
   const eventosOrdenados = Array.isArray(eventosResumo)
     ? [...eventosResumo].sort((a, b) => {
         const dataA = new Date(a.data_inicio);
@@ -109,7 +136,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="space-y-6 pb-10">
+      <div className="space-y-6 pb-28">
         {/* Boas-vindas */}
         <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
           <h2 className="text-2xl font-bold text-cor-titulo">
@@ -119,6 +146,56 @@ export default function Dashboard() {
             Bem-vindo ao painel de administração
           </p>
         </div>
+
+        {/* Ação Rápida: Chamada (outline, diferente dos cards) */}
+        {(temPapel(["instrutor"]) ||
+          (temPapel(["admin"]) && temTurmaResponsavel)) && (
+          <button
+            onClick={() => {
+              if (minhasTurmas.length === 1) {
+                // vai direto para a turma do usuário
+                navigate(`/presencas?turma=${minhasTurmas[0].id}`);
+              } else {
+                // deixa escolher na página de presenças
+                navigate("/presencas");
+              }
+            }}
+            aria-label="Abrir chamada para tirar faltas"
+            className="w-full rounded-xl border-2 border-dashed border-cor-primaria/80 
+               bg-transparent text-cor-primaria px-4 py-3
+               flex items-center justify-between
+               active:scale-[0.99] transition
+               focus:outline-none focus:ring-2 focus:ring-cor-primaria/40"
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="h-10 w-10 rounded-lg border border-cor-primaria/50 
+                      flex items-center justify-center"
+              >
+                <ClipboardDocumentListIcon
+                  className="h-6 w-6"
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="text-left leading-tight">
+                <div className="text-[15px] font-semibold">
+                  Chamada (tirar faltas)
+                </div>
+                <div className="text-xs opacity-80">
+                  {minhasTurmas.length === 1
+                    ? minhasTurmas[0]?.nome
+                      ? `Turma: ${minhasTurmas[0].nome}`
+                      : "sua turma"
+                    : "selecione a turma"}
+                </div>
+              </div>
+            </div>
+            <ChevronRightIcon
+              className="h-5 w-5 opacity-90"
+              aria-hidden="true"
+            />
+          </button>
+        )}
 
         {/* Estatísticas Rápidas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -261,7 +338,6 @@ function BotaoModulo({ to, label }) {
       return () => clearTimeout(timeout);
     }
   }, [ativo]);
-
 
   return (
     <Link

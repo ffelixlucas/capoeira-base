@@ -32,23 +32,13 @@ exports.listarPorTurmaEData = async (turmaId, data) => {
 };
 
 /** Upsert em lote usando UNIQUE (aluno_id, turma_id, data) */
+// presencasRepository.js
 exports.upsertBatch = async (linhas = []) => {
-  if (!linhas || linhas.length === 0) return;
+  if (!linhas || linhas.length === 0) return { affectedRows: 0, info: "" };
 
   const values = [];
-  const placeholders = linhas
-    .map(() => "(?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)")
-    .join(",");
-
-  for (const l of linhas) {
-    values.push(
-      l.aluno_id,
-      l.turma_id,
-      l.data,
-      l.status,
-      l.created_by ?? null
-    );
-  }
+  const placeholders = linhas.map(() => "(?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)").join(",");
+  for (const l of linhas) values.push(l.aluno_id, l.turma_id, l.data, l.status, l.created_by ?? null);
 
   const sql = `
     INSERT INTO presencas (aluno_id, turma_id, data, status, created_by, created_at, updated_at)
@@ -58,9 +48,10 @@ exports.upsertBatch = async (linhas = []) => {
       created_by = VALUES(created_by),
       updated_at = CURRENT_TIMESTAMP
   `;
-
-  await db.execute(sql, values);
+  const [result] = await db.execute(sql, values);
+  return { affectedRows: result.affectedRows ?? 0, info: result.info ?? "" };
 };
+
 
 /** Buscar por id */
 exports.buscarPorId = async (id) => {
@@ -91,23 +82,33 @@ exports.atualizarUma = async (id, { status, observacao }) => {
   await db.execute(sql, vals);
 };
 
-/** Retorna quais IDs NÃO pertencem à turma informada */
+/** Retorna quais IDs NÃO pertencem à turma informada (usando MATRICULAS ativas) */
+/** Retorna quais IDs NÃO pertencem à turma informada (usando MATRICULAS ativas) */
 exports.alunosForaDaTurma = async (turmaId, alunoIds = []) => {
   if (!alunoIds.length) return [];
 
-  const placeholders = alunoIds.map(() => "?").join(",");
-  const sql = `
-    SELECT id 
-      FROM alunos 
-     WHERE id IN (${placeholders}) 
-       AND turma_id = ?
-  `;
-  const params = [...alunoIds, turmaId];
+  // Normaliza tudo pra Number pra evitar mismatch "1" vs 1
+  const alunoIdsNum = alunoIds.map(n => Number(n)).filter(Boolean);
+  const turmaIdNum = Number(turmaId);
 
+  const placeholders = alunoIdsNum.map(() => "?").join(",");
+  const sql = `
+    SELECT m.aluno_id
+      FROM matriculas m
+     WHERE m.aluno_id IN (${placeholders})
+       AND m.turma_id = ?
+       AND m.data_fim IS NULL
+  `;
+  const params = [...alunoIdsNum, turmaIdNum];
   const [rows] = await db.execute(sql, params);
-  const encontrados = new Set(rows.map((r) => r.id));
-  return alunoIds.filter((id) => !encontrados.has(id));
+
+  // Normaliza retorno do banco
+  const encontrados = new Set(rows.map(r => Number(r.aluno_id)));
+  const fora = alunoIdsNum.filter(id => !encontrados.has(id));
+  return fora;
 };
+
+
 
 /** Relatório por período (agregado por turma) 
  * Retorna: turma_id, turma_nome, presentes, faltas, total

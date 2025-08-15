@@ -6,13 +6,13 @@ async function listar(req, res) {
     const turmaId = req.query.turma_id ? Number(req.query.turma_id) : null;
 
     const alunos = await alunoService.listarTodos(usuario, turmaId);
+
     res.json(alunos);
   } catch (err) {
     console.error("Erro ao listar alunos:", err);
     res.status(500).json({ erro: "Erro ao buscar alunos." });
   }
 }
-
 
 async function buscar(req, res) {
   try {

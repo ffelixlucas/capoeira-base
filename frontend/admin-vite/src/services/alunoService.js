@@ -1,10 +1,17 @@
 // src/services/alunoService.js
 import api from "./api"; // axios com token JWT
 
-export async function listarAlunos() {
-  const res = await api.get("/alunos");
+export async function listarAlunos(turmaId) {
+  const url = turmaId ? `/alunos?turma_id=${turmaId}` : "/alunos";
+
+
+  const res = await api.get(url);
+
+  const ids = Array.isArray(res.data) ? res.data.map(a => a.id) : [];
+
   return res.data;
 }
+
 
 export async function buscarAluno(id) {
   const res = await api.get(`/alunos/${id}`);

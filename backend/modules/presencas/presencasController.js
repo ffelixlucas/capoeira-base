@@ -30,22 +30,22 @@ exports.listarPorTurmaEData = async (req, res) => {
  * Body: { turma_id, data, itens: [{ aluno_id, status }] }
  */
 exports.salvarBatch = async (req, res) => {
+
   try {
     const { turma_id, data, itens } = req.body;
     if (!turma_id || !data || !Array.isArray(itens) || itens.length === 0) {
-      return res
-        .status(400)
-        .json({ erro: 'turma_id, data e itens[] são obrigatórios' });
+      return res.status(400).json({ erro: 'turma_id, data e itens[] são obrigatórios' });
     }
 
-    await service.salvarBatch({
-      user: req.user,
+    const result = await service.salvarBatch({
+      user: req.user,              // (mantém igual ao seu middleware)
       turma_id: Number(turma_id),
       data,
       itens,
     });
 
-    return res.status(201).json({ ok: true, mensagem: 'Presenças salvas' });
+    // antes: { ok: true, mensagem: 'Presenças salvas' }
+    return res.status(201).json(result); // agora devolve { ok, upsert }
   } catch (e) {
     console.error(e);
     return res.status(e.status || 500).json({

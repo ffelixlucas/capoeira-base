@@ -1,4 +1,4 @@
-const repo = require('./presencasRepository');
+const repo = require("./presencasRepository");
 
 /** Helpers */
 function httpError(message, status) {
@@ -7,18 +7,18 @@ function httpError(message, status) {
   return e;
 }
 function roleOf(user) {
-  return user?.role?.toString?.().toLowerCase?.() || '';
+  return user?.role?.toString?.().toLowerCase?.() || "";
 }
 function isAdmin(user) {
-  return roleOf(user) === 'admin';
+  return roleOf(user) === "admin";
 }
 function isInstrutor(user) {
-  return roleOf(user) === 'instrutor';
+  return roleOf(user) === "instrutor";
 }
 async function ensurePermissao(user, turmaId) {
   if (isInstrutor(user)) {
     const ok = await repo.instrutorPossuiTurma(user.id, turmaId);
-    if (!ok) throw httpError('Sem permissão para esta turma', 403);
+    if (!ok) throw httpError("Sem permissão para esta turma", 403);
   }
 }
 
@@ -34,36 +34,41 @@ exports.salvarBatch = async ({ user, turma_id, data, itens }) => {
   await ensurePermissao(user, turma_id);
 
   if (!Array.isArray(itens) || itens.length === 0) {
-    throw httpError('itens[] é obrigatório', 400);
+    throw httpError("itens[] é obrigatório", 400);
   }
 
-  // Validação: todos os alunos precisam pertencer à turma
-  const alunoIds = itens.map(i => Number(i.aluno_id)).filter(Boolean);
+  const alunoIds = itens.map((i) => Number(i.aluno_id)).filter(Boolean);
+
   const fora = await repo.alunosForaDaTurma(Number(turma_id), alunoIds);
+
   if (fora.length) {
-    throw httpError(`Alunos fora da turma ${turma_id}: ${fora.join(', ')}`, 400);
+    throw httpError(
+      `Alunos fora da turma ${turma_id}: ${fora.join(", ")}`,
+      400
+    );
   }
 
-  // Normaliza e grava
-  const linhas = itens.map(i => ({
+  const linhas = itens.map((i) => ({
     aluno_id: Number(i.aluno_id),
     turma_id: Number(turma_id),
     data,
-    status: i.status === 'presente' ? 'presente' : 'falta',
-    created_by: user?.id || null
+    status: i.status === "presente" ? "presente" : "falta",
+    created_by: user?.id || null,
   }));
 
-  await repo.upsertBatch(linhas);
-};
+  // antes: await repo.upsertBatch(linhas);
+  const upsert = await repo.upsertBatch(linhas);
 
+  return { ok: true, upsert };
+};
 /** Atualização individual */
 exports.atualizarUma = async ({ user, id, status, observacao }) => {
   const registro = await repo.buscarPorId(id);
-  if (!registro) throw httpError('Registro não encontrado', 404);
+  if (!registro) throw httpError("Registro não encontrado", 404);
 
   await ensurePermissao(user, registro.turma_id);
 
-  if (!status && typeof observacao === 'undefined') {
+  if (!status && typeof observacao === "undefined") {
     // nada a atualizar
     return;
   }
@@ -77,18 +82,18 @@ exports.atualizarUma = async ({ user, id, status, observacao }) => {
  * Retorno por turma: { turma_id, turma_nome, presentes, faltas, total, taxa_presenca }
  */
 exports.relatorioPorPeriodo = async ({ user, inicio, fim }) => {
-  if (!inicio || !fim) throw httpError('inicio e fim são obrigatórios', 400);
+  if (!inicio || !fim) throw httpError("inicio e fim são obrigatórios", 400);
 
   let turmaIds = [];
   if (isInstrutor(user)) {
     const turmas = await repo.turmasDoInstrutor(user.id);
-    turmaIds = turmas.map(t => t.id);
+    turmaIds = turmas.map((t) => t.id);
     if (turmaIds.length === 0) return { inicio, fim, turmas: [] };
   }
   // Admin vê todas (turmaIds vazio => sem filtro)
   const rows = await repo.relatorioPorPeriodo({ inicio, fim, turmaIds });
 
-  const turmas = rows.map(r => {
+  const turmas = rows.map((r) => {
     const total = Number(r.total) || 0;
     const presentes = Number(r.presentes) || 0;
     const faltas = Number(r.faltas) || 0;
@@ -99,7 +104,7 @@ exports.relatorioPorPeriodo = async ({ user, inicio, fim }) => {
       presentes,
       faltas,
       total,
-      taxa_presenca
+      taxa_presenca,
     };
   });
 

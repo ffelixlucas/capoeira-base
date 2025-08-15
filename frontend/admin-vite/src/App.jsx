@@ -14,6 +14,7 @@ import PrivateRoute from "./components/layout/PrivateRoute";
 import RoleRoute from "./components/RoleRoute";
 import LayoutAdmin from "./components/layout/LayoutAdmin";
 
+
 // Imports de páginas administrativas
 
 import Login from "./pages/Login";
@@ -30,6 +31,8 @@ import Turmas from "./pages/Turmas";
 import Contatos from "./pages/Contatos";
 import Inscricoes from "./pages/Inscricoes";
 import InscritosEvento from "./pages/InscritosEvento.jsx";
+import Presencas from "./pages/Presencas.jsx";
+
 
 // Imports de páginas públicas
 import LayoutPublic from "./components/layout/LayoutPublic";
@@ -78,6 +81,8 @@ function App() {
             <Route path="/contatos" element={<Contatos />} />
             <Route path="/inscricoes" element={<Inscricoes />} />
             <Route path="/inscricoes/:eventoId" element={<InscritosEvento />} />
+            <Route path="/presencas" element={<Presencas />} />
+
 
             <Route
               path="/horarios"
