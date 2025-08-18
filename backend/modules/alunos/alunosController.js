@@ -66,6 +66,29 @@ async function trocarTurma(req, res) {
   }
 }
 
+async function metricasAluno(req, res) {
+  try {
+    const { id } = req.params;
+    let { inicio, fim } = req.query;
+
+    // ✅ Default seguro se não vier nada
+    const hoje = new Date().toISOString().split("T")[0];
+    if (!inicio) {
+      const anoAtual = new Date().getFullYear();
+      inicio = `${anoAtual}-01-01`;
+    }
+    if (!fim) {
+      fim = hoje;
+    }
+
+    const metricas = await alunoService.metricasAluno(Number(id), inicio, fim);
+
+    res.json(metricas);
+  } catch (err) {
+    console.error("Erro ao buscar métricas do aluno:", err);
+    res.status(400).json({ erro: err.message });
+  }
+}
 module.exports = {
   listar,
   buscar,
@@ -73,4 +96,5 @@ module.exports = {
   editar,
   excluir,
   trocarTurma,
+  metricasAluno
 };

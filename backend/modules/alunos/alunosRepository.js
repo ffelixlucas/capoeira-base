@@ -36,11 +36,22 @@ async function listarAlunosPorInstrutor(equipe_id) {
 
 // Busca aluno por ID
 async function buscarPorId(id) {
-  const [rows] = await connection.execute(`SELECT * FROM alunos WHERE id = ?`, [
-    id,
-  ]);
+  const [rows] = await connection.execute(
+    `SELECT 
+       a.*,
+       t.nome AS turma,
+       t.id AS turma_id
+     FROM alunos a
+     LEFT JOIN matriculas m 
+       ON m.aluno_id = a.id AND m.data_fim IS NULL
+     LEFT JOIN turmas t 
+       ON t.id = m.turma_id
+     WHERE a.id = ?`,
+    [id]
+  );
   return rows[0];
 }
+
 
 // Cria novo aluno
 async function criarAluno(dados) {
@@ -172,6 +183,28 @@ async function migrarAlunosDeTurma(origemId, destinoId) {
   );
 }
 
+// Métricas de presença do aluno em um período
+async function metricasAluno(alunoId, inicio, fim) {
+  const [rows] = await connection.execute(
+    `
+    SELECT
+      SUM(CASE WHEN status = 'presente' THEN 1 ELSE 0 END) AS presentes,
+      SUM(CASE WHEN status = 'falta' THEN 1 ELSE 0 END) AS faltas,
+      COUNT(*) AS total
+    FROM presencas
+    WHERE aluno_id = ?
+      AND DATE(data) BETWEEN ? AND ?
+    `,
+    [alunoId, inicio, fim]
+  );
+
+  return {
+    presentes: Number(rows[0]?.presentes || 0),
+    faltas: Number(rows[0]?.faltas || 0),
+    total: Number(rows[0]?.total || 0)
+  };
+}
+
 module.exports = {
   listarAlunosComTurmaAtual,
   listarAlunosPorInstrutor,
@@ -183,4 +216,5 @@ module.exports = {
   trocarTurma,
   listarAlunosPorTurmas,
   migrarAlunosDeTurma,
-};
+  metricasAluno,
+} 

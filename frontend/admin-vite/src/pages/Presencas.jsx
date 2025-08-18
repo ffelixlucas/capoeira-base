@@ -368,17 +368,19 @@ export default function Presencas() {
       </div>
 
       {/* Botão fixo de salvar */}
-      <div className="fixed inset-x-4 bottom-5 z-50">
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
         <button
           disabled={
             !turmaIdNum || !turmaPermitida || salvando || itens.length === 0
           }
           onClick={handleSalvar}
-          className={`w-full rounded-2xl px-5 py-3 text-white shadow-xl flex items-center justify-center gap-2 ${
-            !turmaIdNum || !turmaPermitida || salvando || itens.length === 0
-              ? "bg-cor-secundaria/40"
-              : "bg-cor-primaria active:scale-[0.98]"
-          }`}
+          className={`rounded-2xl px-6 py-3 text-white shadow-xl flex items-center justify-center gap-2
+      ${
+        !turmaIdNum || !turmaPermitida || salvando || itens.length === 0
+          ? "bg-cor-secundaria/40"
+          : "bg-cor-primaria active:scale-[0.98]"
+      }
+    `}
           aria-label="Salvar presenças"
         >
           <CheckCircleIcon className="h-5 w-5" aria-hidden="true" />

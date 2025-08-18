@@ -1,8 +1,10 @@
-import { useState } from "react";
 import ModalFicha from "../ui/ModalFicha";
 import NotasAluno from "./NotasAluno";
 import { excluirAluno } from "../../services/alunoService";
+import api from "../../services/api";
 import { toast } from "react-toastify";
+import React, { useState, useEffect } from "react";
+
 
 export default function ModalAluno({
   aberto,
@@ -12,6 +14,34 @@ export default function ModalAluno({
   onExcluido,
 }) {
   const [foto, setFoto] = useState(aluno?.foto_url || null);
+  const [metricas, setMetricas] = useState(aluno?.metricas || null);
+  const [inicio, setInicio] = useState("");
+  const [fim, setFim] = useState("");
+
+  // Atualiza métricas quando abrir modal
+  React.useEffect(() => {
+    if (aluno && aberto) {
+      setMetricas(aluno.metricas || null);
+
+      const anoAtual = new Date().getFullYear();
+      setInicio(`${anoAtual}-01-01`);
+      setFim(new Date().toISOString().split("T")[0]);
+      carregarMetricasPeriodo(); // já busca ao abrir
+
+    }
+  }, [aluno, aberto]);
+
+  async function carregarMetricasPeriodo() {
+    try {
+      const { data } = await api.get(`/alunos/${aluno.id}/metricas`, {
+        params: { inicio, fim }
+      });
+      setMetricas(data);
+    } catch (err) {
+      console.error("Erro ao carregar métricas:", err);
+      toast.error("Erro ao carregar métricas de presença");
+    }
+  }
 
   if (!aluno) return null;
 
@@ -31,10 +61,16 @@ export default function ModalAluno({
     { label: "Observações médicas", valor: aluno.observacoes_medicas },
   ];
 
-  const handleExcluir = async () => {
-    const confirmado = window.confirm(
-      "Tem certeza que deseja excluir este aluno?"
+  if (metricas) {
+    dados.push(
+      { label: "Presenças", valor: `${metricas.presentes}/${metricas.total}` },
+      { label: "Faltas", valor: metricas.faltas },
+      { label: "Frequência", valor: `${Math.round(metricas.taxa_presenca * 100)}%` }
     );
+  }
+
+  const handleExcluir = async () => {
+    const confirmado = window.confirm("Tem certeza que deseja excluir este aluno?");
     if (!confirmado) return;
 
     try {
@@ -54,40 +90,55 @@ export default function ModalAluno({
       onClose={onClose}
       titulo={
         <div className="flex justify-center mb-4 relative">
-  {/* Foto ou iniciais */}
-  {foto ? (
-    <img
-      src={foto}
-      alt="Foto do aluno"
-      className="h-24 w-24 rounded-full object-cover border shadow"
-    />
-  ) : (
-    <div className="h-24 w-24 rounded-full bg-purple-500 flex items-center justify-center text-3xl font-bold text-white shadow">
-      {(aluno.apelido || aluno.nome || "?")
-        .substring(0, 1)
-        .toUpperCase()}
-    </div>
-  )}
-
-  {/* Ícone câmera estilo Google */}
-  <button
-    className="absolute bottom-0 right-1/2 translate-x-10 w-8 h-8 flex items-center justify-center 
-               bg-white border border-gray-300 rounded-full shadow-md hover:bg-gray-100"
-    title="Adicionar/Alterar foto"
-    onClick={() => alert('Futuramente: upload foto Firebase')}
-  >
-    <span className="material-symbols-outlined text-gray-600 text-[18px] leading-none">
-      photo_camera
-    </span>
-  </button>
-</div>
-
+          {foto ? (
+            <img
+              src={foto}
+              alt="Foto do aluno"
+              className="h-24 w-24 rounded-full object-cover border shadow"
+            />
+          ) : (
+            <div className="h-24 w-24 rounded-full bg-purple-500 flex items-center justify-center text-3xl font-bold text-white shadow">
+              {(aluno.apelido || aluno.nome || "?").substring(0, 1).toUpperCase()}
+            </div>
+          )}
+          <button
+            className="absolute bottom-0 right-1/2 translate-x-10 w-8 h-8 flex items-center justify-center 
+                       bg-white border border-gray-300 rounded-full shadow-md hover:bg-gray-100"
+            title="Adicionar/Alterar foto"
+            onClick={() => alert('Futuramente: upload foto Firebase')}
+          >
+            <span className="material-symbols-outlined text-gray-600 text-[18px] leading-none">
+              photo_camera
+            </span>
+          </button>
+        </div>
       }
       subtitulo={aluno.nome}
       dados={dados}
       onEditar={() => onEditar?.(aluno)}
     >
-      {/* Conteúdo adicional exclusivo dos alunos */}
+      {/* Filtro opcional de período */}
+      <div className="flex gap-2 items-center mt-4 mb-2">
+        <input
+          type="date"
+          value={inicio}
+          onChange={(e) => setInicio(e.target.value)}
+          className="border rounded px-2 py-1 text-sm"
+        />
+        <input
+          type="date"
+          value={fim}
+          onChange={(e) => setFim(e.target.value)}
+          className="border rounded px-2 py-1 text-sm"
+        />
+        <button
+          onClick={carregarMetricasPeriodo}
+          className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+        >
+          Filtrar
+        </button>
+      </div>
+
       <NotasAluno alunoId={aluno.id} />
 
       <div className="mt-4 flex justify-end">

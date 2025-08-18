@@ -2,7 +2,6 @@
 const alunoRepo = require("./alunosRepository");
 const turmaRepo = require("../turmas/turmasRepository");
 
-
 async function listarTodos(usuario, turmaId = null) {
   // Se for admin
   if (usuario.roles.includes("admin")) {
@@ -16,7 +15,7 @@ async function listarTodos(usuario, turmaId = null) {
   const turmas = await turmaRepo.listarTurmasPorEquipe(usuario.id);
   if (!turmas || turmas.length === 0) return [];
 
-  const turmaIds = turmas.map(t => t.id);
+  const turmaIds = turmas.map((t) => t.id);
 
   // Se estiver filtrando por uma turma específica, verifica se ela é da responsabilidade do instrutor
   if (turmaId) {
@@ -27,7 +26,6 @@ async function listarTodos(usuario, turmaId = null) {
   // Retorna todas as turmas que o instrutor gerencia
   return await alunoRepo.listarAlunosPorTurmas(turmaIds);
 }
-
 
 async function buscarPorId(id) {
   const aluno = await alunoRepo.buscarPorId(id);
@@ -65,11 +63,33 @@ async function trocarTurma(id, novaTurmaId) {
   await alunoRepo.trocarTurma(id, novaTurmaId);
 }
 
+async function metricasAluno(id, inicio, fim) {
+  const hoje = new Date().toISOString().split("T")[0];
+
+  // ✅ Garante período padrão
+  if (!inicio) {
+    const anoAtual = new Date().getFullYear();
+    inicio = `${anoAtual}-01-01`;
+  }
+  if (!fim) {
+    fim = hoje;
+  }
+
+  const metricas = await alunoRepo.metricasAluno(id, inicio, fim);
+  const taxa_presenca =
+    metricas.total > 0 ? metricas.presentes / metricas.total : 0;
+
+  return {
+    ...metricas,
+    taxa_presenca: +taxa_presenca.toFixed(2), // arredonda pra 2 casas
+  };
+}
 module.exports = {
   listarTodos,
   buscarPorId,
   cadastrarAluno,
   editarAluno,
   deletarAluno,
-  trocarTurma
+  trocarTurma,
+  metricasAluno,
 };

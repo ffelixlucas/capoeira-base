@@ -6,6 +6,7 @@ import { useAlunos } from "../hooks/useAlunos";
 import { buscarAluno } from "../services/alunoService";
 import { toast } from "react-toastify";
 import { useMinhasTurmas } from "../hooks/useMinhasTurmas";
+import api from "../services/api";
 
 function Alunos() {
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -28,12 +29,26 @@ function Alunos() {
 
   async function abrirFichaCompleta(aluno) {
     try {
+      // 1️⃣ Buscar dados completos do aluno
       const alunoCompleto = await buscarAluno(aluno.id);
-      setAlunoSelecionado(alunoCompleto);
+  
+      // 2️⃣ Calcular período do ano atual
+      const anoAtual = new Date().getFullYear();
+      const inicio = `${anoAtual}-01-01`;
+      const fim = new Date().toISOString().split("T")[0];
+  
+      // 3️⃣ Buscar métricas
+      const { data: metricas } = await api.get(`/alunos/${aluno.id}/metricas`, {
+        params: { inicio, fim }
+      });
+  
+      // 4️⃣ Juntar e salvar no estado
+      setAlunoSelecionado({ ...alunoCompleto, metricas });
     } catch (err) {
       toast.error("Erro ao carregar ficha do aluno");
     }
   }
+  
 
   const alunosFiltrados = alunos
     .filter((a) => {
