@@ -12,10 +12,9 @@ function LayoutPublic() {
           <img
             src={logo}
             alt="Logo Capoeira Base"
-            className="h-12 w-12 object-contain"
+            className="h-28 w-28 object-contain"
           />
           <span className="font-semibold text-lg text-cor-titulo">
-            Capoeira Base
           </span>
         </Link>
       </header>
