@@ -1,4 +1,3 @@
-
 # 📅 Módulo Agenda (Próximos Eventos) – Backend – Capoeira Base (Atualizado)
 
 ## ✅ Descrição
@@ -11,15 +10,15 @@ API REST responsável pela gestão dos **Próximos Eventos**, exibidos na landin
 
 ## 🔗 Endpoints
 
-| Método | Endpoint                    | Descrição                                  |
-| ------ | --------------------------- | ------------------------------------------ |
-| GET    | `/api/agenda`               | Listar todos os eventos                    |
-| GET    | `/api/agenda/:id` (futuro)  | Obter dados de um evento específico        |
-| POST   | `/api/agenda`               | Criar um novo evento                       |
-| PUT    | `/api/agenda/:id`           | Editar um evento existente                 |
+| Método | Endpoint                    | Descrição                                                |
+| ------ | --------------------------- | -------------------------------------------------------- |
+| GET    | `/api/agenda`               | Listar todos os eventos                                  |
+| GET    | `/api/agenda/:id`           | Obter dados de um evento específico                      |
+| POST   | `/api/agenda`               | Criar um novo evento                                     |
+| PUT    | `/api/agenda/:id`           | Editar um evento existente                               |
 | PUT    | `/api/agenda/:id/status`    | Atualizar status do evento (ativo, concluido, cancelado) |
-| DELETE | `/api/agenda/:id`           | Excluir um evento                          |
-| POST   | `/api/agenda/upload-imagem` | Criar um novo evento com imagem (Firebase) |
+| DELETE | `/api/agenda/:id`           | Excluir um evento                                        |
+| POST   | `/api/agenda/upload-imagem` | Criar um novo evento com imagem (Firebase)               |
 
 ---
 
@@ -36,45 +35,50 @@ API REST responsável pela gestão dos **Próximos Eventos**, exibidos na landin
 
 ## 🗄️ Estrutura da Tabela `agenda`
 
-| Campo               | Tipo     | Descrição                                                  |
-| ------------------- | -------- | ---------------------------------------------------------- |
-| id                  | INT (PK) | Identificador único                                        |
-| titulo              | VARCHAR  | Título do evento                                           |
-| descricao\_curta    | VARCHAR  | Descrição resumida (landing)                               |
-| descricao\_completa | TEXT     | Descrição detalhada (opcional)                             |
-| local               | VARCHAR  | Local/bairro                                               |
-| endereco            | VARCHAR  | Endereço completo (opcional)                               |
-| telefone\_contato   | VARCHAR  | Telefone/WhatsApp (opcional)                               |
-| data\_inicio        | DATETIME | Data e hora de início                                      |
-| data\_fim           | DATETIME | (Opcional) Data e hora de término                          |
-| imagem\_url         | VARCHAR  | URL pública da imagem (armazenada no Firebase)             |
-| **com\_inscricao**  | BOOLEAN  | Indica se o evento exige inscrição                         |
-| **valor**           | DECIMAL  | Valor da inscrição                                         |
-| **responsavel\_id** | INT (FK) | Membro da equipe responsável pelo evento                   |
-| **configuracoes**   | JSON     | Configuração de campos opcionais (ex.: camiseta, alergias) |
-| criado\_por         | INT (FK) | ID do usuário que criou (opcional)                         |
-| criado\_em          | DATETIME | Data de criação                                            |
-| atualizado\_em      | DATETIME | Data de atualização                                        |
+| Campo                | Tipo     | Descrição                                                               |
+| -------------------- | -------- | ----------------------------------------------------------------------- |
+| id                   | INT (PK) | Identificador único                                                     |
+| titulo               | VARCHAR  | Título do evento                                                        |
+| descricao\_curta     | VARCHAR  | Descrição resumida (landing)                                            |
+| descricao\_completa  | TEXT     | Descrição detalhada (opcional)                                          |
+| local                | VARCHAR  | Local/bairro                                                            |
+| endereco             | VARCHAR  | Endereço completo (opcional)                                            |
+| telefone\_contato    | VARCHAR  | Telefone/WhatsApp (opcional)                                            |
+| data\_inicio         | DATETIME | Data e hora de início                                                   |
+| data\_fim            | DATETIME | (Opcional) Data e hora de término                                       |
+| imagem\_url          | VARCHAR  | URL pública da imagem (armazenada no Firebase)                          |
+| **com\_inscricao**   | BOOLEAN  | Indica se o evento exige inscrição                                      |
+| **valor**            | DECIMAL  | Valor da inscrição                                                      |
+| **responsavel\_id**  | INT (FK) | Membro da equipe responsável pelo evento                                |
+| **possui\_camiseta** | BOOLEAN  | Indica se haverá distribuição de camisetas no evento                    |
+| **configuracoes**    | JSON     | Configurações opcionais → Ex.: `{ "camiseta_tamanhos": ["P","M","G"] }` |
+| criado\_por          | INT (FK) | ID do usuário que criou (opcional)                                      |
+| criado\_em           | DATETIME | Data de criação                                                         |
+| atualizado\_em       | DATETIME | Data de atualização                                                     |
 
 ---
 
 ## 🔥 Fluxo de Funcionamento
 
 1. O admin acessa o painel e preenche os dados do evento (título, data, local, inscrições, etc.).
-2. O backend salva no banco MySQL, incluindo as configurações opcionais no campo `configuracoes` (JSON).
-3. A página pública consome o endpoint `/api/agenda` para exibir a lista dos eventos.
-4. Alterações (edição ou exclusão) são refletidas automaticamente na landing page.  
-   - O admin pode **editar** dados do evento (`PUT /api/agenda/:id`).  
-   - O admin pode **marcar como concluído/cancelado** (`PUT /api/agenda/:id/status`), bloqueando novas inscrições e mantendo os dados no histórico.
+2. O backend salva no banco MySQL, incluindo as **configurações opcionais** no campo `configuracoes` (JSON).
 
+   * Se marcado **possui\_camiseta**, o admin define os tamanhos disponíveis.
+   * O backend salva em `configuracoes.camiseta_tamanhos` um array (ex.: `["04","06","08","P","M","G","GG","XG"]`).
+3. A página pública consome o endpoint `/api/agenda` para exibir a lista dos eventos.
+4. Alterações (edição ou exclusão) são refletidas automaticamente na landing page.
+
+   * O admin pode **editar** dados do evento (`PUT /api/agenda/:id`).
+   * O admin pode **marcar como concluído/cancelado** (`PUT /api/agenda/:id/status`), bloqueando novas inscrições e mantendo os dados no histórico.
 
 ---
 
 ## 🎯 Validações e Regras de Negócio
 
 * ✔️ Validação de campos obrigatórios (`titulo` e `data_inicio`) na criação.
-* ✔️ Campos opcionais (ex.: `tamanho_camiseta`) controlados pelo campo `configuracoes` (JSON).
+* ✔️ Campos opcionais controlados via `configuracoes` (ex.: `camiseta_tamanhos`).
 * ✔️ `com_inscricao` e `valor` controlam a exibição do botão **Inscreva-se** na landing page.
+* ✔️ `possui_camiseta` ativa a escolha de tamanhos (que vêm de `configuracoes.camiseta_tamanhos`).
 * ✔️ O campo `criado_por` armazena quem criou o evento (se autenticado).
 * ✔️ As operações de criação, edição e exclusão são protegidas por token (`verifyToken`).
 
@@ -98,6 +102,7 @@ API REST responsável pela gestão dos **Próximos Eventos**, exibidos na landin
 
 * [x] Upload de imagem do evento (`imagem_url`) com armazenamento no Firebase.
 * [x] Campo `configuracoes` (JSON) para campos opcionais no formulário de inscrição.
+* [x] Suporte a tamanhos dinâmicos de camiseta (`camiseta_tamanhos`).
 * [ ] Checkbox para **"Evento visível/oculto"** na landing.
 * [ ] Logs de ações: criação, edição e exclusão.
 * [ ] Paginação e filtro (eventos futuros e passados).
@@ -131,4 +136,7 @@ Este módulo segue 100% o padrão profissional Capoeira Base CN10:
 * 🔥 Código limpo, organizado e escalável
 * 🔥 Documentação viva, clara e profissional
 * 🔥 Totalmente preparado para integração e evolução
+
+---
+
 

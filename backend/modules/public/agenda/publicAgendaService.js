@@ -41,6 +41,7 @@ async function buscarEventoPublicoPorId(id) {
     imagem_url: evento.imagem_url,
     local: evento.local,
     possui_camiseta: evento.possui_camiseta,
+    configuracoes: evento.configuracoes || {},
   };
 }
 

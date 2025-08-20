@@ -6,6 +6,20 @@ import {
 import AgendaPreview from "./Preview";
 
 function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
+  const TAMANHOS_CAMISETA = [
+    "04",
+    "06",
+    "08",
+    "10",
+    "12",
+    "14",
+    "P",
+    "M",
+    "G",
+    "GG",
+    "XG",
+  ];
+
   const [form, setForm] = useState({
     titulo: "",
     descricao_curta: "",
@@ -19,6 +33,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
     hora_fim: "",
     imagem: null,
     possui_camiseta: false,
+    camiseta_tamanhos: [],
   });
 
   const [mostrarDataFim, setMostrarDataFim] = useState(false);
@@ -79,8 +94,12 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         }
         formData.append("possui_camiseta", form.possui_camiseta ? 1 : 0);
 
-
         if (form.imagem) formData.append("imagem", form.imagem);
+        
+        formData.append(
+          "configuracoes",
+          JSON.stringify({ camiseta_tamanhos: form.camiseta_tamanhos || [] })
+        );
 
         await criarEventoComImagem(formData, token);
       }
@@ -99,9 +118,8 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         imagem: null,
         com_inscricao: false,
         valor: "",
-        possui_camiseta: false
+        possui_camiseta: false,
       });
-      
 
       setMostrarDataFim(false);
       onCriado?.();
@@ -274,6 +292,38 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
             </label>
           </div>
         )}
+       {form.possui_camiseta && (
+  <div className="ml-6 mt-2">
+    <p className="text-sm font-semibold text-gray-700 mb-1">
+      Tamanhos disponíveis
+    </p>
+    <div className="grid grid-cols-3 gap-2">
+      {TAMANHOS_CAMISETA.map((t) => (
+        <label
+          key={t}
+          className="flex items-center gap-2 text-sm text-gray-800"
+        >
+          <input
+            type="checkbox"
+            value={t}
+            checked={form.camiseta_tamanhos.includes(t)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setForm((prev) => {
+                let novos = prev.camiseta_tamanhos.includes(value)
+                  ? prev.camiseta_tamanhos.filter((x) => x !== value)
+                  : [...prev.camiseta_tamanhos, value];
+                return { ...prev, camiseta_tamanhos: novos };
+              });
+            }}
+          />
+          {t}
+        </label>
+      ))}
+    </div>
+  </div>
+)}
+
 
         <input
           type="file"

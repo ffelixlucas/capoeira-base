@@ -7,6 +7,7 @@ import { gerarPagamentoPix } from "../../services/public/inscricaoPublicService"
 import EventoInfo from "../../components/public/EventoInfo.jsx";
 import FormInscricaoPublic from "../../components/public/FormInscricaoPublic.jsx";
 import ModalPagamentoPix from "../../components/public/ModalPagamentoPix.jsx";
+import PoliticaLGPD from "../../docs/politicaLGPD.jsx";
 
 export default function InscricaoEventoPublic() {
   const { eventoId } = useParams();
@@ -62,23 +63,25 @@ export default function InscricaoEventoPublic() {
   function validarCPF(cpf) {
     cpf = cpf.replace(/\D/g, ""); // só números
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-  
-    let soma = 0, resto;
-  
-    for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+
+    let soma = 0,
+      resto;
+
+    for (let i = 1; i <= 9; i++)
+      soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
     resto = (soma * 10) % 11;
     if (resto === 10 || resto === 11) resto = 0;
     if (resto !== parseInt(cpf.substring(9, 10))) return false;
-  
+
     soma = 0;
-    for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+    for (let i = 1; i <= 10; i++)
+      soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
     resto = (soma * 10) % 11;
     if (resto === 10 || resto === 11) resto = 0;
     if (resto !== parseInt(cpf.substring(10, 11))) return false;
-  
+
     return true;
   }
-  
 
   // Buscar evento
   useEffect(() => {
@@ -97,19 +100,19 @@ export default function InscricaoEventoPublic() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-  
+
     // Validações principais
     if (!form.aceite_lgpd || !form.autorizacao_imagem) {
       alert("Você precisa aceitar a LGPD e autorizar o uso de imagem.");
       return;
     }
-  
+
     // Validar CPF do inscrito
     if (!validarCPF(form.cpf)) {
       alert("CPF inválido. Verifique e tente novamente.");
       return;
     }
-  
+
     if (idade !== null && idade < 18) {
       if (
         !form.responsavel_nome ||
@@ -119,20 +122,20 @@ export default function InscricaoEventoPublic() {
         alert("Preencha todos os dados do responsável.");
         return;
       }
-  
+
       // Validar CPF do responsável
       if (!validarCPF(form.responsavel_documento)) {
         alert("CPF do responsável inválido.");
         return;
       }
     }
-  
+
     // Se marcou restrições, precisa preencher
     if (form.tem_restricoes && !form.alergias_restricoes) {
       alert("Descreva as restrições médicas.");
       return;
     }
-  
+
     setEnviando(true);
     try {
       const resultado = await gerarPagamentoPix({
@@ -140,26 +143,26 @@ export default function InscricaoEventoPublic() {
         evento_id: evento.id,
         valor: evento.valor, // sempre pega do banco, seguro
       });
-  
+
       // Abrir modal PIX
       setDadosPagamento(resultado);
       setModalPagamento(true);
     } catch (err) {
       console.error("Erro ao salvar inscrição:", err);
       let mensagemErro = "Erro ao gerar pagamento. Tente novamente.";
-  
+
       if (err.response?.data?.error) {
         mensagemErro = err.response.data.error;
       } else if (err.message) {
         mensagemErro = err.message;
       }
-  
+
       alert(mensagemErro);
     } finally {
       setEnviando(false);
     }
   }
-  
+
   if (carregando) {
     return <p className="text-center text-white/80">Carregando evento...</p>;
   }
@@ -223,25 +226,52 @@ export default function InscricaoEventoPublic() {
           className="relative z-50"
           onClose={() => setModalLGPD(false)}
         >
+          {/* backdrop */}
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="fixed inset-0 flex items-center justify-center p-4">
-            <Dialog.Panel className="bg-white rounded-2xl shadow-xl p-6 max-w-lg w-full">
-              <Dialog.Title className="text-lg font-bold text-black mb-4">
-                Política de Privacidade e LGPD
-              </Dialog.Title>
-              <p className="text-sm text-gray-700 mb-4">
-                Aqui você pode descrever todos os termos de privacidade, uso de
-                dados e LGPD...
-              </p>
-              <div className="flex justify-end">
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                  onClick={() => setModalLGPD(false)}
+
+          {/* container COM SCROLL (mobile-first) */}
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
+              {/* painel */}
+              <Dialog.Panel
+                className="
+            w-full sm:max-w-lg 
+            rounded-t-2xl sm:rounded-2xl 
+            bg-white shadow-xl 
+            text-left align-middle 
+            focus:outline-none
+          "
+              >
+                {/* header fixo */}
+                <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b">
+                  <Dialog.Title className="text-base sm:text-lg font-bold text-black">
+                    Política de Privacidade e LGPD
+                  </Dialog.Title>
+                </div>
+
+                {/* CONTEÚDO ROLÁVEL */}
+                <div
+                  className="px-4 sm:px-6 py-4 max-h-[75vh] sm:max-h-[70vh] overflow-y-auto"
+                  style={{ WebkitOverflowScrolling: "touch" }}
                 >
-                  Fechar
-                </button>
-              </div>
-            </Dialog.Panel>
+                  <PoliticaLGPD
+                    organization="Capoeira Base"
+                    contactEmail="contato@capoeirabase.com.br"
+                    updatedAt="2025-08-20"
+                  />
+                </div>
+
+                {/* footer fixo */}
+                <div className="px-4 sm:px-6 py-3 border-t flex justify-end">
+                  <button
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                    onClick={() => setModalLGPD(false)}
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </div>
           </div>
         </Dialog>
       </Transition>

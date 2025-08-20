@@ -129,9 +129,11 @@ export default function FormInscricaoPublic({
           required
         >
           <option value="">Tamanho da camiseta</option>
-          <option value="P">P</option>
-          <option value="M">M</option>
-          <option value="G">G</option>
+          {evento?.configuracoes?.camiseta_tamanhos?.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
         </select>
       )}
 

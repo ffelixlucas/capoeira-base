@@ -156,13 +156,21 @@ const atualizarInscricaoPendente = async (id, dados) => {
 const buscarInscricaoComEvento = async (id) => {
   const [rows] = await db.execute(
     `SELECT 
-      i.status, 
-      i.nome, 
-      i.evento_id, 
-      i.id, 
-      a.titulo, 
-      a.data_inicio AS data, 
+      i.id,
+      i.status,
+      i.nome,
+      i.apelido,
+      i.email,
+      i.telefone,
+      i.cpf,
+      i.data_nascimento,
+      i.tamanho_camiseta,
+      i.alergias_restricoes,
+      i.evento_id,
+      a.titulo,
+      a.data_inicio AS data,
       a.local,
+      a.endereco,
       a.possui_camiseta
      FROM inscricoes_evento i
      JOIN agenda a ON i.evento_id = a.id
@@ -171,6 +179,7 @@ const buscarInscricaoComEvento = async (id) => {
   );
   return rows[0];
 };
+
 
 const verificarInscricaoPaga = async (cpf, eventoId) => {
   const [rows] = await db.execute(

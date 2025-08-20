@@ -10,8 +10,10 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  keepAliveInitialDelay: 0,
+  timezone: "-03:00"  
 });
+
 
 const transientErrors = ['EAI_AGAIN', 'ETIMEDOUT', 'ECONNRESET'];
 

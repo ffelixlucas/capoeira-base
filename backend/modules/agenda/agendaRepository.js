@@ -164,8 +164,23 @@ const atualizar = async (id, dados) => {
 
 const buscarPorId = async (id) => {
   const [rows] = await db.execute(`SELECT * FROM agenda WHERE id = ?`, [id]);
-  return rows[0] || null;
+  const evento = rows[0] || null;
+
+  if (evento) {
+    evento.configuracoes = (() => {
+      if (!evento.configuracoes) return {};
+      if (typeof evento.configuracoes === "object") return evento.configuracoes;
+      try {
+        return JSON.parse(evento.configuracoes);
+      } catch {
+        return {};
+      }
+    })();
+  }
+
+  return evento;
 };
+
 
 async function atualizarStatus(id, status) {
   const [result] = await db.execute(

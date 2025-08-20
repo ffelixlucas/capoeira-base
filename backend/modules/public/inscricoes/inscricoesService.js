@@ -238,17 +238,28 @@ const buscarInscricaoDetalhadaService = async (id) => {
   );
 
   return {
+    id: inscricao.id,
     status: inscricao.status,
     nome: inscricao.nome,
+    apelido: inscricao.apelido,
+    email: inscricao.email,
+    telefone: inscricao.telefone,
+    cpf: inscricao.cpf,
+    data_nascimento: inscricao.data_nascimento,
+    camiseta_tamanho: inscricao.tamanho_camiseta,
+    restricoes: inscricao.alergias_restricoes,
     codigo_inscricao,
     evento: {
       titulo: inscricao.titulo,
-      data: inscricao.data,
+      data_inicio: inscricao.data,
+      data_fim: inscricao.data_fim,
       local: inscricao.local,
+      endereco: inscricao.endereco,
       possui_camiseta: inscricao.possui_camiseta,
     },
   };
 };
+
 
 module.exports = {
   gerarPagamentoPixService,

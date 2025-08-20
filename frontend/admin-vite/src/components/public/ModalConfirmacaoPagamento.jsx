@@ -2,7 +2,6 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { CheckCircle } from "lucide-react";
 
-
 export default function ModalConfirmacaoPagamento({ isOpen, onClose, dados }) {
   if (!dados) return null;
 
@@ -24,16 +23,36 @@ export default function ModalConfirmacaoPagamento({ isOpen, onClose, dados }) {
             </p>
 
             <div className="mb-3">
-              <p className="text-xs font-medium text-gray-600">Código de inscrição:</p>
+              <p className="text-xs font-medium text-gray-600">
+                Código de inscrição:
+              </p>
               <p className="font-mono bg-gray-100 p-2 rounded text-sm text-blue-700">
                 {codigo_inscricao}
               </p>
             </div>
 
             <div className="text-sm text-gray-600 mb-2">
-              <p><strong>Evento:</strong> {evento.titulo}</p>
-              <p><strong>Data:</strong> {new Date(evento.data).toLocaleDateString("pt-BR")}</p>
-              <p><strong>Local:</strong> {evento.local}</p>
+              <p>
+                <strong>Evento:</strong> {evento.titulo}
+              </p>
+              <p>
+                <strong>Data:</strong>{" "}
+                {evento.data_inicio
+                  ? new Date(evento.data_inicio).toLocaleDateString("pt-BR")
+                  : "-"}
+                {evento.data_fim
+                  ? ` até ${new Date(evento.data_fim).toLocaleDateString(
+                      "pt-BR"
+                    )}`
+                  : ""}
+              </p>
+              <p>
+                <strong>Local:</strong> {evento.local}
+              </p>
+              <p className="text-xs text-gray-500 mt-3">
+              ⚠️ Você receberá um e-mail com todos os detalhes da sua inscrição e
+                do evento.
+              </p>
             </div>
 
             <button

@@ -2,16 +2,27 @@ const bucket = require("../../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 const agendaRepository = require("./agendaRepository");
 
+const normalizarConfig = (conf) => {
+  if (!conf) return {};
+  if (typeof conf === "object") return conf;
+  try {
+    return JSON.parse(conf);
+  } catch {
+    return {};
+  }
+};
+
 const listarEventos = async (status, situacao) => {
   const eventos = await agendaRepository.listarEventos(status, situacao);
   return eventos.map((e) => ({
     ...e,
     configuracoes: e.configuracoes
-      ? (typeof e.configuracoes === "string" ? JSON.parse(e.configuracoes) : e.configuracoes)
+      ? typeof e.configuracoes === "string"
+        ? JSON.parse(e.configuracoes)
+        : e.configuracoes
       : {},
   }));
 };
-
 
 const criarEvento = async (dados, usuarioId) => {
   if (!dados.titulo || !dados.data_inicio) {
@@ -32,9 +43,9 @@ const criarEvento = async (dados, usuarioId) => {
     com_inscricao: dados.com_inscricao || false,
     valor: dados.valor || 0,
     responsavel_id: dados.responsavel_id || null,
-    configuracoes: dados.configuracoes || {},
+    configuracoes: normalizarConfig(dados.configuracoes),
     criado_por: usuarioId || null,
-    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0
+    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0,
   };
 
   const id = await agendaRepository.criarEvento(evento);
@@ -47,11 +58,11 @@ async function processarUploadEvento(imagem, dados, usuarioId) {
   if (imagem) {
     const nomeArquivo = `eventos/${uuidv4()}-${imagem.originalname}`;
     const file = bucket.file(nomeArquivo);
-  
+
     await file.save(imagem.buffer, {
       metadata: { contentType: imagem.mimetype },
     });
-  
+
     imagem_url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
   }
 
@@ -68,9 +79,9 @@ async function processarUploadEvento(imagem, dados, usuarioId) {
     com_inscricao: dados.com_inscricao || false,
     valor: dados.valor || 0,
     responsavel_id: dados.responsavel_id || null,
-    configuracoes: dados.configuracoes || {},
+    configuracoes: normalizarConfig(dados.configuracoes),
     criado_por: usuarioId || null,
-    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0
+    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0,
   };
 
   const id = await agendaRepository.criarEvento(evento);
@@ -116,8 +127,8 @@ async function atualizarEvento(id, dados) {
     com_inscricao: dados.com_inscricao ?? false,
     valor: dados.valor ?? 0,
     responsavel_id: dados.responsavel_id ?? null,
-    configuracoes: dados.configuracoes ?? {},
-    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0
+    configuracoes: normalizarConfig(dados.configuracoes),
+    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0,
   };
 
   return agendaRepository.atualizar(id, evento);
@@ -148,12 +159,11 @@ async function arquivarEvento(id) {
   const dataFim = evento.data_fim || new Date();
   return agendaRepository.atualizar(id, {
     ...evento,
-    status: 'concluido',
+    status: "concluido",
     data_fim: dataFim,
-    imagem_url: null
+    imagem_url: null,
   });
 }
-
 
 module.exports = {
   listarEventos,
@@ -162,5 +172,5 @@ module.exports = {
   excluirEvento,
   atualizarEvento,
   atualizarStatus,
-  arquivarEvento
+  arquivarEvento,
 };
