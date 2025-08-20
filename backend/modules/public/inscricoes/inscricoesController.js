@@ -12,8 +12,8 @@ const gerarPagamentoPix = async (req, res) => {
     const pagamento = await gerarPagamentoPixService(req.body);
     res.status(201).json(pagamento);
   } catch (error) {
-    console.error("Erro Controller gerarPagamentoPix:", error);
-    res.status(500).json({ error: "Erro ao gerar pagamento PIX" });
+    console.error("Erro Controller gerarPagamentoPix:", error?.response?.data || error);
+res.status(500).json({ error: error.message || "Erro ao gerar pagamento PIX" });
   }
 };
 

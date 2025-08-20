@@ -22,8 +22,69 @@ const payment = new Payment(client);
 /**
  * Gera pagamento PIX no Mercado Pago ou retorna QR de inscrição pendente
  */
+
+function validarCPF(cpf) {
+  cpf = cpf.replace(/\D/g, "");
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+
+  let soma = 0,
+    resto;
+
+  for (let i = 1; i <= 9; i++)
+    soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.substring(9, 10))) return false;
+
+  soma = 0;
+  for (let i = 1; i <= 10; i++)
+    soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.substring(10, 11))) return false;
+
+  return true;
+}
+function validarEmail(email) {
+  // Regex simples que cobre a maioria dos casos
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(String(email).toLowerCase());
+}
+
+function validarTelefone(telefone) {
+  const digits = telefone.replace(/\D/g, "");
+  // Aceita fixo (10 dígitos) ou celular (11 dígitos)
+  return digits.length >= 10 && digits.length <= 11;
+}
+
 const gerarPagamentoPixService = async (dadosFormulario) => {
-  const { cpf, nome, apelido, valor, evento_id } = dadosFormulario;
+  const { cpf, responsavel_documento, nome, apelido, valor, evento_id } =
+    dadosFormulario;
+
+  // 🔒 Validar CPF do inscrito
+  if (!validarCPF(cpf)) {
+    throw new Error("CPF do inscrito inválido.");
+  }
+
+  // 🔒 Validar CPF do responsável, se informado
+  if (responsavel_documento && !validarCPF(responsavel_documento)) {
+    throw new Error("CPF do responsável inválido.");
+  }
+
+  // 🔒 Validar e-mail
+  if (!validarEmail(dadosFormulario.email)) {
+    throw new Error("E-mail inválido.");
+  }
+
+  // 🔒 Validar telefone
+  if (!validarTelefone(dadosFormulario.telefone)) {
+    throw new Error("Telefone inválido.");
+  }
+
+  // 🔒 Validar valor
+  if (!valor || parseFloat(valor) <= 0) {
+    throw new Error("Valor da inscrição inválido.");
+  }
 
   // 🔒 Verifica se já tem uma inscrição paga para este CPF no mesmo evento
   const jaPago = await verificarInscricaoPaga(cpf, evento_id);
@@ -57,19 +118,29 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
 
   const codigo_inscricao = gerarCodigoInscricao(inscricaoId, evento_id);
 
+  // 🔒 Se menor de idade, usa dados do responsável como pagador
+  const documentoCPF = dadosFormulario.responsavel_documento
+    ? dadosFormulario.responsavel_documento.replace(/\D/g, "")
+    : cpf.replace(/\D/g, "");
+
+  const nomePagador = dadosFormulario.responsavel_nome || nome;
+  const emailPagador =
+    dadosFormulario.responsavel_email || dadosFormulario.email;
+
   // 3️⃣ Gera PIX no Mercado Pago
   const body = {
     transaction_amount: parseFloat(valor),
     description: `Inscrição ${nome}${apelido ? ` (${apelido})` : ""}`,
     payment_method_id: "pix",
     payer: {
-      email: dadosFormulario.email,
-      first_name: nome,
+      email: emailPagador,
+      first_name: nomePagador,
       identification: {
         type: "CPF",
-        number: cpf.replace(/\D/g, ""),
+        number: documentoCPF,
       },
     },
+
     notification_url: `${process.env.SERVER_URL}/api/public/inscricoes/webhook`,
     external_reference: `${inscricaoId}`, // agora usamos o ID da inscrição
   };
@@ -108,7 +179,6 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   };
 };
 
-
 const processarWebhookService = async (payload) => {
   if (payload?.type !== "payment") return;
 
@@ -117,16 +187,23 @@ const processarWebhookService = async (payload) => {
 
     const { data: pagamento } = await axios.get(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      { headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+        },
+      }
     );
 
     if (pagamento.status !== "approved") return;
 
     const inscricaoId = Number(pagamento.external_reference); // foi salvo como string no create
     const bruto = Number(pagamento.transaction_amount); // valor cobrado
-    const liquido = Number(pagamento.transaction_details?.net_received_amount || 0);
+    const liquido = Number(
+      pagamento.transaction_details?.net_received_amount || 0
+    );
     const taxa_valor = Math.max(0, bruto - liquido);
-    const taxa_percentual = bruto > 0 ? Number(((taxa_valor / bruto) * 100).toFixed(2)) : 0;
+    const taxa_percentual =
+      bruto > 0 ? Number(((taxa_valor / bruto) * 100).toFixed(2)) : 0;
 
     // Atualiza a inscrição com bruto + líquido + taxas (uma única query)
     await atualizarInscricaoParaPago(inscricaoId, {
@@ -144,10 +221,12 @@ const processarWebhookService = async (payload) => {
       await enviarEmailConfirmacao(inscricao);
     }
   } catch (err) {
-    console.error("Erro no webhook do Mercado Pago:", err?.response?.data || err);
+    console.error(
+      "Erro no webhook do Mercado Pago:",
+      err?.response?.data || err
+    );
   }
 };
-
 
 const buscarInscricaoDetalhadaService = async (id) => {
   const inscricao = await buscarInscricaoComEvento(id);

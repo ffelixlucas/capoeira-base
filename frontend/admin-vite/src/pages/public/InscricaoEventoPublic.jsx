@@ -59,6 +59,26 @@ export default function InscricaoEventoPublic() {
       .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
       .slice(0, 14);
   }
+  function validarCPF(cpf) {
+    cpf = cpf.replace(/\D/g, ""); // só números
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  
+    let soma = 0, resto;
+  
+    for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.substring(9, 10))) return false;
+  
+    soma = 0;
+    for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.substring(10, 11))) return false;
+  
+    return true;
+  }
+  
 
   // Buscar evento
   useEffect(() => {
@@ -77,13 +97,19 @@ export default function InscricaoEventoPublic() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-
+  
     // Validações principais
     if (!form.aceite_lgpd || !form.autorizacao_imagem) {
       alert("Você precisa aceitar a LGPD e autorizar o uso de imagem.");
       return;
     }
-
+  
+    // Validar CPF do inscrito
+    if (!validarCPF(form.cpf)) {
+      alert("CPF inválido. Verifique e tente novamente.");
+      return;
+    }
+  
     if (idade !== null && idade < 18) {
       if (
         !form.responsavel_nome ||
@@ -93,39 +119,47 @@ export default function InscricaoEventoPublic() {
         alert("Preencha todos os dados do responsável.");
         return;
       }
+  
+      // Validar CPF do responsável
+      if (!validarCPF(form.responsavel_documento)) {
+        alert("CPF do responsável inválido.");
+        return;
+      }
     }
-
+  
     // Se marcou restrições, precisa preencher
     if (form.tem_restricoes && !form.alergias_restricoes) {
       alert("Descreva as restrições médicas.");
       return;
     }
+  
     setEnviando(true);
     try {
       const resultado = await gerarPagamentoPix({
         ...form,
         evento_id: evento.id,
-        valor: evento.valor,
+        valor: evento.valor, // sempre pega do banco, seguro
       });
-
-      // Abrir modal
+  
+      // Abrir modal PIX
       setDadosPagamento(resultado);
       setModalPagamento(true);
     } catch (err) {
       console.error("Erro ao salvar inscrição:", err);
       let mensagemErro = "Erro ao gerar pagamento. Tente novamente.";
-
+  
       if (err.response?.data?.error) {
         mensagemErro = err.response.data.error;
       } else if (err.message) {
         mensagemErro = err.message;
       }
-
+  
       alert(mensagemErro);
     } finally {
       setEnviando(false);
     }
   }
+  
   if (carregando) {
     return <p className="text-center text-white/80">Carregando evento...</p>;
   }

@@ -114,6 +114,7 @@ export default function FormInscricaoPublic({
             placeholder="Parentesco"
             value={form.responsavel_parentesco}
             onChange={handleChange}
+            required
           />
         </div>
       )}
