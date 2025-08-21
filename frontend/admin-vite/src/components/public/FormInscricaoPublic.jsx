@@ -39,13 +39,22 @@ export default function FormInscricaoPublic({
         value={form.apelido}
         onChange={handleChange}
       />
-      <InputBase
-        type="date"
-        name="data_nascimento"
-        value={form.data_nascimento}
-        onChange={handleChange}
-        required
-      />
+      <div className="flex flex-col gap-1">
+        <label
+          htmlFor="data_nascimento"
+          className="text-sm text-gray-700 font-medium"
+        >
+          Data de nascimento
+        </label>
+        <InputBase
+          type="date"
+          id="data_nascimento"
+          name="data_nascimento"
+          value={form.data_nascimento}
+          onChange={handleChange}
+          required
+        />
+      </div>
       <InputBase
         type="email"
         name="email"
