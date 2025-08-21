@@ -9,11 +9,11 @@ function LayoutPublic() {
       {/* Header simples com logo */}
       <header className="w-full bg-cor-secundaria p-4 flex justify-center border-b border-cor-secundaria">
         <Link to="/" className="flex items-center gap-2">
-          <img
-            src={logo}
-            alt="Logo Capoeira Base"
-            className="h-28 w-28 object-contain"
-          />
+        <img
+  src={logo}
+  alt="Logo Capoeira Base"
+  className="h-[200px] w-[200px] object-contain"
+/>
           <span className="font-semibold text-lg text-cor-titulo">
           </span>
         </Link>
@@ -26,7 +26,7 @@ function LayoutPublic() {
 
       {/* Rodapé simples */}
       <footer className="w-full bg-cor-secundaria p-4 text-center text-sm text-cor-texto/80">
-        © {new Date().getFullYear()} Capoeira Base – Todos os direitos reservados
+        © {new Date().getFullYear()} Grupo Capoeira Brasil – Todos os direitos reservados
       </footer>
     </div>
   );
