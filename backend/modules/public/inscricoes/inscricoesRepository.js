@@ -18,7 +18,6 @@ const buscarInscricaoPendente = async (cpf) => {
  * Cria uma inscrição com status = pendente
  */
 const criarInscricaoPendente = async (dados) => {
-  console.log("📝 Tentando inserir inscrição no banco:", dados);
 
   const {
     evento_id,
@@ -75,7 +74,6 @@ const criarInscricaoPendente = async (dados) => {
       aceite_lgpd,
     ]
   );
-  console.log("✅ Inserção realizada com ID:", result.insertId);
 
   return result.insertId;
 };

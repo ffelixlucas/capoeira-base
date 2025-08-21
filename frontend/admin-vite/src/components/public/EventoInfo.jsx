@@ -14,7 +14,6 @@ export default function EventoInfo({ evento }) {
       })
       .toUpperCase();
   };
-  console.log("📌 Evento recebido:", evento);
 
   return (
     <div className="bg-white rounded-xl p-6 text-gray-800 shadow-lg mb-6 border border-gray-200">
