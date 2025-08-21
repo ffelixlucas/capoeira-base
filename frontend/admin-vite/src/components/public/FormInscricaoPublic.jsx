@@ -75,7 +75,7 @@ export default function FormInscricaoPublic({
       />
       <InputBase
         name="cpf"
-        placeholder="CPF"
+        placeholder="CPF do participante"
         value={form.cpf}
         onChange={(e) => setForm({ ...form, cpf: formatarCPF(e.target.value) })}
         required
