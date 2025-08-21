@@ -58,8 +58,6 @@ function validarTelefone(telefone) {
 }
 
 const gerarPagamentoPixService = async (dadosFormulario) => {
-
-
   const { cpf, responsavel_documento, nome, apelido, valor, evento_id } =
     dadosFormulario;
 
@@ -219,11 +217,23 @@ const processarWebhookService = async (payload) => {
       taxa_valor,
       taxa_percentual,
     });
+    console.log("🚀 Webhook recebido para pagamento:", paymentId);
 
     // Envia e-mail de confirmação
     const inscricao = await buscarInscricaoDetalhadaService(inscricaoId);
+    console.log("📌 Inscrição detalhada:", inscricao);
+
     if (inscricao) {
-      await enviarEmailConfirmacao(inscricao);
+      if (inscricao.email && inscricao.email.includes("@")) {
+        try {
+          await enviarEmailConfirmacao(inscricao);
+          console.log("✅ E-mail enviado com sucesso para:", inscricao.email);
+        } catch (err) {
+          console.error("❌ Erro ao enviar e-mail:", err.message || err);
+        }
+      } else {
+        console.warn("⚠️ Inscrição sem e-mail válido, não foi possível enviar:", inscricao);
+      }
     }
   } catch (err) {
     console.error(
@@ -232,7 +242,6 @@ const processarWebhookService = async (payload) => {
     );
   }
 };
-
 const buscarInscricaoDetalhadaService = async (id) => {
   const inscricao = await buscarInscricaoComEvento(id);
   if (!inscricao) return null;
@@ -266,8 +275,6 @@ const buscarInscricaoDetalhadaService = async (id) => {
       valor: inscricao.valor,
       possui_camiseta: inscricao.possui_camiseta,
     },
-    
-    
   };
 };
 
