@@ -18,6 +18,10 @@ const buscarInscricaoPendente = async (cpf) => {
  * Cria uma inscrição com status = pendente
  */
 const criarInscricaoPendente = async (dados) => {
+
+  console.log("📝 Tentando inserir inscrição no banco:", dados);
+
+
   const {
     evento_id,
     nome,
@@ -43,6 +47,7 @@ const criarInscricaoPendente = async (dados) => {
   const documento_autorizacao_url = null; // por enquanto não usamos
 
   const [result] = await db.execute(
+    
     `INSERT INTO inscricoes_evento (
       evento_id, nome, apelido, data_nascimento, email, telefone, cpf,
       autorizacao_participacao, autorizacao_imagem, documento_autorizacao_url,
@@ -50,6 +55,7 @@ const criarInscricaoPendente = async (dados) => {
       tamanho_camiseta, alergias_restricoes, aceite_imagem, aceite_responsabilidade, aceite_lgpd,
       status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`,
+     
     [
       evento_id,
       nome,
@@ -72,6 +78,8 @@ const criarInscricaoPendente = async (dados) => {
       aceite_lgpd,
     ]
   );
+  console.log("✅ Inserção realizada com ID:", result.insertId);
+
 
   return result.insertId;
 };

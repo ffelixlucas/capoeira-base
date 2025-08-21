@@ -58,6 +58,10 @@ function validarTelefone(telefone) {
 }
 
 const gerarPagamentoPixService = async (dadosFormulario) => {
+
+  console.log("📥 Dados recebidos em gerarPagamentoPixService:", dadosFormulario);
+
+
   const { cpf, responsavel_documento, nome, apelido, valor, evento_id } =
     dadosFormulario;
 
