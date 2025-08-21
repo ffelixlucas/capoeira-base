@@ -58,9 +58,10 @@ function validarTelefone(telefone) {
 }
 
 const gerarPagamentoPixService = async (dadosFormulario) => {
-
-  console.log("📥 Dados recebidos em gerarPagamentoPixService:", dadosFormulario);
-
+  console.log(
+    "📥 Dados recebidos em gerarPagamentoPixService:",
+    dadosFormulario
+  );
 
   const { cpf, responsavel_documento, nome, apelido, valor, evento_id } =
     dadosFormulario;
@@ -131,7 +132,11 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   const emailPagador =
     dadosFormulario.responsavel_email || dadosFormulario.email;
 
-  // 3️⃣ Gera PIX no Mercado Pago
+  // 🔒 Garante que não duplique o /api
+  const baseUrl = process.env.SERVER_URL.endsWith("/api")
+    ? process.env.SERVER_URL
+    : `${process.env.SERVER_URL}/api`;
+
   const body = {
     transaction_amount: parseFloat(valor),
     description: `Inscrição ${nome}${apelido ? ` (${apelido})` : ""}`,
@@ -144,8 +149,7 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
         number: documentoCPF,
       },
     },
-
-    notification_url: `${process.env.SERVER_URL}/api/public/inscricoes/webhook`,
+    notification_url: `${baseUrl}/public/inscricoes/webhook`,
     external_reference: `${inscricaoId}`, // agora usamos o ID da inscrição
   };
 
@@ -255,15 +259,20 @@ const buscarInscricaoDetalhadaService = async (id) => {
     codigo_inscricao,
     evento: {
       titulo: inscricao.titulo,
-      data_inicio: inscricao.data,
+      descricao_curta: inscricao.descricao_curta,
+      descricao_completa: inscricao.descricao_completa,
+      data_inicio: inscricao.data_inicio,
       data_fim: inscricao.data_fim,
       local: inscricao.local,
       endereco: inscricao.endereco,
+      telefone_contato: inscricao.telefone_contato,
+      valor: inscricao.valor,
       possui_camiseta: inscricao.possui_camiseta,
     },
+    
+    
   };
 };
-
 
 module.exports = {
   gerarPagamentoPixService,

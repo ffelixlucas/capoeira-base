@@ -18,9 +18,7 @@ const buscarInscricaoPendente = async (cpf) => {
  * Cria uma inscrição com status = pendente
  */
 const criarInscricaoPendente = async (dados) => {
-
   console.log("📝 Tentando inserir inscrição no banco:", dados);
-
 
   const {
     evento_id,
@@ -47,7 +45,6 @@ const criarInscricaoPendente = async (dados) => {
   const documento_autorizacao_url = null; // por enquanto não usamos
 
   const [result] = await db.execute(
-    
     `INSERT INTO inscricoes_evento (
       evento_id, nome, apelido, data_nascimento, email, telefone, cpf,
       autorizacao_participacao, autorizacao_imagem, documento_autorizacao_url,
@@ -55,7 +52,7 @@ const criarInscricaoPendente = async (dados) => {
       tamanho_camiseta, alergias_restricoes, aceite_imagem, aceite_responsabilidade, aceite_lgpd,
       status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`,
-     
+
     [
       evento_id,
       nome,
@@ -79,7 +76,6 @@ const criarInscricaoPendente = async (dados) => {
     ]
   );
   console.log("✅ Inserção realizada com ID:", result.insertId);
-
 
   return result.insertId;
 };
@@ -164,30 +160,35 @@ const atualizarInscricaoPendente = async (id, dados) => {
 const buscarInscricaoComEvento = async (id) => {
   const [rows] = await db.execute(
     `SELECT 
-      i.id,
-      i.status,
-      i.nome,
-      i.apelido,
-      i.email,
-      i.telefone,
-      i.cpf,
-      i.data_nascimento,
-      i.tamanho_camiseta,
-      i.alergias_restricoes,
-      i.evento_id,
-      a.titulo,
-      a.data_inicio AS data,
-      a.local,
-      a.endereco,
-      a.possui_camiseta
-     FROM inscricoes_evento i
-     JOIN agenda a ON i.evento_id = a.id
-     WHERE i.id = ?`,
+  i.id,
+  i.status,
+  i.nome,
+  i.apelido,
+  i.email,
+  i.telefone,
+  i.cpf,
+  i.data_nascimento,
+  i.tamanho_camiseta,
+  i.alergias_restricoes,
+  i.evento_id,
+  a.titulo,
+  a.descricao_curta,
+  a.descricao_completa,
+  a.data_inicio,
+  a.data_fim,
+  a.local,
+  a.endereco,
+  a.telefone_contato,
+  a.valor,
+  a.possui_camiseta
+FROM inscricoes_evento i
+JOIN agenda a ON i.evento_id = a.id
+WHERE i.id = ?
+`,
     [id]
   );
   return rows[0];
 };
-
 
 const verificarInscricaoPaga = async (cpf, eventoId) => {
   const [rows] = await db.execute(
