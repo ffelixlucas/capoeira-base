@@ -3,6 +3,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { FaWhatsapp, FaFilePdf, FaPrint } from "react-icons/fa";
 import ModalEditarInscrito from "./ModalEditarInscrito";
+import api from "../../services/api";
 
 import jsPDF from "jspdf";
 
@@ -330,15 +331,9 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                     <button
                       onClick={async () => {
                         try {
-                          const resp = await fetch(
-                            `/public/inscricoes/${inscrito.id}/reenviar-email`,
-                            {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                            }
+                          const { data } = await api.post(
+                            `/public/inscricoes/${inscrito.id}/reenviar-email`
                           );
-                          const data = await resp.json();
-
                           if (data.ok) {
                             alert(`✅ ${data.mensagem}`);
                           } else {
