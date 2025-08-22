@@ -1,5 +1,6 @@
 const express = require("express");
-const { gerarPagamentoPix, webhookPagamento } = require("./inscricoesController");
+const { gerarPagamentoPix, webhookPagamento, buscarInscricaoPorId, reenviarEmail } = require("./inscricoesController");
+
 
 const router = express.Router();
 
@@ -11,3 +12,6 @@ router.post("/webhook", webhookPagamento);
 const { buscarInscricaoPorId } = require("./inscricoesController");
 router.get("/:id", buscarInscricaoPorId);
 module.exports = router;
+
+// 👇 nova rota para reenvio manual
+router.post("/:id/reenviar-email", reenviarEmail);

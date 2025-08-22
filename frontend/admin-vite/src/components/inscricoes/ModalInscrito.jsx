@@ -326,6 +326,38 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                     >
                       Editar
                     </button>
+
+                    <button
+                      onClick={async () => {
+                        try {
+                          const resp = await fetch(
+                            `/api/public/inscricoes/${inscrito.id}/reenviar-email`,
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                            }
+                          );
+                          const data = await resp.json();
+
+                          if (data.ok) {
+                            alert(`✅ ${data.mensagem}`);
+                          } else {
+                            alert(
+                              `❌ Erro ao reenviar: ${
+                                data.error || "Falha desconhecida"
+                              }`
+                            );
+                          }
+                        } catch (err) {
+                          console.error("Erro no reenvio:", err);
+                          alert("❌ Falha ao reenviar e-mail");
+                        }
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm"
+                    >
+                      Reenviar E-mail
+                    </button>
+
                     <button
                       onClick={onClose}
                       className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm"

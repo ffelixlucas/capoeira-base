@@ -54,14 +54,24 @@ async function enviarEmailConfirmacao(inscricao) {
   `;
 
   try {
-    await resend.emails.send({
-      from: "Grupo Capoeira Brasil <onboarding@resend.dev>",
-      to: email,
+    const to = String(email || "").trim();
+
+    console.log("📧 Enviando e-mail de confirmação para:", JSON.stringify(to));
+
+    const { data, error } = await resend.emails.send({
+      from: "Inscrições CN10 <notificacoes@capoeiranota10.com.br>",
+      to,
       subject: `Inscrição confirmada – ${evento.titulo}`,
       html,
     });
+
+    if (error) {
+      console.error("❌ Falha no envio (Resend):", error);
+    } else {
+      console.log("✅ E-mail enviado via Resend:", data);
+    }
   } catch (err) {
-    console.error("❌ Falha ao enviar e-mail de confirmação:", err.message);
+    console.error("❌ Erro inesperado ao enviar e-mail:", err.message);
   }
 }
 
