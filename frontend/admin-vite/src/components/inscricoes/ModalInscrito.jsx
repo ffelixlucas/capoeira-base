@@ -331,7 +331,7 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                       onClick={async () => {
                         try {
                           const resp = await fetch(
-                            `/api/public/inscricoes/${inscrito.id}/reenviar-email`,
+                            `/public/inscricoes/${inscrito.id}/reenviar-email`,
                             {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
