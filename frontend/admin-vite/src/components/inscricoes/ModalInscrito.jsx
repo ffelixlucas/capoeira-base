@@ -344,7 +344,12 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                             );
                           }
                         } catch (err) {
-                          console.error("Erro no reenvio:", err);
+                          console.error("❌ Erro no reenvio:", {
+                            message: err.message,
+                            url: err.config?.url,
+                            status: err.response?.status,
+                            data: err.response?.data,
+                          });
                           alert("❌ Falha ao reenviar e-mail");
                         }
                       }}
