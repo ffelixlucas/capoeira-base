@@ -49,7 +49,10 @@ async function enviarEmailConfirmacao(inscricao) {
         ⚠️ Guarde este e-mail — o código de inscrição poderá ser solicitado na entrada do evento.
       </p>
 
-      <p>Axé,<br />Organização do evento<br /><strong>Grupo Capoeira Brasil</strong></p>
+      <p style="margin-top:20px; font-size:12px; color:#666;">
+        Este é um e-mail automático enviado por <strong>capoeiranota10.com.br</strong>.<br/>
+        Caso não reconheça esta inscrição, entre em contato pelo WhatsApp oficial: (41) 99618-9598.
+      </p>
     </div>
   `;
 
@@ -59,7 +62,7 @@ async function enviarEmailConfirmacao(inscricao) {
     console.log("📧 Enviando e-mail de confirmação para:", JSON.stringify(to));
 
     const { data, error } = await resend.emails.send({
-      from: "Inscrições CN10 <notificacoes@capoeiranota10.com.br>",
+      from: "Capoeira Nota10 – Inscrições <contato@capoeiranota10.com.br>",
       to,
       subject: `Inscrição confirmada – ${evento.titulo}`,
       html,
