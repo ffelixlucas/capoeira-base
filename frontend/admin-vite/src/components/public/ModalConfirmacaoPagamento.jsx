@@ -60,9 +60,8 @@ export default function ModalConfirmacaoPagamento({ isOpen, onClose, dados }) {
                   <strong>Lixeira</strong>.
                 </p>
                 <p className="text-xs text-gray-700 mt-1">
-                  Caso não encontre, utilize o botão de{" "}
-                  <strong>Reenvio de E-mail</strong> ou entre em contato com a
-                  organização.
+                  Caso não encontre entre em contato com a
+                  organização do evento.
                 </p>
               </div>
             </div>
