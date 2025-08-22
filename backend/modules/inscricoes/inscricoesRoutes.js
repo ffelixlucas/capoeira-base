@@ -32,6 +32,11 @@ router.put(
     inscricoesController.atualizarInscricao
   );
   
-
+  router.delete(
+    "/:id",
+    verifyToken,
+    checkRole(["admin"]),
+    inscricoesController.deletarInscricao
+  );
 
 module.exports = router;

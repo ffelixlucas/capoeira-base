@@ -175,10 +175,16 @@ async function atualizarStatus(payload) {
   return { atualizado: true, payload };
 }
 
+async function deletarInscricao(id) {
+  const [result] = await db.query("DELETE FROM inscricoes_evento WHERE id = ?", [id]);
+  return result.affectedRows > 0;
+}
+
 module.exports = {
   listarPorEvento,
   buscarPorId,
   criarInscricao,
-  atualizarStatus,
-  atualizarInscricao 
+  atualizarInscricao,
+  deletarInscricao, // novo
 };
+

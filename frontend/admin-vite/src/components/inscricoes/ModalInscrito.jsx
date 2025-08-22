@@ -359,6 +359,29 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                     </button>
 
                     <button
+                      onClick={async () => {
+                        if (
+                          window.confirm(
+                            "Tem certeza que deseja excluir esta inscrição?"
+                          )
+                        ) {
+                          try {
+                            await api.delete(`/inscricoes/${inscrito.id}`);
+                            alert("Inscrição excluída com sucesso!");
+                            onClose(); // fecha modal
+                            // opcional: recarregar lista
+                          } catch (err) {
+                            console.error("Erro ao excluir inscrição:", err);
+                            alert("Erro ao excluir inscrição.");
+                          }
+                        }
+                      }}
+                      className="bg-red-600 text-white px-4 py-2 rounded-md mt-3 w-full"
+                    >
+                      🗑️ Deletar inscrição
+                    </button>
+
+                    <button
                       onClick={onClose}
                       className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm"
                     >

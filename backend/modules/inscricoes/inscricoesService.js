@@ -41,10 +41,15 @@ async function atualizarInscricao(id, dados) {
   return inscricoesRepository.atualizarInscricao(id, dadosFiltrados);
 }
 
+async function deletarInscricao(id) {
+  return inscricoesRepository.deletarInscricao(id);
+}
+
 module.exports = {
   listarPorEvento,
   buscarPorId,
   criarInscricao,
   processarWebhook,
-  atualizarInscricao 
+  atualizarInscricao,
+  deletarInscricao // novo
 };

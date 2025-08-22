@@ -66,10 +66,21 @@ const atualizarInscricao = async (req, res) => {
   }
 };
 
+async function deletarInscricao(req, res) {
+  try {
+    const ok = await inscricoesService.deletarInscricao(req.params.id);
+    if (!ok) return res.status(404).json({ error: "Inscrição não encontrada" });
+    res.json({ message: "Inscrição deletada com sucesso" });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao deletar inscrição", details: err.message });
+  }
+}
+
 module.exports = {
   listarPorEvento,
   buscarPorId,
   criarInscricao,
+  atualizarInscricao,
   webhookPagamento,
-  atualizarInscricao 
+  deletarInscricao // novo
 };
