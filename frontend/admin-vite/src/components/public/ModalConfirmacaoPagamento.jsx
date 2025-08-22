@@ -50,9 +50,21 @@ export default function ModalConfirmacaoPagamento({ isOpen, onClose, dados }) {
                 <strong>Local:</strong> {evento.local}
               </p>
               <p className="text-xs text-gray-500 mt-3">
-              ⚠️ Você receberá um e-mail com todos os detalhes da sua inscrição e
-                do evento.
+                ⚠️ Você receberá um e-mail com todos os detalhes da sua
+                inscrição e do evento.
               </p>
+              <div className="mt-4 p-3 rounded-md border border-red-500 bg-yellow-100">
+                <p className="text-sm text-red-700 font-bold">
+                  ⚠️ Atenção: Se você não encontrar o e-mail na sua caixa de
+                  entrada, verifique também a pasta <strong>Spam</strong> ou{" "}
+                  <strong>Lixeira</strong>.
+                </p>
+                <p className="text-xs text-gray-700 mt-1">
+                  Caso não encontre, utilize o botão de{" "}
+                  <strong>Reenvio de E-mail</strong> ou entre em contato com a
+                  organização.
+                </p>
+              </div>
             </div>
 
             <button
