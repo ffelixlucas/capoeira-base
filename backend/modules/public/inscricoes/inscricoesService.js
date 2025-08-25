@@ -262,6 +262,8 @@ const buscarInscricaoDetalhadaService = async (id) => {
     data_nascimento: inscricao.data_nascimento,
     camiseta_tamanho: inscricao.tamanho_camiseta,
     restricoes: inscricao.alergias_restricoes,
+    categoria: inscricao.categoria,     
+    graduacao: inscricao.graduacao,     
     codigo_inscricao,
     evento: {
       titulo: inscricao.titulo,

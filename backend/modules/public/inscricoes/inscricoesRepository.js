@@ -18,7 +18,6 @@ const buscarInscricaoPendente = async (cpf) => {
  * Cria uma inscrição com status = pendente
  */
 const criarInscricaoPendente = async (dados) => {
-
   const {
     evento_id,
     nome,
@@ -34,23 +33,26 @@ const criarInscricaoPendente = async (dados) => {
     tamanho_camiseta,
     alergias_restricoes,
     aceite_lgpd,
+    categoria,
+    graduacao,
   } = dados;
 
-  // Definindo valores assumidos como verdadeiros
+  // Valores assumidos
   const autorizacao_participacao = true;
   const autorizacao_imagem = true;
   const aceite_imagem = true;
   const aceite_responsabilidade = true;
-  const documento_autorizacao_url = null; // por enquanto não usamos
+  const documento_autorizacao_url = null;
 
   const [result] = await db.execute(
     `INSERT INTO inscricoes_evento (
       evento_id, nome, apelido, data_nascimento, email, telefone, cpf,
       autorizacao_participacao, autorizacao_imagem, documento_autorizacao_url,
       responsavel_nome, responsavel_documento, responsavel_contato, responsavel_parentesco,
-      tamanho_camiseta, alergias_restricoes, aceite_imagem, aceite_responsabilidade, aceite_lgpd,
+      tamanho_camiseta, alergias_restricoes, categoria, graduacao,
+      aceite_imagem, aceite_responsabilidade, aceite_lgpd,
       status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`,
 
     [
       evento_id,
@@ -69,6 +71,8 @@ const criarInscricaoPendente = async (dados) => {
       responsavel_parentesco || null,
       tamanho_camiseta || null,
       alergias_restricoes || null,
+      categoria || null,
+      graduacao || null,
       aceite_imagem,
       aceite_responsabilidade,
       aceite_lgpd,
@@ -129,13 +133,16 @@ const atualizarInscricaoParaPago = async (id, dados) => {
   );
 };
 
+/**
+ * Atualiza inscrição pendente
+ */
 const atualizarInscricaoPendente = async (id, dados) => {
   await db.execute(
     `UPDATE inscricoes_evento 
      SET nome = ?, apelido = ?, data_nascimento = ?, email = ?, telefone = ?, 
          responsavel_nome = ?, responsavel_documento = ?, responsavel_contato = ?, 
          responsavel_parentesco = ?, tamanho_camiseta = ?, alergias_restricoes = ?, 
-         aceite_lgpd = ?, atualizado_em = NOW()
+         categoria = ?, graduacao = ?, aceite_lgpd = ?, atualizado_em = NOW()
      WHERE id = ? AND status = 'pendente'`,
     [
       dados.nome,
@@ -149,40 +156,46 @@ const atualizarInscricaoPendente = async (id, dados) => {
       dados.responsavel_parentesco || null,
       dados.tamanho_camiseta || null,
       dados.alergias_restricoes || null,
+      dados.categoria || null,
+      dados.graduacao || null,
       dados.aceite_lgpd,
       id,
     ]
   );
 };
 
+/**
+ * Busca inscrição com detalhes do evento
+ */
 const buscarInscricaoComEvento = async (id) => {
   const [rows] = await db.execute(
     `SELECT 
-  i.id,
-  i.status,
-  i.nome,
-  i.apelido,
-  i.email,
-  i.telefone,
-  i.cpf,
-  i.data_nascimento,
-  i.tamanho_camiseta,
-  i.alergias_restricoes,
-  i.evento_id,
-  a.titulo,
-  a.descricao_curta,
-  a.descricao_completa,
-  a.data_inicio,
-  a.data_fim,
-  a.local,
-  a.endereco,
-  a.telefone_contato,
-  a.valor,
-  a.possui_camiseta
-FROM inscricoes_evento i
-JOIN agenda a ON i.evento_id = a.id
-WHERE i.id = ?
-`,
+      i.id,
+      i.status,
+      i.nome,
+      i.apelido,
+      i.email,
+      i.telefone,
+      i.cpf,
+      i.data_nascimento,
+      i.tamanho_camiseta,
+      i.alergias_restricoes,
+      i.categoria,
+      i.graduacao,
+      i.evento_id,
+      a.titulo,
+      a.descricao_curta,
+      a.descricao_completa,
+      a.data_inicio,
+      a.data_fim,
+      a.local,
+      a.endereco,
+      a.telefone_contato,
+      a.valor,
+      a.possui_camiseta
+    FROM inscricoes_evento i
+    JOIN agenda a ON i.evento_id = a.id
+    WHERE i.id = ?`,
     [id]
   );
   return rows[0];

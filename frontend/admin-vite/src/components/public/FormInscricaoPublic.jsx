@@ -20,6 +20,39 @@ export default function FormInscricaoPublic({
     }));
   }
 
+  const graduacoesPorCategoria = {
+    Infantil: [
+      "Branca",
+      "Ponta Amarela",
+      "Ponta Laranja",
+      "Ponta Azul",
+      "Ponta Verde",
+      "Ponta Roxa",
+      "Ponta Marrom",
+    ],
+    Juvenil: [
+      "Meia Amarela",
+      "Meia Laranja",
+      "Meia Azul",
+      "Meia Verde",
+      "Meia Roxa",
+      "Meia Marrom",
+    ],
+    "Jovens e Adultos": [
+      "Branca",
+      "Branca e Amarela",
+      "Amarela",
+      "Branca e Laranja",
+      "Laranja",
+      "Vermelha e Azul",
+      "Azul",
+      "Verde",
+      "Roxa",
+      "Marrom",
+      "Preta",
+    ],
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -141,6 +174,37 @@ export default function FormInscricaoPublic({
           {evento?.configuracoes?.camiseta_tamanhos?.map((t) => (
             <option key={t} value={t}>
               {t}
+            </option>
+          ))}
+        </select>
+      )}
+      {/* Categoria */}
+      <select
+        name="categoria"
+        value={form.categoria}
+        onChange={handleChange}
+        className="w-full border rounded-lg px-3 py-2 text-black text-sm"
+        required
+      >
+        <option value="">Selecione a categoria</option>
+        <option value="Infantil">Infantil (4 a 10 anos)</option>
+        <option value="Juvenil">Juvenil (11 a 16 anos)</option>
+        <option value="Jovens e Adultos">Jovens e Adultos (17+)</option>
+      </select>
+
+      {/* Graduação (dependente da categoria) */}
+      {form.categoria && (
+        <select
+          name="graduacao"
+          value={form.graduacao}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2 text-black text-sm"
+          required
+        >
+          <option value="">Selecione a graduação</option>
+          {graduacoesPorCategoria[form.categoria].map((g) => (
+            <option key={g} value={g}>
+              {g}
             </option>
           ))}
         </select>
