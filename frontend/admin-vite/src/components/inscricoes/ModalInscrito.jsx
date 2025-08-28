@@ -358,28 +358,49 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                       Reenviar E-mail
                     </button>
 
-                    <button
-                      onClick={async () => {
-                        if (
-                          window.confirm(
-                            "Tem certeza que deseja excluir esta inscrição?"
-                          )
-                        ) {
-                          try {
-                            await api.delete(`/inscricoes/${inscrito.id}`);
-                            alert("Inscrição excluída com sucesso!");
-                            onClose(); // fecha modal
-                            // opcional: recarregar lista
-                          } catch (err) {
-                            console.error("Erro ao excluir inscrição:", err);
-                            alert("Erro ao excluir inscrição.");
+                    {inscrito.status === "pago" && (
+                      <button
+                        onClick={async () => {
+                          if (
+                            window.confirm(
+                              "⚠️ Tem certeza que deseja EXTORNAR este pagamento? O valor será devolvido ao inscrito."
+                            )
+                          ) {
+                            try {
+                              const { data } = await api.post(
+                                `/inscricoes/${inscrito.id}/extornar`
+                              );
+                              if (data.sucesso) {
+                                alert("✅ Pagamento extornado com sucesso!");
+                              
+                                // dispara callback para atualizar lista no pai
+                                onEditar?.({
+                                  ...inscrito,
+                                  status: "extornado",
+                                  refund_id: data.debug?.refund_id,
+                                  refund_valor: data.debug?.refund_valor,
+                                });
+                              
+                                onClose(); // fecha modal
+                              }
+                               else {
+                                alert(
+                                  `❌ Erro ao extornar: ${
+                                    data.erro || "Falha desconhecida"
+                                  }`
+                                );
+                              }
+                            } catch (err) {
+                              console.error("Erro ao extornar inscrição:", err);
+                              alert("❌ Falha ao extornar inscrição.");
+                            }
                           }
-                        }
-                      }}
-                      className="bg-red-600 text-white px-4 py-2 rounded-md mt-3 w-full"
-                    >
-                      🗑️ Deletar inscrição
-                    </button>
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+                      >
+                        💸 Extornar
+                      </button>
+                    )}
 
                     <button
                       onClick={onClose}
