@@ -225,6 +225,7 @@ const buscarInscricaoComEvento = async (id) => {
       i.categoria,
       i.graduacao,
       i.evento_id,
+      i.pagamento_id,
       a.titulo,
       a.descricao_curta,
       a.descricao_completa,
