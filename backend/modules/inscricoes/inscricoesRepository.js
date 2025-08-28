@@ -206,6 +206,44 @@ async function atualizarInscricaoParaExtornado(id, dados) {
   );
 }
 
+/**
+ * Busca inscrição com detalhes do evento
+ */
+const buscarInscricaoComEvento = async (id) => {
+  const [rows] = await db.execute(
+    `SELECT 
+      i.id,
+      i.status,
+      i.nome,
+      i.apelido,
+      i.email,
+      i.telefone,
+      i.cpf,
+      i.data_nascimento,
+      i.tamanho_camiseta,
+      i.alergias_restricoes,
+      i.categoria,
+      i.graduacao,
+      i.evento_id,
+      a.titulo,
+      a.descricao_curta,
+      a.descricao_completa,
+      a.data_inicio,
+      a.data_fim,
+      a.local,
+      a.endereco,
+      a.telefone_contato,
+      a.valor,
+      a.possui_camiseta
+    FROM inscricoes_evento i
+    JOIN agenda a ON i.evento_id = a.id
+    WHERE i.id = ?`,
+    [id]
+  );
+  return rows[0];
+};
+
+
 
 module.exports = {
   listarPorEvento,
@@ -214,5 +252,6 @@ module.exports = {
   atualizarInscricao,
   deletarInscricao,
   atualizarInscricaoParaExtornado,
+  buscarInscricaoComEvento,
 };
 
