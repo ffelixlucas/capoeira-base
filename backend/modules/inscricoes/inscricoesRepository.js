@@ -1,4 +1,7 @@
+// backend/modules/inscricoes/inscricoesRepository.js
+
 const db = require('../../database/connection');
+const { atualizarInscricaoComPix } = require('../public/inscricoes/inscricoesRepository');
 
 // Lista evento, totais e inscritos (com filtro opcional)
 async function listarPorEvento(eventoId, busca = "") {
@@ -189,11 +192,27 @@ async function deletarInscricao(id) {
   return result.affectedRows > 0;
 }
 
+// Atualiza inscrição para extornado
+async function atualizarInscricaoParaExtornado(id, dados) {
+  await db.execute(
+    `UPDATE inscricoes_evento
+       SET status = 'extornado',
+           refund_id = ?,
+           refund_valor = ?,
+           refund_data = NOW(),
+           atualizado_em = NOW()
+     WHERE id = ?`,
+    [dados.refund_id ?? null, dados.refund_valor ?? null, id]
+  );
+}
+
+
 module.exports = {
   listarPorEvento,
   buscarPorId,
   criarInscricao,
   atualizarInscricao,
-  deletarInscricao, // novo
+  deletarInscricao,
+  atualizarInscricaoParaExtornado,
 };
 

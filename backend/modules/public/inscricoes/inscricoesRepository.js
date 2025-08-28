@@ -1,3 +1,5 @@
+//backend/modules/public/inscricoes/inscricoesRepository.js
+
 const db = require("../../../database/connection");
 
 /**
@@ -163,6 +165,7 @@ const atualizarInscricaoPendente = async (id, dados) => {
     ]
   );
 };
+
 
 /**
  * Busca inscrição com detalhes do evento

@@ -1,8 +1,9 @@
+//backend/modules/public/inscricoes/inscricoesController.js
 const {
   gerarPagamentoPixService,
   processarWebhookService,
   buscarInscricaoDetalhadaService,
-  verificarInscricaoPaga,
+  verificarInscricaoPaga,  
 } = require("./inscricoesService");
 const { enviarEmailConfirmacao } = require("../../../services/emailService");
 
@@ -75,4 +76,5 @@ module.exports = {
   webhookPagamento,
   buscarInscricaoPorId,
   reenviarEmail,
+  
 };

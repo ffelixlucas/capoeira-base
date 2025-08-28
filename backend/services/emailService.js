@@ -78,4 +78,75 @@ async function enviarEmailConfirmacao(inscricao) {
   }
 }
 
-module.exports = { enviarEmailConfirmacao };
+async function enviarEmailExtorno(inscricao) {
+  const {
+    nome,
+    apelido,
+    email,
+    telefone,
+    cpf,
+    data_nascimento,
+    codigo_inscricao,
+    evento,
+    refund_valor,
+  } = inscricao;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+      <h2>Extorno realizado 💸</h2>
+      <p>Olá <strong>${nome}</strong>, sua inscrição foi <span style="color:red">extornada</span> no evento do 
+      <strong>Grupo Capoeira Brasil</strong>.</p>
+
+      <h3>📌 Dados do Evento</h3>
+      <ul>
+        <li><strong>Evento:</strong> ${evento.titulo}</li>
+        <li><strong>Data:</strong> ${new Date(evento.data_inicio).toLocaleDateString("pt-BR")} 
+          ${evento.data_fim ? " até " + new Date(evento.data_fim).toLocaleDateString("pt-BR") : ""}</li>
+        <li><strong>Local:</strong> ${evento.local}</li>
+        <li><strong>Endereço:</strong> ${evento.endereco || "-"}</li>
+        <li><strong>Código de inscrição:</strong> <code>${codigo_inscricao}</code></li>
+      </ul>
+
+      <h3>💰 Detalhes do Extorno</h3>
+      <ul>
+        <li><strong>Valor devolvido:</strong> R$ ${Number(refund_valor).toFixed(2)}</li>
+        <li><strong>CPF:</strong> ${cpf || "-"}</li>
+        <li><strong>E-mail:</strong> ${email}</li>
+        <li><strong>Telefone:</strong> ${telefone || "-"}</li>
+      </ul>
+
+      <p style="margin-top:20px;">
+        ⚠️ O valor pode levar de <strong>3 a 10 dias úteis</strong> para aparecer em sua conta/cartão.
+      </p>
+
+      <p style="margin-top:20px; font-size:12px; color:#666;">
+        Este é um e-mail automático enviado por <strong>capoeiranota10.com.br</strong>.<br/>
+        Caso não reconheça este extorno, entre em contato pelo WhatsApp oficial: (41) 99618-9598.
+      </p>
+    </div>
+  `;
+
+  try {
+    const to = String(email || "").trim();
+
+    console.log("📧 Enviando e-mail de extorno para:", JSON.stringify(to));
+
+    const { data, error } = await resend.emails.send({
+      from: "Capoeira Nota10 – Inscrições <contato@capoeiranota10.com.br>",
+      to,
+      subject: `Extorno da inscrição – ${evento.titulo}`,
+      html,
+    });
+
+    if (error) {
+      console.error("❌ Falha no envio (Resend):", error);
+    } else {
+      console.log("✅ E-mail de extorno enviado via Resend:", data);
+    }
+  } catch (err) {
+    console.error("❌ Erro inesperado ao enviar e-mail de extorno:", err.message);
+  }
+}
+
+
+module.exports = { enviarEmailConfirmacao, enviarEmailExtorno };

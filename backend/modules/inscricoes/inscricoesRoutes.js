@@ -1,3 +1,5 @@
+//backend/modules/inscricoes/inscricoesRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const inscricoesController = require('./inscricoesController');
@@ -7,6 +9,7 @@ const checkRole = require('../../middlewares/checkRole');
 // Rotas públicas
 router.post('/', inscricoesController.criarInscricao);
 router.post('/webhook', inscricoesController.webhookPagamento);
+
 
 // Rotas protegidas (Admin / Instrutor)
 router.get(
@@ -24,6 +27,14 @@ router.get(
 );
 
 // Rotas protegidas (Apenas Admin )
+
+router.post(
+  "/:id/extornar",
+  verifyToken,
+  checkRole(["admin"]),
+  inscricoesController.extornarPagamento
+);
+
 
 router.put(
     '/:id',

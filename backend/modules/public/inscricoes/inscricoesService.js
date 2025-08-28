@@ -1,3 +1,4 @@
+//backend/modules/public/inscricoes/inscricoesService.js
 const crypto = require("crypto");
 const axios = require("axios");
 const { MercadoPagoConfig, Payment } = require("mercadopago");
@@ -10,7 +11,10 @@ const {
   buscarInscricaoComEvento,
   verificarInscricaoPaga,
 } = require("./inscricoesRepository");
-const { enviarEmailConfirmacao } = require("../../../services/emailService.js");
+const {
+  enviarEmailConfirmacao,
+  enviarEmailExtorno,
+} = require("../../../services/emailService.js");
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
@@ -232,7 +236,10 @@ const processarWebhookService = async (payload) => {
           console.error("❌ Erro ao enviar e-mail:", err.message || err);
         }
       } else {
-        console.warn("⚠️ Inscrição sem e-mail válido, não foi possível enviar:", inscricao);
+        console.warn(
+          "⚠️ Inscrição sem e-mail válido, não foi possível enviar:",
+          inscricao
+        );
       }
     }
   } catch (err) {
@@ -262,8 +269,8 @@ const buscarInscricaoDetalhadaService = async (id) => {
     data_nascimento: inscricao.data_nascimento,
     camiseta_tamanho: inscricao.tamanho_camiseta,
     restricoes: inscricao.alergias_restricoes,
-    categoria: inscricao.categoria,     
-    graduacao: inscricao.graduacao,     
+    categoria: inscricao.categoria,
+    graduacao: inscricao.graduacao,
     codigo_inscricao,
     evento: {
       titulo: inscricao.titulo,
