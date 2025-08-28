@@ -51,5 +51,5 @@ module.exports = {
   criarInscricao,
   processarWebhook,
   atualizarInscricao,
-  deletarInscricao // novo
+  deletarInscricao 
 };

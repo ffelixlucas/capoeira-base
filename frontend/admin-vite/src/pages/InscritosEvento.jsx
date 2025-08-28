@@ -13,6 +13,7 @@ import {
 import { Menu } from "@headlessui/react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
+import ResumoCamisetas from "../components/ui/ResumoCamisetas";
 
 function InscritosEvento() {
   const { eventoId } = useParams();
@@ -24,6 +25,8 @@ function InscritosEvento() {
 
   const [modalAberto, setModalAberto] = useState(false);
   const [inscritoSelecionado, setInscritoSelecionado] = useState(null);
+  const [resumoCamisetas, setResumoCamisetas] = useState([]);
+
 
   // Carregar lista inicial
   useEffect(() => {
@@ -37,6 +40,7 @@ function InscritosEvento() {
       const dados = await buscarInscritosPorEvento(eventoId, busca);
       setEvento(dados.evento);
       setInscritos(dados.inscritos);
+      setResumoCamisetas(dados.resumo_camisetas || []);
     } catch (err) {
       console.error("Erro ao carregar inscritos:", err);
     } finally {
@@ -117,6 +121,8 @@ function InscritosEvento() {
     win.close();
   }
 
+  
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Estatísticas */}
@@ -128,14 +134,15 @@ function InscritosEvento() {
           cor="blue"
         />
 
-<CardEstat
-  valor={`R$ ${Number(evento?.valor_liquido_total ?? 0).toFixed(2)}`}
-  label="Total (líquido após taxas)"
-  Icon={CurrencyDollarIcon}
-  cor="green"
-/>
-
+        <CardEstat
+          valor={`R$ ${Number(evento?.valor_liquido_total ?? 0).toFixed(2)}`}
+          label="Total (líquido após taxas)"
+          Icon={CurrencyDollarIcon}
+          cor="green"
+        />
       </div>
+
+      <ResumoCamisetas resumo={resumoCamisetas} />
 
       <div className="flex justify-between mb-4">
         <Menu as="div" className="relative text-black">

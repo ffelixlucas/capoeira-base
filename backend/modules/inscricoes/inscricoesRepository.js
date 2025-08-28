@@ -65,10 +65,19 @@ async function listarPorEvento(eventoId, busca = "") {
   query += " ORDER BY criado_em DESC";
   const [inscritos] = await db.execute(query, params);
 
-  // 5) Retorno padronizado
-  return { evento, inscritos };
-}
-
+    // 5) Resumo de camisetas (apenas pagos)
+    const [camisetasRows] = await db.execute(
+      `SELECT tamanho_camiseta AS tamanho, COUNT(*) AS total
+       FROM inscricoes_evento
+       WHERE evento_id = ? AND status = 'pago'
+       GROUP BY tamanho_camiseta
+       ORDER BY tamanho_camiseta`,
+      [eventoId]
+    );
+  
+    // 6) Retorno padronizado
+    return { evento, inscritos, resumo_camisetas: camisetasRows };
+  }
 
 
 
