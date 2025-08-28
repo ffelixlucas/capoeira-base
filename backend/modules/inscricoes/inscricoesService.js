@@ -2,23 +2,11 @@
 const inscricoesRepository = require("./inscricoesRepository");
 const { registrarLogTransacao } = require("./logsRepository");
 const { enviarEmailExtorno } = require("../../services/emailService");
-const { MercadoPagoConfig, Payment } = require("mercadopago");
-
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
-});
-const payment = new Payment(client);
-
-
-
-
-// Extorna pagamento
-
+const axios = require("axios");
 
 async function extornarPagamentoService(id) {
   console.log("🔎 Iniciando extorno para inscrição:", id);
 
-  // Buscar inscrição com evento (precisamos do evento para o e-mail)
   const inscricao = await inscricoesRepository.buscarInscricaoComEvento(id);
   if (!inscricao || !inscricao.pagamento_id) {
     console.error("❌ Inscrição não encontrada ou sem pagamento vinculado:", inscricao);
@@ -31,29 +19,33 @@ async function extornarPagamentoService(id) {
   });
 
   try {
-    // Criar estorno no Mercado Pago
-    console.log("➡️ Chamando Mercado Pago refund...");
-    const result = await payment.refund({ id: inscricao.pagamento_id });
+    console.log("➡️ Chamando Mercado Pago refund API...");
+    const { data: result } = await axios.post(
+      `https://api.mercadopago.com/v1/payments/${inscricao.pagamento_id}/refunds`,
+      {}, // body vazio = estorno total. Para parcial: { amount: 50.0 }
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+        },
+      }
+    );
+
     console.log("✅ Resposta do Mercado Pago:", result);
 
-    // Blindagem para diferentes formatos de retorno
-    const statusMP = result?.status ?? result?.body?.status;
-    const refundId = result?.id ?? result?.body?.id;
-    const refundAmount = result?.amount ?? result?.body?.amount;
+    const refundId = result.id;
+    const refundAmount = result.amount;
 
-    if (statusMP !== "approved") {
-      console.error("⚠️ Extorno não confirmado pelo Mercado Pago:", result);
+    if (!refundId) {
       throw new Error("Extorno não confirmado pelo Mercado Pago");
     }
 
-    // Atualizar banco
     const refundInfo = {
       refund_id: refundId,
       refund_valor: refundAmount,
       status: "extornado",
     };
-    console.log("💾 Atualizando inscrição no banco com:", refundInfo);
 
+    console.log("💾 Atualizando inscrição no banco com:", refundInfo);
     await inscricoesRepository.atualizarInscricaoParaExtornado(id, refundInfo);
     await registrarLogTransacao(id, "extorno_realizado", "sucesso", refundInfo);
 
@@ -61,7 +53,7 @@ async function extornarPagamentoService(id) {
     await enviarEmailExtorno({
       ...inscricao,
       refund_valor: refundAmount,
-      codigo_inscricao: inscricao.codigo_inscricao, // se já existe no objeto
+      codigo_inscricao: inscricao.codigo_inscricao,
       evento: {
         titulo: inscricao.titulo,
         local: inscricao.local,
