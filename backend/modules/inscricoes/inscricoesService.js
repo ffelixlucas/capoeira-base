@@ -36,7 +36,7 @@ async function extornarPagamentoService(id) {
   };
 
   await inscricoesRepository.atualizarInscricaoParaExtornado(id, refundInfo);
-  await registrarLogTransacao(id, "extorno", "sucesso", refundInfo);
+  await registrarLogTransacao(id, "extorno_realizado", "sucesso", refundInfo);
 
   return { id, ...refundInfo };
 }
