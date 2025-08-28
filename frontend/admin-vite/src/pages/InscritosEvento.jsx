@@ -58,19 +58,25 @@ function InscritosEvento() {
     }
   }
 
-  // Atualizar um inscrito editado na lista
-  function atualizarInscritoNaLista(inscritoAtualizado) {
-    setInscritos((lista) =>
-      lista.map((i) =>
-        i.id === inscritoAtualizado.id ? { ...i, ...inscritoAtualizado } : i
-      )
-    );
-    setInscritoSelecionado((atual) =>
-      atual && atual.id === inscritoAtualizado.id
-        ? { ...atual, ...inscritoAtualizado }
-        : atual
-    );
+  async function atualizarInscritoNaLista(inscritoAtualizado) {
+    // Se foi extornado, recarregar tudo para atualizar totais
+    if (inscritoAtualizado.status === "extornado") {
+      await carregarInscritos();
+    } else {
+      // Atualiza só o item na lista e no modal
+      setInscritos((lista) =>
+        lista.map((i) =>
+          i.id === inscritoAtualizado.id ? { ...i, ...inscritoAtualizado } : i
+        )
+      );
+      setInscritoSelecionado((atual) =>
+        atual && atual.id === inscritoAtualizado.id
+          ? { ...atual, ...inscritoAtualizado }
+          : atual
+      );
+    }
   }
+  
 
   // Gerar Excel da lista completa
   function baixarListaExcel() {
@@ -129,14 +135,14 @@ function InscritosEvento() {
       <div className="grid grid-cols-2 gap-4 mb-4">
         <CardEstat
           valor={evento?.total_inscritos || 0}
-          label="Total de Inscritos"
+          label="Inscritos"
           Icon={UserGroupIcon}
           cor="blue"
         />
 
         <CardEstat
           valor={`R$ ${Number(evento?.valor_liquido_total ?? 0).toFixed(2)}`}
-          label="Total (líquido após taxas)"
+          label="Total (líquido)"
           Icon={CurrencyDollarIcon}
           cor="green"
         />

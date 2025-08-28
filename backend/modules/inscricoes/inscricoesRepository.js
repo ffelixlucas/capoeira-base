@@ -17,10 +17,14 @@ async function listarPorEvento(eventoId, busca = "") {
 
   // 2) Totais gerais de inscritos (independente de filtro)
   const [totalRows] = await db.execute(
-    `SELECT COUNT(*) AS total FROM inscricoes_evento WHERE evento_id = ?`,
+    `SELECT COUNT(*) AS total 
+     FROM inscricoes_evento 
+     WHERE evento_id = ? 
+       AND status <> 'extornado'`,
     [eventoId]
   );
   evento.total_inscritos = totalRows[0]?.total ?? 0;
+
 
   // 3) Totais financeiros apenas de pagos
   const [totaisRows] = await db.execute(
