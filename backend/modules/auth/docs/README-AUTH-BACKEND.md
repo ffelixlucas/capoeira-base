@@ -55,11 +55,11 @@ API REST responsável pela **autenticação de usuários da equipe**, geração 
 
 ## 🛠️ Melhorias Futuras
 
-- [ ] Endpoint `/me` → Retornar os dados do usuário logado.
-- [ ] Implementar `/logout` (futuro, se desejar blacklist de tokens).
-- [ ] Refresh token (futuro, se desejado).
-- [ ] Logs de tentativas de login (sucesso e falha).
-- [ ] Controle de tentativas inválidas (anti brute-force).
+- [✅] Endpoint `/me` → Retornar os dados do usuário logado.
+- [  ] Implementar `/logout` (futuro, se desejar blacklist de tokens).
+- [  ] Refresh token (futuro, se desejado).
+- [  ] Logs de tentativas de login (sucesso e falha).
+- [  ] Controle de tentativas inválidas (anti brute-force).
 
 ---
 
