@@ -4,6 +4,7 @@ async function getAllEquipe() {
   const [rows] = await db.query(`
     SELECT id, nome, telefone, whatsapp, email, status, observacoes, criado_em, atualizado_em
     FROM equipe
+    WHERE visivel_no_painel = 1
     ORDER BY nome ASC
   `);
 
