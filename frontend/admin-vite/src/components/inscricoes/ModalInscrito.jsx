@@ -398,7 +398,7 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                         }}
                         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
                       >
-                        💸 Extornar
+                        💸 Estornar
                       </button>
                     )}
 

@@ -93,8 +93,8 @@ async function enviarEmailExtorno(inscricao) {
 
   const html = `
     <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-      <h2>Extorno realizado 💸</h2>
-      <p>Olá <strong>${nome}</strong>, sua inscrição foi <span style="color:red">extornada</span> no evento do 
+      <h2>Estorno realizado 💸</h2>
+      <p>Olá <strong>${nome}</strong>, sua inscrição foi <span style="color:red">estornada</span> no evento do 
       <strong>Grupo Capoeira Brasil</strong>.</p>
 
       <h3>📌 Dados do Evento</h3>
@@ -107,7 +107,7 @@ async function enviarEmailExtorno(inscricao) {
         <li><strong>Código de inscrição:</strong> <code>${codigo_inscricao}</code></li>
       </ul>
 
-      <h3>💰 Detalhes do Extorno</h3>
+      <h3>💰 Detalhes do Estorno</h3>
       <ul>
         <li><strong>Valor devolvido:</strong> R$ ${Number(refund_valor).toFixed(2)}</li>
         <li><strong>CPF:</strong> ${cpf || "-"}</li>
@@ -121,7 +121,7 @@ async function enviarEmailExtorno(inscricao) {
 
       <p style="margin-top:20px; font-size:12px; color:#666;">
         Este é um e-mail automático enviado por <strong>capoeiranota10.com.br</strong>.<br/>
-        Caso não reconheça este extorno, entre em contato pelo WhatsApp oficial: (41) 99618-9598.
+        Caso não reconheça este estorno, entre em contato pelo WhatsApp oficial: (41) 99618-9598.
       </p>
     </div>
   `;
@@ -129,22 +129,22 @@ async function enviarEmailExtorno(inscricao) {
   try {
     const to = String(email || "").trim();
 
-    console.log("📧 Enviando e-mail de extorno para:", JSON.stringify(to));
+    console.log("📧 Enviando e-mail de estorno para:", JSON.stringify(to));
 
     const { data, error } = await resend.emails.send({
       from: "Capoeira Nota10 – Inscrições <contato@capoeiranota10.com.br>",
       to,
-      subject: `Extorno da inscrição – ${evento.titulo}`,
+      subject: `Estorno da inscrição – ${evento.titulo}`,
       html,
     });
 
     if (error) {
       console.error("❌ Falha no envio (Resend):", error);
     } else {
-      console.log("✅ E-mail de extorno enviado via Resend:", data);
+      console.log("✅ E-mail de estorno enviado via Resend:", data);
     }
   } catch (err) {
-    console.error("❌ Erro inesperado ao enviar e-mail de extorno:", err.message);
+    console.error("❌ Erro inesperado ao enviar e-mail de estorno:", err.message);
   }
 }
 
