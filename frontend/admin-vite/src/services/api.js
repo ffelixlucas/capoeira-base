@@ -5,7 +5,10 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
 
+const isOnLogin = () => window.location.pathname.startsWith("/login");
+
 const redirectToLogin = () => {
+  if (isOnLogin()) return; // evita loop em /login
   try {
     sessionStorage.setItem("auth.message", "expired");
     const next = encodeURIComponent(window.location.pathname + window.location.search);
@@ -18,9 +21,7 @@ const redirectToLogin = () => {
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => Promise.reject(error)
@@ -32,12 +33,15 @@ api.interceptors.response.use(
     const status = error?.response?.status;
 
     if (status === 401 || status === 403) {
-      console.warn("Sessão inválida/expirada. Redirecionando para login...");
+      // logs apenas em dev
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn("Sessão inválida/expirada. Redirecionando para login...");
+      }
       localStorage.removeItem("token");
       localStorage.removeItem("usuario");
       redirectToLogin();
-      // impede que o erro continue pros componentes (evita toasts locais)
-      return new Promise(() => {});
+      return new Promise(() => {}); 
     }
 
     return Promise.reject(error);
