@@ -87,9 +87,31 @@ async function deleteEquipe(id) {
   return result.affectedRows;
 }
 
+async function buscarPorId(id) {
+  const [rows] = await db.query("SELECT * FROM equipe WHERE id = ?", [id]);
+  const usuario = rows[0];
+  if (!usuario) return null;
+
+  const [roles] = await db.query(
+    `SELECT r.id, r.nome
+     FROM equipe_roles er
+     JOIN roles r ON er.role_id = r.id
+     WHERE er.equipe_id = ?`,
+    [id]
+  );
+
+  usuario.roles = roles;
+  return usuario;
+}
+
+
+
+
 module.exports = {
   getAllEquipe,
   createEquipe,
   updateEquipe,
   deleteEquipe,
+  buscarPorId,
+
 };

@@ -92,3 +92,34 @@ export async function removerTodosOsPapeis(equipeId) {
     throw erro;
   }
 }
+
+/**
+ * 👤 Atualizar perfil do usuário logado
+ */
+export async function atualizarPerfil(dados) {
+  try {
+    const response = await api.put("/equipe/me", dados);
+    return response.data;
+  } catch (erro) {
+    console.error("Erro ao atualizar perfil:", erro);
+    throw erro;
+  }
+}
+
+/**
+ * 👤 Buscar perfil do usuário logado
+ */
+export async function buscarPerfil() {
+  try {
+    const response = await api.get("/equipe/me");
+    return response.data;
+  } catch (erro) {
+    console.error("Erro ao buscar perfil:", erro);
+    throw erro;
+  }
+}
+
+export async function atualizarSenha(dados) {
+  const response = await api.put("/equipe/me/senha", dados);
+  return response.data;
+}

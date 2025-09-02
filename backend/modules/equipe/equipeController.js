@@ -49,9 +49,73 @@ async function removerEquipe(req, res) {
   }
 }
 
+async function atualizarPerfil(req, res) {
+  try {
+    const atualizado = await equipeService.atualizarEquipe(req.usuario.id, req.body);
+    if (atualizado) {
+      res.json({ message: "Perfil atualizado com sucesso" });
+    } else {
+      res.status(404).json({ message: "Usuário não encontrado" });
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar perfil:", error);
+    res.status(500).json({ message: "Erro ao atualizar perfil" });
+  }
+}
+async function alterarSenha(req, res) {
+  try {
+    const { senhaAtual, novaSenha } = req.body;
+
+    if (!senhaAtual || !novaSenha) {
+      return res.status(400).json({ message: "Informe senha atual e nova senha" });
+    }
+
+    const resultado = await equipeService.alterarSenha(req.usuario.id, senhaAtual, novaSenha);
+
+    if (!resultado.sucesso) {
+      return res.status(400).json({ message: resultado.message });
+    }
+
+    res.json({ message: "Senha alterada com sucesso" });
+  } catch (error) {
+    console.error("Erro ao alterar senha:", error);
+    res.status(500).json({ message: "Erro interno ao alterar senha" });
+  }
+}
+
+async function getPerfil(req, res) {
+  try {
+    const usuario = await equipeService.buscarPorId(req.usuario.id);
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    // remover hash
+    delete usuario.senha_hash;
+
+    // 🔥 garantir que roles seja um array de strings, igual no login
+    if (usuario.roles && Array.isArray(usuario.roles)) {
+      usuario.roles = usuario.roles.map((r) => r.nome);
+    } else {
+      usuario.roles = [];
+    }
+
+    res.json(usuario);
+  } catch (error) {
+    console.error("Erro ao buscar perfil:", error);
+    res.status(500).json({ message: "Erro interno ao buscar perfil" });
+  }
+}
+
+
+
+
 module.exports = {
   getEquipe,
   criarEquipe,
   atualizarEquipe,
   removerEquipe,
+  atualizarPerfil,
+  alterarSenha,
+  getPerfil,
 };

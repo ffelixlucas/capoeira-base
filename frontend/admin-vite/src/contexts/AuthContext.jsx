@@ -1,25 +1,36 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { fazerLogin } from '../services/authService';
+import React, { createContext, useState, useEffect, useContext } from "react";
+import axios from "axios";
+import { fazerLogin } from "../services/authService";
+import { buscarPerfil } from "../services/equipeService";
 
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [usuario, setUsuario] = useState(null);
   const [carregando, setCarregando] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('token') || '');
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
 
   useEffect(() => {
-    // Recupera dados salvos ao carregar
-    const tokenSalvo = localStorage.getItem('token');
-    const usuarioSalvo = localStorage.getItem('usuario');
+    const tokenSalvo = localStorage.getItem("token");
 
-    if (tokenSalvo && usuarioSalvo) {
+    if (tokenSalvo) {
       setToken(tokenSalvo);
-      setUsuario(JSON.parse(usuarioSalvo));
-    }
 
-    setCarregando(false);
+      // 🔥 Buscar perfil atualizado no backend
+      buscarPerfil()
+        .then((dados) => {
+          setUsuario(dados);
+          localStorage.setItem("usuario", JSON.stringify(dados));
+          console.log("📌 Perfil atualizado:", dados);
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar perfil:", err);
+          logout();
+        })
+        .finally(() => setCarregando(false));
+    } else {
+      setCarregando(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -28,8 +39,8 @@ export const AuthProvider = ({ children }) => {
       (res) => res,
       (err) => {
         if (err.response?.status === 401 || err.response?.status === 403) {
-          logout(); // limpa token e usuário
-          window.location.href = "/login"; // redireciona pro login
+          logout();
+          window.location.href = "/login";
         }
         return Promise.reject(err);
       }
@@ -42,25 +53,30 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, senha) => {
     try {
-      const { token, usuario } = await fazerLogin(email, senha);
-      localStorage.setItem('token', token);
-      localStorage.setItem('usuario', JSON.stringify(usuario));
+      // login só retorna token
+      const { token } = await fazerLogin(email, senha);
+      localStorage.setItem("token", token);
       setToken(token);
-      setUsuario(usuario);
+
+      // 🔥 buscar perfil completo com roles/telefone/whatsapp
+      const perfil = await buscarPerfil();
+      localStorage.setItem("usuario", JSON.stringify(perfil));
+      setUsuario(perfil);
+
       return { sucesso: true };
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
+      console.error("Erro ao fazer login:", error);
       return {
         sucesso: false,
-        mensagem: error.response?.data?.message || 'Erro desconhecido'
+        mensagem: error.response?.data?.message || "Erro desconhecido",
       };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('usuario');
-    setToken('');
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
+    setToken("");
     setUsuario(null);
   };
 

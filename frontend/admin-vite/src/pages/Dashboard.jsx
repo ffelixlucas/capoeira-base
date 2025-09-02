@@ -145,6 +145,12 @@ export default function Dashboard() {
           <p className="text-sm text-cor-texto/80 mt-1">
             Bem-vindo ao painel de administração
           </p>
+          <button
+            onClick={() => navigate("/perfil")}
+            className="mt-3 text-sm text-cor-primaria hover:underline"
+          >
+            Editar meu perfil
+          </button>
         </div>
 
         {/* Ação Rápida: Chamada (outline, diferente dos cards) */}

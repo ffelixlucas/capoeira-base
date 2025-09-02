@@ -32,6 +32,7 @@ import Contatos from "./pages/Contatos";
 import Inscricoes from "./pages/Inscricoes";
 import InscritosEvento from "./pages/InscritosEvento.jsx";
 import Presencas from "./pages/Presencas.jsx";
+import EditarPerfil from "./pages/EditarPerfil.jsx";
 
 
 // Imports de páginas públicas
@@ -82,6 +83,7 @@ function App() {
             <Route path="/inscricoes" element={<Inscricoes />} />
             <Route path="/inscricoes/:eventoId" element={<InscritosEvento />} />
             <Route path="/presencas" element={<Presencas />} />
+            <Route path="/perfil" element={<EditarPerfil />} />
 
 
             <Route
