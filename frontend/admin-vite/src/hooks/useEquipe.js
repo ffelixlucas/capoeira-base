@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listarEquipe } from "../services/equipeService";
+import { logger } from "../utils/logger";
 
 export function useEquipe() {
   const [membros, setMembros] = useState([]);
@@ -13,7 +14,7 @@ export function useEquipe() {
       setMembros(dados);
       setErro(null);
     } catch (err) {
-      console.error("Erro ao buscar equipe:", err);
+      logger.error("Erro ao buscar equipe:", err);
       setErro("Erro ao carregar equipe");
     } finally {
       setLoading(false);

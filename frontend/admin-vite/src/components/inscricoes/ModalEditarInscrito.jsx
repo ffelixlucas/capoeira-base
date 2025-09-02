@@ -3,6 +3,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { atualizarInscrito } from "../../services/inscricaoService";
 import { toast } from "react-toastify";
+import { logger } from "../../utils/logger";
 
 export default function ModalEditarInscrito({ aberto, onClose, inscrito, onSalvo }) {
   const [form, setForm] = useState({
@@ -32,7 +33,7 @@ export default function ModalEditarInscrito({ aberto, onClose, inscrito, onSalvo
       toast.success("Inscrição atualizada com sucesso!");
       onSalvo(atualizado);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       toast.error("Erro ao atualizar inscrição!");
     } finally {
       setSalvando(false);

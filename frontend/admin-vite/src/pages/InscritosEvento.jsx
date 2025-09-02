@@ -14,6 +14,7 @@ import { Menu } from "@headlessui/react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import ResumoCamisetas from "../components/ui/ResumoCamisetas";
+import { logger } from "../utils/logger";
 
 function InscritosEvento() {
   const { eventoId } = useParams();
@@ -42,7 +43,7 @@ function InscritosEvento() {
       setResumoCamisetas(dados.resumo_camisetas || []);
     } catch (err) {
       if (import.meta.env.DEV) {
-        console.error("Erro ao carregar inscritos:", err);
+        logger.error("Erro ao carregar inscritos:", err);
       }
     } finally {
       setCarregando(false);
@@ -56,7 +57,7 @@ function InscritosEvento() {
       setModalAberto(true);
     } catch (err) {
       if (import.meta.env.DEV) {
-        console.error("Erro ao buscar inscrito:", err);
+        logger.error("Erro ao buscar inscrito:", err);
       }
     }
   }

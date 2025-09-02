@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { fazerLogin } from "../services/authService";
 import { buscarPerfil } from "../services/equipeService";
+import { logger } from "../utils/logger";
 
 export const AuthContext = createContext(null);
 
@@ -71,10 +72,8 @@ export const AuthProvider = ({ children }) => {
         .then((dados) => {
           setUsuario(dados);
           localStorage.setItem("usuario", JSON.stringify(dados));
-          if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
-            console.log("📌 Perfil atualizado:", dados);
-          }
+            logger.log("📌 Perfil atualizado:", dados);
+          
         })
         .catch(() => {
           // não expor erro detalhado ao usuário aqui
@@ -101,10 +100,8 @@ export const AuthProvider = ({ children }) => {
 
       return { sucesso: true };
     } catch (error) {
-      if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.error("Erro ao fazer login:", error);
-      }
+        logger.error("Erro ao fazer login:", error);
+      
       return {
         sucesso: false,
         mensagem: error?.response?.data?.message || "Erro ao fazer login",

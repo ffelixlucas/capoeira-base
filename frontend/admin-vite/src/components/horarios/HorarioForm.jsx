@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useContext } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { logger } from "../../utils/logger";
 
 function HorarioForm({ onSubmit, onCancel, dadosIniciais = {} }) {
   const { token } = useAuth();
@@ -23,7 +24,7 @@ function HorarioForm({ onSubmit, onCancel, dadosIniciais = {} }) {
     
       .then((res) => res.json())
       .then((data) => setEquipe(data))
-      .catch((err) => console.error("Erro ao buscar equipe:", err));
+      .catch((err) => logger.error("Erro ao buscar equipe:", err));
   }, [token]);
   
   const diasSemana = [

@@ -4,6 +4,7 @@ import EquipeForm from "./EquipeForm";
 import { useAuth } from "../../contexts/AuthContext";
 import { removerMembro } from "../../services/equipeService";
 import { toast } from "react-toastify";
+import { logger } from "../../utils/logger";
 
 function EquipeList({ membros, loading, erro, onAtualizar }) {
   const { usuario } = useAuth();
@@ -18,7 +19,7 @@ function EquipeList({ membros, loading, erro, onAtualizar }) {
       toast.success("Membro excluído com sucesso");
       onAtualizar();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast.error("Erro ao excluir membro");
     }
   };

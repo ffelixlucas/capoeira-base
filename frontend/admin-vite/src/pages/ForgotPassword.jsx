@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { requestPasswordReset } from "../services/authService";
 import { toast } from "react-toastify";
 import InputBase from "../components/ui/InputBase";
+import { logger } from "../utils/logger";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -22,7 +23,7 @@ export default function ForgotPassword() {
       toast.success("Se o e-mail existir, você receberá um link de redefinição.");
       navigate("/login");
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast.error("Erro ao solicitar redefinição, tente novamente.");
     } finally {
       setLoading(false);

@@ -8,6 +8,7 @@ import EventoInfo from "../../components/public/EventoInfo.jsx";
 import FormInscricaoPublic from "../../components/public/FormInscricaoPublic.jsx";
 import ModalPagamentoPix from "../../components/public/ModalPagamentoPix.jsx";
 import PoliticaLGPD from "../../docs/politicaLGPD.jsx";
+import { logger } from "../../utils/logger.js";
 
 export default function InscricaoEventoPublic() {
   const { eventoId } = useParams();
@@ -90,7 +91,7 @@ export default function InscricaoEventoPublic() {
         const dados = await buscarEventoPublicoPorId(eventoId);
         setEvento(dados);
       } catch (err) {
-        console.error("Erro ao buscar evento público:", err);
+        logger.error("Erro ao buscar evento público:", err);
       } finally {
         setCarregando(false);
       }
@@ -148,7 +149,7 @@ export default function InscricaoEventoPublic() {
       setDadosPagamento(resultado);
       setModalPagamento(true);
     } catch (err) {
-      console.error("Erro ao salvar inscrição:", err);
+        logger.error("Erro ao salvar inscrição:", err);
       let mensagemErro = "Erro ao gerar pagamento. Tente novamente.";
 
       if (err.response?.data?.error) {

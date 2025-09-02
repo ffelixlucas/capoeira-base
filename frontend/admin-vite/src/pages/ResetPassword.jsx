@@ -4,6 +4,7 @@ import { resetPassword } from "../services/authService";
 import { toast } from "react-toastify";
 import InputBase from "../components/ui/InputBase";
 import InputSenha from "../components/ui/InputSenha";
+import { logger } from "../utils/logger";
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function ResetPassword() {
       toast.success("Senha redefinida com sucesso!");
       navigate("/login");
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast.error(err?.response?.data?.message || "Erro ao redefinir senha");
     } finally {
       setLoading(false);

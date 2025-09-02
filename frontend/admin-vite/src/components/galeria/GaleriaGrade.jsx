@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import GaleriaItem from "./GaleriaItem";
 import { atualizarLegenda, atualizarOrdem } from "../../services/galeriaService";
 import ModalLegenda from "./ModalLegenda";
+import { logger } from "../../utils/logger";
 
 function GaleriaGrade({
   imagens: initialImagens,
@@ -37,7 +38,7 @@ function GaleriaGrade({
       toast.success("Legenda atualizada com sucesso.");
       setIsModalOpen(false);
     } catch (error) {
-      console.error("Erro ao atualizar legenda:", error);
+      logger.error("Erro ao atualizar legenda:", error);
       toast.error("Erro ao atualizar legenda.");
     } finally {
       setLoading(false);
@@ -89,7 +90,7 @@ function GaleriaGrade({
       setOrdemEditada(false);
       toast.success("Ordem salva com sucesso.");
     } catch (error) {
-      console.error("Erro ao salvar ordem:", error);
+      logger.error("Erro ao salvar ordem:", error);
       toast.error("Erro ao salvar ordem. Verifique sua conexão ou login.");
       setImagens([...initialImagens]); // opcional: restaura ordem anterior
     } finally {

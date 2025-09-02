@@ -5,6 +5,7 @@ import { listarAlunos } from "../services/alunoService";
 import { salvarBatch, listarPorTurmaEData } from "../services/presencaService";
 import { listarTurmas, getMinhasTurmas } from "../services/turmaService";
 import { ArrowLeftIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { logger } from "../utils/logger";
 
 function useQuery() {
   const { search } = useLocation();
@@ -45,7 +46,7 @@ export default function Presencas() {
         setMinhasTurmas(Array.isArray(minhas) ? minhas : []);
         setTodasTurmas(Array.isArray(todas) ? todas : []);
       } catch (e) {
-        console.error(e);
+        logger.error(e);
       } finally {
         if (ativo) setDescobrindoTurma(false);
       }
@@ -116,7 +117,7 @@ export default function Presencas() {
         if (!ativo) return;
         setItens(base);
       } catch (e) {
-        console.error(e);
+        logger.error(e);
         alert(e?.response?.data?.erro || "Falha ao carregar dados de chamada.");
       } finally {
         if (ativo) setCarregando(false);
@@ -161,7 +162,7 @@ export default function Presencas() {
       });
       alert("Presenças salvas com sucesso!");
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       alert(e?.response?.data?.erro || "Falha ao salvar presenças.");
     } finally {
       setSalvando(false);

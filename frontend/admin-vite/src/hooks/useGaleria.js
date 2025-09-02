@@ -7,6 +7,7 @@ import {
   atualizarOrdem,
 } from "../services/galeriaService";
 import { toast } from "react-toastify";
+import { logger } from "../utils/logger";
 
 export function useGaleria() {
   const [arquivo, setArquivo] = useState(null);
@@ -21,7 +22,7 @@ export function useGaleria() {
       const ordenadas = data.sort((a, b) => a.ordem - b.ordem);
       setImagens(ordenadas);
     } catch (error) {
-      console.error("Erro ao carregar imagens:", error);
+      logger.error("Erro ao carregar imagens:", error);
       toast.error("Erro ao carregar imagens.");
     }
   };
@@ -63,7 +64,7 @@ export function useGaleria() {
       setLegenda("");
       carregarImagens();
     } catch (error) {
-      console.error("Erro ao enviar imagem:", error);
+      logger.error("Erro ao enviar imagem:", error);
       toast.error("Erro ao enviar imagem.");
     } finally {
       setLoading(false);
@@ -81,7 +82,7 @@ export function useGaleria() {
       setImagens((prev) => prev.filter((img) => img.id !== id));
       toast.success("Imagem removida com sucesso.");
     } catch (error) {
-      console.error("Erro ao remover imagem:", error);
+      logger.error("Erro ao remover imagem:", error);
       toast.error("Erro ao remover imagem.");
     } finally {
       setLoading(false);
@@ -100,7 +101,7 @@ export function useGaleria() {
       );
       toast.success("Legenda atualizada com sucesso.");
     } catch (error) {
-      console.error("Erro ao atualizar legenda:", error);
+      logger.error("Erro ao atualizar legenda:", error);
       toast.error("Erro ao atualizar legenda.");
     } finally {
       setLoading(false);
@@ -115,7 +116,7 @@ export function useGaleria() {
       toast.success("Ordem salva com sucesso.");
       carregarImagens();
     } catch (error) {
-      console.error("Erro ao atualizar ordem:", error);
+      logger.error("Erro ao atualizar ordem:", error);
       toast.error("Erro ao atualizar ordem.");
     } finally {
       setLoading(false);

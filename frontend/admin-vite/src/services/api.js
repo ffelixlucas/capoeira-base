@@ -1,5 +1,6 @@
 // src/services/api.js
 import axios from "axios";
+import { logger } from "../utils/logger";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -33,11 +34,8 @@ api.interceptors.response.use(
     const status = error?.response?.status;
 
     if (status === 401 || status === 403) {
-      // logs apenas em dev
-      if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.warn("Sessão inválida/expirada. Redirecionando para login...");
-      }
+        logger.warn("Sessão inválida/expirada. Redirecionando para login...");
+      
       localStorage.removeItem("token");
       localStorage.removeItem("usuario");
       redirectToLogin();

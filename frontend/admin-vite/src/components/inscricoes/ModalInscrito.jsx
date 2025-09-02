@@ -6,6 +6,7 @@ import ModalEditarInscrito from "./ModalEditarInscrito";
 import api from "../../services/api";
 
 import jsPDF from "jspdf";
+import { logger } from "../../utils/logger";
 
 export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
   if (!inscrito) return null;
@@ -345,7 +346,7 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                           }
                         } catch (err) {
                           if (import.meta.env.DEV) {
-                            console.error("❌ Erro no reenvio:", {
+                            logger.error("❌ Erro no reenvio:", {
                               message: err.message,
                               url: err.config?.url,
                               status: err.response?.status,
@@ -393,7 +394,7 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                               }
                             } catch (err) {
                               if (import.meta.env.DEV) {
-                                console.error(
+                                logger.error(
                                   "Erro ao extornar inscrição:",
                                   err
                                 );

@@ -1,3 +1,5 @@
+import { logger } from "../../admin-vite/src/utils/logger";
+
 async function carregarAgenda() {
     try {
       const resposta = await fetch(`${CONFIG.API_BASE_URL}/horarios`);
@@ -7,7 +9,7 @@ async function carregarAgenda() {
       if (!tbody) return;
   
       tbody.innerHTML = '';
-      console.log('Horários recebidos:', agenda);
+      logger.log('Horários recebidos:', agenda);
   
       agenda.forEach((item) => {
         const linha = document.createElement('tr');
@@ -20,7 +22,7 @@ async function carregarAgenda() {
         tbody.appendChild(linha);
       });
     } catch (erro) {
-      console.error('Erro ao carregar a agenda:', erro);
+      logger.error('Erro ao carregar a agenda:', erro);
     }
   }
   

@@ -4,6 +4,7 @@ import { atualizarPerfil, atualizarSenha } from "../services/equipeService";
 import { toast } from "react-toastify";
 import EditableField from "../components/ui/EditableField";
 import InputBase from "../components/ui/InputBase";
+import { logger } from "../utils/logger";
 
 function EditarPerfil() {
   const { usuario } = useAuth();
@@ -30,9 +31,9 @@ function EditarPerfil() {
     const tel = usuario.telefone?.toString() || "";
     const whats = usuario.whatsapp?.toString() || "";
 
-    console.log("📌 Dados do usuário:", usuario);
-    console.log("📌 Telefone setado:", tel);
-    console.log("📌 WhatsApp setado:", whats);
+    logger.log("📌 Dados do usuário:", usuario);
+    logger.log("📌 Telefone setado:", tel);
+    logger.log("📌 WhatsApp setado:", whats);
     
     setForm({
       nome: usuario.nome || "",

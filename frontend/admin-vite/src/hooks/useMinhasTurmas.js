@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { listarTurmas, getMinhasTurmas } from "../services/turmaService";
 import { toast } from "react-toastify";
+import { logger } from "../utils/logger";
 
 export function useMinhasTurmas(usuario) {
   const [turmas, setTurmas] = useState([]);
@@ -33,7 +34,7 @@ export function useMinhasTurmas(usuario) {
           setTurmaSelecionada(lista[0].id);
         }
       } catch (err) {
-        console.error("Erro ao carregar turmas:", err);
+        logger.error("Erro ao carregar turmas:", err);
         toast.error("Erro ao carregar suas turmas");
       } finally {
         setCarregando(false);

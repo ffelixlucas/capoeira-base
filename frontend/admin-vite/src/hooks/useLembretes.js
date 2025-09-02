@@ -6,6 +6,7 @@ import {
   atualizarLembrete,
   excluirLembrete,
 } from "../services/lembretesService";
+import { logger } from "../utils/logger";
 
 export function useLembretes({ status = "" } = {}) {
   const [lembretes, setLembretes] = useState([]);
@@ -22,7 +23,7 @@ export function useLembretes({ status = "" } = {}) {
       const data = await listarLembretes(status);
       setLembretes(data);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setErro("Erro ao carregar lembretes");
     } finally {
       setLoading(false);
@@ -43,7 +44,7 @@ export function useLembretes({ status = "" } = {}) {
       data: dados.data ? dados.data.split("T")[0] : null, 
     };
 
-    console.log("Enviando dados para atualização:", dadosFiltrados);
+    logger.log("Enviando dados para atualização:", dadosFiltrados);
 
     await atualizarLembrete(id, dadosFiltrados);
     await fetchLembretes();
