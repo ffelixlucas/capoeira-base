@@ -16,7 +16,9 @@ const PrivateRoute = ({ children }) => {
   }
 
   // 🔐 Se autenticado → libera
-  return isAutenticado() ? children : <Navigate to="/login" replace />;
+  return isAutenticado()
+  ? children
+  : <Navigate to={`/login?next=${encodeURIComponent(window.location.pathname)}`} replace />;
 };
 
 export default PrivateRoute;
