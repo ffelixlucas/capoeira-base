@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-toastify";
 import logo from "../assets/images/logo.png";
@@ -7,10 +7,20 @@ import logo from "../assets/images/logo.png";
 function Login() {
   const { login, isAutenticado } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
+
+  useEffect(() => {
+    // 🔥 Mostra aviso se a sessão expirou
+    const msg = sessionStorage.getItem("auth.message");
+    if (msg === "expired") {
+      toast.info("Sua sessão expirou, faça login novamente.");
+      sessionStorage.removeItem("auth.message");
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +30,11 @@ function Login() {
 
     if (resultado.sucesso) {
       toast.success("Login realizado com sucesso!");
-      navigate("/dashboard");
+
+      // 🔑 pega ?next da URL (ou cai no dashboard)
+      const params = new URLSearchParams(location.search);
+      const next = params.get("next") || "/dashboard";
+      navigate(next, { replace: true });
     } else {
       toast.error(resultado.mensagem || "Erro ao fazer login");
     }
