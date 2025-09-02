@@ -39,6 +39,8 @@ import EditarPerfil from "./pages/EditarPerfil.jsx";
 import LayoutPublic from "./components/layout/LayoutPublic";
 import InscricoesPublic from "./pages/public/InscricoesPublic";
 import InscricaoEventoPublic from "./pages/public/InscricaoEventoPublic";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 
 function App() {
@@ -51,6 +53,8 @@ function App() {
 
           {/* Rota pública */}
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/nao-autorizado" element={<NaoAutorizado />} />
 
 

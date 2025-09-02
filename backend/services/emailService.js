@@ -148,5 +148,39 @@ async function enviarEmailExtorno(inscricao) {
   }
 }
 
+async function enviarEmailReset({ email, link }) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+      <h2>Redefinição de senha 🔑</h2>
+      <p>Recebemos um pedido para redefinir sua senha.</p>
+      <p>
+        Clique no link abaixo para escolher uma nova senha. 
+        Este link é válido por 1 hora.
+      </p>
+      <p><a href="${link}" target="_blank">${link}</a></p>
+      <p>Se você não pediu isso, pode ignorar este e-mail.</p>
+    </div>
+  `;
 
-module.exports = { enviarEmailConfirmacao, enviarEmailExtorno };
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "Capoeira Nota10 – Sistema <contato@capoeiranota10.com.br>",
+      to: email,
+      subject: "Redefinição de senha",
+      html,
+    });
+
+    if (error) {
+      console.error("❌ Erro no envio de reset:", error);
+    } else {
+      console.log("✅ E-mail de reset enviado:", data);
+    }
+  } catch (err) {
+    console.error("❌ Erro inesperado no envio de reset:", err.message);
+  }
+}
+
+module.exports = { enviarEmailConfirmacao, enviarEmailExtorno, enviarEmailReset };
+
+
+
