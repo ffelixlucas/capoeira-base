@@ -344,12 +344,14 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                             );
                           }
                         } catch (err) {
-                          console.error("❌ Erro no reenvio:", {
-                            message: err.message,
-                            url: err.config?.url,
-                            status: err.response?.status,
-                            data: err.response?.data,
-                          });
+                          if (import.meta.env.DEV) {
+                            console.error("❌ Erro no reenvio:", {
+                              message: err.message,
+                              url: err.config?.url,
+                              status: err.response?.status,
+                              data: err.response?.data,
+                            });
+                          }
                           alert("❌ Falha ao reenviar e-mail");
                         }
                       }}
@@ -372,7 +374,7 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                               );
                               if (data.sucesso) {
                                 alert("✅ Pagamento extornado com sucesso!");
-                              
+
                                 // dispara callback para atualizar lista no pai
                                 onEditar?.({
                                   ...inscrito,
@@ -380,19 +382,23 @@ export default function ModalInscrito({ aberto, onClose, inscrito, onEditar }) {
                                   refund_id: data.debug?.refund_id,
                                   refund_valor: data.debug?.refund_valor,
                                 });
-                              
+
                                 onClose(); // fecha modal
-                              }
-                               else {
+                              } else {
                                 alert(
-                                  `❌ Erro ao extornar: ${
+                                  `❌ Erro ao estornar: ${
                                     data.erro || "Falha desconhecida"
                                   }`
                                 );
                               }
                             } catch (err) {
-                              console.error("Erro ao extornar inscrição:", err);
-                              alert("❌ Falha ao extornar inscrição.");
+                              if (import.meta.env.DEV) {
+                                console.error(
+                                  "Erro ao extornar inscrição:",
+                                  err
+                                );
+                              }
+                              alert("❌ Falha ao estornar inscrição.");
                             }
                           }
                         }}
