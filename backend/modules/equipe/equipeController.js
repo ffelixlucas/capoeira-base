@@ -1,3 +1,4 @@
+const logger = require("../../utils/logger");
 const equipeService = require("./equipeService");
 
 async function getEquipe(req, res) {
@@ -5,7 +6,7 @@ async function getEquipe(req, res) {
     const equipe = await equipeService.listarEquipe();
     res.json(equipe);
   } catch (error) {
-    console.error("Erro ao listar equipe:", error);
+    logger.error("Erro ao listar equipe:", error);
     res.status(500).json({ message: "Erro ao buscar equipe" });
   }
 }
@@ -15,7 +16,7 @@ async function criarEquipe(req, res) {
       const id = await equipeService.criarEquipe(req.body);
       res.status(201).json({ id, message: "Membro criado com sucesso" });
     } catch (error) {
-      console.error("Erro ao criar membro:", error.message);
+      logger.error("Erro ao criar membro:", error.message);
       res.status(400).json({ message: error.message });
     }
   }
@@ -30,7 +31,7 @@ async function atualizarEquipe(req, res) {
       res.status(404).json({ message: "Membro não encontrado" });
     }
   } catch (error) {
-    console.error("Erro ao atualizar membro:", error);
+    logger.error("Erro ao atualizar membro:", error);
     res.status(500).json({ message: "Erro ao atualizar membro" });
   }
 }
@@ -44,7 +45,7 @@ async function removerEquipe(req, res) {
       res.status(404).json({ message: "Membro não encontrado" });
     }
   } catch (error) {
-    console.error("Erro ao remover membro:", error);
+    logger.error("Erro ao remover membro:", error);
     res.status(500).json({ message: "Erro ao remover membro" });
   }
 }
@@ -58,7 +59,7 @@ async function atualizarPerfil(req, res) {
       res.status(404).json({ message: "Usuário não encontrado" });
     }
   } catch (error) {
-    console.error("Erro ao atualizar perfil:", error);
+    logger.error("Erro ao atualizar perfil:", error);
     res.status(500).json({ message: "Erro ao atualizar perfil" });
   }
 }
@@ -78,7 +79,7 @@ async function alterarSenha(req, res) {
 
     res.json({ message: "Senha alterada com sucesso" });
   } catch (error) {
-    console.error("Erro ao alterar senha:", error);
+    logger.error("Erro ao alterar senha:", error);
     res.status(500).json({ message: "Erro interno ao alterar senha" });
   }
 }
@@ -102,7 +103,7 @@ async function getPerfil(req, res) {
 
     res.json(usuario);
   } catch (error) {
-    console.error("Erro ao buscar perfil:", error);
+    logger.error("Erro ao buscar perfil:", error);
     res.status(500).json({ message: "Erro interno ao buscar perfil" });
   }
 }

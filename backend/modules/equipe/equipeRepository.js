@@ -1,4 +1,5 @@
 const db = require("../../database/connection");
+const logger = require("../../utils/logger");
 
 async function getAllEquipe() {
   const [rows] = await db.query(`
@@ -76,7 +77,7 @@ async function updateEquipe(id, dados) {
     const [result] = await db.query(sql, valores);
     return result.affectedRows;
   } catch (err) {
-    console.error("❌ ERRO SQL AO ATUALIZAR MEMBRO:", err.message);
+    logger.error("❌ ERRO SQL AO ATUALIZAR MEMBRO:", err.message);
     throw err;
   }
 }

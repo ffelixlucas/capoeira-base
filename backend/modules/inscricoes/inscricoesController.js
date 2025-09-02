@@ -1,4 +1,5 @@
 //backend/modules/inscricoes/inscricoesController.js
+const logger = require("../../utils/logger");
 const inscricoesService = require("./inscricoesService");
 
 const listarPorEvento = async (req, res) => {
@@ -106,7 +107,7 @@ async function extornarPagamento(req, res) {
       },
     });
   } catch (error) {
-    console.error(
+    logger.error(
       "❌ Erro no controller extornarPagamento:",
       error?.response?.data || error
     );

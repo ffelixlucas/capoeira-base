@@ -1,9 +1,10 @@
 
 const bcrypt = require('bcrypt');
+const logger = require("../backend/utils/logger");
+
 
 bcrypt.hash('123456', 10).then((hash) => {
-  if (process.env.NODE_ENV !== "production") {
-    console.log("Hash:", hash);
+    logger.log("Hash:", hash);
   }
   
-});
+);

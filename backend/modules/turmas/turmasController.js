@@ -1,3 +1,4 @@
+const logger = require("../../utils/logger");
 const turmasService = require("./turmasService");
 
 async function listarTurmasAtivas(req, res) {
@@ -55,7 +56,7 @@ async function listarMinhasTurmas(req, res) {
     const turmas = await turmasService.listarTurmasPorEquipe(usuarioId);
     res.json(turmas);
   } catch (error) {
-    console.error("Erro ao listar turmas do instrutor:", error);
+    logger.error("Erro ao listar turmas do instrutor:", error);
     res.status(500).json({ erro: "Erro ao buscar turmas do instrutor." });
   }
 }
@@ -72,7 +73,7 @@ async function encerrarTurma(req, res) {
     await turmasService.encerrarTurmaComMigracao(origemId, destino_id || 1);
     res.json({ sucesso: true });
   } catch (error) {
-    console.error("Erro ao encerrar turma:", error);
+    logger.error("Erro ao encerrar turma:", error);
     res.status(500).json({ erro: "Erro ao encerrar turma" });
   }
 }

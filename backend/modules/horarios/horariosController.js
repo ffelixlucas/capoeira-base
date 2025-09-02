@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger');
 const horariosService = require('./horariosService');
 
 // GET /api/horarios
@@ -6,7 +7,7 @@ async function listarHorarios(req, res) {
     const horarios = await horariosService.listarHorarios();
     res.json(horarios);
   } catch (err) {
-    console.error('Erro ao listar horários:', err);
+    logger.error('Erro ao listar horários:', err);
     res.status(500).json({ erro: 'Erro ao listar horários' });
   }
 }
@@ -19,7 +20,7 @@ async function obterHorario(req, res) {
     if (!horario) return res.status(404).json({ erro: 'Horário não encontrado' });
     res.json(horario);
   } catch (err) {
-    console.error('Erro ao obter horário:', err);
+    logger.error('Erro ao obter horário:', err);
     res.status(500).json({ erro: 'Erro ao obter horário' });
   }
 }
@@ -30,7 +31,7 @@ async function criarHorario(req, res) {
     const novo = await horariosService.criarHorario(req.body);
     res.status(201).json({ id: novo });
   } catch (err) {
-    console.error('Erro ao criar horário:', err);
+    logger.error('Erro ao criar horário:', err);
     res.status(400).json({ erro: err.message || 'Erro ao criar horário' });
   }
 }
@@ -42,7 +43,7 @@ async function atualizarHorario(req, res) {
     await horariosService.atualizarHorario(id, req.body);
     res.status(204).end();
   } catch (err) {
-    console.error('Erro ao atualizar horário:', err);
+    logger.error('Erro ao atualizar horário:', err);
     res.status(400).json({ erro: err.message || 'Erro ao atualizar horário' });
   }
 }
@@ -54,7 +55,7 @@ async function excluirHorario(req, res) {
     await horariosService.excluirHorario(id);
     res.status(204).end();
   } catch (err) {
-    console.error('Erro ao excluir horário:', err);
+    logger.error('Erro ao excluir horário:', err);
     res.status(400).json({ erro: err.message || 'Erro ao excluir horário' });
   }
 }
@@ -73,7 +74,7 @@ async function atualizarOrdem(req, res) {
     await horariosService.atualizarOrdemHorarios(lista);
     res.json({ mensagem: 'Ordem atualizada com sucesso' });
   } catch (err) {
-    console.error('Erro ao atualizar ordem:', err);
+    logger.error('Erro ao atualizar ordem:', err);
     res.status(500).json({ erro: 'Erro ao atualizar ordem' });
   }
 }

@@ -1,5 +1,6 @@
 // backend/services/emailService.js
 const { Resend } = require("resend");
+const logger = require("../utils/logger");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -59,7 +60,7 @@ async function enviarEmailConfirmacao(inscricao) {
   try {
     const to = String(email || "").trim();
 
-    console.log("📧 Enviando e-mail de confirmação para:", JSON.stringify(to));
+    logger.log("📧 Enviando e-mail de confirmação para:", JSON.stringify(to));
 
     const { data, error } = await resend.emails.send({
       from: "Capoeira Nota10 – Inscrições <contato@capoeiranota10.com.br>",
@@ -69,12 +70,12 @@ async function enviarEmailConfirmacao(inscricao) {
     });
 
     if (error) {
-      console.error("❌ Falha no envio (Resend):", error);
+      logger.error("❌ Falha no envio (Resend):", error);
     } else {
-      console.log("✅ E-mail enviado via Resend:", data);
+      logger.log("✅ E-mail enviado via Resend:", data);
     }
   } catch (err) {
-    console.error("❌ Erro inesperado ao enviar e-mail:", err.message);
+    logger.error("❌ Erro inesperado ao enviar e-mail:", err.message);
   }
 }
 
@@ -129,7 +130,7 @@ async function enviarEmailExtorno(inscricao) {
   try {
     const to = String(email || "").trim();
 
-    console.log("📧 Enviando e-mail de estorno para:", JSON.stringify(to));
+    logger.log("📧 Enviando e-mail de estorno para:", JSON.stringify(to));
 
     const { data, error } = await resend.emails.send({
       from: "Capoeira Nota10 – Inscrições <contato@capoeiranota10.com.br>",
@@ -139,12 +140,12 @@ async function enviarEmailExtorno(inscricao) {
     });
 
     if (error) {
-      console.error("❌ Falha no envio (Resend):", error);
+      logger.error("❌ Falha no envio (Resend):", error);
     } else {
-      console.log("✅ E-mail de estorno enviado via Resend:", data);
+      logger.log("✅ E-mail de estorno enviado via Resend:", data);
     }
   } catch (err) {
-    console.error("❌ Erro inesperado ao enviar e-mail de estorno:", err.message);
+    logger.error("❌ Erro inesperado ao enviar e-mail de estorno:", err.message);
   }
 }
 
@@ -171,12 +172,12 @@ async function enviarEmailReset({ email, link }) {
     });
 
     if (error) {
-      console.error("❌ Erro no envio de reset:", error);
+      logger.error("❌ Erro no envio de reset:", error);
     } else {
-      console.log("✅ E-mail de reset enviado:", data);
+      logger.log("✅ E-mail de reset enviado:", data);
     }
   } catch (err) {
-    console.error("❌ Erro inesperado no envio de reset:", err.message);
+    logger.error("❌ Erro inesperado no envio de reset:", err.message);
   }
 }
 

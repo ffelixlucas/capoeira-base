@@ -1,4 +1,5 @@
 const agendaService = require("./agendaService");
+const logger = require("../../utils/logger");
 
 const formatarDataHora = (data) => {
   if (!data) return { data: null, horario: null };
@@ -17,7 +18,6 @@ const listarEventos = async (req, res) => {
     const { status, situacao } = req.query;
     const eventos = await agendaService.listarEventos(status, situacao);
 
-    // Aqui ainda formatamos a data, se necessário
     const eventosFormatados = eventos.map((evento) => {
       const raw =
         typeof evento.data_inicio === "string"
@@ -36,6 +36,7 @@ const listarEventos = async (req, res) => {
 
     return res.status(200).json({ sucesso: true, data: eventosFormatados });
   } catch (error) {
+    logger.error("❌ Erro ao listar eventos:", error);
     return res
       .status(500)
       .json({ sucesso: false, erro: "Erro ao listar eventos." });
@@ -50,6 +51,7 @@ const criarEvento = async (req, res) => {
       .status(201)
       .json({ mensagem: "Evento criado com sucesso.", id: idCriado });
   } catch (error) {
+    logger.error("❌ Erro ao criar evento:", error);
     res.status(400).json({ erro: error.message });
   }
 };
@@ -63,10 +65,8 @@ const criarEventoComImagem = async (req, res) => {
       possui_camiseta: parseInt(req.body.possui_camiseta) === 1 ? 1 : 0,
     };
 
-    if (process.env.NODE_ENV !== "production") {
-      console.log("📦 Imagem recebida:", imagem?.originalname);
-      console.log("📝 Dados recebidos:", dados);
-    }
+    logger.log("📦 Imagem recebida:", imagem?.originalname);
+    logger.log("📝 Dados recebidos:", dados);
 
     const resultado = await agendaService.processarUploadEvento(
       imagem,
@@ -80,11 +80,7 @@ const criarEventoComImagem = async (req, res) => {
       imagem_url: resultado.imagem_url,
     });
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("❌ Erro ao criar evento com imagem:", error);
-    } else {
-      console.error("❌ Erro ao criar evento com imagem:", error.message);
-    }
+    logger.error("❌ Erro ao criar evento com imagem:", error);
     return res.status(500).json({ erro: "Erro ao criar evento com imagem." });
   }
 };
@@ -98,6 +94,7 @@ const excluirEvento = async (req, res) => {
       res.status(404).json({ erro: "Evento não encontrado." });
     }
   } catch (error) {
+    logger.error("❌ Erro ao excluir evento:", error);
     res.status(500).json({ erro: "Erro ao excluir evento." });
   }
 };
@@ -113,11 +110,7 @@ async function atualizarEvento(req, res) {
     await agendaService.atualizarEvento(id, dados);
     res.status(200).json({ message: "Evento atualizado com sucesso" });
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("❌ Erro ao atualizar evento:", error);
-    } else {
-      console.error("❌ Erro ao atualizar evento:", error.message);
-    }
+    logger.error("❌ Erro ao atualizar evento:", error);
     res.status(500).json({ message: "Erro ao atualizar evento" });
   }
 }
@@ -141,6 +134,7 @@ const atualizarStatus = async (req, res) => {
       .status(200)
       .json({ sucesso: true, mensagem: `Evento marcado como ${status}` });
   } catch (error) {
+    logger.error("❌ Erro ao atualizar status do evento:", error);
     return res.status(500).json({ sucesso: false, erro: error.message });
   }
 };
@@ -158,11 +152,7 @@ const arquivarEvento = async (req, res) => {
       .status(200)
       .json({ sucesso: true, mensagem: "Evento arquivado com sucesso" });
   } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Erro ao arquivar evento:", error);
-    } else {
-      console.error("Erro ao arquivar evento:", error.message);
-    }
+    logger.error("❌ Erro ao arquivar evento:", error);
     return res
       .status(500)
       .json({ sucesso: false, erro: "Erro ao arquivar evento" });

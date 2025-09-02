@@ -1,6 +1,7 @@
 const bucket = require('../../config/firebase');
 const { v4: uuidv4 } = require('uuid');
 const galeriaRepository = require('./galeriaRepository');
+const logger = require('../../utils/logger');
 
 async function processarUpload(imagem, titulo = null, criadoPor = null, legenda = null) {
   const totalItens = await galeriaRepository.contarTotalItens();
@@ -25,7 +26,7 @@ async function processarUpload(imagem, titulo = null, criadoPor = null, legenda 
     const novaImagem = await galeriaRepository.buscarPorId(id);
     return novaImagem;
   } catch (error) {
-    console.error('Erro no upload direto:', error);
+    logger.error('Erro no upload direto:', error);
     throw error;
   }
 }

@@ -1,5 +1,6 @@
 const authService = require('./authService');
 const emailService = require('../../services/emailService'); 
+const logger = require('../../utils/logger');
 
 async function login(req, res) {
   const { email, senha } = req.body;
@@ -20,7 +21,7 @@ async function forgotPassword(req, res) {
 
   const baseResetUrl = process.env.RESET_PASSWORD_URL;
   if (!baseResetUrl) {
-    console.error("⚠️ Variável RESET_PASSWORD_URL não definida no .env");
+    logger.error("⚠️ Variável RESET_PASSWORD_URL não definida no .env");
   }
   try {
     const resetLink = await authService.requestPasswordReset(email, baseResetUrl);
@@ -35,7 +36,7 @@ async function forgotPassword(req, res) {
       message: 'Se o email existir, enviaremos um link para redefinição de senha.',
     });
   } catch (e) {
-    console.error('forgotPassword error:', e);
+    logger.error('forgotPassword error:', e);
     return res.status(200).json({
       message: 'Se o email existir, enviaremos um link para redefinição de senha.',
     });
@@ -52,7 +53,7 @@ async function resetPassword(req, res) {
     await authService.resetPassword(token, novaSenha);
     return res.status(200).json({ message: 'Senha redefinida com sucesso' });
   } catch (e) {
-    console.error('resetPassword error:', e);
+    logger.error('resetPassword error:', e);
     return res.status(400).json({ message: e.message || 'Erro ao redefinir senha' });
   }
 }

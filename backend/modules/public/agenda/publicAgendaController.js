@@ -1,3 +1,4 @@
+const logger = require("../../../utils/logger");
 const publicAgendaService = require("./publicAgendaService");
 
 async function listarEventosPublicos(req, res) {
@@ -5,7 +6,7 @@ async function listarEventosPublicos(req, res) {
     const eventos = await publicAgendaService.listarEventosPublicos();
     return res.status(200).json({ sucesso: true, data: eventos });
   } catch (error) {
-    console.error("❌ Erro ao listar eventos públicos:", error);
+    logger.error("❌ Erro ao listar eventos públicos:", error);
     return res.status(500).json({ sucesso: false, erro: "Erro interno ao listar eventos públicos." });
   }
 }
@@ -21,7 +22,7 @@ async function buscarEventoPublicoPorId(req, res) {
 
     return res.status(200).json(evento);
   } catch (error) {
-    console.error("❌ Erro ao buscar evento público:", error);
+    logger.error("❌ Erro ao buscar evento público:", error);
     return res.status(500).json({ sucesso: false, erro: "Erro interno ao buscar evento público." });
   }
 }

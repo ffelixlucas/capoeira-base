@@ -3,23 +3,24 @@ const inscricoesRepository = require("./inscricoesRepository");
 const { registrarLogTransacao } = require("./logsRepository");
 const { enviarEmailExtorno } = require("../../services/emailService");
 const axios = require("axios");
+const logger = require("../../utils/logger");
 
 async function extornarPagamentoService(id) {
-  console.log("🔎 Iniciando extorno para inscrição:", id);
+  logger.log("🔎 Iniciando extorno para inscrição:", id);
 
   const inscricao = await inscricoesRepository.buscarInscricaoComEvento(id);
   if (!inscricao || !inscricao.pagamento_id) {
-    console.error("❌ Inscrição não encontrada ou sem pagamento vinculado:", inscricao);
+    logger.error("❌ Inscrição não encontrada ou sem pagamento vinculado:", inscricao);
     throw new Error("Inscrição não encontrada ou sem pagamento vinculado");
   }
-  console.log("📌 Inscrição encontrada:", {
+  logger.log("📌 Inscrição encontrada:", {
     id: inscricao.id,
     status: inscricao.status,
     pagamento_id: inscricao.pagamento_id,
   });
 
   try {
-    console.log("➡️ Chamando Mercado Pago refund API...");
+    logger.log("➡️ Chamando Mercado Pago refund API...");
     const { data: result } = await axios.post(
       `https://api.mercadopago.com/v1/payments/${inscricao.pagamento_id}/refunds`,
       {}, // body vazio = estorno total. Para parcial: { amount: 50.0 }
@@ -30,7 +31,7 @@ async function extornarPagamentoService(id) {
       }
     );
 
-    console.log("✅ Resposta do Mercado Pago:", result);
+    logger.log("✅ Resposta do Mercado Pago:", result);
 
     const refundId = result.id;
     const refundAmount = result.amount;
@@ -45,7 +46,7 @@ async function extornarPagamentoService(id) {
       status: "extornado",
     };
 
-    console.log("💾 Atualizando inscrição no banco com:", refundInfo);
+    logger.log("💾 Atualizando inscrição no banco com:", refundInfo);
     await inscricoesRepository.atualizarInscricaoParaExtornado(id, refundInfo);
     await registrarLogTransacao(id, "extorno_realizado", "sucesso", refundInfo);
 
@@ -63,10 +64,10 @@ async function extornarPagamentoService(id) {
       },
     });
 
-    console.log("🎉 Extorno concluído com sucesso!");
+    logger.log("🎉 Extorno concluído com sucesso!");
     return { id, ...refundInfo };
   } catch (err) {
-    console.error("❌ Erro ao extornar no Mercado Pago:", err?.response?.data || err);
+    logger.error("❌ Erro ao extornar no Mercado Pago:", err?.response?.data || err);
 
     await registrarLogTransacao(id, "erro_extorno", "erro", {
       message: err.message,

@@ -15,6 +15,7 @@ const {
   enviarEmailConfirmacao,
   enviarEmailExtorno,
 } = require("../../../services/emailService.js");
+const logger = require("../../../utils/logger.js");
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
@@ -221,29 +222,29 @@ const processarWebhookService = async (payload) => {
       taxa_valor,
       taxa_percentual,
     });
-    console.log("🚀 Webhook recebido para pagamento:", paymentId);
+    logger.log("🚀 Webhook recebido para pagamento:", paymentId);
 
     // Envia e-mail de confirmação
     const inscricao = await buscarInscricaoDetalhadaService(inscricaoId);
-    console.log("📌 Inscrição detalhada:", inscricao);
+    logger.log("📌 Inscrição detalhada:", inscricao);
 
     if (inscricao) {
       if (inscricao.email && inscricao.email.includes("@")) {
         try {
           await enviarEmailConfirmacao(inscricao);
-          console.log("✅ E-mail enviado com sucesso para:", inscricao.email);
+          logger.log("✅ E-mail enviado com sucesso para:", inscricao.email);
         } catch (err) {
-          console.error("❌ Erro ao enviar e-mail:", err.message || err);
+          logger.error("❌ Erro ao enviar e-mail:", err.message || err);
         }
       } else {
-        console.warn(
+        logger.warn(
           "⚠️ Inscrição sem e-mail válido, não foi possível enviar:",
           inscricao
         );
       }
     }
   } catch (err) {
-    console.error(
+    logger.error(
       "Erro no webhook do Mercado Pago:",
       err?.response?.data || err
     );

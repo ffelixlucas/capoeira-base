@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const authRepository = require('./authRepository');
 const passwordResetRepository = require('./passwordResetRepository');
+const logger = require('../../utils/logger');
 
 // util para hashear o token
 function sha256Hex(str) {
@@ -70,9 +71,8 @@ async function requestPasswordReset(email, baseResetUrl) {
 
   const resetLink = `${baseResetUrl}?token=${rawToken}`;
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[DEV] Link de reset:', resetLink);
-  }
+    logger.log('[DEV] Link de reset:', resetLink);
+  
   return resetLink;
 }
 

@@ -1,4 +1,5 @@
 // alunosController.js
+const logger = require("../../utils/logger");
 const alunoService = require("./alunosService");
 async function listar(req, res) {
   try {
@@ -9,7 +10,7 @@ async function listar(req, res) {
 
     res.json(alunos);
   } catch (err) {
-    console.error("Erro ao listar alunos:", err);
+    logger.error("Erro ao listar alunos:", err);
     res.status(500).json({ erro: "Erro ao buscar alunos." });
   }
 }
@@ -19,7 +20,7 @@ async function buscar(req, res) {
     const aluno = await alunoService.buscarPorId(req.params.id);
     res.json(aluno);
   } catch (err) {
-    console.error("Erro ao buscar aluno:", err);
+    logger.error("Erro ao buscar aluno:", err);
     res.status(404).json({ erro: err.message });
   }
 }
@@ -29,7 +30,7 @@ async function cadastrar(req, res) {
     const alunoId = await alunoService.cadastrarAluno(req.body);
     res.status(201).json({ id: alunoId });
   } catch (err) {
-    console.error("Erro ao cadastrar aluno:", err);
+    logger.error("Erro ao cadastrar aluno:", err);
     res.status(400).json({ erro: err.message });
   }
 }
@@ -39,7 +40,7 @@ async function editar(req, res) {
     await alunoService.editarAluno(req.params.id, req.body);
     res.json({ sucesso: true });
   } catch (err) {
-    console.error("Erro ao editar aluno:", err);
+    logger.error("Erro ao editar aluno:", err);
     res.status(400).json({ erro: err.message });
   }
 }
@@ -49,7 +50,7 @@ async function excluir(req, res) {
     await alunoService.deletarAluno(req.params.id);
     res.json({ sucesso: true });
   } catch (err) {
-    console.error("Erro ao excluir aluno:", err);
+    logger.error("Erro ao excluir aluno:", err);
     res.status(400).json({ erro: err.message });
   }
 }
@@ -61,7 +62,7 @@ async function trocarTurma(req, res) {
     await alunoService.trocarTurma(req.params.id, nova_turma_id);
     res.json({ sucesso: true });
   } catch (err) {
-    console.error("Erro ao trocar turma:", err);
+    logger.error("Erro ao trocar turma:", err);
     res.status(400).json({ erro: err.message });
   }
 }
@@ -85,7 +86,7 @@ async function metricasAluno(req, res) {
 
     res.json(metricas);
   } catch (err) {
-    console.error("Erro ao buscar métricas do aluno:", err);
+    logger.error("Erro ao buscar métricas do aluno:", err);
     res.status(400).json({ erro: err.message });
   }
 }

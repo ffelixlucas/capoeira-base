@@ -66,7 +66,7 @@ from: 'Capoeira Base <onboarding@resend.dev>'
 - **Logs de sucesso foram removidos para ambiente de produção**
 - **Logs de erro mantêm apenas a mensagem principal para debug leve:**
   ```js
-  console.error("❌ Falha ao enviar e-mail de confirmação:", err.message);
+  logger.error("❌ Falha ao enviar e-mail de confirmação:", err.message);
   ```
 
 ---
