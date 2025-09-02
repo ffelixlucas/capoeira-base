@@ -1,9 +1,9 @@
-//backend/modules/public/inscricoes/inscricoesController.js
+// backend/modules/public/inscricoes/inscricoesController.js
 const {
   gerarPagamentoPixService,
   processarWebhookService,
   buscarInscricaoDetalhadaService,
-  verificarInscricaoPaga,  
+  verificarInscricaoPaga,
 } = require("./inscricoesService");
 const { enviarEmailConfirmacao } = require("../../../services/emailService");
 
@@ -19,10 +19,13 @@ const gerarPagamentoPix = async (req, res) => {
     const pagamento = await gerarPagamentoPixService(req.body);
     res.status(201).json(pagamento);
   } catch (error) {
-    console.error(
-      "Erro Controller gerarPagamentoPix:",
-      error?.response?.data || error
-    );
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error(
+        "Erro Controller gerarPagamentoPix:",
+        error?.response?.data || error
+      );
+    }
     res
       .status(500)
       .json({ error: error.message || "Erro ao gerar pagamento PIX" });
@@ -34,7 +37,10 @@ const webhookPagamento = async (req, res) => {
     await processarWebhookService(req.body);
     res.sendStatus(200);
   } catch (error) {
-    console.error("Erro Controller webhookPagamento:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("Erro Controller webhookPagamento:", error);
+    }
     res.sendStatus(500);
   }
 };
@@ -47,7 +53,10 @@ const buscarInscricaoPorId = async (req, res) => {
       return res.status(404).json({ error: "Inscrição não encontrada" });
     res.json(inscricao);
   } catch (error) {
-    console.error("Erro buscarInscricaoPorId:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("Erro buscarInscricaoPorId:", error);
+    }
     res.status(500).json({ error: "Erro ao buscar inscrição" });
   }
 };
@@ -67,14 +76,17 @@ const reenviarEmail = async (req, res) => {
       mensagem: `E-mail reenviado para ${inscricao.email}`,
     });
   } catch (error) {
-    console.error("❌ Erro ao reenviar e-mail:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("❌ Erro ao reenviar e-mail:", error);
+    }
     res.status(500).json({ error: "Falha ao reenviar e-mail" });
   }
 };
+
 module.exports = {
   gerarPagamentoPix,
   webhookPagamento,
   buscarInscricaoPorId,
   reenviarEmail,
-  
 };
