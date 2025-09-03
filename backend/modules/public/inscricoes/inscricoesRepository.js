@@ -77,7 +77,7 @@ const criarInscricaoPendente = async (dados) => {
       graduacao || null,
       aceite_imagem,
       aceite_responsabilidade,
-      aceite_lgpd,
+      aceite_lgpd ?? 0,
     ]
   );
 
@@ -122,6 +122,8 @@ const atualizarInscricaoParaPago = async (id, dados) => {
            valor_liquido = ?,
            taxa_valor = ?,
            taxa_percentual = ?,
+           metodo_pagamento = ?,
+           parcelas = ?,
            atualizado_em = NOW()
      WHERE id = ?`,
     [
@@ -130,6 +132,8 @@ const atualizarInscricaoParaPago = async (id, dados) => {
       dados.valor_liquido ?? null,
       dados.taxa_valor ?? null,
       dados.taxa_percentual ?? null,
+      dados.metodo_pagamento ?? null,
+      dados.parcelas ?? null,
       id,
     ]
   );
@@ -160,12 +164,11 @@ const atualizarInscricaoPendente = async (id, dados) => {
       dados.alergias_restricoes || null,
       dados.categoria || null,
       dados.graduacao || null,
-      dados.aceite_lgpd,
+      dados.aceite_lgpd ?? 0,
       id,
     ]
   );
 };
-
 
 /**
  * Busca inscrição com detalhes do evento

@@ -87,7 +87,10 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   }
 
   // 🔒 Validar valor
-  if (!valor || parseFloat(valor) <= 0) {
+  const valorNum = parseFloat(
+    dadosFormulario.total_amount || dadosFormulario.valor
+  );
+  if (isNaN(valorNum) || valorNum <= 0) {
     throw new Error("Valor da inscrição inválido.");
   }
 
@@ -137,9 +140,11 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
     ? process.env.SERVER_URL
     : `${process.env.SERVER_URL}/api`;
 
+  const apelidoNormalizado = apelido || "";
+
   const body = {
-    transaction_amount: parseFloat(valor),
-    description: `Inscrição ${nome}${apelido ? ` (${apelido})` : ""}`,
+    transaction_amount: valorNum,
+    description: `Inscrição ${nome}${apelidoNormalizado ? ` (${apelidoNormalizado})` : ""}`,
     payment_method_id: "pix",
     payer: {
       email: emailPagador,
@@ -187,6 +192,237 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   };
 };
 
+// Gera pagamento com cartão de crédito no Mercado Pago
+
+const gerarPagamentoCartaoService = async (dadosFormulario) => {
+  try {
+    const {
+      token,
+      payment_method_id,
+      installments = 1,
+      issuer_id,
+      cpf,
+      responsavel_documento,
+      nome,
+      apelido,
+      email,
+      telefone,
+      valor,
+      evento_id,
+      responsavel_nome,
+      responsavel_email,
+    } = dadosFormulario;
+    logger.log("📦 [Cartão] Body recebido:", dadosFormulario);
+
+    logger.log("🟢 [Cartão] Iniciando geração de pagamento:", {
+      evento_id: dadosFormulario.evento_id,
+      cpf: dadosFormulario.cpf,
+      total_amount: dadosFormulario.total_amount,
+      valor: dadosFormulario.valor,
+      installments: dadosFormulario.installments,
+      payment_method_id: dadosFormulario.payment_method_id,
+    });
+
+    if (!token) throw new Error("Token do cartão ausente.");
+    if (!payment_method_id)
+      throw new Error("Bandeira do cartão não informada.");
+    // 🔒 Validar valor
+    const valorNum = parseFloat(dadosFormulario.total_amount);
+    if (isNaN(valorNum) || valorNum <= 0) {
+      throw new Error("Valor da inscrição inválido.");
+    }
+
+    // 🔒 Validar parcelas
+    const parcelasNum = parseInt(installments, 10);
+    if (isNaN(parcelasNum) || parcelasNum <= 0) {
+      throw new Error("Número de parcelas inválido.");
+    }
+
+    // 🔒 Normalizar issuer_id
+    const issuer = issuer_id && issuer_id !== "" ? issuer_id : null;
+
+    const jaPago = await verificarInscricaoPaga(cpf, evento_id);
+    if (jaPago) {
+      throw new Error("Este CPF já possui inscrição confirmada neste evento.");
+    }
+
+    // 🔄 Inscrição pendente
+    let inscricaoId;
+    const pendente = await buscarInscricaoPendente(cpf);
+    if (pendente) {
+      await atualizarInscricaoPendente(pendente.id, dadosFormulario);
+      inscricaoId = pendente.id;
+      logger.log("🔄 [Cartão] Atualizada inscrição pendente:", inscricaoId);
+    } else {
+      inscricaoId = await criarInscricaoPendente(dadosFormulario);
+      logger.log("🆕 [Cartão] Criada nova inscrição pendente:", inscricaoId);
+    }
+
+    const codigo_inscricao = gerarCodigoInscricao(inscricaoId, evento_id);
+
+    const documentoCPF = responsavel_documento
+      ? responsavel_documento.replace(/\D/g, "")
+      : cpf.replace(/\D/g, "");
+    const nomePagador = responsavel_nome || nome;
+    const emailPagador = responsavel_email || email;
+
+    const baseUrl = process.env.SERVER_URL.endsWith("/api")
+      ? process.env.SERVER_URL
+      : `${process.env.SERVER_URL}/api`;
+
+    const body = {
+      transaction_amount: valorNum, // ✅ usa o valor já validado
+      token,
+      description: `Inscrição ${nome}${apelido ? ` (${apelido})` : ""}`,
+      installments: parcelasNum,
+      payment_method_id,
+      issuer_id: issuer,
+      capture: true,
+      payer: {
+        email: emailPagador,
+        first_name: nomePagador,
+        identification: { type: "CPF", number: documentoCPF },
+      },
+      additional_info: {
+        items: [
+          {
+            id: `${evento_id}`,
+            title: `Inscrição evento ${evento_id}`,
+            description: `Inscrição ${nome}${apelido ? ` (${apelido})` : ""}`,
+            quantity: 1,
+            unit_price: valorNum,
+          },
+        ],
+        payer: {
+          first_name: nomePagador,
+          last_name: "",
+          phone: { number: telefone },
+          address: {
+            zip_code: "",
+            street_name: "",
+            street_number: "",
+          },
+        },
+      },
+      notification_url: `${baseUrl}/public/inscricoes/webhook`,
+      external_reference: `${inscricaoId}`,
+      statement_descriptor: "CAPOEIRA BASE",
+    };
+
+    logger.log("📦 [Cartão] Body enviado ao MP:", body);
+
+    const result = await payment.create({
+      body,
+      requestOptions: { idempotencyKey: crypto.randomUUID() },
+    });
+
+    logger.log("✅ [Cartão] Resposta MP:", {
+      id: result.id,
+      status: result.status,
+      status_detail: result.status_detail,
+    });
+
+    return {
+      id: inscricaoId,
+      pagamento_id: result.id,
+      status: result.status,
+      status_detail: result.status_detail,
+      installments: result.installments,
+      payment_method_id: result.payment_method_id,
+      codigo_inscricao,
+    };
+  } catch (err) {
+    logger.error("❌ [Cartão] Erro gerarPagamentoCartaoService:", err);
+    throw err;
+  }
+};
+
+// mapeia o payload do MP em uma lista simples
+function mapPayerCosts(data) {
+  const arr = Array.isArray(data) ? data : [];
+  const costs = arr[0]?.payer_costs || [];
+  return costs
+    .filter((p) => p?.installments > 0)
+    .map((p) => ({
+      installments: p.installments,
+      installment_amount: p.installment_amount,
+      total_amount: p.total_amount,
+      recommended_message: p.recommended_message,
+    }));
+}
+
+async function fetchInstallments({
+  amount,
+  bin = null,
+  payment_method_id = null,
+  issuer_id = null,
+}) {
+  const url = new URL(
+    "https://api.mercadopago.com/v1/payment_methods/installments"
+  );
+  url.searchParams.append("amount", amount);
+  if (bin) url.searchParams.append("bin", String(bin));
+  if (payment_method_id)
+    url.searchParams.append("payment_method_id", payment_method_id);
+  if (issuer_id) url.searchParams.append("issuer.id", issuer_id);
+
+  const { data } = await axios.get(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+    },
+    timeout: 8000,
+  });
+  return mapPayerCosts(data);
+}
+
+const calcularParcelasService = async ({
+  amount,
+  payment_method_id = null,
+  issuer_id = null,
+  bin = null,
+}) => {
+  try {
+    // 1) tenta com BIN puro
+    let lista = await fetchInstallments({
+      amount,
+      bin,
+      payment_method_id,
+      issuer_id,
+    });
+
+    // 2) fallback: se veio vazio, força VISA
+    if (!lista.length) {
+      lista = await fetchInstallments({
+        amount,
+        bin,
+        payment_method_id: "visa",
+        issuer_id: null,
+      });
+    }
+
+    // 3) fallback final: se ainda vazio, força MASTER
+    if (!lista.length) {
+      lista = await fetchInstallments({
+        amount,
+        bin,
+        payment_method_id: "master",
+        issuer_id: null,
+      });
+    }
+
+    return lista;
+  } catch (err) {
+    // mantém o comportamento de não derrubar o fluxo
+    console.error(
+      "❌ Erro Service calcularParcelasService:",
+      err?.response?.data || err?.message || err
+    );
+    throw new Error("Falha ao consultar parcelas no Mercado Pago");
+  }
+};
+
+// Processa webhook do Mercado Pago
+
 const processarWebhookService = async (payload) => {
   if (payload?.type !== "payment") return;
 
@@ -202,7 +438,14 @@ const processarWebhookService = async (payload) => {
       }
     );
 
-    if (pagamento.status !== "approved") return;
+    if (pagamento.status !== "approved") {
+      logger.warn("⚠️ Pagamento não aprovado:", {
+        id: pagamento.id,
+        status: pagamento.status,
+        detail: pagamento.status_detail,
+      });
+      return;
+    }
 
     const inscricaoId = Number(pagamento.external_reference); // foi salvo como string no create
     const bruto = Number(pagamento.transaction_amount); // valor cobrado
@@ -221,7 +464,10 @@ const processarWebhookService = async (payload) => {
       valor_liquido: liquido,
       taxa_valor,
       taxa_percentual,
+      metodo_pagamento: pagamento.payment_method_id,
+      parcelas: pagamento.installments,
     });
+
     logger.log("🚀 Webhook recebido para pagamento:", paymentId);
 
     // Envia e-mail de confirmação
@@ -290,6 +536,8 @@ const buscarInscricaoDetalhadaService = async (id) => {
 
 module.exports = {
   gerarPagamentoPixService,
+  gerarPagamentoCartaoService,
+  calcularParcelasService,
   processarWebhookService,
   buscarInscricaoDetalhadaService,
   verificarInscricaoPaga,
