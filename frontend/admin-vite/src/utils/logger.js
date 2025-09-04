@@ -12,3 +12,4 @@ export const logger = {
     console.error(...args); // sempre mostra erros
   },
 };
+export default logger;
