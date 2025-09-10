@@ -14,7 +14,6 @@ import PrivateRoute from "./components/layout/PrivateRoute";
 import RoleRoute from "./components/RoleRoute";
 import LayoutAdmin from "./components/layout/LayoutAdmin";
 
-
 // Imports de páginas administrativas
 
 import Login from "./pages/Login";
@@ -34,14 +33,13 @@ import InscritosEvento from "./pages/InscritosEvento.jsx";
 import Presencas from "./pages/Presencas.jsx";
 import EditarPerfil from "./pages/EditarPerfil.jsx";
 
-
 // Imports de páginas públicas
 import LayoutPublic from "./components/layout/LayoutPublic";
 import InscricoesPublic from "./pages/public/InscricoesPublic";
 import InscricaoEventoPublic from "./pages/public/InscricaoEventoPublic";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-
+import CartaoPagamento from "./components/public/pagamento/CartaoPagamento.jsx";
 
 function App() {
   return (
@@ -56,7 +54,6 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/nao-autorizado" element={<NaoAutorizado />} />
-
 
           {/* Rotas protegidas com layout administrativo */}
           <Route
@@ -89,7 +86,6 @@ function App() {
             <Route path="/presencas" element={<Presencas />} />
             <Route path="/perfil" element={<EditarPerfil />} />
 
-
             <Route
               path="/horarios"
               element={
@@ -110,6 +106,7 @@ function App() {
               path="/inscrever/:eventoId"
               element={<InscricaoEventoPublic />}
             />
+            <Route path="/cartao-pagamento" element={<CartaoPagamento />} />
           </Route>
         </Routes>
       </Router>

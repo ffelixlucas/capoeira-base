@@ -11,18 +11,30 @@ const {
   buscarInscricaoComEvento,
   verificarInscricaoPaga,
 } = require("./inscricoesRepository");
-const {
-  enviarEmailConfirmacao,
-  enviarEmailExtorno,
-} = require("../../../services/emailService.js");
+const { enviarEmailConfirmacao } = require("../../../services/emailService.js");
 const logger = require("../../../utils/logger.js");
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
-  options: { timeout: 5000 },
+  options: { timeout: 8000 },
 });
 
 const payment = new Payment(client);
+
+function mapearStatusMP(status) {
+  switch (status) {
+    case "approved":
+      return "pago";
+    case "refunded":
+      return "extornado"; // devolvido
+    case "rejected":
+      return "rejeitado"; // nunca foi pago
+    case "pending":
+    default:
+      return "pendente";
+  }
+}
+
 
 /**
  * Gera pagamento PIX no Mercado Pago ou retorna QR de inscrição pendente
@@ -101,28 +113,34 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   }
 
   // 1️⃣ Verifica inscrição pendente pelo CPF
-  const pendente = await buscarInscricaoPendente(cpf);
+  const pendente = await buscarInscricaoPendente(cpf, evento_id);
+  let inscricaoId; // ✅ UMA variável só
+
   if (pendente) {
-    // 🛠️ Atualiza dados básicos (camiseta, responsável, etc.)
     await atualizarInscricaoPendente(pendente.id, dadosFormulario);
 
-    const codigo_inscricao = gerarCodigoInscricao(pendente.id, evento_id);
+    const temQr = !!(pendente.qr_code && pendente.ticket_url);
+    if (temQr) {
+      const codigo_inscricao = gerarCodigoInscricao(pendente.id, evento_id);
+      return {
+        id: pendente.id,
+        ticket_url: pendente.ticket_url,
+        qr_code_base64: pendente.qr_code_base64,
+        qr_code: pendente.qr_code,
+        valor: pendente.valor,
+        pagamento_id: pendente.pagamento_id,
+        status: "pendente",
+        date_of_expiration: pendente.date_of_expiration,
+        codigo_inscricao,
+      };
+    }
 
-    return {
-      id: pendente.id,
-      ticket_url: pendente.ticket_url,
-      qr_code_base64: pendente.qr_code_base64,
-      qr_code: pendente.qr_code,
-      valor: pendente.valor,
-      pagamento_id: pendente.pagamento_id,
-      status: "pendente",
-      date_of_expiration: pendente.date_of_expiration,
-      codigo_inscricao,
-    };
+    // pendente sem QR → gerar PIX no MESMO registro
+    inscricaoId = pendente.id;
+  } else {
+    // não havia pendente → cria agora
+    inscricaoId = await criarInscricaoPendente(dadosFormulario);
   }
-
-  // 2️⃣ Cria inscrição pendente no banco
-  const inscricaoId = await criarInscricaoPendente(dadosFormulario);
 
   const codigo_inscricao = gerarCodigoInscricao(inscricaoId, evento_id);
 
@@ -176,6 +194,7 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
     qr_code: result.point_of_interaction.transaction_data.qr_code,
     date_of_expiration: expirationDate,
     valor: result.transaction_amount,
+    metodo_pagamento: "pix",
   });
 
   // 6️⃣ Retorna dados para o frontend
@@ -196,6 +215,12 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
 
 const gerarPagamentoCartaoService = async (dadosFormulario) => {
   try {
+    logger.log("➡️ [Service] Dados recebidos:", {
+      ...dadosFormulario,
+      cpf: logger.mascararCpf(dadosFormulario.cpf),
+      telefone: logger.mascararTelefone(dadosFormulario.telefone),
+    });
+    
     const {
       token,
       payment_method_id,
@@ -212,22 +237,13 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
       responsavel_nome,
       responsavel_email,
     } = dadosFormulario;
-    logger.log("📦 [Cartão] Body recebido:", dadosFormulario);
-
-    logger.log("🟢 [Cartão] Iniciando geração de pagamento:", {
-      evento_id: dadosFormulario.evento_id,
-      cpf: dadosFormulario.cpf,
-      total_amount: dadosFormulario.total_amount,
-      valor: dadosFormulario.valor,
-      installments: dadosFormulario.installments,
-      payment_method_id: dadosFormulario.payment_method_id,
-    });
 
     if (!token) throw new Error("Token do cartão ausente.");
     if (!payment_method_id)
       throw new Error("Bandeira do cartão não informada.");
+
     // 🔒 Validar valor
-    const valorNum = parseFloat(dadosFormulario.total_amount);
+    const valorNum = parseFloat(dadosFormulario.total_amount || valor);
     if (isNaN(valorNum) || valorNum <= 0) {
       throw new Error("Valor da inscrição inválido.");
     }
@@ -238,28 +254,13 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
       throw new Error("Número de parcelas inválido.");
     }
 
-    // 🔒 Normalizar issuer_id
-    const issuer = issuer_id && issuer_id !== "" ? issuer_id : null;
-
+    // 🔒 Verificar se já existe inscrição paga
     const jaPago = await verificarInscricaoPaga(cpf, evento_id);
     if (jaPago) {
       throw new Error("Este CPF já possui inscrição confirmada neste evento.");
     }
 
-    // 🔄 Inscrição pendente
-    let inscricaoId;
-    const pendente = await buscarInscricaoPendente(cpf);
-    if (pendente) {
-      await atualizarInscricaoPendente(pendente.id, dadosFormulario);
-      inscricaoId = pendente.id;
-      logger.log("🔄 [Cartão] Atualizada inscrição pendente:", inscricaoId);
-    } else {
-      inscricaoId = await criarInscricaoPendente(dadosFormulario);
-      logger.log("🆕 [Cartão] Criada nova inscrição pendente:", inscricaoId);
-    }
-
-    const codigo_inscricao = gerarCodigoInscricao(inscricaoId, evento_id);
-
+    // 🔒 Normalizar dados do pagador
     const documentoCPF = responsavel_documento
       ? responsavel_documento.replace(/\D/g, "")
       : cpf.replace(/\D/g, "");
@@ -270,13 +271,27 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
       ? process.env.SERVER_URL
       : `${process.env.SERVER_URL}/api`;
 
+    // ✅ garantir inscrição e atualizar dados ANTES do pagamento
+    let inscricaoId;
+    const pendenteAtual = await buscarInscricaoPendente(cpf, evento_id);
+    if (pendenteAtual) {
+      await atualizarInscricaoPendente(pendenteAtual.id, dadosFormulario);
+      inscricaoId = pendenteAtual.id;
+    } else {
+      inscricaoId = await criarInscricaoPendente({
+        ...dadosFormulario,
+        status: "pendente",
+        metodo_pagamento: "cartao",
+      });
+    }
+
     const body = {
-      transaction_amount: valorNum, // ✅ usa o valor já validado
+      transaction_amount: valorNum,
       token,
       description: `Inscrição ${nome}${apelido ? ` (${apelido})` : ""}`,
       installments: parcelasNum,
       payment_method_id,
-      issuer_id: issuer,
+      issuer_id: issuer_id || null,
       capture: true,
       payer: {
         email: emailPagador,
@@ -297,42 +312,84 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
           first_name: nomePagador,
           last_name: "",
           phone: { number: telefone },
-          address: {
-            zip_code: "",
-            street_name: "",
-            street_number: "",
-          },
+          address: { zip_code: "", street_name: "", street_number: "" },
         },
       },
       notification_url: `${baseUrl}/public/inscricoes/webhook`,
-      external_reference: `${inscricaoId}`,
+      external_reference: inscricaoId.toString(), // 🔥 chave para o webhook achar sua inscrição
       statement_descriptor: "CAPOEIRA BASE",
     };
 
-    logger.log("📦 [Cartão] Body enviado ao MP:", body);
+    const safeBodyForLog = { ...body, token: "***" };
+    logger.log("📦 [Cartão] Body enviado ao MP:", safeBodyForLog);
 
     const result = await payment.create({
       body,
       requestOptions: { idempotencyKey: crypto.randomUUID() },
     });
 
-    logger.log("✅ [Cartão] Resposta MP:", {
+    logger.log("📦 [Cartão] Resposta MP:", {
       id: result.id,
       status: result.status,
       status_detail: result.status_detail,
     });
 
-    return {
-      id: inscricaoId,
-      pagamento_id: result.id,
-      status: result.status,
-      status_detail: result.status_detail,
-      installments: result.installments,
-      payment_method_id: result.payment_method_id,
-      codigo_inscricao,
-    };
+    // -------------------------------
+    // 📌 Decisão baseada no status
+    // -------------------------------
+    // Se aprovado -> marcar como pago e retornar inscrição completa (com evento)
+    if (result.status === "approved") {
+      // 👉 usar o update de "pago", não o "pendente"
+      await atualizarInscricaoParaPago(inscricaoId, {
+        pagamento_id: result.id,
+        status: "pago",
+        metodo_pagamento: "cartao",
+        bandeira_cartao: result.payment_method_id,
+        parcelas: result.installments,
+        valor_bruto: result.transaction_amount,
+        // ainda não temos o líquido aqui; coloca 0 ou igual ao bruto (o webhook ajusta depois)
+        valor_liquido: result.transaction_amount,
+        taxa_valor: 0,
+        taxa_percentual: 0,
+        // limpa qualquer resquício de PIX
+        ticket_url: null,
+        qr_code: null,
+        qr_code_base64: null,
+        date_of_expiration: null,
+      });
+
+      // retorna a inscrição DETALHADA (inclui evento, código, valores)
+      const inscricaoCompleta =
+        await buscarInscricaoDetalhadaService(inscricaoId);
+
+      return inscricaoCompleta;
+    }
+
+    // Se pendente (CONT, CALL) -> mantém a MESMA inscrição como pendente
+    if (result.status === "in_process" || result.status === "pending") {
+      await atualizarInscricaoPendente(inscricaoId, {
+        ...dadosFormulario,
+        pagamento_id: result.id,
+        status: "pendente",
+      });
+
+      return {
+        id: inscricaoId,
+        pagamento_id: result.id,
+        status: "pendente",
+        status_detail: result.status_detail,
+      };
+    }
+
+    // Se rejeitado definitivo (FUND, SECU, EXPI, ORM...) -> não cria nada
+    if (result.status === "rejected") {
+      throw new Error("Pagamento rejeitado: " + result.status_detail);
+    }
+
+    // Qualquer outro caso inesperado
+    throw new Error("Status de pagamento não reconhecido: " + result.status);
   } catch (err) {
-    logger.error("❌ [Cartão] Erro gerarPagamentoCartaoService:", err);
+    logger.error("❌ [Service] Erro gerarPagamentoCartaoService:", err);
     throw err;
   }
 };
@@ -447,7 +504,7 @@ const processarWebhookService = async (payload) => {
       return;
     }
 
-    const inscricaoId = Number(pagamento.external_reference); // foi salvo como string no create
+    const inscricaoId = Number(pagamento.external_reference);
     const bruto = Number(pagamento.transaction_amount); // valor cobrado
     const liquido = Number(
       pagamento.transaction_details?.net_received_amount || 0
@@ -456,23 +513,40 @@ const processarWebhookService = async (payload) => {
     const taxa_percentual =
       bruto > 0 ? Number(((taxa_valor / bruto) * 100).toFixed(2)) : 0;
 
-    // Atualiza a inscrição com bruto + líquido + taxas (uma única query)
-    await atualizarInscricaoParaPago(inscricaoId, {
-      status: "pago",
+    // Identifica se é PIX ou Cartão
+    const isPix = pagamento.payment_method_id === "pix";
+
+    // (você já calculou bruto, liquido, taxa_valor e taxa_percentual acima)
+
+    // Monta o payload de atualização
+    const updatePayload = {
       pagamento_id: pagamento.id,
-      valor_bruto: bruto,
-      valor_liquido: liquido,
-      taxa_valor,
-      taxa_percentual,
-      metodo_pagamento: pagamento.payment_method_id,
-      parcelas: pagamento.installments,
-    });
+      status: mapearStatusMP(pagamento.status),
+      metodo_pagamento: isPix ? "pix" : "cartao",
+      bandeira_cartao: isPix ? null : pagamento.payment_method_id, // só cartão tem bandeira
+      parcelas: isPix ? 1 : pagamento.installments,
+      valor_bruto: pagamento.transaction_amount,
+      valor_liquido: pagamento.transaction_details?.net_received_amount ?? 0,
+      taxa_valor: pagamento.fee_details?.[0]?.amount || 0,
+      taxa_percentual, // usa o que você já calculou acima
+    };
+
+    // 🧹 Se for cartão, limpamos qualquer resquício de PIX nesse registro
+    if (!isPix) {
+      updatePayload.ticket_url = null;
+      updatePayload.qr_code = null;
+      updatePayload.qr_code_base64 = null;
+      updatePayload.date_of_expiration = null;
+    }
+
+    // ✅ Atualiza a inscrição com o payload único (sem duplicar objeto)
+    await atualizarInscricaoParaPago(inscricaoId, updatePayload);
 
     logger.log("🚀 Webhook recebido para pagamento:", paymentId);
 
     // Envia e-mail de confirmação
     const inscricao = await buscarInscricaoDetalhadaService(inscricaoId);
-    logger.log("📌 Inscrição detalhada:", inscricao);
+    logger.log("📌 Inscrição detalhada:", { id: inscricao.id, status: inscricao.status, email: inscricao.email });
 
     if (inscricao) {
       if (inscricao.email && inscricao.email.includes("@")) {
@@ -483,10 +557,9 @@ const processarWebhookService = async (payload) => {
           logger.error("❌ Erro ao enviar e-mail:", err.message || err);
         }
       } else {
-        logger.warn(
-          "⚠️ Inscrição sem e-mail válido, não foi possível enviar:",
-          inscricao
-        );
+        logger.warn("⚠️ Inscrição sem e-mail válido, não foi possível enviar:", { id: inscricao.id, status: inscricao.status });
+
+        
       }
     }
   } catch (err) {
@@ -519,6 +592,16 @@ const buscarInscricaoDetalhadaService = async (id) => {
     categoria: inscricao.categoria,
     graduacao: inscricao.graduacao,
     codigo_inscricao,
+
+    // 🔥 Campos de pagamento
+    metodo_pagamento: inscricao.metodo_pagamento,
+    bandeira_cartao: inscricao.bandeira_cartao,
+    parcelas: inscricao.parcelas,
+    valor_bruto: inscricao.valor_bruto,
+    valor_liquido: inscricao.valor_liquido,
+    taxa_valor: inscricao.taxa_valor,
+    taxa_percentual: inscricao.taxa_percentual,
+
     evento: {
       titulo: inscricao.titulo,
       descricao_curta: inscricao.descricao_curta,

@@ -8,7 +8,10 @@ const {
   calcularParcelasService,
 } = require("./inscricoesService");
 const { enviarEmailConfirmacao } = require("../../../services/emailService");
-const { buscarPorId: buscarEventoPorId } = require("../../agenda/agendaRepository");
+const {
+  buscarPorId: buscarEventoPorId,
+} = require("../../agenda/agendaRepository");
+const { buscarInscricaoPendente } = require("./inscricoesRepository");
 const logger = require("../../../utils/logger");
 
 const gerarPagamentoPix = async (req, res) => {
@@ -36,19 +39,28 @@ const gerarPagamentoPix = async (req, res) => {
 
 const gerarPagamentoCartao = async (req, res) => {
   try {
+    logger.log("🚀 [Controller] Iniciando pagamento Cartão:", {
+      ...req.body,
+      cpf: logger.mascararCpf(req.body.cpf),
+      telefone: logger.mascararTelefone(req.body.telefone),
+    });
+
     const { cpf, evento_id } = req.body;
 
     const jaPago = await verificarInscricaoPaga(cpf, evento_id);
     if (jaPago) {
-      logger.warn("⚠️ Inscrição já paga via Cartão:", { cpf, evento_id });
+      logger.warn("⚠️ Inscrição já paga via Cartão:", { cpf: logger.mascararCpf(cpf), evento_id });
       return res.status(400).json({ error: "Inscrição já realizada e paga." });
     }
 
     const pagamento = await gerarPagamentoCartaoService(req.body);
-    logger.log("✅ Pagamento Cartão gerado:", pagamento);
+    logger.log("✅ [controller] Pagamento Cartão gerado:", pagamento);
     res.status(201).json(pagamento);
   } catch (error) {
-    logger.error("❌ Erro Controller gerarPagamentoCartao:", error);
+    logger.error(
+      "❌ [controller] Erro Controller gerarPagamentoCartao:",
+      error
+    );
     res
       .status(500)
       .json({ error: error.message || "Erro ao gerar pagamento Cartão" });
@@ -75,14 +87,18 @@ const calcularParcelas = async (req, res) => {
     }
 
     // chama service com o valor do evento
-    const parcelas = await calcularParcelasService({ amount: valorEvento, bin, payment_method_id, issuer_id });
+    const parcelas = await calcularParcelasService({
+      amount: valorEvento,
+      bin,
+      payment_method_id,
+      issuer_id,
+    });
 
     res.json(parcelas);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 const webhookPagamento = async (req, res) => {
   try {
@@ -95,15 +111,21 @@ const webhookPagamento = async (req, res) => {
 };
 
 const buscarInscricaoPorId = async (req, res) => {
+  logger.log("📌 [DEBUG] Chamou GET /public/inscricoes/:id", req.params);
+
   try {
     const { id } = req.params;
+    logger.log("🔎 Buscando inscrição por id:", id);
+
     const inscricao = await buscarInscricaoDetalhadaService(id);
-    if (!inscricao)
+
+    if (!inscricao) {
       return res.status(404).json({ error: "Inscrição não encontrada" });
-    res.json(inscricao);
+    }
+
+    return res.json(inscricao);
   } catch (error) {
     logger.error("Erro buscarInscricaoPorId:", error);
-
     res.status(500).json({ error: "Erro ao buscar inscrição" });
   }
 };
@@ -129,6 +151,50 @@ const reenviarEmail = async (req, res) => {
   }
 };
 
+// Valida se o CPF já tem inscrição para o evento
+const validarInscricao = async (req, res) => {
+  try {
+    const { cpf, evento_id } = req.query;
+    logger.log("📌 [validarInscricao] chamado com:", { cpf: logger.mascararCpf(cpf), evento_id });
+
+    if (!cpf || !evento_id) {
+      logger.warn("⚠️ [validarInscricao] CPF ou evento_id faltando");
+      return res
+        .status(400)
+        .json({ error: "CPF e evento_id são obrigatórios" });
+    }
+
+    const jaPago = await verificarInscricaoPaga(cpf, evento_id);
+    logger.log("🔎 [validarInscricao] jáPago?", jaPago);
+
+    if (jaPago) {
+      return res.status(409).json({
+        error: "Este CPF já possui inscrição confirmada neste evento.",
+      });
+    }
+
+    const pendente = await buscarInscricaoPendente(cpf, evento_id);
+    logger.log("🔎 [validarInscricao] pendente encontrado:", { id: pendente.id, status: pendente.status });
+
+    if (pendente) {
+      logger.log(
+        "🔄 [validarInscricao] retornando inscrição pendente:",
+        pendente.id
+      );
+
+      return res.json({
+        status: "pendente",
+        inscricao: pendente,
+      });
+    }
+
+    return res.json({ ok: true });
+  } catch (error) {
+    logger.error("❌ [validarInscricao] erro:", error);
+    res.status(500).json({ error: "Erro ao validar inscrição" });
+  }
+};
+
 module.exports = {
   gerarPagamentoPix,
   gerarPagamentoCartao,
@@ -136,4 +202,5 @@ module.exports = {
   webhookPagamento,
   buscarInscricaoPorId,
   reenviarEmail,
+  validarInscricao,
 };

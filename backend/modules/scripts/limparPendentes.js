@@ -4,6 +4,9 @@ const logger = require("../../utils/logger");
 
 (async () => {
   try {
+
+    console.log("🚀 Cron limpeza inscrições pendentes iniciado...");
+
     // Buscar IDs das inscrições que serão deletadas
     const [rows] = await db.execute(
       `SELECT id, nome, email, cpf 
@@ -13,7 +16,7 @@ const logger = require("../../utils/logger");
     );
 
     if (rows.length === 0) {
-      logger.log("✅ Nenhuma inscrição pendente expirada encontrada.");
+      console.log("✅ Nenhuma inscrição pendente expirada encontrada.");
       return process.exit(0);
     }
 
@@ -30,10 +33,10 @@ const logger = require("../../utils/logger");
        AND date_of_expiration < NOW()`
     );
 
-    logger.log(`🗑️ ${result.affectedRows} inscrições pendentes expiradas foram deletadas.`);
+    console.log(`🗑️ ${result.affectedRows} inscrições expiradas foram removidas.`);
     process.exit(0);
   } catch (error) {
-    logger.error("❌ Erro ao limpar inscrições pendentes:", error);
+    console.error("❌ Erro ao limpar inscrições pendentes:", error);
     process.exit(1);
   }
 })();

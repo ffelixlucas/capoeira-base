@@ -9,6 +9,11 @@ import FormInscricaoPublic from "../../components/public/FormInscricaoPublic.jsx
 import ModalPagamentoPix from "../../components/public/ModalPagamentoPix.jsx";
 import PoliticaLGPD from "../../docs/politicaLGPD.jsx";
 import { logger } from "../../utils/logger.js";
+import ModalPagamentoCartao from "../../components/public/pagamento/ModalPagamentoCartao.jsx";
+import ModalConfirmacaoPagamento from "../../components/public/ModalConfirmacaoPagamento.jsx";
+
+import api from "../../services/api";
+import { toast } from "react-toastify";
 
 export default function InscricaoEventoPublic() {
   const { eventoId } = useParams();
@@ -19,6 +24,8 @@ export default function InscricaoEventoPublic() {
   const [modalLGPD, setModalLGPD] = useState(false);
   const [modalPagamento, setModalPagamento] = useState(false);
   const [dadosPagamento, setDadosPagamento] = useState(null);
+  const [modalCartao, setModalCartao] = useState(false);
+  const [modalConfirmacao, setModalConfirmacao] = useState(false);
 
   const [form, setForm] = useState({
     nome: "",
@@ -36,6 +43,7 @@ export default function InscricaoEventoPublic() {
     alergias_restricoes: "",
     aceite_lgpd: false,
     autorizacao_imagem: false,
+    metodo_pagamento: "",
   });
 
   const idade = form.data_nascimento
@@ -131,34 +139,71 @@ export default function InscricaoEventoPublic() {
       }
     }
 
+    // 🔍 Só valida no backend se ainda não existe inscrição criada
+    // 🔍 Só valida no backend se ainda não existe inscrição criada
+    if (!form.id) {
+      try {
+        const { data } = await api.get("/public/inscricoes/validar", {
+          params: { cpf: form.cpf, evento_id: evento.id },
+        });
+
+        if (data.status === "pendente") {
+          logger.log("🔄 Inscrição pendente detectada:", data.inscricao);
+          setForm({
+            ...form,
+            id: data.inscricao.id,
+            cpf: form.cpf, // mantém o CPF correto
+            evento_id: evento.id, // garante que o evento_id vai junto
+          });
+          toast.info("Inscrição pendente encontrada. Continue o pagamento.");
+        } else if (data.ok) {
+          logger.log("✅ Nenhuma inscrição encontrada, pode criar nova.");
+        } else {
+          toast.error(data.error || "Não foi possível validar inscrição.");
+          return;
+        }
+      } catch (err) {
+        const msg =
+          err.response?.data?.error ||
+          err.message ||
+          "Erro ao validar inscrição.";
+        toast.error(msg);
+        return;
+      }
+    }
+
     // Se marcou restrições, precisa preencher
     if (form.tem_restricoes && !form.alergias_restricoes) {
       alert("Descreva as restrições médicas.");
       return;
     }
-
+    if (!form.metodo_pagamento) {
+      alert("Selecione a forma de pagamento.");
+      return;
+    }
     setEnviando(true);
     try {
-      const resultado = await gerarPagamentoPix({
-        ...form,
-        evento_id: evento.id,
-        valor: evento.valor, // sempre pega do banco, seguro
-      });
+      if (form.metodo_pagamento === "pix") {
+        const resultado = await gerarPagamentoPix({
+          ...form,
+          evento_id: evento.id,
+          valor: evento.valor,
+          forma_pagamento: "pix",
+        });
+        setForm({ ...form, id: resultado.id });
+        setDadosPagamento(resultado);
 
-      // Abrir modal PIX
-      setDadosPagamento(resultado);
-      setModalPagamento(true);
-    } catch (err) {
-        logger.error("Erro ao salvar inscrição:", err);
-      let mensagemErro = "Erro ao gerar pagamento. Tente novamente.";
-
-      if (err.response?.data?.error) {
-        mensagemErro = err.response.data.error;
-      } else if (err.message) {
-        mensagemErro = err.message;
+        setModalCartao(false); // ✅ fecha Cartão antes
+        setModalPagamento(true); // abre Pix
+      } else if (form.metodo_pagamento === "cartao") {
+        setModalPagamento(false); // ✅ fecha Pix antes
+        setModalCartao(true); // abre Cartão
+      } else {
+        alert("Selecione a forma de pagamento.");
       }
-
-      alert(mensagemErro);
+    } catch (err) {
+      logger.error("Erro ao salvar inscrição:", err);
+      alert("Erro ao gerar pagamento. Tente novamente.");
     } finally {
       setEnviando(false);
     }
@@ -175,7 +220,7 @@ export default function InscricaoEventoPublic() {
           Evento não encontrado ou não disponível para inscrição.
         </p>
         <button
-          onClick={() => navigate("/inscrever")}
+          onClick={() => navigate(`/inscrever/${evento.id}`)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
           Voltar para inscrições
@@ -196,7 +241,7 @@ export default function InscricaoEventoPublic() {
           As inscrições para este evento já estão encerradas.
         </p>
         <button
-          onClick={() => navigate("/inscrever")}
+          onClick={() => navigate(`/inscrever/${evento.id}`)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
           Ver outros eventos
@@ -219,7 +264,6 @@ export default function InscricaoEventoPublic() {
         formatarCPF={formatarCPF}
         evento={evento}
       />
-
       {/* Modal LGPD */}
       <Transition appear show={modalLGPD} as={Fragment}>
         <Dialog
@@ -276,14 +320,34 @@ export default function InscricaoEventoPublic() {
           </div>
         </Dialog>
       </Transition>
+      {modalPagamento && (
+        <ModalPagamentoPix
+          isOpen={modalPagamento}
+          onClose={() => {
+            setModalPagamento(false);
+            navigate(`/inscrever/${evento.id}`);
+          }}
+          pagamento={dadosPagamento}
+        />
+      )}
 
-      <ModalPagamentoPix
-        isOpen={modalPagamento}
+      <ModalPagamentoCartao
+        isOpen={modalCartao}
         onClose={() => {
-          setModalPagamento(false);
-          navigate("/inscrever"); // só redireciona ao fechar o modal
+          setModalCartao(false);
+          navigate(`/inscrever/${evento.id}`);
         }}
-        pagamento={dadosPagamento}
+        evento={evento}
+        form={form}
+        setDadosPagamento={setDadosPagamento}
+        setModalPagamento={setModalPagamento}
+        setModalConfirmacao={setModalConfirmacao}   
+
+      />
+      <ModalConfirmacaoPagamento
+        isOpen={modalConfirmacao}
+        onClose={() => setModalConfirmacao(false)}
+        dados={dadosPagamento}
       />
     </div>
   );

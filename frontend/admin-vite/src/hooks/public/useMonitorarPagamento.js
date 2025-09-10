@@ -20,6 +20,10 @@ export const useMonitorarPagamento = (inscricaoId, onSucesso, onErro) => {
           if (onErro) onErro(data);
         }
       } catch (err) {
+        if (err.response?.status === 404) {
+          // inscrição ainda não encontrada → ignora silenciosamente
+          return;
+        }
         logger.error("Erro ao verificar status da inscrição:", err);
       }
     }, 5000);
