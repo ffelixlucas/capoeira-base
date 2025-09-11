@@ -13,6 +13,7 @@ const {
 } = require("../../agenda/agendaRepository");
 const { buscarInscricaoPendente } = require("./inscricoesRepository");
 const logger = require("../../../utils/logger");
+const { calcularValorComTaxa } = require("../../../utils/calcularValor");
 
 const gerarPagamentoPix = async (req, res) => {
   try {
@@ -49,7 +50,10 @@ const gerarPagamentoCartao = async (req, res) => {
 
     const jaPago = await verificarInscricaoPaga(cpf, evento_id);
     if (jaPago) {
-      logger.warn("⚠️ Inscrição já paga via Cartão:", { cpf: logger.mascararCpf(cpf), evento_id });
+      logger.warn("⚠️ Inscrição já paga via Cartão:", {
+        cpf: logger.mascararCpf(cpf),
+        evento_id,
+      });
       return res.status(400).json({ error: "Inscrição já realizada e paga." });
     }
 
@@ -81,14 +85,17 @@ const calcularParcelas = async (req, res) => {
       return res.status(404).json({ error: "Evento não encontrado" });
     }
 
-    const valorEvento = parseFloat(evento.valor);
-    if (isNaN(valorEvento) || valorEvento <= 0) {
+    const valorBase = parseFloat(evento.valor);
+    if (isNaN(valorBase) || valorBase <= 0) {
       return res.status(400).json({ error: "Valor do evento inválido" });
     }
 
     // chama service com o valor do evento
+    // ✅ aplica taxa especificamente para cartão
+    const valorComTaxa = calcularValorComTaxa(valorBase, "cartao");
+
     const parcelas = await calcularParcelasService({
-      amount: valorEvento,
+      amount: valorComTaxa,
       bin,
       payment_method_id,
       issuer_id,
@@ -155,7 +162,10 @@ const reenviarEmail = async (req, res) => {
 const validarInscricao = async (req, res) => {
   try {
     const { cpf, evento_id } = req.query;
-    logger.log("📌 [validarInscricao] chamado com:", { cpf: logger.mascararCpf(cpf), evento_id });
+    logger.log("📌 [validarInscricao] chamado com:", {
+      cpf: logger.mascararCpf(cpf),
+      evento_id,
+    });
 
     if (!cpf || !evento_id) {
       logger.warn("⚠️ [validarInscricao] CPF ou evento_id faltando");
@@ -172,9 +182,16 @@ const validarInscricao = async (req, res) => {
         error: "Este CPF já possui inscrição confirmada neste evento.",
       });
     }
-
     const pendente = await buscarInscricaoPendente(cpf, evento_id);
-    logger.log("🔎 [validarInscricao] pendente encontrado:", { id: pendente.id, status: pendente.status });
+
+    if (pendente) {
+      logger.log("🔎 [validarInscricao] pendente encontrado:", {
+        id: pendente.id,
+        status: pendente.status,
+      });
+    } else {
+      logger.log("🔎 [validarInscricao] nenhuma inscrição pendente encontrada");
+    }
 
     if (pendente) {
       logger.log(

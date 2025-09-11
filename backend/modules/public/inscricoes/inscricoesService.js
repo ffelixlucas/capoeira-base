@@ -13,6 +13,7 @@ const {
 } = require("./inscricoesRepository");
 const { enviarEmailConfirmacao } = require("../../../services/emailService.js");
 const logger = require("../../../utils/logger.js");
+const { calcularValorComTaxa } = require("../../../utils/calcularValor");
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
@@ -34,7 +35,6 @@ function mapearStatusMP(status) {
       return "pendente";
   }
 }
-
 
 /**
  * Gera pagamento PIX no Mercado Pago ou retorna QR de inscrição pendente
@@ -220,7 +220,7 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
       cpf: logger.mascararCpf(dadosFormulario.cpf),
       telefone: logger.mascararTelefone(dadosFormulario.telefone),
     });
-    
+
     const {
       token,
       payment_method_id,
@@ -243,10 +243,13 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
       throw new Error("Bandeira do cartão não informada.");
 
     // 🔒 Validar valor
-    const valorNum = parseFloat(dadosFormulario.total_amount || valor);
+    let valorNum = parseFloat(dadosFormulario.total_amount || valor);
     if (isNaN(valorNum) || valorNum <= 0) {
       throw new Error("Valor da inscrição inválido.");
     }
+
+    // ✅ Aplica taxa se for cartão
+    valorNum = calcularValorComTaxa(valorNum, "cartao");
 
     // 🔒 Validar parcelas
     const parcelasNum = parseInt(installments, 10);
@@ -546,7 +549,11 @@ const processarWebhookService = async (payload) => {
 
     // Envia e-mail de confirmação
     const inscricao = await buscarInscricaoDetalhadaService(inscricaoId);
-    logger.log("📌 Inscrição detalhada:", { id: inscricao.id, status: inscricao.status, email: inscricao.email });
+    logger.log("📌 Inscrição detalhada:", {
+      id: inscricao.id,
+      status: inscricao.status,
+      email: inscricao.email,
+    });
 
     if (inscricao) {
       if (inscricao.email && inscricao.email.includes("@")) {
@@ -557,9 +564,10 @@ const processarWebhookService = async (payload) => {
           logger.error("❌ Erro ao enviar e-mail:", err.message || err);
         }
       } else {
-        logger.warn("⚠️ Inscrição sem e-mail válido, não foi possível enviar:", { id: inscricao.id, status: inscricao.status });
-
-        
+        logger.warn(
+          "⚠️ Inscrição sem e-mail válido, não foi possível enviar:",
+          { id: inscricao.id, status: inscricao.status }
+        );
       }
     }
   } catch (err) {

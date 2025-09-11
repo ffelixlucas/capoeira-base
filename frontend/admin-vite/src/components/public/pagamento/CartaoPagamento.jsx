@@ -6,6 +6,7 @@ import { logger } from "../../../utils/logger";
 import { usePagamentoCartao } from "../../../hooks/public/usePagamentoCartao";
 import ModalErroPagamento from "../ModalErroPagamento";
 import ModalPagamentoPendente from "../pagamento/ModalPagamentoPendente";
+import { calcularValorComTaxa } from "../../../utils/calcularValor";
 
 // Inicializa SDK
 initMP();
@@ -19,6 +20,7 @@ export default function CartaoPagamento({
   const { pagar, loading, erro, resposta } = usePagamentoCartao();
   const [modalErro, setModalErro] = useState(false);
   const [modalPendente, setModalPendente] = useState(false);
+  const valorComTaxa = calcularValorComTaxa(evento?.valor || 0, "cartao");
 
   const handleSubmit = async (formData) => {
     try {
@@ -101,7 +103,7 @@ export default function CartaoPagamento({
   return (
     <div className="p-4">
       <CardPayment
-        initialization={{ amount: parseFloat(evento?.valor || 0) }}
+        initialization={{ amount: valorComTaxa }}
         locale="pt-BR"
         onSubmit={handleSubmit}
         onError={(err) => logger.error("[CartaoPagamento] erro no Brick:", err)}
