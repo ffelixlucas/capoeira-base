@@ -26,18 +26,19 @@ Gerenciar os membros da equipe interna do projeto (instrutores, responsáveis, a
 
 ## 🗃️ Tabela relacionada: `equipe`
 
-| Campo         | Tipo           | Descrição                        |
-|---------------|----------------|----------------------------------|
-| id            | int (PK)       | Identificador do membro          |
-| nome          | varchar(100)   | Nome do membro                   |
-| telefone      | varchar(20)    | Telefone                        |
-| whatsapp      | varchar(20)    | WhatsApp                        |
-| email         | varchar(100)   | E-mail de login ou contato       |
-| status        | varchar(20)    | Ex: ativo, inativo               |
-| observacoes   | text           | Notas adicionais                 |
-| senha_hash    | varchar(255)   | Senha criptografada              |
-| criado_em     | datetime       | Timestamp de criação             |
-| atualizado_em | datetime       | Atualização automática           |
+| Campo             | Tipo           | Descrição                                               |
+|-------------------|----------------|---------------------------------------------------------|
+| id                | int (PK)       | Identificador do membro                                 |
+| nome              | varchar(100)   | Nome do membro                                          |
+| telefone          | varchar(20)    | Telefone                                                |
+| whatsapp          | varchar(20)    | WhatsApp                                                |
+| email             | varchar(100)   | E-mail de login ou contato                              |
+| status            | varchar(20)    | Ex: ativo, inativo                                      |
+| observacoes       | text           | Notas adicionais                                        |
+| senha_hash        | varchar(255)   | Senha criptografada                                     |
+| visivel_no_painel | boolean        | Define se o membro aparece ou não na listagem de equipe |
+| criado_em         | datetime       | Timestamp de criação                                    |
+| atualizado_em     | datetime       | Atualização automática                                  |
 
 ## 📌 Observações
 - Este módulo será utilizado também para login.

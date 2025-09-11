@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { listarEventos } from "../services/agendaService";
+import { logger } from "../utils/logger";
 
 export function useAgenda() {
   const [eventos, setEventos] = useState([]);
@@ -10,7 +11,7 @@ export function useAgenda() {
     try {
       const dados = await listarEventos();
       setEventos(Array.isArray(dados) ? dados : []);    } catch (error) {
-      console.error("Erro ao carregar eventos:", error);
+      logger.error("Erro ao carregar eventos:", error);
     } finally {
       setCarregando(false);
     }

@@ -20,7 +20,7 @@ async function listarPorEvento(eventoId, busca = "") {
     `SELECT COUNT(*) AS total 
      FROM inscricoes_evento 
      WHERE evento_id = ? 
-       AND status <> 'extornado'`,
+       AND status = 'pago'`,
     [eventoId]
   );
   evento.total_inscritos = totalRows[0]?.total ?? 0;

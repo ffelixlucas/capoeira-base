@@ -1,3 +1,5 @@
+import { logger } from "../../admin-vite/src/utils/logger";
+
 // === Carregar eventos da API ===
 async function carregarEventos() {
     try {
@@ -6,7 +8,7 @@ async function carregarEventos() {
         throw new Error(`Erro na API: ${resposta.status} ${resposta.statusText}`);
       }
       const eventos = await resposta.json();
-      console.log("Eventos recebidos:", eventos);
+      logger.log("Eventos recebidos:", eventos);
       const container = document.getElementById("eventos-container");
   
       if (!Array.isArray(eventos) || eventos.length === 0) {
@@ -96,7 +98,7 @@ async function carregarEventos() {
         });
       });
     } catch (err) {
-      console.error("Erro ao carregar eventos:", err);
+      logger.error("Erro ao carregar eventos:", err);
       document.getElementById("eventos-container").innerHTML =
         "<p>Erro ao carregar eventos. Tente novamente mais tarde.</p>";
     }
@@ -273,7 +275,7 @@ async function carregarEventos() {
         new Promise((resolve) => {
           imgLogo.onload = resolve;
           imgLogo.onerror = () => {
-            console.warn("Logotipo não encontrado, usando imagem padrão.");
+            logger.warn("Logotipo não encontrado, usando imagem padrão.");
             imgLogo.src = "https://via.placeholder.com/150";
             resolve();
           };
@@ -350,7 +352,7 @@ async function carregarEventos() {
             document.getElementById("modal-titulo").textContent
           }" do Capoeira Nota 10!`,
         });
-        console.log("Evento compartilhado com sucesso!");
+        logger.log("Evento compartilhado com sucesso!");
       } else {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -365,9 +367,9 @@ async function carregarEventos() {
         );
       }
     } catch (err) {
-      console.error("Erro ao gerar ou compartilhar a imagem:", err);
+      logger.error("Erro ao gerar ou compartilhar a imagem:", err);
       alert(
-        "Ocorreu um erro ao gerar a imagem. Verifique o console para mais detalhes e confirme se o logotipo (/media/logo.png) está no caminho correto."
+        "Ocorreu um erro ao gerar a imagem. Verifique o logger para mais detalhes e confirme se o logotipo (/media/logo.png) está no caminho correto."
       );
     }
   }

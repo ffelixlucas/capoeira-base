@@ -12,7 +12,7 @@ export async function gerarPagamentoPix(dados) {
   }
 }
 
-export const buscarStatusInscricao = async (id) => {
-  const { data } = await api.get(`/public/inscricoes/${id}`);
+export const buscarStatusInscricao = async (inscricaoId) => {
+  const { data } = await api.get(`/public/inscricoes/${inscricaoId}`);
   return data;
 };

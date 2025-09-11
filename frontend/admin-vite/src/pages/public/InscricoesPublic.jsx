@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { listarEventosPublicos } from "../../services/agendaService"; // 🔹 função pública
+import { logger } from "../../utils/logger";
 
 function InscricoesPublic() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ function InscricoesPublic() {
         const dados = await listarEventosPublicos(); // 🔹 usa rota pública
         setEventos(dados);
       } catch (err) {
-        console.error("Erro ao carregar eventos públicos:", err);
+        logger.error("Erro ao carregar eventos públicos:", err);
       } finally {
         setCarregando(false);
       }

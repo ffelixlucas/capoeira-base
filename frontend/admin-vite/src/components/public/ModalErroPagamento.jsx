@@ -1,6 +1,33 @@
+// components/public/ModalErroPagamento.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { XCircle } from "lucide-react";
+
+// 🔹 Mapeamento dos status_detail → mensagens amigáveis
+const mensagensDetalhadas = {
+  cc_rejected_call_for_authorize:
+    "❌ Pagamento recusado. Ligue para o banco e autorize a compra.",
+  cc_rejected_insufficient_amount:
+    "❌ Pagamento recusado por saldo insuficiente.",
+  cc_rejected_bad_filled_security_code:
+    "❌ Código de segurança inválido. Verifique os 3 dígitos atrás do cartão.",
+  cc_rejected_bad_filled_date:
+    "❌ Data de validade incorreta. Verifique o mês/ano do cartão.",
+  cc_rejected_bad_filled_other:
+    "❌ Dados do cartão inválidos. Verifique as informações digitadas.",
+  cc_rejected_other_reason:
+    "❌ Pagamento recusado. Verifique com seu banco ou use outro cartão.",
+};
+
+function getMensagemErro(dados) {
+  if (!dados) return "❌ O pagamento não pôde ser processado.";
+  const detalhe = dados?.status_detail;
+  if (mensagensDetalhadas[detalhe]) return mensagensDetalhadas[detalhe];
+  return (
+    dados?.message ||
+    "❌ O pagamento não pôde ser processado. Tente novamente mais tarde."
+  );
+}
 
 export default function ModalErroPagamento({ isOpen, onClose, dados }) {
   return (
@@ -15,15 +42,8 @@ export default function ModalErroPagamento({ isOpen, onClose, dados }) {
             </Dialog.Title>
 
             <p className="text-sm text-gray-700 mb-4">
-              O pagamento da inscrição não foi confirmado.
-              Isso pode acontecer por:
+              {getMensagemErro(dados)}
             </p>
-
-            <ul className="text-sm text-left text-gray-600 list-disc list-inside mb-4">
-              <li>Tempo de pagamento expirado</li>
-              <li>Erro no aplicativo do banco</li>
-              <li>Cancelamento manual</li>
-            </ul>
 
             <button
               onClick={onClose}

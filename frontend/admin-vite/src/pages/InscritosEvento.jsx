@@ -14,6 +14,7 @@ import { Menu } from "@headlessui/react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import ResumoCamisetas from "../components/ui/ResumoCamisetas";
+import { logger } from "../utils/logger";
 
 function InscritosEvento() {
   const { eventoId } = useParams();
@@ -26,7 +27,6 @@ function InscritosEvento() {
   const [modalAberto, setModalAberto] = useState(false);
   const [inscritoSelecionado, setInscritoSelecionado] = useState(null);
   const [resumoCamisetas, setResumoCamisetas] = useState([]);
-
 
   // Carregar lista inicial
   useEffect(() => {
@@ -42,7 +42,9 @@ function InscritosEvento() {
       setInscritos(dados.inscritos);
       setResumoCamisetas(dados.resumo_camisetas || []);
     } catch (err) {
-      console.error("Erro ao carregar inscritos:", err);
+      if (import.meta.env.DEV) {
+        logger.error("Erro ao carregar inscritos:", err);
+      }
     } finally {
       setCarregando(false);
     }
@@ -54,9 +56,12 @@ function InscritosEvento() {
       setInscritoSelecionado(dadosCompletos);
       setModalAberto(true);
     } catch (err) {
-      console.error("Erro ao buscar inscrito:", err);
+      if (import.meta.env.DEV) {
+        logger.error("Erro ao buscar inscrito:", err);
+      }
     }
   }
+  
 
   async function atualizarInscritoNaLista(inscritoAtualizado) {
     // Se foi extornado, recarregar tudo para atualizar totais
@@ -76,7 +81,6 @@ function InscritosEvento() {
       );
     }
   }
-  
 
   // Gerar Excel da lista completa
   function baixarListaExcel() {
@@ -126,8 +130,6 @@ function InscritosEvento() {
     win.print();
     win.close();
   }
-
-  
 
   return (
     <div className="p-6 max-w-6xl mx-auto">

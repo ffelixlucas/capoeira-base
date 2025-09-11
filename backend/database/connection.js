@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const logger = require('../utils/logger');
 
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
@@ -32,7 +33,7 @@ async function getConnectionWithRetry(retries = 3, delayMs = 1000) {
     } catch (err) {
       lastErr = err;
       if (transientErrors.includes(err.code)) {
-        console.warn(
+        logger.warn(
           `⚠️ Erro transitório MySQL (${err.code}) — tentativa ${attempt}/${retries}`
         );
         await new Promise(res => setTimeout(res, delayMs * attempt));

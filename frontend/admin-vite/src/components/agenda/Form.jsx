@@ -4,6 +4,7 @@ import {
   atualizarEvento,
 } from "../../services/agendaService";
 import AgendaPreview from "./Preview";
+import { logger } from "../../utils/logger";
 
 function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
   const TAMANHOS_CAMISETA = [
@@ -125,7 +126,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
       onCriado?.();
       onLimparEdicao?.();
     } catch (err) {
-      console.error("Erro ao salvar evento:", err);
+    logger.error("Erro ao salvar evento:", err);
     }
   };
 

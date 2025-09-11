@@ -1,3 +1,4 @@
+const logger = require("../../utils/logger");
 const equipeService = require("./equipeService");
 
 async function getEquipe(req, res) {
@@ -5,7 +6,7 @@ async function getEquipe(req, res) {
     const equipe = await equipeService.listarEquipe();
     res.json(equipe);
   } catch (error) {
-    console.error("Erro ao listar equipe:", error);
+    logger.error("Erro ao listar equipe:", error);
     res.status(500).json({ message: "Erro ao buscar equipe" });
   }
 }
@@ -15,7 +16,7 @@ async function criarEquipe(req, res) {
       const id = await equipeService.criarEquipe(req.body);
       res.status(201).json({ id, message: "Membro criado com sucesso" });
     } catch (error) {
-      console.error("Erro ao criar membro:", error.message);
+      logger.error("Erro ao criar membro:", error.message);
       res.status(400).json({ message: error.message });
     }
   }
@@ -30,7 +31,7 @@ async function atualizarEquipe(req, res) {
       res.status(404).json({ message: "Membro não encontrado" });
     }
   } catch (error) {
-    console.error("Erro ao atualizar membro:", error);
+    logger.error("Erro ao atualizar membro:", error);
     res.status(500).json({ message: "Erro ao atualizar membro" });
   }
 }
@@ -44,14 +45,78 @@ async function removerEquipe(req, res) {
       res.status(404).json({ message: "Membro não encontrado" });
     }
   } catch (error) {
-    console.error("Erro ao remover membro:", error);
+    logger.error("Erro ao remover membro:", error);
     res.status(500).json({ message: "Erro ao remover membro" });
   }
 }
+
+async function atualizarPerfil(req, res) {
+  try {
+    const atualizado = await equipeService.atualizarEquipe(req.usuario.id, req.body);
+    if (atualizado) {
+      res.json({ message: "Perfil atualizado com sucesso" });
+    } else {
+      res.status(404).json({ message: "Usuário não encontrado" });
+    }
+  } catch (error) {
+    logger.error("Erro ao atualizar perfil:", error);
+    res.status(500).json({ message: "Erro ao atualizar perfil" });
+  }
+}
+async function alterarSenha(req, res) {
+  try {
+    const { senhaAtual, novaSenha } = req.body;
+
+    if (!senhaAtual || !novaSenha) {
+      return res.status(400).json({ message: "Informe senha atual e nova senha" });
+    }
+
+    const resultado = await equipeService.alterarSenha(req.usuario.id, senhaAtual, novaSenha);
+
+    if (!resultado.sucesso) {
+      return res.status(400).json({ message: resultado.message });
+    }
+
+    res.json({ message: "Senha alterada com sucesso" });
+  } catch (error) {
+    logger.error("Erro ao alterar senha:", error);
+    res.status(500).json({ message: "Erro interno ao alterar senha" });
+  }
+}
+
+async function getPerfil(req, res) {
+  try {
+    const usuario = await equipeService.buscarPorId(req.usuario.id);
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    // remover hash
+    delete usuario.senha_hash;
+
+    // 🔥 garantir que roles seja um array de strings, igual no login
+    if (usuario.roles && Array.isArray(usuario.roles)) {
+      usuario.roles = usuario.roles.map((r) => r.nome);
+    } else {
+      usuario.roles = [];
+    }
+
+    res.json(usuario);
+  } catch (error) {
+    logger.error("Erro ao buscar perfil:", error);
+    res.status(500).json({ message: "Erro interno ao buscar perfil" });
+  }
+}
+
+
+
 
 module.exports = {
   getEquipe,
   criarEquipe,
   atualizarEquipe,
   removerEquipe,
+  atualizarPerfil,
+  alterarSenha,
+  getPerfil,
 };

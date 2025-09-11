@@ -4,6 +4,7 @@ import { excluirAluno } from "../../services/alunoService";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
+import { logger } from "../../utils/logger";
 
 
 export default function ModalAluno({
@@ -38,7 +39,7 @@ export default function ModalAluno({
       });
       setMetricas(data);
     } catch (err) {
-      console.error("Erro ao carregar métricas:", err);
+      logger.error("Erro ao carregar métricas:", err);
       toast.error("Erro ao carregar métricas de presença");
     }
   }
@@ -79,7 +80,7 @@ export default function ModalAluno({
       onExcluido?.();
       onClose();
     } catch (err) {
-      console.error("Erro ao excluir aluno:", err);
+      logger.error("Erro ao excluir aluno:", err);
       toast.error("Erro ao excluir aluno.");
     }
   };

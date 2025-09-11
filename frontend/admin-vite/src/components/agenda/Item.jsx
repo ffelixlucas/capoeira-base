@@ -4,6 +4,7 @@ import AgendaDetalhe from "./Detalhe";
 import ImageModal from "./ImageModal";
 import { excluirEvento, arquivarEvento } from "../../services/agendaService";
 import { toast } from "react-toastify";
+import logger from "../../utils/logger";
 
 function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
   if (!evento) return null;
@@ -67,7 +68,7 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
         toast.success("Evento arquivado. Inscrições mantidas com segurança.");
         onExcluir && onExcluir(); // recarrega lista no pai
       } catch (err) {
-        console.error("Erro ao arquivar evento:", err);
+      logger.error("Erro ao arquivar evento:", err);
         toast.error("Não foi possível arquivar o evento.");
       }
       return;
@@ -82,7 +83,7 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
       toast.success("Evento excluído com sucesso.");
       onExcluir && onExcluir();
     } catch (err) {
-      console.error("Erro ao excluir evento:", err);
+    logger.error("Erro ao excluir evento:", err);
       toast.error("Não foi possível excluir o evento.");
     }
   };

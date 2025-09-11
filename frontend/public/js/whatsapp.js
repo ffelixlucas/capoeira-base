@@ -1,3 +1,5 @@
+import { logger } from "../../admin-vite/src/utils/logger";
+
 let numeroAula = "554100000000"; // Número padrão para aulas
 let numeroGenerico = "554200000000"; // Número padrão para outros assuntos
 
@@ -28,7 +30,7 @@ async function carregarNumerosWhatsapp() {
     if (dadosJuvenil?.valor) numeroJuvenil = dadosJuvenil.valor.replace(/\D/g, '');
     if (dadosAdulto?.valor) numeroAdulto = dadosAdulto.valor.replace(/\D/g, '');
   } catch (err) {
-    console.warn("Erro ao buscar números de WhatsApp. Usando fallback.");
+    logger.warn("Erro ao buscar números de WhatsApp. Usando fallback.");
   }
 }
 

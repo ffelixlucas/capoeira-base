@@ -1,3 +1,5 @@
+import { logger } from "../../admin-vite/src/utils/logger";
+
 let imagens = [];
 let indiceAtual = 0;
 let intervalo;
@@ -66,7 +68,7 @@ fetch(`${CONFIG.API_BASE_URL}/galeria`)
     iniciarSlider();
   })
   .catch((err) => {
-    console.error("Erro ao carregar galeria:", err);
+    logger.error("Erro ao carregar galeria:", err);
     document.getElementById("slider").innerText = "Erro ao carregar imagens.";
   });
   function abrirModalImagem(src, alt = "") {

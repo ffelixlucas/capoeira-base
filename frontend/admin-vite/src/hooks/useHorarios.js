@@ -7,6 +7,7 @@ import {
   excluirHorario,
   atualizarOrdemHorarios, // 🔥 nova função no service
 } from "../services/horariosService";
+import { logger } from "../utils/logger";
 
 export default function useHorarios() {
   const [horarios, setHorarios] = useState([]);
@@ -22,7 +23,7 @@ export default function useHorarios() {
       setHorarios(data);
     } catch (err) {
       setErro("Erro ao carregar horários");
-      console.error(err);
+      logger.error(err);
     } finally {
       setCarregando(false);
     }
@@ -38,7 +39,7 @@ export default function useHorarios() {
       return novo;
     } catch (err) {
       setErro("Erro ao criar horário");
-      console.error(err);
+      logger.error(err);
       throw err;
     } finally {
       setCarregando(false);
@@ -54,7 +55,7 @@ export default function useHorarios() {
       await carregarHorarios();
     } catch (err) {
       setErro("Erro ao atualizar horário");
-      console.error(err);
+      logger.error(err);
       throw err;
     } finally {
       setCarregando(false);
@@ -70,7 +71,7 @@ export default function useHorarios() {
       await carregarHorarios();
     } catch (err) {
       setErro("Erro ao excluir horário");
-      console.error(err);
+      logger.error(err);
       throw err;
     } finally {
       setCarregando(false);
@@ -86,7 +87,7 @@ export default function useHorarios() {
       await carregarHorarios();
     } catch (err) {
       setErro("Erro ao atualizar ordem dos horários");
-      console.error(err);
+      logger.error(err);
       throw err;
     } finally {
       setCarregando(false);

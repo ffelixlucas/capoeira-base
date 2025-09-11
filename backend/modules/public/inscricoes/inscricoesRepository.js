@@ -3,18 +3,19 @@
 const db = require("../../../database/connection");
 
 /**
- * Busca inscrição pendente por CPF
+ * Busca inscrição pendente por CPF e evento
  */
-const buscarInscricaoPendente = async (cpf) => {
+const buscarInscricaoPendente = async (cpf, eventoId) => {
   const [rows] = await db.execute(
     `SELECT id, pagamento_id, ticket_url, qr_code_base64, qr_code, valor, date_of_expiration
      FROM inscricoes_evento 
-     WHERE cpf = ? AND status = 'pendente' 
+     WHERE cpf = ? AND evento_id = ? AND status = 'pendente' 
      LIMIT 1`,
-    [cpf]
+    [cpf, eventoId]
   );
   return rows[0] || null;
 };
+
 
 /**
  * Cria uma inscrição com status = pendente
@@ -37,6 +38,7 @@ const criarInscricaoPendente = async (dados) => {
     aceite_lgpd,
     categoria,
     graduacao,
+    metodo_pagamento,
   } = dados;
 
   // Valores assumidos
@@ -52,9 +54,9 @@ const criarInscricaoPendente = async (dados) => {
       autorizacao_participacao, autorizacao_imagem, documento_autorizacao_url,
       responsavel_nome, responsavel_documento, responsavel_contato, responsavel_parentesco,
       tamanho_camiseta, alergias_restricoes, categoria, graduacao,
-      aceite_imagem, aceite_responsabilidade, aceite_lgpd,
+      aceite_imagem, aceite_responsabilidade, aceite_lgpd, metodo_pagamento,
       status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`,
 
     [
       evento_id,
@@ -77,7 +79,8 @@ const criarInscricaoPendente = async (dados) => {
       graduacao || null,
       aceite_imagem,
       aceite_responsabilidade,
-      aceite_lgpd,
+      aceite_lgpd ?? 0,
+      metodo_pagamento || null, 
     ]
   );
 
@@ -95,7 +98,8 @@ const atualizarInscricaoComPix = async (id, pagamento) => {
          qr_code_base64 = ?, 
          qr_code = ?, 
          valor = ?, 
-         date_of_expiration = ?
+         date_of_expiration = ?,
+         metodo_pagamento = 'pix'
      WHERE id = ?`,
     [
       pagamento.pagamento_id ?? null,
@@ -114,26 +118,28 @@ const atualizarInscricaoComPix = async (id, pagamento) => {
  * Salva status, id do pagamento, bruto, líquido e taxas (uma única query)
  */
 const atualizarInscricaoParaPago = async (id, dados) => {
-  await db.execute(
-    `UPDATE inscricoes_evento 
-       SET status = 'pago',
-           pagamento_id = ?,
-           valor_bruto = ?,
-           valor_liquido = ?,
-           taxa_valor = ?,
-           taxa_percentual = ?,
-           atualizado_em = NOW()
+  const [result] = await db.execute(
+    `UPDATE inscricoes_evento
+     SET status = ?, pagamento_id = ?, valor_bruto = ?, valor_liquido = ?, 
+         taxa_valor = ?, taxa_percentual = ?, parcelas = ?, metodo_pagamento = ?, 
+         bandeira_cartao = ?, atualizado_em = NOW()
      WHERE id = ?`,
     [
-      dados.pagamento_id ?? null,
-      dados.valor_bruto ?? null,
-      dados.valor_liquido ?? null,
-      dados.taxa_valor ?? null,
-      dados.taxa_percentual ?? null,
+      dados.status,
+      dados.pagamento_id,
+      dados.valor_bruto,
+      dados.valor_liquido,
+      dados.taxa_valor,
+      dados.taxa_percentual,
+      dados.parcelas,
+      dados.metodo_pagamento,
+      dados.bandeira_cartao,
       id,
     ]
   );
+  return result;
 };
+
 
 /**
  * Atualiza inscrição pendente
@@ -144,7 +150,9 @@ const atualizarInscricaoPendente = async (id, dados) => {
      SET nome = ?, apelido = ?, data_nascimento = ?, email = ?, telefone = ?, 
          responsavel_nome = ?, responsavel_documento = ?, responsavel_contato = ?, 
          responsavel_parentesco = ?, tamanho_camiseta = ?, alergias_restricoes = ?, 
-         categoria = ?, graduacao = ?, aceite_lgpd = ?, atualizado_em = NOW()
+         categoria = ?, graduacao = ?, aceite_lgpd = ?, 
+         status = ?, pagamento_id = ?, metodo_pagamento = ?, 
+         bandeira_cartao = ?, parcelas = ?, atualizado_em = NOW()
      WHERE id = ? AND status = 'pendente'`,
     [
       dados.nome,
@@ -160,12 +168,16 @@ const atualizarInscricaoPendente = async (id, dados) => {
       dados.alergias_restricoes || null,
       dados.categoria || null,
       dados.graduacao || null,
-      dados.aceite_lgpd,
+      dados.aceite_lgpd ?? 0,
+      dados.status || "pendente",          // 🔥 agora atualiza status também
+      dados.pagamento_id || null,          // 🔥 salva id do pagamento
+      dados.metodo_pagamento || "cartao",  // 🔥 salva forma
+      dados.bandeira_cartao || null,       // 🔥 salva bandeira se já tiver
+      dados.parcelas || null,              // 🔥 salva parcelas se já tiver
       id,
     ]
   );
 };
-
 
 /**
  * Busca inscrição com detalhes do evento
@@ -186,6 +198,22 @@ const buscarInscricaoComEvento = async (id) => {
       i.categoria,
       i.graduacao,
       i.evento_id,
+
+      -- 🔥 CAMPOS DE PAGAMENTO
+      i.pagamento_id,
+      i.metodo_pagamento,
+      i.bandeira_cartao,
+      i.parcelas,
+      i.valor_bruto,
+      i.valor_liquido,
+      i.taxa_valor,
+      i.taxa_percentual,
+      i.ticket_url,
+      i.qr_code,
+      i.qr_code_base64,
+      i.date_of_expiration,
+
+      -- EVENTO
       a.titulo,
       a.descricao_curta,
       a.descricao_completa,
@@ -196,13 +224,15 @@ const buscarInscricaoComEvento = async (id) => {
       a.telefone_contato,
       a.valor,
       a.possui_camiseta
+
     FROM inscricoes_evento i
-    JOIN agenda a ON i.evento_id = a.id
+    LEFT JOIN agenda a ON i.evento_id = a.id
     WHERE i.id = ?`,
     [id]
   );
   return rows[0];
 };
+
 
 const verificarInscricaoPaga = async (cpf, eventoId) => {
   const [rows] = await db.execute(

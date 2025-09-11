@@ -245,6 +245,39 @@ export default function FormInscricaoPublic({
         Autorizo o uso de minha imagem em fotos e vídeos do evento
       </label>
 
+      {/* Escolha de forma de pagamento */}
+      <div className="border-t pt-3 space-y-2">
+        <p className="text-sm font-semibold text-gray-700">
+          Forma de pagamento
+        </p>
+        <label className="flex items-center gap-2 text-black text-sm">
+          <input
+            type="radio"
+            name="metodo_pagamento"
+            value="pix"
+            checked={form.metodo_pagamento === "pix"}
+            onChange={(e) =>
+              setForm({ ...form, metodo_pagamento: e.target.value })
+            }
+            required
+          />
+          <span>Pix — R$ {evento?.valor}</span>
+        </label>
+        <label className="flex items-center gap-2 text-black text-sm">
+          <input
+            type="radio"
+            name="metodo_pagamento"
+            value="cartao"
+            checked={form.metodo_pagamento === "cartao"}
+            onChange={(e) =>
+              setForm({ ...form, metodo_pagamento: e.target.value })
+            }
+            required
+          />
+          <span>Cartão — R$ {evento?.valor} + taxas de processamento</span>
+        </label>
+      </div>
+
       {/* Botão */}
       <button
         type="submit"

@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger');
 const service = require('./presencasService');
 
 /**
@@ -18,7 +19,7 @@ exports.listarPorTurmaEData = async (req, res) => {
 
     res.json(result);
   } catch (e) {
-    console.error(e);
+    logger.error(e);
     return res.status(e.status || 500).json({
       erro: e.message || 'Falha ao listar presenças',
     });
@@ -47,7 +48,7 @@ exports.salvarBatch = async (req, res) => {
     // antes: { ok: true, mensagem: 'Presenças salvas' }
     return res.status(201).json(result); // agora devolve { ok, upsert }
   } catch (e) {
-    console.error(e);
+    logger.error(e);
     return res.status(e.status || 500).json({
       erro: e.message || 'Falha ao salvar presenças',
     });
@@ -78,7 +79,7 @@ exports.atualizarUma = async (req, res) => {
 
     return res.json({ ok: true });
   } catch (e) {
-    console.error(e);
+    logger.error(e);
     return res.status(e.status || 500).json({
       erro: e.message || 'Falha ao atualizar presença',
     });
@@ -104,7 +105,7 @@ exports.relatorioPorPeriodo = async (req, res) => {
 
     return res.json(result);
   } catch (e) {
-    console.error(e);
+    logger.error(e);
     return res.status(e.status || 500).json({
       erro: e.message || 'Falha ao gerar relatório',
     });

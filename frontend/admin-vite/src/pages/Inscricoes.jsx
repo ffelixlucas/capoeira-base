@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { listarEventos } from "../services/agendaService";
+import { logger } from "../utils/logger";
 
 function Inscricoes() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ function Inscricoes() {
       // Apenas com inscrição obrigatória
       setEventos((dados || []).filter((e) => e.com_inscricao));
     } catch (err) {
-      console.error("Erro ao carregar eventos:", err);
+      logger.error("Erro ao carregar eventos:", err);
     } finally {
       setCarregando(false);
     }

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { buscarStatusInscricao } from "../../services/public/inscricaoPublicService";
+import { logger } from "../../utils/logger";
 
 export const useMonitorarPagamento = (inscricaoId, onSucesso, onErro) => {
   useEffect(() => {
@@ -19,7 +20,11 @@ export const useMonitorarPagamento = (inscricaoId, onSucesso, onErro) => {
           if (onErro) onErro(data);
         }
       } catch (err) {
-        console.error("Erro ao verificar status da inscrição:", err);
+        if (err.response?.status === 404) {
+          // inscrição ainda não encontrada → ignora silenciosamente
+          return;
+        }
+        logger.error("Erro ao verificar status da inscrição:", err);
       }
     }, 5000);
 

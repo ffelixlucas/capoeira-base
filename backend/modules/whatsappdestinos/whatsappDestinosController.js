@@ -1,3 +1,4 @@
+const logger = require("../../utils/logger");
 const service = require("./whatsappDestinosService");
 
 async function listar(req, res) {
@@ -5,7 +6,7 @@ async function listar(req, res) {
     const dados = await service.getDestinosFormatados();
     res.json(dados);
   } catch (err) {
-    console.error("Erro ao listar destinos:", err);
+    logger.error("Erro ao listar destinos:", err);
     res.status(500).json({ erro: "Erro interno" });
   }
 }
@@ -19,7 +20,7 @@ async function atualizar(req, res) {
   }
 
   try {
-    console.log("🔄 Atualizando destino:", {
+    logger.log("🔄 Atualizando destino:", {
       horarioId,
       membro_id,
       membro_backup_id,
@@ -28,7 +29,7 @@ async function atualizar(req, res) {
     await service.atualizarDestino(horarioId, membro_id, membro_backup_id);
     res.json({ sucesso: true });
   } catch (err) {
-    console.error("Erro ao atualizar destino:", err);
+    logger.error("Erro ao atualizar destino:", err);
     res.status(500).json({ erro: "Erro interno" });
   }
 }

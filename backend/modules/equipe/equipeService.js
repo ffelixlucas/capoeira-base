@@ -30,9 +30,39 @@ async function removerEquipe(id) {
   return await equipeRepository.deleteEquipe(id);
 }
 
+async function alterarSenha(id, senhaAtual, novaSenha) {
+  // Buscar o usuário pelo ID
+  const membro = await equipeRepository.buscarPorId(id);
+  if (!membro) {
+    return { sucesso: false, message: "Usuário não encontrado" };
+  }
+
+  // Validar senha atual
+  const senhaValida = await bcrypt.compare(senhaAtual, membro.senha_hash);
+  if (!senhaValida) {
+    return { sucesso: false, message: "Senha atual incorreta" };
+  }
+
+  // Gerar hash da nova senha
+  const novaHash = await bcrypt.hash(novaSenha, 10);
+
+  // Atualizar no banco
+  await equipeRepository.updateEquipe(id, { senha_hash: novaHash });
+
+  return { sucesso: true };
+}
+
+async function buscarPorId(id) {
+  return await equipeRepository.buscarPorId(id);
+}
+
+
+
 module.exports = {
   listarEquipe,
   criarEquipe,
   atualizarEquipe,
   removerEquipe,
+  alterarSenha,
+  buscarPorId,
 };

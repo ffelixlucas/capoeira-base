@@ -7,6 +7,7 @@ import {
   removerTodosOsPapeis,
 } from "../../services/equipeService";
 import { toast } from "react-toastify";
+import logger from "../../utils/logger";
 
 function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
   const [form, setForm] = useState({
@@ -111,7 +112,7 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
       if (form.role_ids && form.role_ids.length > 0) {
         if (editando) {
           await removerTodosOsPapeis(membroId).catch((err) => {
-            console.warn(
+            logger.warn(
               "⚠️ Ignorando erro ao remover papéis (edição):",
               err.message
             );
@@ -120,7 +121,7 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
   
         for (let roleId of form.role_ids) {
           await atribuirPapel(membroId, roleId).catch((err) => {
-            console.error("❌ Erro ao atribuir papel:", err.message);
+            logger.error("❌ Erro ao atribuir papel:", err.message);
           });
         }
       }
@@ -128,7 +129,7 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
       toast.success("Membro salvo com sucesso!");
       if (onSave) onSave();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast.error("Erro ao salvar membro");
     } finally {
       setLoading(false);
@@ -136,8 +137,8 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
   };
   
 
-  console.log("roles:", roles);
-  console.log("form.role_ids:", form.role_ids);
+  logger.log("roles:", roles);
+  logger.log("form.role_ids:", form.role_ids);
 
   return (
     <div

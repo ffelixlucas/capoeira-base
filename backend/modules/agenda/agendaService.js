@@ -1,6 +1,7 @@
 const bucket = require("../../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 const agendaRepository = require("./agendaRepository");
+const logger = require("../../utils/logger");
 
 const normalizarConfig = (conf) => {
   if (!conf) return {};
@@ -103,9 +104,9 @@ const excluirEvento = async (id) => {
 
     try {
       await bucket.file(caminho).delete();
-      console.log("🗑️ Imagem do evento excluída do Firebase:", caminho);
+      logger.log("🗑️ Imagem do evento excluída do Firebase:", caminho);
     } catch (error) {
-      console.warn("⚠️ Erro ao excluir imagem do evento:", error.message);
+      logger.warn("⚠️ Erro ao excluir imagem do evento:", error.message);
     }
   }
 
@@ -149,9 +150,9 @@ async function arquivarEvento(id) {
         new URL(evento.imagem_url).pathname.replace(/^\/[^/]+\//, "")
       );
       await bucket.file(caminho).delete();
-      console.log("🗑️ Imagem do evento excluída:", caminho);
+      logger.log("🗑️ Imagem do evento excluída:", caminho);
     } catch (error) {
-      console.warn("⚠️ Erro ao excluir imagem:", error.message);
+      logger.warn("⚠️ Erro ao excluir imagem:", error.message);
     }
   }
 

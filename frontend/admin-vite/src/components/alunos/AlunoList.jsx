@@ -3,6 +3,7 @@ import ListagemItem from "../ui/ListagemItem";
 import ModalAluno from "./ModalAluno";
 import ContadorLista from "../ui/ContadorLista";
 import api from "../../services/api"; // certifique-se que existe seu axios config
+import { logger } from "../../utils/logger";
 
 export default function AlunoList({
   alunos,
@@ -31,7 +32,7 @@ export default function AlunoList({
           });
           novasMetricas[aluno.id] = data;
         } catch (err) {
-          console.error("Erro ao buscar métricas do aluno", aluno.id, err);
+          logger.error("Erro ao buscar métricas do aluno", aluno.id, err);
         }
       }
       setMetricas(novasMetricas);

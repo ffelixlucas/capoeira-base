@@ -5,6 +5,7 @@ import useHorarios from "../hooks/useHorarios";
 import HorarioList from "../components/horarios/HorarioList";
 import HorarioForm from "../components/horarios/HorarioForm";
 import { toast } from "react-toastify";
+import { logger } from "../utils/logger";
 
 function Horarios() {
   const {
@@ -28,7 +29,7 @@ function Horarios() {
     })
       .then((res) => res.json())
       .then((data) => setEquipe(data))
-      .catch((err) => console.error("Erro ao buscar equipe:", err));
+      .catch((err) => logger.error("Erro ao buscar equipe:", err));
   }, [token]);
 
   // 🔥 Ordena os horários pela ordem
@@ -115,7 +116,7 @@ function Horarios() {
       await atualizarVariosHorarios(listaComOrdem);
       toast.success("Ordem atualizada com sucesso");
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast.error("Erro ao atualizar ordem");
     }
   };

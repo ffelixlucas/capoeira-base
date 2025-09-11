@@ -1,4 +1,5 @@
 const db = require('../../../database/connection');
+const logger = require('../../../utils/logger');
 
 // Buscar todos os papéis de um membro específico
 async function buscarRolesPorMembro(equipeId) {
@@ -27,7 +28,7 @@ async function removerRoleDeMembro(equipeId, roleId) {
 // Remover todos os papéis de um membro
 async function removerTodosOsRoles(equipeId) {
   if (!equipeId || typeof equipeId !== "number") {
-    console.warn("🚫 ID inválido em removerTodosOsRoles:", equipeId);
+    logger.warn("🚫 ID inválido em removerTodosOsRoles:", equipeId);
     return;
   }
 

@@ -1,8 +1,12 @@
 require("dotenv").config();
 const db = require("../../database/connection");
+const logger = require("../../utils/logger");
 
 (async () => {
   try {
+
+    console.log("🚀 Cron limpeza inscrições pendentes iniciado...");
+
     // Buscar IDs das inscrições que serão deletadas
     const [rows] = await db.execute(
       `SELECT id, nome, email, cpf 
@@ -17,9 +21,9 @@ const db = require("../../database/connection");
     }
 
     // Mostrar quais serão deletadas
-    console.log(`🔎 Encontradas ${rows.length} inscrições expiradas:`);
+    logger.log(`🔎 Encontradas ${rows.length} inscrições expiradas:`);
     rows.forEach((r) => {
-      console.log(` - ID: ${r.id} | Nome: ${r.nome} | CPF: ${r.cpf} | Email: ${r.email}`);
+      logger.log(` - ID: ${r.id} | Nome: ${r.nome} | CPF: ${r.cpf} | Email: ${r.email}`);
     });
 
     // Deletar as inscrições
@@ -29,7 +33,7 @@ const db = require("../../database/connection");
        AND date_of_expiration < NOW()`
     );
 
-    console.log(`🗑️ ${result.affectedRows} inscrições pendentes expiradas foram deletadas.`);
+    console.log(`🗑️ ${result.affectedRows} inscrições expiradas foram removidas.`);
     process.exit(0);
   } catch (error) {
     console.error("❌ Erro ao limpar inscrições pendentes:", error);

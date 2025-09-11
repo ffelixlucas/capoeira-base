@@ -24,6 +24,7 @@ import ModalLembretes from "../components/lembretes/ModalLembretes";
 import logo from "../assets/images/logo.png";
 import { listarAlunos } from "../services/alunoService";
 import { getMinhasTurmas } from "../services/turmaService";
+import { logger } from "../utils/logger";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ export default function Dashboard() {
         setMinhasTurmas(arr);
         setTemTurmaResponsavel(arr.length > 0);
       } catch (e) {
-        console.error("Erro ao buscar minhas turmas:", e);
+        logger.error("Erro ao buscar minhas turmas:", e);
         setMinhasTurmas([]);
         setTemTurmaResponsavel(false);
       }
@@ -61,7 +62,7 @@ export default function Dashboard() {
         const alunos = await listarAlunos();
         setQtdAlunos(alunos.length);
       } catch (error) {
-        console.error("Erro ao buscar alunos:", error);
+        logger.error("Erro ao buscar alunos:", error);
       }
     };
 
@@ -89,7 +90,7 @@ export default function Dashboard() {
         setQtdEventos(Array.isArray(eventos) ? eventos.length : 0);
         setEventosResumo(Array.isArray(eventos) ? eventos : []);
       } catch (error) {
-        console.error("Erro ao buscar eventos:", error);
+        logger.error("Erro ao buscar eventos:", error);
       }
     };
 
@@ -103,7 +104,7 @@ export default function Dashboard() {
       const lista = await listarLembretes("pendente");
       setLembretes(lista);
     } catch (err) {
-      console.error("Erro ao buscar lembretes:", err);
+      logger.error("Erro ao buscar lembretes:", err);
     }
   }
 
@@ -119,7 +120,7 @@ export default function Dashboard() {
         const imagens = await listarImagens();
         setQtdFotos(imagens.length);
       } catch (error) {
-        console.error("Erro ao buscar fotos:", error);
+        logger.error("Erro ao buscar fotos:", error);
       }
     };
 
@@ -145,6 +146,12 @@ export default function Dashboard() {
           <p className="text-sm text-cor-texto/80 mt-1">
             Bem-vindo ao painel de administração
           </p>
+          <button
+            onClick={() => navigate("/perfil")}
+            className="mt-3 text-sm text-cor-primaria hover:underline"
+          >
+            Editar meu perfil
+          </button>
         </div>
 
         {/* Ação Rápida: Chamada (outline, diferente dos cards) */}
