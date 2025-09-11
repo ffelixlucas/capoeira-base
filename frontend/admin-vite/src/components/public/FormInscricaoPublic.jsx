@@ -1,5 +1,6 @@
 // components/public/FormInscricaoPublic.jsx
 import InputBase from "../../components/ui/InputBase";
+import { calcularValorComTaxa } from "../../utils/calcularValor";
 
 export default function FormInscricaoPublic({
   form,
@@ -12,6 +13,9 @@ export default function FormInscricaoPublic({
   formatarCPF,
   evento,
 }) {
+  
+  const valorComTaxa = calcularValorComTaxa(evento?.valor || 0, "cartao");
+
   function handleChange(e) {
     const { name, type, value, checked } = e.target;
     setForm((prev) => ({
@@ -274,7 +278,8 @@ export default function FormInscricaoPublic({
             }
             required
           />
-          <span>Cartão — R$ {evento?.valor} + taxas de processamento</span>
+           <span>Cartão — R$ {valorComTaxa.toFixed(2)} + taxas de parcelamento</span>
+
         </label>
       </div>
 

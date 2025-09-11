@@ -2,6 +2,7 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import CartaoPagamento from "./CartaoPagamento";
+import { calcularValorComTaxa } from "../../../utils/calcularValor";
 
 export default function ModalPagamentoCartao({
   isOpen,
@@ -12,6 +13,8 @@ export default function ModalPagamentoCartao({
   setModalPagamento,
   setModalConfirmacao,
 }) {
+  const valorComTaxa = calcularValorComTaxa(evento?.valor || 0, "cartao");
+
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -33,7 +36,7 @@ export default function ModalPagamentoCartao({
               {/* header */}
               <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b">
                 <Dialog.Title className="text-base sm:text-lg font-bold text-black text-center">
-                  Pagamento com Cartão
+                  Pagar com Cartão – R${valorComTaxa.toFixed(2)}
                 </Dialog.Title>
               </div>
 
@@ -45,9 +48,8 @@ export default function ModalPagamentoCartao({
                   setDadosPagamento={setDadosPagamento}
                   onSucesso={(dados) => {
                     setDadosPagamento(dados);
-                    setModalPagamento(false); 
+                    setModalPagamento(false);
                     setModalConfirmacao(true);
-                    
                   }}
                 />
               </div>
