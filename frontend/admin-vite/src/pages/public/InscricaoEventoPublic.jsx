@@ -11,6 +11,7 @@ import PoliticaLGPD from "../../docs/politicaLGPD.jsx";
 import { logger } from "../../utils/logger.js";
 import ModalPagamentoCartao from "../../components/public/pagamento/ModalPagamentoCartao.jsx";
 import ModalConfirmacaoPagamento from "../../components/public/ModalConfirmacaoPagamento.jsx";
+import AgendaItem from "../../components/agenda/Item.jsx";
 
 import api from "../../services/api";
 import { toast } from "react-toastify";
@@ -251,8 +252,13 @@ export default function InscricaoEventoPublic() {
   }
 
   return (
-    <div className="w-full text-white">
-      <EventoInfo evento={evento} />
+    <div className="w-full flex flex-col items-center text-white">
+      <div className="w-full px-4 mb-6">
+        <div className="max-w-[350px] w-full mx-auto">
+          <AgendaItem evento={evento} mostrarBotoes={false} />
+        </div>
+      </div>
+
       <FormInscricaoPublic
         form={form}
         setForm={setForm}
@@ -264,6 +270,7 @@ export default function InscricaoEventoPublic() {
         formatarCPF={formatarCPF}
         evento={evento}
       />
+
       {/* Modal LGPD */}
       <Transition appear show={modalLGPD} as={Fragment}>
         <Dialog
@@ -341,8 +348,7 @@ export default function InscricaoEventoPublic() {
         form={form}
         setDadosPagamento={setDadosPagamento}
         setModalPagamento={setModalPagamento}
-        setModalConfirmacao={setModalConfirmacao}   
-
+        setModalConfirmacao={setModalConfirmacao}
       />
       <ModalConfirmacaoPagamento
         isOpen={modalConfirmacao}
