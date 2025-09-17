@@ -84,6 +84,9 @@ async function metricasAluno(id, inicio, fim) {
     taxa_presenca: +taxa_presenca.toFixed(2), // arredonda pra 2 casas
   };
 }
+async function contarPendentes() {
+  return await alunoRepo.contarPendentes();
+}
 module.exports = {
   listarTodos,
   buscarPorId,
@@ -92,4 +95,5 @@ module.exports = {
   deletarAluno,
   trocarTurma,
   metricasAluno,
+  contarPendentes
 };

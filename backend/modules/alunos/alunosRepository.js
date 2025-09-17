@@ -205,6 +205,15 @@ async function metricasAluno(alunoId, inicio, fim) {
   };
 }
 
+// Conta quantos alunos estão pendentes
+async function contarPendentes() {
+  const [rows] = await connection.execute(
+    "SELECT COUNT(*) AS total FROM alunos WHERE status = 'pendente'"
+  );
+  return Number(rows[0]?.total || 0);
+}
+
+
 module.exports = {
   listarAlunosComTurmaAtual,
   listarAlunosPorInstrutor,
@@ -217,4 +226,5 @@ module.exports = {
   listarAlunosPorTurmas,
   migrarAlunosDeTurma,
   metricasAluno,
+  contarPendentes
 } 

@@ -9,6 +9,7 @@ const checkRole = require("../../middlewares/checkRole");
 router.use(verifyToken);
 
 router.get("/", checkRole(["admin", "instrutor"]), controller.listar);
+router.get("/pendentes/count",checkRole(["admin"]), controller.contarPendentes);
 router.get("/:id", checkRole(["admin", "instrutor"]), controller.buscar);
 router.get("/:id/metricas", checkRole(["admin", "instrutor"]), controller.metricasAluno);
 router.post("/", checkRole(["admin", "instrutor"]), controller.cadastrar);

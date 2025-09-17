@@ -1,4 +1,3 @@
-
 # 🧾 README – Módulo Alunos
 
 ## 🎯 Objetivo
@@ -59,36 +58,51 @@ Gerenciar os alunos de forma segura e flexível, permitindo:
   "turma_id": 2,
   "criado_por": 1
 }
-```
+````
 
 ### ✏️ Editar aluno
+
 `PUT /api/alunos/:id`
 
 ### 🗑️ Excluir aluno
+
 `DELETE /api/alunos/:id` *(apenas admin)*
 
 ### 🔁 Trocar aluno de turma
+
 `PUT /api/alunos/:id/trocar-turma`
+
 ```json
 { "nova_turma_id": 3 }
+```
+
+### 🔔 Contar alunos pendentes
+
+`GET /api/alunos/pendentes/count` *(apenas admin)*
+
+* Retorna a quantidade de alunos aguardando aprovação.
+* Exemplo de resposta:
+
+```json
+{ "count": 3 }
 ```
 
 ---
 
 ## 🧩 Funcionamento da Matrícula
 
-- A troca de turma encerra a matrícula anterior (`data_fim = hoje`)
-- O sistema cria uma nova matrícula (`data_inicio = hoje`)
-- A consulta sempre busca a matrícula com `data_fim IS NULL`
+* A troca de turma encerra a matrícula anterior (`data_fim = hoje`)
+* O sistema cria uma nova matrícula (`data_inicio = hoje`)
+* A consulta sempre busca a matrícula com `data_fim IS NULL`
 
 ---
 
 ## 🚦 Validações obrigatórias
 
-- `nome` é obrigatório
-- `turma_id` deve existir
-- Não permite cadastro sem matrícula
-- Apenas admin pode excluir alunos
+* `nome` é obrigatório
+* `turma_id` deve existir
+* Não permite cadastro sem matrícula
+* Apenas admin pode excluir alunos
 
 ---
 
@@ -107,11 +121,12 @@ Gerenciar os alunos de forma segura e flexível, permitindo:
 
 ### 🗒️ Notas Internas
 
-- Cada instrutor pode adicionar observações pessoais por aluno.
-- Admin pode ver todas.
-- Visível no `ModalAluno` do painel admin.
+* Cada instrutor pode adicionar observações pessoais por aluno.
+* Admin pode ver todas.
+* Visível no `ModalAluno` do painel admin.
 
 ## ✅ Status: FUNCIONAL
-- Estrutura profissional e modular
-- Segurança aplicada (JWT + RBAC)
-- Pronto para integração com frequência e observações
+
+* Estrutura profissional e modular
+* Segurança aplicada (JWT + RBAC)
+* Pronto para integração com frequência, observações e aprovação de matrículas

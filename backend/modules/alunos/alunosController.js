@@ -90,6 +90,17 @@ async function metricasAluno(req, res) {
     res.status(400).json({ erro: err.message });
   }
 }
+
+async function contarPendentes(req, res) {
+  try {
+    const total = await alunoService.contarPendentes();
+    res.json({ count: total });
+  } catch (err) {
+    logger.error("Erro ao contar alunos pendentes:", err);
+    res.status(500).json({ erro: "Erro ao contar alunos pendentes." });
+  }
+}
+
 module.exports = {
   listar,
   buscar,
@@ -97,5 +108,6 @@ module.exports = {
   editar,
   excluir,
   trocarTurma,
-  metricasAluno
+  metricasAluno,
+  contarPendentes,
 };
