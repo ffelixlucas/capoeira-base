@@ -28,7 +28,7 @@ export default function AlunoList({
       for (const aluno of alunos) {
         try {
           const { data } = await api.get(`/alunos/${aluno.id}/metricas`, {
-            params: { inicio, fim }
+            params: { inicio, fim },
           });
           novasMetricas[aluno.id] = data;
         } catch (err) {
@@ -60,6 +60,7 @@ export default function AlunoList({
               ? `${Math.round(dados.taxa_presenca * 100)}%`
               : "-";
 
+            // trecho dentro do map de alunos em AlunoList.jsx
             return (
               <ListagemItem
                 key={aluno.id}
@@ -68,10 +69,28 @@ export default function AlunoList({
                     <span className="font-bold text-base text-gray-800">
                       {aluno.apelido}
                     </span>
-                    <span className="text-sm text-gray-500"> - {aluno.nome}</span>
+                    <span className="text-sm text-gray-500">
+                      {" "}
+                      - {aluno.nome}
+                    </span>
                   </>
                 }
-                subtitulo={`Frequência: ${frequencia}`}
+                subtitulo={
+                  <>
+                    <span className="block">Frequência: {frequencia}</span>
+                    {aluno.status === "pendente" && (
+                      <span className="text-yellow-600 font-medium">
+                        Aguardando aprovação
+                      </span>
+                    )}
+                    {aluno.status === "ativo" && (
+                      <span className="text-green-600 font-medium">Ativo</span>
+                    )}
+                    {aluno.status === "inativo" && (
+                      <span className="text-red-600 font-medium">Inativo</span>
+                    )}
+                  </>
+                }
                 onVerMais={() => onVerMais(aluno)}
               />
             );
