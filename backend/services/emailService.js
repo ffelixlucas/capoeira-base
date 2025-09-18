@@ -181,7 +181,32 @@ async function enviarEmailReset({ email, link }) {
   }
 }
 
-module.exports = { enviarEmailConfirmacao, enviarEmailExtorno, enviarEmailReset };
+async function enviarEmailCustom({ to, subject, html }) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "Capoeira Nota10 <contato@capoeiranota10.com.br>",
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      logger.error("❌ Falha no envio (Resend):", error);
+    } else {
+      logger.log("✅ E-mail custom enviado via Resend:", data);
+    }
+  } catch (err) {
+    logger.error("❌ Erro inesperado no envio de e-mail custom:", err.message);
+  }
+}
+
+module.exports = { 
+  enviarEmailConfirmacao, 
+  enviarEmailExtorno, 
+  enviarEmailReset,
+  enviarEmailCustom // <-- nova exportação
+};
+
 
 
 

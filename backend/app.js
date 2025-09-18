@@ -22,6 +22,9 @@ const inscricoesRoutes = require('./modules/inscricoes/inscricoesRoutes');
 
 // Rotas públicas
 app.use('/api/teste', (_, res) => res.json({ mensagem: 'API no ar!' }));
+const matriculaRoutes = require("./modules/public/matricula/matriculaRoutes");
+app.use("/api/public", matriculaRoutes);
+
 
 // Autenticação
 app.use('/api/auth', authRoutes);

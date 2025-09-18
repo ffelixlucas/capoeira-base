@@ -10,24 +10,37 @@ function mascararTelefone(tel) {
   return digits.replace(/.(?=.{4})/g, "*"); // ******4302
 }
 
+function log(...args) {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(...args);
+  }
+}
+
+function info(...args) {
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[INFO]", ...args);
+  }
+}
+
+function error(msg, error) {
+  if (process.env.NODE_ENV !== "production") {
+    console.error("[ERROR]", msg, error);
+  } else {
+    console.error(msg, error?.message || error);
+  }
+}
+
+function warn(...args) {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn("[WARN]", ...args);
+  }
+}
+
 module.exports = {
-  log: (...args) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(...args);
-    }
-  },
-  error: (msg, error) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.error(msg, error);
-    } else {
-      console.error(msg, error?.message || error);
-    }
-  },
-  warn: (...args) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(...args);
-    }
-  },
+  log,
+  info,
+  error,
+  warn,
   mascararCpf,
   mascararTelefone,
 };
