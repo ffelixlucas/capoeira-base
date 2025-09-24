@@ -5,15 +5,16 @@ const connection = require("../../database/connection");
 async function listarAlunosComTurmaAtual() {
   const [rows] = await connection.execute(`
     SELECT 
-      a.id,
-      a.nome,
-      a.apelido,
-      t.nome AS turma,
-      t.id AS turma_id
-    FROM alunos a
-    LEFT JOIN matriculas m ON m.aluno_id = a.id AND m.data_fim IS NULL
-    LEFT JOIN turmas t ON t.id = m.turma_id
-    ORDER BY a.nome
+  a.id,
+  a.nome,
+  a.apelido,
+  t.nome AS turma,
+  t.id AS turma_id
+FROM alunos a
+LEFT JOIN matriculas m ON m.aluno_id = a.id AND m.data_fim IS NULL
+LEFT JOIN turmas t ON t.id = m.turma_id
+WHERE a.status = 'ativo'
+ORDER BY a.nome
   `);
   return rows;
 }
@@ -51,7 +52,6 @@ async function buscarPorId(id) {
   );
   return rows[0];
 }
-
 
 // Cria novo aluno
 async function criarAluno(dados) {
@@ -201,7 +201,7 @@ async function metricasAluno(alunoId, inicio, fim) {
   return {
     presentes: Number(rows[0]?.presentes || 0),
     faltas: Number(rows[0]?.faltas || 0),
-    total: Number(rows[0]?.total || 0)
+    total: Number(rows[0]?.total || 0),
   };
 }
 
@@ -234,9 +234,6 @@ async function atualizarStatus(id, status) {
   );
 }
 
-
-
-
 module.exports = {
   listarAlunosComTurmaAtual,
   listarAlunosPorInstrutor,
@@ -252,4 +249,4 @@ module.exports = {
   contarPendentes,
   listarPendentes,
   atualizarStatus,
-}; 
+};
