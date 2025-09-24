@@ -1,3 +1,4 @@
+
 # 🧾 README – Módulo Alunos
 
 ## 🎯 Objetivo
@@ -9,6 +10,7 @@ Gerenciar os alunos de forma segura e flexível, permitindo:
 - Controle de presença (frequência)
 - Anotações internas por instrutores
 - Permissões diferentes para admin e instrutor
+- Aprovação e rejeição de matrículas públicas
 
 ---
 
@@ -79,21 +81,52 @@ Gerenciar os alunos de forma segura e flexível, permitindo:
 ### 🔔 Contar alunos pendentes
 
 `GET /api/alunos/pendentes/count` *(apenas admin)*
-
-* Retorna a quantidade de alunos aguardando aprovação.
-* Exemplo de resposta:
+Retorna a quantidade de alunos aguardando aprovação.
 
 ```json
 { "count": 3 }
+```
+
+### 📋 Listar alunos pendentes
+
+`GET /api/alunos/pendentes` *(apenas admin)*
+Retorna lista detalhada de alunos em `status = pendente`.
+
+```json
+[
+  {
+    "id": 19,
+    "nome": "Aluno Infantil",
+    "apelido": null,
+    "telefone_responsavel": "41999999999",
+    "email": "infantil@example.com",
+    "status": "pendente"
+  }
+]
+```
+
+### ✅ Aprovar / ❌ Rejeitar matrícula
+
+`PATCH /api/alunos/:id/status` *(apenas admin)*
+
+* Aprovar matrícula → `{ "status": "ativo" }`
+* Rejeitar matrícula → `{ "status": "inativo" }` (⚠️ no fluxo atual, isso **exclui o aluno** do banco)
+
+Resposta:
+
+```json
+{ "sucesso": true }
 ```
 
 ---
 
 ## 🧩 Funcionamento da Matrícula
 
-* A troca de turma encerra a matrícula anterior (`data_fim = hoje`)
-* O sistema cria uma nova matrícula (`data_inicio = hoje`)
-* A consulta sempre busca a matrícula com `data_fim IS NULL`
+* Matrículas públicas entram como `pendente`.
+* Admin aprova → aluno vira `ativo` e permanece vinculado à sua turma.
+* Admin rejeita → aluno é excluído do banco.
+* Troca de turma encerra a matrícula anterior (`data_fim = hoje`) e cria nova (`data_inicio = hoje`).
+* Consultas sempre usam a matrícula ativa (`data_fim IS NULL`).
 
 ---
 
@@ -103,6 +136,7 @@ Gerenciar os alunos de forma segura e flexível, permitindo:
 * `turma_id` deve existir
 * Não permite cadastro sem matrícula
 * Apenas admin pode excluir alunos
+* Apenas admin pode aprovar/rejeitar pendentes
 
 ---
 
@@ -125,8 +159,12 @@ Gerenciar os alunos de forma segura e flexível, permitindo:
 * Admin pode ver todas.
 * Visível no `ModalAluno` do painel admin.
 
+---
+
 ## ✅ Status: FUNCIONAL
 
 * Estrutura profissional e modular
 * Segurança aplicada (JWT + RBAC)
-* Pronto para integração com frequência, observações e aprovação de matrículas
+* Fluxo de aprovação de matrículas públicas validado
+* Pronto para integração com frequência, observações e gestão de turmas
+
