@@ -87,6 +87,23 @@ async function metricasAluno(id, inicio, fim) {
 async function contarPendentes() {
   return await alunoRepo.contarPendentes();
 }
+
+async function listarPendentes() {
+  return await alunoRepo.listarPendentes();
+}
+
+async function atualizarStatus(id, status) {
+  const aluno = await alunoRepo.buscarPorId(id);
+  if (!aluno) throw new Error("Aluno não encontrado");
+
+  if (status === "inativo") {
+    // 👉 ao invés de setar "inativo", vamos excluir
+    await alunoRepo.excluirAluno(id);
+  } else {
+    await alunoRepo.atualizarStatus(id, status);
+  }
+}
+
 module.exports = {
   listarTodos,
   buscarPorId,
@@ -95,5 +112,7 @@ module.exports = {
   deletarAluno,
   trocarTurma,
   metricasAluno,
-  contarPendentes
+  contarPendentes,
+  listarPendentes,
+  atualizarStatus,
 };

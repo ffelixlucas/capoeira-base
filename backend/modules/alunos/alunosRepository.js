@@ -213,6 +213,29 @@ async function contarPendentes() {
   return Number(rows[0]?.total || 0);
 }
 
+// Lista todos os alunos pendentes
+async function listarPendentes() {
+  const [rows] = await connection.execute(
+    `SELECT id, nome, apelido, telefone_responsavel, email, status
+     FROM alunos
+     WHERE status = 'pendente'
+     ORDER BY criado_em ASC`
+  );
+  return rows;
+}
+
+// Atualiza status do aluno (ativo, inativo, pendente)
+async function atualizarStatus(id, status) {
+  await connection.execute(
+    `UPDATE alunos 
+     SET status = ?, atualizado_em = NOW() 
+     WHERE id = ?`,
+    [status, id]
+  );
+}
+
+
+
 
 module.exports = {
   listarAlunosComTurmaAtual,
@@ -226,5 +249,7 @@ module.exports = {
   listarAlunosPorTurmas,
   migrarAlunosDeTurma,
   metricasAluno,
-  contarPendentes
-} 
+  contarPendentes,
+  listarPendentes,
+  atualizarStatus,
+}; 

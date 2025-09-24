@@ -13,7 +13,7 @@ async function buscarPorCpf(cpf) {
 }
 
 /**
- * Busca turma pelo nome (Infantil, Juvenil, Adulto)
+ * Busca turma pelo nome (Infantil, Juvenil, Adulto, etc.)
  */
 async function buscarTurmaPorNome(nome) {
   const [rows] = await db.execute("SELECT id FROM turmas WHERE nome = ?", [nome]);
@@ -21,7 +21,7 @@ async function buscarTurmaPorNome(nome) {
 }
 
 /**
- * Cria um novo aluno na tabela `alunos`
+ * Cria um novo aluno na tabela `alunos` + matrícula inicial
  */
 async function criar(dados) {
   const sql = `
@@ -54,18 +54,33 @@ async function criar(dados) {
   ];
 
   const [result] = await db.execute(sql, params);
-  return { id: result.insertId, ...dados, status: "pendente" };
+  const alunoId = result.insertId;
+
+  // ✅ Criar matrícula inicial vinculada à turma
+  if (dados.turma_id) {
+    await db.execute(
+      `INSERT INTO matriculas (aluno_id, turma_id, data_inicio) VALUES (?, ?, CURDATE())`,
+      [alunoId, dados.turma_id]
+    );
+  }
+
+  return { id: alunoId, ...dados, status: "pendente" };
 }
 
+/**
+ * Busca turma compatível com a idade informada,
+ * ignorando a turma "Sem turma" (usada apenas para realocação interna).
+ */
 async function buscarTurmaPorIdade(idade) {
-    const [rows] = await db.execute(
-      `SELECT id FROM turmas 
-       WHERE (idade_min IS NULL OR idade_min <= ?) 
-         AND (idade_max IS NULL OR idade_max >= ?)
-       LIMIT 1`,
-      [idade, idade]
-    );
-    return rows.length > 0 ? rows[0].id : null;
-  }
-  
-  module.exports = { criar, buscarPorCpf, buscarTurmaPorNome, buscarTurmaPorIdade };
+  const [rows] = await db.execute(
+    `SELECT id FROM turmas 
+     WHERE nome <> 'Sem turma'
+       AND (idade_min IS NULL OR idade_min <= ?) 
+       AND (idade_max IS NULL OR idade_max >= ?)
+     LIMIT 1`,
+    [idade, idade]
+  );
+  return rows.length > 0 ? rows[0].id : null;
+}
+
+module.exports = { criar, buscarPorCpf, buscarTurmaPorNome, buscarTurmaPorIdade };

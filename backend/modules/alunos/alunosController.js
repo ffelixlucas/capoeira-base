@@ -101,6 +101,32 @@ async function contarPendentes(req, res) {
   }
 }
 
+async function listarPendentes(req, res) {
+  try {
+    const pendentes = await alunoService.listarPendentes();
+    res.json(pendentes);
+  } catch (err) {
+    logger.error("Erro ao listar alunos pendentes:", err);
+    res.status(500).json({ erro: "Erro ao listar pendentes." });
+  }
+}
+
+async function atualizarStatus(req, res) {
+  try {
+    const { status } = req.body;
+    if (!["ativo", "inativo", "pendente"].includes(status)) {
+      return res.status(400).json({ erro: "Status inválido." });
+    }
+
+    await alunoService.atualizarStatus(req.params.id, status);
+    res.json({ sucesso: true });
+  } catch (err) {
+    logger.error("Erro ao atualizar status do aluno:", err);
+    res.status(400).json({ erro: err.message });
+  }
+}
+
+
 module.exports = {
   listar,
   buscar,
@@ -110,4 +136,6 @@ module.exports = {
   trocarTurma,
   metricasAluno,
   contarPendentes,
+  listarPendentes,
+  atualizarStatus,
 };

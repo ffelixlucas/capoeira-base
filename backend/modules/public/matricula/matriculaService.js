@@ -39,10 +39,9 @@ async function criarMatricula(dados) {
     let turmaId = await matriculaRepository.buscarTurmaPorIdade(idade);
 
     if (!turmaId) {
-      // fallback -> "Sem turma"
-      turmaId = await matriculaRepository.buscarTurmaPorNome("Sem turma");
+      throw new Error("No momento não há turmas disponíveis para esta idade.");
     }
-
+    
     dados.turma_id = turmaId;
 
     // 4. Criar aluno com status pendente
