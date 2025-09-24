@@ -6,7 +6,6 @@ import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import { logger } from "../../utils/logger";
 
-
 export default function ModalAluno({
   aberto,
   onClose,
@@ -20,22 +19,22 @@ export default function ModalAluno({
   const [fim, setFim] = useState("");
 
   // Atualiza métricas quando abrir modal
-  React.useEffect(() => {
-    if (aluno && aberto) {
+  useEffect(() => {
+    if (aluno && aberto && aluno.status === "ativo") {
       setMetricas(aluno.metricas || null);
 
       const anoAtual = new Date().getFullYear();
       setInicio(`${anoAtual}-01-01`);
       setFim(new Date().toISOString().split("T")[0]);
-      carregarMetricasPeriodo(); // já busca ao abrir
-
+      carregarMetricasPeriodo(); // só busca se ativo
     }
   }, [aluno, aberto]);
 
   async function carregarMetricasPeriodo() {
     try {
+      if (aluno?.status !== "ativo") return; // evita chamada para pendentes
       const { data } = await api.get(`/alunos/${aluno.id}/metricas`, {
-        params: { inicio, fim }
+        params: { inicio, fim },
       });
       setMetricas(data);
     } catch (err) {
@@ -62,16 +61,22 @@ export default function ModalAluno({
     { label: "Observações médicas", valor: aluno.observacoes_medicas },
   ];
 
-  if (metricas) {
+  // ✅ só adiciona métricas se aluno for ativo
+  if (aluno.status === "ativo" && metricas) {
     dados.push(
       { label: "Presenças", valor: `${metricas.presentes}/${metricas.total}` },
       { label: "Faltas", valor: metricas.faltas },
-      { label: "Frequência", valor: `${Math.round(metricas.taxa_presenca * 100)}%` }
+      {
+        label: "Frequência",
+        valor: `${Math.round(metricas.taxa_presenca * 100)}%`,
+      }
     );
   }
 
   const handleExcluir = async () => {
-    const confirmado = window.confirm("Tem certeza que deseja excluir este aluno?");
+    const confirmado = window.confirm(
+      "Tem certeza que deseja excluir este aluno?"
+    );
     if (!confirmado) return;
 
     try {
@@ -99,14 +104,16 @@ export default function ModalAluno({
             />
           ) : (
             <div className="h-24 w-24 rounded-full bg-purple-500 flex items-center justify-center text-3xl font-bold text-white shadow">
-              {(aluno.apelido || aluno.nome || "?").substring(0, 1).toUpperCase()}
+              {(aluno.apelido || aluno.nome || "?")
+                .substring(0, 1)
+                .toUpperCase()}
             </div>
           )}
           <button
             className="absolute bottom-0 right-1/2 translate-x-10 w-8 h-8 flex items-center justify-center 
                        bg-white border border-gray-300 rounded-full shadow-md hover:bg-gray-100"
             title="Adicionar/Alterar foto"
-            onClick={() => alert('Futuramente: upload foto Firebase')}
+            onClick={() => alert("Futuramente: upload foto Firebase")}
           >
             <span className="material-symbols-outlined text-gray-600 text-[18px] leading-none">
               photo_camera
@@ -118,27 +125,29 @@ export default function ModalAluno({
       dados={dados}
       onEditar={() => onEditar?.(aluno)}
     >
-      {/* Filtro opcional de período */}
-      <div className="flex gap-2 items-center mt-4 mb-2">
-        <input
-          type="date"
-          value={inicio}
-          onChange={(e) => setInicio(e.target.value)}
-          className="border rounded px-2 py-1 text-sm"
-        />
-        <input
-          type="date"
-          value={fim}
-          onChange={(e) => setFim(e.target.value)}
-          className="border rounded px-2 py-1 text-sm"
-        />
-        <button
-          onClick={carregarMetricasPeriodo}
-          className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-        >
-          Filtrar
-        </button>
-      </div>
+      {/* ✅ filtro de período só aparece se ativo */}
+      {aluno.status === "ativo" && (
+        <div className="flex gap-2 items-center mt-4 mb-2">
+          <input
+            type="date"
+            value={inicio}
+            onChange={(e) => setInicio(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          />
+          <input
+            type="date"
+            value={fim}
+            onChange={(e) => setFim(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          />
+          <button
+            onClick={carregarMetricasPeriodo}
+            className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Filtrar
+          </button>
+        </div>
+      )}
 
       <NotasAluno alunoId={aluno.id} />
 
