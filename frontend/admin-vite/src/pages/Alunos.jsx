@@ -3,6 +3,7 @@ import AlunoList from "../components/alunos/AlunoList";
 import AlunoForm from "../components/alunos/AlunoForm";
 import Busca from "../components/ui/Busca";
 import ModalAlunoForm from "../components/alunos/ModalAlunoForm";
+import ModalPendentes from "../components/alunos/ModalPendentes";
 import { useAlunos } from "../hooks/useAlunos";
 import { buscarAluno } from "../services/alunoService";
 import { toast } from "react-toastify";
@@ -24,32 +25,47 @@ function Alunos() {
     carregando: carregandoTurmas,
   } = useMinhasTurmas(usuario);
 
+  const [contadorPendentes, setContadorPendentes] = useState(0);
+  const [mostrarPendentes, setMostrarPendentes] = useState(false);
+
+  useEffect(() => {
+    if (usuario?.roles?.includes("admin")) {
+      api
+        .get("/alunos/pendentes/count")
+        .then(({ data }) => setContadorPendentes(data.count))
+        .catch(() => toast.error("Erro ao carregar pendentes"));
+    }
+  }, [usuario]);
+
+  async function atualizarContadorPendentes() {
+    try {
+      const { data } = await api.get("/alunos/pendentes/count");
+      setContadorPendentes(data.count);
+    } catch {
+      toast.error("Erro ao atualizar contador de pendentes");
+    }
+  }
+
   useEffect(() => {
     carregarAlunos();
   }, []);
 
   async function abrirFichaCompleta(aluno) {
     try {
-      // 1️⃣ Buscar dados completos do aluno
       const alunoCompleto = await buscarAluno(aluno.id);
-  
-      // 2️⃣ Calcular período do ano atual
       const anoAtual = new Date().getFullYear();
       const inicio = `${anoAtual}-01-01`;
       const fim = new Date().toISOString().split("T")[0];
-  
-      // 3️⃣ Buscar métricas
+
       const { data: metricas } = await api.get(`/alunos/${aluno.id}/metricas`, {
-        params: { inicio, fim }
+        params: { inicio, fim },
       });
-  
-      // 4️⃣ Juntar e salvar no estado
+
       setAlunoSelecionado({ ...alunoCompleto, metricas });
     } catch (err) {
       toast.error("Erro ao carregar ficha do aluno");
     }
   }
-  
 
   const alunosFiltrados = alunos
     .filter((a) => {
@@ -69,8 +85,7 @@ function Alunos() {
 
   return (
     <div className="p-6 text-center">
-
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-3">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-3">
         <div className="w-full sm:w-auto text-left">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Filtrar por turma:
@@ -81,7 +96,7 @@ function Alunos() {
             </p>
           )}
           <select
-            className="w-full sm:w-60 p-2 border rounded-md bg-black text-white text-sm"
+            className="w-full sm:w-60 p-2 border rounded-md bg-white text-gray-800 text-sm"
             value={turmaSelecionada || "todos"}
             onChange={(e) => setTurmaSelecionada(e.target.value)}
           >
@@ -92,19 +107,36 @@ function Alunos() {
             ))}
           </select>
         </div>
-      
-        <button
-          onClick={() => setMostrarForm(!mostrarForm)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition"
-        >
-          {mostrarForm ? "Fechar" : "Cadastrar Aluno"}
-        </button>
-        
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setMostrarForm(!mostrarForm)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition"
+          >
+            {mostrarForm ? "Fechar" : "Cadastrar Aluno"}
+          </button>
+
+          {usuario?.roles?.includes("admin") && (
+            <button
+              onClick={() => setMostrarPendentes(true)}
+              className="relative bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition"
+            >
+              Matrículas Pendentes
+              {contadorPendentes > 0 && (
+                <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow">
+                  {contadorPendentes}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
       </div>
+
       <Busca
-          placeholder="Buscar por nome, apelido ou turma"
-          onBuscar={setBusca}
-        />
+        placeholder="Buscar por nome, apelido ou turma"
+        onBuscar={setBusca}
+      />
+
       <AlunoList
         alunos={alunosFiltrados}
         carregando={carregando}
@@ -120,17 +152,27 @@ function Alunos() {
           carregarAlunos();
         }}
       />
+
       {mostrarForm && (
         <ModalAlunoForm
-        aberto={mostrarForm}
-        onClose={() => {
-          setMostrarForm(false);
-          setModoEdicao(false);
-        }}
-        onCriado={carregarAlunos}
-        alunoParaEdicao={modoEdicao}
-      />
-      
+          aberto={mostrarForm}
+          onClose={() => {
+            setMostrarForm(false);
+            setModoEdicao(false);
+          }}
+          onCriado={carregarAlunos}
+          alunoParaEdicao={modoEdicao}
+        />
+      )}
+
+      {usuario?.roles?.includes("admin") && (
+        <ModalPendentes
+          aberto={mostrarPendentes}
+          onClose={() => setMostrarPendentes(false)}
+          onAtualizarContador={atualizarContadorPendentes}
+          onAtualizarAlunos={carregarAlunos}   
+          onAbrirFicha={abrirFichaCompleta}
+        />
       )}
     </div>
   );
