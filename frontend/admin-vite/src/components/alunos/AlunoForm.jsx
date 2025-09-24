@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { criarAluno, editarAluno } from "../../services/alunoService";
 import { useTurmas } from "../../hooks/useTurmas";
 import { toast } from "react-toastify";
+import InputBase from "../ui/InputBase";
 
 export default function AlunoForm({ onCriado, alunoParaEdicao }) {
   const { turmas, carregando: carregandoTurmas } = useTurmas();
@@ -73,82 +74,67 @@ export default function AlunoForm({ onCriado, alunoParaEdicao }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-cor-secundaria rounded-xl p-4 shadow space-y-3 max-w-md mx-auto text-cor-texto"
-    >
-      <h2 className="text-lg font-bold text-center text-cor-titulo">
-        {alunoParaEdicao ? "Editar Aluno" : "Cadastrar Aluno"}
-      </h2>
-
-      <input
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <InputBase
         type="text"
         name="nome"
         placeholder="Nome completo *"
         value={form.nome}
         onChange={handleChange}
-        className={inputBase}
       />
-      <input
+      <InputBase
         type="text"
         name="apelido"
-        placeholder="Apelido"
+        placeholder="Apelido (se tiver)"
         value={form.apelido}
         onChange={handleChange}
-        className={inputBase}
       />
-      <input
+      <InputBase
         type="date"
         name="nascimento"
         value={form.nascimento}
         onChange={handleChange}
-        className={inputBase}
       />
-      <input
+      <InputBase
         type="text"
         name="telefone_responsavel"
         placeholder="Telefone do responsável"
         value={form.telefone_responsavel}
         onChange={handleChange}
-        className={inputBase}
       />
-      <input
+      <InputBase
         type="text"
         name="nome_responsavel"
         placeholder="Nome do responsável"
         value={form.nome_responsavel}
         onChange={handleChange}
-        className={inputBase}
       />
-      <input
+      <InputBase
         type="text"
         name="endereco"
         placeholder="Endereço"
         value={form.endereco}
         onChange={handleChange}
-        className={inputBase}
       />
-      <input
+      <InputBase
         type="text"
         name="graduacao"
         placeholder="Graduação (corda)"
         value={form.graduacao}
         onChange={handleChange}
-        className={inputBase}
       />
-      <textarea
+      <InputBase
+        as="textarea"
         name="observacoes_medicas"
         placeholder="Observações médicas"
         value={form.observacoes_medicas}
         onChange={handleChange}
-        className={inputBase}
-      ></textarea>
-
-      <select
+      />
+      <InputBase
+        as="select"
         name="turma_id"
         value={form.turma_id}
         onChange={handleChange}
-        className={inputBase}
         required
       >
         <option value="">Selecione a turma *</option>
@@ -161,15 +147,16 @@ export default function AlunoForm({ onCriado, alunoParaEdicao }) {
             </option>
           ))
         )}
-      </select>
-
+      </InputBase>
+    
       <button
         type="submit"
         disabled={salvando}
-        className="w-full bg-cor-primaria hover:bg-cor-destaque text-cor-escura font-semibold rounded-md py-2 transition"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md py-2 transition"
       >
         {salvando ? "Salvando..." : alunoParaEdicao ? "Salvar alterações" : "Cadastrar"}
       </button>
     </form>
+    
   );
 }

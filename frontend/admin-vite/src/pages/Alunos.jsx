@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import AlunoList from "../components/alunos/AlunoList";
 import AlunoForm from "../components/alunos/AlunoForm";
 import Busca from "../components/ui/Busca";
+import ModalAlunoForm from "../components/alunos/ModalAlunoForm";
 import { useAlunos } from "../hooks/useAlunos";
 import { buscarAluno } from "../services/alunoService";
 import { toast } from "react-toastify";
@@ -120,14 +121,16 @@ function Alunos() {
         }}
       />
       {mostrarForm && (
-        <AlunoForm
-          onCriado={() => {
-            carregarAlunos();
-            setMostrarForm(false);
-            setModoEdicao(false);
-          }}
-          alunoParaEdicao={modoEdicao}
-        />
+        <ModalAlunoForm
+        aberto={mostrarForm}
+        onClose={() => {
+          setMostrarForm(false);
+          setModoEdicao(false);
+        }}
+        onCriado={carregarAlunos}
+        alunoParaEdicao={modoEdicao}
+      />
+      
       )}
     </div>
   );
