@@ -1,4 +1,3 @@
-// src/components/inscricoes/InscritoFicha.jsx
 import { FaWhatsapp } from "react-icons/fa";
 
 export default function InscritoFicha({
@@ -24,145 +23,192 @@ export default function InscritoFicha({
   };
 
   return (
-    <div className="space-y-2 text-sm">
-      {/* Apelido primeiro, nome abaixo */}
-      <h2 className="text-center text-lg font-bold mb-1">
-        {inscrito.apelido ? formatarNome(inscrito.apelido) : "Sem apelido"}
-      </h2>
-      {inscrito.nome && (
-        <p className="text-sm text-center text-gray-600 mb-3">
-          {formatarNome(inscrito.nome)}
-        </p>
-      )}
-
-      {/* Dados principais */}
-      <p>
-        <strong>Data de Nascimento:</strong>{" "}
-        {formatarData(inscrito.data_nascimento)}
-      </p>
-      <p>
-        <strong>Email:</strong> {inscrito.email || "-"}
-      </p>
-      <p className="flex items-center gap-2">
-        <strong>Telefone:</strong> {inscrito.telefone || "-"}
-        {inscrito.telefone && (
-          <FaWhatsapp
-            onClick={() => abrirWhatsApp(inscrito.telefone)}
-            className="text-green-500 cursor-pointer"
-            title="Abrir no WhatsApp"
-          />
-        )}
-      </p>
-
-      {/* CPF do inscrito */}
-      <p>
-        <strong>CPF do Inscrito:</strong> {inscrito.cpf || "-"}
-      </p>
-
-      {/* Responsável */}
-      {inscrito.responsavel_nome && (
-        <div className="space-y-1">
-          <p>
-            <strong>Responsável:</strong> {formatarNome(inscrito.responsavel_nome)}
-          </p>
-          {inscrito.responsavel_documento && (
-            <p>
-              <strong>CPF do Responsável:</strong>{" "}
-              {inscrito.responsavel_documento}
-            </p>
-          )}
-          {inscrito.responsavel_contato && (
-            <p className="flex items-center gap-2">
-              <strong>Contato Resp.:</strong> {inscrito.responsavel_contato}
+    <div className="space-y-6 text-sm divide-y divide-gray-200">
+      {/* Dados pessoais */}
+      <div className="section-wrapper">
+        <h3 className="section-title">Dados pessoais</h3>
+        <div className="field-grid">
+          <div>
+            <span className="field-label">Nascimento</span>
+            <span className="field-value">
+              {formatarData(inscrito.data_nascimento)}
+            </span>
+          </div>
+          <div>
+            <span className="field-label">CPF</span>
+            <span className="field-value break-all">
+              {inscrito.cpf || "-"}
+            </span>
+          </div>
+          <div>
+            <span className="field-label">Email</span>
+            <span className="field-value break-all">
+              {inscrito.email || "-"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div>
+              <span className="field-label">Telefone</span>
+              <span className="field-value">
+                {inscrito.telefone || "-"}
+              </span>
+            </div>
+            {inscrito.telefone && (
               <FaWhatsapp
-                onClick={() => abrirWhatsApp(inscrito.responsavel_contato)}
+                onClick={() => abrirWhatsApp(inscrito.telefone)}
                 className="text-green-500 cursor-pointer"
                 title="Abrir no WhatsApp"
               />
-            </p>
-          )}
-          {inscrito.responsavel_parentesco && (
-            <p>
-              <strong>Parentesco:</strong>{" "}
-              {formatarNome(inscrito.responsavel_parentesco)}
-            </p>
-          )}
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Responsável */}
+      {inscrito.responsavel_nome && (
+        <div className="section-wrapper">
+          <h3 className="section-title">Responsável</h3>
+          <div className="field-grid">
+            <div>
+              <span className="field-label">Nome</span>
+              <span className="field-value break-words">
+                {formatarNome(inscrito.responsavel_nome)}
+              </span>
+            </div>
+            <div>
+              <span className="field-label">CPF</span>
+              <span className="field-value break-all">
+                {inscrito.responsavel_documento || "-"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div>
+                <span className="field-label">Contato</span>
+                <span className="field-value">
+                  {inscrito.responsavel_contato || "-"}
+                </span>
+              </div>
+              {inscrito.responsavel_contato && (
+                <FaWhatsapp
+                  onClick={() => abrirWhatsApp(inscrito.responsavel_contato)}
+                  className="text-green-500 cursor-pointer"
+                  title="Abrir no WhatsApp"
+                />
+              )}
+            </div>
+            <div>
+              <span className="field-label">Parentesco</span>
+              <span className="field-value">
+                {formatarNome(inscrito.responsavel_parentesco)}
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
-      <p>
-        <strong>Categoria:</strong> {inscrito.categoria || "-"}
-      </p>
-      {inscrito.graduacao && (
-        <p>
-          <strong>Graduação:</strong> {inscrito.graduacao}
-        </p>
-      )}
-      <p>
-        <strong>Status:</strong> {inscrito.status}
-      </p>
-      <p>
-        <strong>Valor bruto:</strong> R$ {formatarMoeda(inscrito.valor_bruto)}
-      </p>
-      <p>
-        <strong>Valor líquido:</strong> R$ {formatarMoeda(inscrito.valor_liquido)}
-      </p>
-      <p>
-        <strong>Forma de pagamento:</strong> {inscrito.metodo_pagamento || "-"}
-      </p>
-
-      {/* Só aparece se for cartão */}
-      {inscrito.metodo_pagamento === "cartao" && (
-        <>
-          <p>
-            <strong>Bandeira:</strong> {inscrito.bandeira_cartao || "-"}
-          </p>
-          <p>
-            <strong>Parcelas:</strong> {inscrito.parcelas || 1}
-          </p>
-        </>
-      )}
-
-      <p>
-        <strong>Pagamento ID:</strong> {inscrito.pagamento_id || "-"}
-      </p>
-      <p>
-        <strong>Data Inscrição:</strong> {formatarData(inscrito.criado_em)}
-      </p>
+      {/* Pagamento */}
+      <div className="section-wrapper">
+        <h3 className="section-title">Pagamento</h3>
+        <div className="field-grid">
+          <div>
+            <span className="field-label">Status</span>
+            <span className="field-value">{inscrito.status}</span>
+          </div>
+          <div>
+            <span className="field-label">Método</span>
+            <span className="field-value">
+              {inscrito.metodo_pagamento || "-"}
+            </span>
+          </div>
+          <div>
+            <span className="field-label">Valor bruto</span>
+            <span className="field-value">
+              R$ {formatarMoeda(inscrito.valor_bruto)}
+            </span>
+          </div>
+          <div>
+            <span className="field-label">Valor líquido</span>
+            <span className="field-value">
+              R$ {formatarMoeda(inscrito.valor_liquido)}
+            </span>
+          </div>
+          {inscrito.metodo_pagamento === "cartao" && (
+            <>
+              <div>
+                <span className="field-label">Bandeira</span>
+                <span className="field-value">
+                  {inscrito.bandeira_cartao || "-"}
+                </span>
+              </div>
+              <div>
+                <span className="field-label">Parcelas</span>
+                <span className="field-value">
+                  {inscrito.parcelas || 1}
+                </span>
+              </div>
+            </>
+          )}
+          <div>
+            <span className="field-label">Pagamento ID</span>
+            <span className="field-value break-all">
+              {inscrito.pagamento_id || "-"}
+            </span>
+          </div>
+          <div>
+            <span className="field-label">Data inscrição</span>
+            <span className="field-value">
+              {formatarData(inscrito.criado_em)}
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Autorizações */}
-      <div className="mt-4 border-t pt-3 space-y-1">
-        <p>
-          <strong>Autorização Participação:</strong>{" "}
-          {formatBool(inscrito.autorizacao_participacao)}
-        </p>
-        <p>
-          <strong>Autorização Imagem:</strong>{" "}
-          {formatBool(inscrito.autorizacao_imagem)}
-        </p>
-        <p>
-          <strong>Aceite Imagem:</strong> {formatBool(inscrito.aceite_imagem)}
-        </p>
-        <p>
-          <strong>Aceite Responsabilidade:</strong>{" "}
-          {formatBool(inscrito.aceite_responsabilidade)}
-        </p>
-        <p>
-          <strong>Aceite LGPD:</strong> {formatBool(inscrito.aceite_lgpd)}
-        </p>
+      <div className="section-wrapper">
+        <h3 className="section-title">Autorizações</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <span>
+            <strong>Participação:</strong>{" "}
+            {formatBool(inscrito.autorizacao_participacao)}
+          </span>
+          <span>
+            <strong>Imagem:</strong>{" "}
+            {formatBool(inscrito.autorizacao_imagem)}
+          </span>
+          <span>
+            <strong>Aceite Imagem:</strong>{" "}
+            {formatBool(inscrito.aceite_imagem)}
+          </span>
+          <span>
+            <strong>Responsabilidade:</strong>{" "}
+            {formatBool(inscrito.aceite_responsabilidade)}
+          </span>
+          <span>
+            <strong>LGPD:</strong>{" "}
+            {formatBool(inscrito.aceite_lgpd)}
+          </span>
+        </div>
       </div>
 
       {/* Extras */}
-      <div className="mt-4 border-t pt-3 space-y-1">
-        <p>
-          <strong>Tamanho Camiseta:</strong> {inscrito.tamanho_camiseta || "-"}
-        </p>
-        {inscrito.alergias_restricoes && (
-          <p>
-            <strong>Alergias / Restrições:</strong>{" "}
-            {inscrito.alergias_restricoes}
-          </p>
-        )}
+      <div className="section-wrapper">
+        <h3 className="section-title">Extras</h3>
+        <div className="field-grid">
+          <div>
+            <span className="field-label">Camiseta</span>
+            <span className="field-value">
+              {inscrito.tamanho_camiseta || "-"}
+            </span>
+          </div>
+          {inscrito.alergias_restricoes && (
+            <div className="col-span-2">
+              <span className="field-label">Alergias / Restrições</span>
+              <span className="field-value break-words">
+                {inscrito.alergias_restricoes}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
