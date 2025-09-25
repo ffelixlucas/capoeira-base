@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import InscritoList from "../components/ui/InscritoList";
 import ModalInscrito from "../components/inscricoes/ModalInscrito";
@@ -6,130 +6,53 @@ import Busca from "../components/ui/Busca";
 import ContadorLista from "../components/ui/ContadorLista";
 import CardEstat from "../components/ui/CardEstat";
 import { UserGroupIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline";
-import {
-  buscarInscritosPorEvento,
-  buscarInscritoPorId,
-} from "../services/inscricaoService";
-import { Menu } from "@headlessui/react";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
 import ResumoCamisetas from "../components/ui/ResumoCamisetas";
-import { logger } from "../utils/logger";
+import ExportarPDFModal from "../components/shared/ExportarPDFModal";
+import { useInscritosEvento } from "../hooks/useInscritosEvento";
+import {
+  exportarListaPDF,
+  exportarRelatorioPDF,
+} from "../utils/relatorioInscritosPDF";
 
 function InscritosEvento() {
   const { eventoId } = useParams();
-
-  const [evento, setEvento] = useState(null);
-  const [inscritos, setInscritos] = useState([]);
-  const [carregando, setCarregando] = useState(false);
   const [busca, setBusca] = useState("");
 
-  const [modalAberto, setModalAberto] = useState(false);
-  const [inscritoSelecionado, setInscritoSelecionado] = useState(null);
-  const [resumoCamisetas, setResumoCamisetas] = useState([]);
+  const {
+    evento,
+    inscritos,
+    resumoCamisetas,
+    carregando,
+    modalAberto,
+    inscritoSelecionado,
+    setModalAberto,
+    verFichaCompleta,
+    atualizarInscritoNaLista,
+  } = useInscritosEvento(eventoId, busca);
 
-  // Carregar lista inicial
-  useEffect(() => {
-    carregarInscritos();
-  }, [eventoId, busca]);
+  // Deixa cada palavra com a primeira letra maiúscula
+  const formatarNome = (nome) => {
+    if (!nome) return "-";
+    return nome
+      .toLowerCase()
+      .split(" ")
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(" ");
+  };
 
-  async function carregarInscritos() {
-    setCarregando(true);
-    try {
-      // Agora a API retorna { evento, inscritos }
-      const dados = await buscarInscritosPorEvento(eventoId, busca);
-      setEvento(dados.evento);
-      setInscritos(dados.inscritos);
-      setResumoCamisetas(dados.resumo_camisetas || []);
-    } catch (err) {
-      if (import.meta.env.DEV) {
-        logger.error("Erro ao carregar inscritos:", err);
-      }
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  async function verFichaCompleta(inscrito) {
-    try {
-      const dadosCompletos = await buscarInscritoPorId(inscrito.id);
-      setInscritoSelecionado(dadosCompletos);
-      setModalAberto(true);
-    } catch (err) {
-      if (import.meta.env.DEV) {
-        logger.error("Erro ao buscar inscrito:", err);
-      }
-    }
-  }
-  
-
-  async function atualizarInscritoNaLista(inscritoAtualizado) {
-    // Se foi extornado, recarregar tudo para atualizar totais
-    if (inscritoAtualizado.status === "extornado") {
-      await carregarInscritos();
-    } else {
-      // Atualiza só o item na lista e no modal
-      setInscritos((lista) =>
-        lista.map((i) =>
-          i.id === inscritoAtualizado.id ? { ...i, ...inscritoAtualizado } : i
-        )
-      );
-      setInscritoSelecionado((atual) =>
-        atual && atual.id === inscritoAtualizado.id
-          ? { ...atual, ...inscritoAtualizado }
-          : atual
-      );
-    }
-  }
-
-  // Gerar Excel da lista completa
-  function baixarListaExcel() {
-    const ws = XLSX.utils.json_to_sheet(inscritos);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Inscritos");
-    XLSX.writeFile(wb, `inscritos_evento_${eventoId}.xlsx`);
-  }
-
-  // Gerar PDF apenas com nomes dos inscritos
-  function baixarListaPdf() {
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text(`Lista de Inscritos - Evento ${eventoId}`, 10, 10);
-    let y = 30;
-    inscritos.forEach((i, idx) => {
-      doc.text(`${idx + 1}. ${i.nome}`, 10, y);
-      y += 10;
-    });
-    doc.save(`inscritos_evento_${eventoId}.pdf`);
-  }
-
-  // Imprimir apenas os nomes dos inscritos
-  function imprimirLista() {
-    const conteudo = inscritos
-      .map((i, idx) => `${idx + 1}. ${i.nome}`)
-      .join("<br/>");
-
-    const win = window.open("", "_blank", "width=800,height=600");
-    win.document.write(`
-      <html>
-        <head>
-          <title>Lista de Inscritos</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h2 { text-align: center; }
-          </style>
-        </head>
-        <body>
-          <h2>Lista de Inscritos - Evento ${evento?.titulo || ""}</h2>
-          <p>${conteudo}</p>
-        </body>
-      </html>
-    `);
-    win.document.close();
-    win.focus();
-    win.print();
-    win.close();
-  }
+  // Cria uma cópia só para exibição na lista
+  const inscritosFormatados = useMemo(
+    () =>
+      inscritos.map((i) => ({
+        ...i,
+        nome: formatarNome(i.nome),
+        apelido: i.apelido ? formatarNome(i.apelido) : i.apelido,
+        responsavel_nome: i.responsavel_nome
+          ? formatarNome(i.responsavel_nome)
+          : i.responsavel_nome,
+      })),
+    [inscritos]
+  );
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -141,7 +64,6 @@ function InscritosEvento() {
           Icon={UserGroupIcon}
           cor="blue"
         />
-
         <CardEstat
           valor={`R$ ${Number(evento?.valor_liquido_total ?? 0).toFixed(2)}`}
           label="Total (líquido)"
@@ -150,14 +72,20 @@ function InscritosEvento() {
         />
       </div>
 
+      {/* Distribuição camisetas */}
       <ResumoCamisetas resumo={resumoCamisetas} />
 
+      {/* Exportações */}
       <div className="flex justify-between mb-4">
-        <Menu as="div" className="relative text-black">
-          {/* Botão de ações */}
-        </Menu>
+        <ExportarPDFModal
+          onExportLista={() => exportarListaPDF(inscritos, eventoId)}
+          onExportRelatorio={() =>
+            exportarRelatorioPDF(inscritos, evento, eventoId)
+          }
+        />
       </div>
 
+      {/* Lista */}
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-lg font-semibold text-white">
           Inscritos {evento?.titulo ? `- ${evento.titulo}` : ""}
@@ -173,7 +101,7 @@ function InscritosEvento() {
       </div>
 
       <InscritoList
-        inscritos={inscritos}
+        inscritos={inscritosFormatados}
         carregando={carregando}
         onVerMais={verFichaCompleta}
       />

@@ -40,19 +40,35 @@ async function listarPorEvento(eventoId, busca = "") {
 
   // 4) Lista de inscritos (com filtro - busca)
   let query = `
-    SELECT 
-      id, 
-      nome, 
-      telefone, 
-      status, 
-      evento_id,
-      email,
-      apelido,
-      responsavel_nome,
-      tamanho_camiseta
-    FROM inscricoes_evento
-    WHERE evento_id = ?
-  `;
+  SELECT 
+    id, 
+    nome, 
+    telefone, 
+    status, 
+    evento_id,
+    email,
+    apelido,
+    responsavel_nome,
+    tamanho_camiseta,
+    valor_bruto,
+    valor_liquido,
+    metodo_pagamento,
+    bandeira_cartao,
+    parcelas,
+    taxa_valor,
+    taxa_percentual,
+    cpf,
+    categoria,
+    autorizacao_participacao,
+    autorizacao_imagem,
+    aceite_imagem,
+    aceite_responsabilidade,
+    aceite_lgpd
+FROM inscricoes_evento
+WHERE evento_id = ?
+
+`;
+
   const params = [eventoId];
 
   if (busca) {
@@ -91,14 +107,48 @@ async function listarPorEvento(eventoId, busca = "") {
 // Busca os detalhes completos de um inscrito
 async function buscarPorId(id) {
   const [rows] = await db.execute(
-    `SELECT * 
-     FROM inscricoes_evento
-     WHERE id = ?`,
+    `SELECT 
+  id,
+  nome,
+  apelido,
+  email,
+  telefone,
+  cpf,
+  data_nascimento,
+  status,
+  evento_id,
+  responsavel_nome,
+  responsavel_documento,
+  responsavel_contato,
+  responsavel_parentesco,
+  tamanho_camiseta,
+  alergias_restricoes,
+  categoria,
+  graduacao,
+  pagamento_id,
+  valor_bruto,
+  valor_liquido,
+  metodo_pagamento,
+  bandeira_cartao,
+  parcelas,
+  taxa_valor,
+  taxa_percentual,
+  autorizacao_participacao,
+  autorizacao_imagem,
+  aceite_imagem,
+  aceite_responsabilidade,
+  aceite_lgpd,
+  criado_em,
+  atualizado_em
+FROM inscricoes_evento
+WHERE id = ?
+`,
     [id]
   );
 
   return rows[0] || null;
 }
+
 
 async function criarInscricao(dados) {
   const {
