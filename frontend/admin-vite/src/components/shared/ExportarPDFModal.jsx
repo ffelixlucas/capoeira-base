@@ -1,30 +1,24 @@
 import { useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { FaFilePdf } from "react-icons/fa";
+import { FileText, FileSpreadsheet, X } from "lucide-react";
 
-/**
- * Componente reutilizável de modal para exportação em PDF
- * 
- * Props:
- * - onExportLista: função chamada para exportar lista simples
- * - onExportRelatorio: função chamada para exportar relatório completo
- */
 export default function ExportarPDFModal({ onExportLista, onExportRelatorio }) {
   const [aberto, setAberto] = useState(false);
 
   return (
     <>
       {/* Botão principal */}
-      <button
-        onClick={() => setAberto(true)}
-        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
-      >
-        <FaFilePdf /> Exportar PDF
+      <button onClick={() => setAberto(true)} className="btn-danger">
+        <FileText className="w-4 h-4" /> Exportar PDF
       </button>
 
-      {/* Modal de escolha */}
+      {/* Modal */}
       <Transition appear show={aberto} as={Fragment}>
-        <Dialog as="div" className="relative z-[999]" onClose={() => setAberto(false)}>
+        <Dialog
+          as="div"
+          className="relative z-[999]"
+          onClose={() => setAberto(false)}
+        >
           {/* Overlay */}
           <Transition.Child
             as={Fragment}
@@ -51,34 +45,42 @@ export default function ExportarPDFModal({ onExportLista, onExportRelatorio }) {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-sm transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all">
-                  <Dialog.Title className="text-lg font-bold text-center mb-4">
+                  
+                  {/* Título */}
+                  <Dialog.Title className="text-lg font-bold text-center mb-6 text-black">
                     Escolher exportação
                   </Dialog.Title>
 
+                  {/* Botões */}
                   <div className="flex flex-col gap-3">
                     <button
                       onClick={() => {
                         setAberto(false);
                         onExportLista?.();
                       }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                      className="btn-info justify-start"
                     >
-                      📋 Lista de inscritos
+                      <FileText className="w-5 h-5" />
+                      <span>Lista de inscritos</span>
                     </button>
+
                     <button
                       onClick={() => {
                         setAberto(false);
                         onExportRelatorio?.();
                       }}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+                      className="btn-success justify-start"
                     >
-                      📊 Relatório completo
+                      <FileSpreadsheet className="w-5 h-5" />
+                      <span>Relatório completo</span>
                     </button>
+
                     <button
                       onClick={() => setAberto(false)}
-                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded text-sm"
+                      className="btn-light justify-start"
                     >
-                      Cancelar
+                      <X className="w-5 h-5" />
+                      <span>Cancelar</span>
                     </button>
                   </div>
                 </Dialog.Panel>

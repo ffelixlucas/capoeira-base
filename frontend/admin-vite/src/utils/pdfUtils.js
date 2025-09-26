@@ -4,10 +4,21 @@ import autoTable from "jspdf-autotable";
 
 /**
  * Cria um documento PDF novo
- * @param {"p" | "l"} orientacao "p" = retrato, "l" = paisagem
+ * @param {"p"|"portrait"|"l"|"landscape"} orientacao
  */
 export function criarDocumento(orientacao = "p") {
-  return new jsPDF(orientacao, "mm", "a4");
+  const map = {
+    p: "portrait",
+    l: "landscape",
+    portrait: "portrait",
+    landscape: "landscape",
+  };
+
+  return new jsPDF({
+    orientation: map[orientacao] || "portrait",
+    unit: "mm",
+    format: "a4",
+  });
 }
 
 /**

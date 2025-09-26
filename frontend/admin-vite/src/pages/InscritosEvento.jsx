@@ -7,16 +7,20 @@ import ContadorLista from "../components/ui/ContadorLista";
 import CardEstat from "../components/ui/CardEstat";
 import { UserGroupIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline";
 import ResumoCamisetas from "../components/ui/ResumoCamisetas";
-import ExportarPDFModal from "../components/shared/ExportarPDFModal";
 import { useInscritosEvento } from "../hooks/useInscritosEvento";
 import {
   exportarListaPDF,
   exportarRelatorioPDF,
+  exportarRelatorioSemCamisetasPDF,
 } from "../utils/relatorioInscritosPDF";
+import ModalCamisetas from "../components/ui/ModalCamisetas";
+import ExportarPDFModal from "../components/shared/ExportarPDFModal";
 
 function InscritosEvento() {
   const { eventoId } = useParams();
   const [busca, setBusca] = useState("");
+  const [statusFiltro, setStatusFiltro] = useState("todos");
+  const [camisetasAberto, setCamisetasAberto] = useState(false);
 
   const {
     evento,
@@ -30,7 +34,7 @@ function InscritosEvento() {
     atualizarInscritoNaLista,
   } = useInscritosEvento(eventoId, busca);
 
-  // Deixa cada palavra com a primeira letra maiúscula
+  // helpers
   const formatarNome = (nome) => {
     if (!nome) return "-";
     return nome
@@ -40,24 +44,36 @@ function InscritosEvento() {
       .join(" ");
   };
 
-  // Cria uma cópia só para exibição na lista
-  const inscritosFormatados = useMemo(
-    () =>
-      inscritos.map((i) => ({
-        ...i,
-        nome: formatarNome(i.nome),
-        apelido: i.apelido ? formatarNome(i.apelido) : i.apelido,
-        responsavel_nome: i.responsavel_nome
-          ? formatarNome(i.responsavel_nome)
-          : i.responsavel_nome,
-      })),
-    [inscritos]
-  );
+  // aplica filtro
+  const inscritosFormatados = useMemo(() => {
+    let lista = inscritos.map((i) => ({
+      ...i,
+      nome: formatarNome(i.nome),
+      apelido: i.apelido ? formatarNome(i.apelido) : i.apelido,
+      responsavel_nome: i.responsavel_nome
+        ? formatarNome(i.responsavel_nome)
+        : i.responsavel_nome,
+    }));
+    if (statusFiltro !== "todos") {
+      lista = lista.filter((i) => i.status === statusFiltro);
+    }
+    return lista;
+  }, [inscritos, statusFiltro]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Estatísticas */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <header className="text-center sm:text-left">
+        <h1 className="text-2xl font-bold text-white">
+          Inscritos {evento?.titulo ? `– ${evento.titulo}` : ""}
+        </h1>
+        <p className="text-sm text-gray-400 mt-1">
+          Gerencie todos os inscritos, pagamentos e informações do evento.
+        </p>
+      </header>
+
+      {/* Estatísticas lado a lado compactas */}
+      <div className="grid grid-cols-2 gap-3">
         <CardEstat
           valor={evento?.total_inscritos || 0}
           label="Inscritos"
@@ -72,45 +88,82 @@ function InscritosEvento() {
         />
       </div>
 
-      {/* Distribuição camisetas */}
-      <ResumoCamisetas resumo={resumoCamisetas} />
-
-      {/* Exportações */}
-      <div className="flex justify-between mb-4">
-        <ExportarPDFModal
-          onExportLista={() => exportarListaPDF(inscritos, eventoId)}
-          onExportRelatorio={() =>
-            exportarRelatorioPDF(inscritos, evento, eventoId)
-          }
-        />
-      </div>
-
-      {/* Lista */}
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold text-white">
-          Inscritos {evento?.titulo ? `- ${evento.titulo}` : ""}
-        </h2>
-        <ContadorLista total={inscritos.length} />
-      </div>
-
-      <div className="mb-3">
+      {/* Busca + Filtro + Contador */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <Busca
           placeholder="Buscar por nome, e-mail ou telefone"
           onBuscar={setBusca}
         />
+        <div className="flex items-center gap-2">
+          <select
+            value={statusFiltro}
+            onChange={(e) => setStatusFiltro(e.target.value)}
+            className="border rounded-lg px-2 py-1 text-sm text-black"
+          >
+            <option value="todos">Todos</option>
+            <option value="pago">Pago</option>
+            <option value="pendente">Pendente</option>
+            <option value="extornado">Extornado</option>
+          </select>
+          <ContadorLista total={inscritosFormatados.length} />
+        </div>
       </div>
 
-      <InscritoList
-        inscritos={inscritosFormatados}
-        carregando={carregando}
-        onVerMais={verFichaCompleta}
-      />
+      {/* Botões Camisetas + Exportar */}
+      <div className="flex flex-wrap gap-2 justify-between sm:justify-start">
+        {/* Só aparece se houver camisetas */}
+        {resumoCamisetas && resumoCamisetas.length > 0 && (
+          <button
+            onClick={() => setCamisetasAberto(true)}
+            className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-1 hover:bg-gray-100 transition text-sm"
+          >
+            <span className="text-gray-700 text-lg">👕</span>
+            <span className="px-1.5 py-0.5 text-xs rounded-full bg-green-500 text-white font-semibold">
+              {resumoCamisetas
+                .filter((item) => item.status === "pago" || !item.status)
+                .reduce((acc, item) => acc + (item.total || 0), 0)}
+            </span>
+          </button>
+        )}
 
+        {/* Exportar PDF */}
+        {resumoCamisetas && resumoCamisetas.length > 0 ? (
+          <ExportarPDFModal
+            onExportLista={() => exportarListaPDF(inscritos, evento)}
+            onExportRelatorio={() => exportarRelatorioPDF(inscritos, evento)}
+          />
+        ) : (
+          <button
+            onClick={() => exportarRelatorioSemCamisetasPDF(inscritos, evento)}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
+          >
+            <span>📄 Exportar PDF</span>
+          </button>
+        )}
+      </div>
+
+
+      {/* Lista */}
+      <div className="bg-white rounded-lg border border-cor-secundaria/30 shadow-sm overflow-hidden">
+        <InscritoList
+          inscritos={inscritosFormatados}
+          carregando={carregando}
+          onVerMais={verFichaCompleta}
+        />
+      </div>
+
+      {/* Modal */}
       <ModalInscrito
         aberto={modalAberto}
         onClose={() => setModalAberto(false)}
         inscrito={inscritoSelecionado}
         onEditar={atualizarInscritoNaLista}
+      />
+
+      <ModalCamisetas
+        aberto={camisetasAberto}
+        onClose={() => setCamisetasAberto(false)}
+        resumo={resumoCamisetas}
       />
     </div>
   );
