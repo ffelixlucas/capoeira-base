@@ -19,6 +19,8 @@ import {
   BellAlertIcon,
   PhotoIcon,
   ExclamationTriangleIcon,
+  Cog6ToothIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import ModalLembretes from "../components/lembretes/ModalLembretes";
 import logo from "../assets/images/logo.png";
@@ -79,6 +81,7 @@ export default function Dashboard() {
     { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
     { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] },
     { to: "/contatos", label: "Contatos", roles: ["admin"] },
+    { to: "/config", label: "Configurações", roles: ["admin"] },
   ];
 
   const [eventosResumo, setEventosResumo] = useState([]);
@@ -146,12 +149,24 @@ export default function Dashboard() {
           <p className="text-sm text-cor-texto/80 mt-1">
             Bem-vindo ao painel de administração
           </p>
-          <button
-            onClick={() => navigate("/perfil")}
-            className="mt-3 text-sm text-cor-primaria hover:underline"
-          >
-            Editar meu perfil
-          </button>
+
+          <div className="mt-3 flex items-center gap-4">
+            {temPapel(["admin"]) && (
+              <button
+                onClick={() => navigate("/config")}
+                className="text-xs text-cor-texto/70 hover:text-cor-primaria flex items-center gap-1"
+              >
+                <Cog6ToothIcon className="h-4 w-4" /> Configurar sistema
+              </button>
+            )}
+
+            <button
+              onClick={() => navigate("/perfil")}
+              className="text-xs text-cor-texto/70 hover:text-cor-primaria flex items-center gap-1"
+            >
+              <UserCircleIcon className="h-4 w-4" /> Editar meu perfil
+            </button>
+          </div>
         </div>
 
         {/* Ação Rápida: Chamada (outline, diferente dos cards) */}
