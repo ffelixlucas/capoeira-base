@@ -18,12 +18,18 @@ const equipeRolesRoutes = require('./modules/equipe/equipeRoles/equipeRolesRoute
 const lembretesRoutes = require('./modules/lembretes/lembretesRoutes');
 const alunosRoutes = require('./modules/alunos/alunosRoutes');
 const inscricoesRoutes = require('./modules/inscricoes/inscricoesRoutes');
+const notificacaoDestinosRoutes = require("./modules/notificacaoDestinos/notificacaoDestinosRoutes.js");
+
+
+
+
 // Configurações do servidor
 
 // Rotas públicas
 app.use('/api/teste', (_, res) => res.json({ mensagem: 'API no ar!' }));
 const matriculaRoutes = require("./modules/public/matricula/matriculaRoutes");
 app.use("/api/public", matriculaRoutes);
+const graduacoesRoutes = require("./modules/graduacoes/graduacoesRoutes");
 
 
 // Autenticação
@@ -43,9 +49,12 @@ app.use("/api/notas-aluno", require("./modules/notasAluno/notasAlunoRoutes"));
 app.use("/api/turmas", require("./modules/turmas/turmasRoutes.js"));
 app.use('/api/inscricoes', inscricoesRoutes);
 app.use('/api/presencas', require('./modules/presencas/presencasRoutes'));
+app.use("/api/notificacoes", notificacaoDestinosRoutes);
+
 // Rotas públicas
 app.use('/api/public/agenda', require('./modules/public/agenda/publicAgendaRoutes'));
 app.use('/api/public/inscricoes', require('./modules/public/inscricoes/inscricoesRoutes'));
+app.use("/api/graduacoes", graduacoesRoutes);
 
 
 
