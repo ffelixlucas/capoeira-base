@@ -27,6 +27,8 @@ function calcularIdade(nascimento) {
 async function criarMatricula(dados) {
   try {
     // 1. Validar CPF duplicado
+    dados.cpf = dados.cpf.replace(/\D/g, "");
+
     const existente = await matriculaRepository.buscarPorCpf(dados.cpf);
     if (existente) {
       throw new Error("Já existe uma matrícula com este CPF.");
@@ -41,7 +43,7 @@ async function criarMatricula(dados) {
     if (!turmaId) {
       throw new Error("No momento não há turmas disponíveis para esta idade.");
     }
-    
+
     dados.turma_id = turmaId;
 
     // 4. Criar aluno com status pendente
@@ -58,11 +60,20 @@ async function criarMatricula(dados) {
       });
 
       // Para o admin
-      await emailService.enviarEmailCustom({
-        to: process.env.ADMIN_EMAIL,
-        subject: "👥 Nova matrícula pendente",
-        html: `<p>Nova matrícula pendente: <b>${dados.nome}</b> (${dados.cpf})</p>`,
-      });
+      // Buscar e-mails de notificação para matrícula
+      const emails = await notificacaoService.getEmails(
+        dados.grupo_id,
+        "matricula"
+      );
+
+      // Enviar para cada destino configurado
+      for (const email of emails) {
+        await emailService.enviarEmailCustom({
+          to: email,
+          subject: "👥 Nova matrícula pendente",
+          html: `<p>Nova matrícula pendente: <b>${dados.nome}</b> (${dados.cpf})</p>`,
+        });
+      }
     } catch (err) {
       logger.error("[matriculaService] Erro ao enviar e-mails:", err.message);
     }

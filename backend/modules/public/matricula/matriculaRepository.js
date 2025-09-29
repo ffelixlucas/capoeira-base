@@ -8,7 +8,13 @@ const db = require("../../../database/connection");
  * Verifica se já existe um aluno com o CPF informado
  */
 async function buscarPorCpf(cpf) {
-  const [rows] = await db.execute("SELECT id FROM alunos WHERE cpf = ?", [cpf]);
+  // normaliza CPF → só números
+  const normalizado = cpf.replace(/\D/g, "");
+
+  const [rows] = await db.execute("SELECT id FROM alunos WHERE cpf = ?", [
+    normalizado,
+  ]);
+
   return rows.length > 0 ? rows[0] : null;
 }
 
@@ -16,7 +22,9 @@ async function buscarPorCpf(cpf) {
  * Busca turma pelo nome (Infantil, Juvenil, Adulto, etc.)
  */
 async function buscarTurmaPorNome(nome) {
-  const [rows] = await db.execute("SELECT id FROM turmas WHERE nome = ?", [nome]);
+  const [rows] = await db.execute("SELECT id FROM turmas WHERE nome = ?", [
+    nome,
+  ]);
   return rows.length > 0 ? rows[0].id : null;
 }
 
@@ -25,14 +33,14 @@ async function buscarTurmaPorNome(nome) {
  */
 async function criar(dados) {
   const sql = `
-    INSERT INTO alunos (
-      nome, apelido, nascimento, cpf, email,
-      telefone_responsavel, nome_responsavel, responsavel_documento, responsavel_parentesco,
-      endereco, graduacao, observacoes_medicas,
-      autorizacao_imagem, aceite_lgpd, foto_url,
-      status, criado_em, atualizado_em, turma_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', NOW(), NOW(), ?)
-  `;
+  INSERT INTO alunos (
+    nome, apelido, nascimento, cpf, email,
+    telefone_aluno, telefone_responsavel, nome_responsavel, responsavel_documento, responsavel_parentesco,
+    endereco, graduacao, observacoes_medicas,
+    autorizacao_imagem, aceite_lgpd, foto_url,
+    status, criado_em, atualizado_em, turma_id
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', NOW(), NOW(), ?)
+`;
 
   const params = [
     dados.nome,
@@ -40,6 +48,7 @@ async function criar(dados) {
     dados.nascimento,
     dados.cpf,
     dados.email,
+    dados.telefone_aluno || null,
     dados.telefone_responsavel || null,
     dados.nome_responsavel || null,
     dados.responsavel_documento || null,
@@ -83,4 +92,9 @@ async function buscarTurmaPorIdade(idade) {
   return rows.length > 0 ? rows[0].id : null;
 }
 
-module.exports = { criar, buscarPorCpf, buscarTurmaPorNome, buscarTurmaPorIdade };
+module.exports = {
+  criar,
+  buscarPorCpf,
+  buscarTurmaPorNome,
+  buscarTurmaPorIdade,
+};
