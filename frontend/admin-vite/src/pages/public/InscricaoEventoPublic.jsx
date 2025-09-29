@@ -307,7 +307,8 @@ export default function InscricaoEventoPublic() {
                   style={{ WebkitOverflowScrolling: "touch" }}
                 >
                   <PoliticaLGPD
-                    organization=" Grupo Capoeira Brasil"
+                    contexto="evento"
+                    organization="Grupo Capoeira Brasil"
                     contactEmail=""
                     updatedAt="2025-08-20"
                   />

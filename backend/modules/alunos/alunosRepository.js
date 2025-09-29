@@ -216,9 +216,10 @@ async function contarPendentes() {
 // Lista todos os alunos pendentes
 async function listarPendentes() {
   const [rows] = await connection.execute(
-    `SELECT id, nome, apelido, telefone_responsavel, email, status
-     FROM alunos
-     WHERE status = 'pendente'
+    `SELECT id, nome, apelido, telefone_aluno, telefone_responsavel, email, status
+FROM alunos
+WHERE status = 'pendente'
+
      ORDER BY criado_em ASC`
   );
   return rows;

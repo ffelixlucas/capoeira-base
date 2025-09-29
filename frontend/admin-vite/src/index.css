@@ -49,9 +49,10 @@
   }
 
   .btn-primary {
-    @apply btn bg-gradient-to-r from-purple-600 to-purple-700 text-white 
-           hover:from-purple-700 hover:to-purple-800 focus:ring-purple-400;
+    @apply btn bg-gradient-to-r from-cor-primaria to-cor-destaque text-cor-escura
+           hover:from-cor-destaque hover:to-cor-primaria focus:ring-cor-primaria;
   }
+  
 
   .btn-secondary {
     @apply btn bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-400;

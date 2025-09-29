@@ -3,9 +3,12 @@ const emailService = require('../../services/emailService');
 const logger = require('../../utils/logger');
 
 async function login(req, res) {
-  const { email, senha } = req.body;
+  let { email, senha } = req.body;
 
   try {
+    // 🔥 normaliza antes de passar adiante
+    email = email.trim().toLowerCase();
+
     const resultado = await authService.login(email, senha);
     return res.status(200).json(resultado);
   } catch (erro) {

@@ -59,7 +59,9 @@ function ModalPendentes({
                       )}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {aluno.telefone_responsavel || "Sem telefone"}
+                      {aluno.telefone_aluno ||
+                        aluno.telefone_responsavel ||
+                        "Sem telefone"}
                     </p>
                     <p className="text-sm text-gray-600">
                       {aluno.email || "Sem email"}

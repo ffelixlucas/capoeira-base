@@ -5,6 +5,7 @@ import api from "../../services/api";
 import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import { logger } from "../../utils/logger";
+import { FaWhatsapp } from "react-icons/fa";
 
 export default function ModalAluno({
   aberto,
@@ -45,21 +46,90 @@ export default function ModalAluno({
 
   if (!aluno) return null;
 
-  const dados = [
-    { label: "Apelido", valor: aluno.apelido },
-    { label: "Graduação", valor: aluno.graduacao },
-    {
-      label: "Nascimento",
-      valor: aluno.nascimento
-        ? new Date(aluno.nascimento).toLocaleDateString("pt-BR")
-        : "",
-    },
-    { label: "Responsável", valor: aluno.nome_responsavel },
-    { label: "Contato", valor: aluno.telefone_responsavel },
-    { label: "Endereço", valor: aluno.endereco },
-    { label: "Turma", valor: aluno.turma },
-    { label: "Observações médicas", valor: aluno.observacoes_medicas },
-  ];
+  // calcula idade
+  let idade = null;
+  if (aluno.nascimento) {
+    const nascimento = new Date(aluno.nascimento);
+    const diff = Date.now() - nascimento.getTime();
+    idade = new Date(diff).getUTCFullYear() - 1970;
+  }
+
+  const dados = [];
+
+  // Apelido
+  if (aluno.apelido) {
+    dados.push({ label: "Apelido", valor: aluno.apelido });
+  }
+
+  // Graduação
+  dados.push({
+    label: "Graduação",
+    valor: aluno.graduacao || "Branca",
+  });
+
+  // Nascimento
+  dados.push({
+    label: "Nascimento",
+    valor: aluno.nascimento
+      ? new Date(aluno.nascimento).toLocaleDateString("pt-BR")
+      : "-",
+  });
+
+  // Responsável (só se menor de idade)
+  if (idade !== null && idade < 18) {
+    dados.push({ label: "Responsável", valor: aluno.nome_responsavel || "-" });
+  }
+
+  // Contato com ícone do WhatsApp
+  const telefoneContato =
+    idade !== null && idade < 18
+      ? aluno.telefone_responsavel
+      : aluno.telefone_aluno;
+
+  dados.push({
+    label: "Contato",
+    valor: telefoneContato ? (
+      <span className="inline-flex items-center gap-2">
+        <span>{telefoneContato}</span>
+        <FaWhatsapp
+          onClick={() =>
+            window.open(
+              `https://wa.me/55${telefoneContato.replace(/\D/g, "")}`,
+              "_blank"
+            )
+          }
+          className="text-green-500 cursor-pointer"
+          title="Abrir no WhatsApp"
+        />
+      </span>
+    ) : (
+      "-"
+    ),
+  });
+
+  
+  // Endereço
+  dados.push({ label: "Endereço", valor: aluno.endereco || "-" });
+  
+  // Turma
+  dados.push({ label: "Turma", valor: aluno.turma || "-" });
+  
+  // Observações médicas
+  dados.push({
+    label: "Observações médicas",
+    valor: aluno.observacoes_medicas || "Não há",
+  });
+  // Aceites / Autorizações
+  dados.push({
+    label: "Autorização de Imagem",
+    valor: aluno.autorizacao_imagem ? "Sim" : "Não",
+  });
+
+  dados.push({
+    label: "LGPD",
+    valor: aluno.aceite_lgpd ? "Sim" : "Não",
+  });
+
 
   // ✅ só adiciona métricas se aluno for ativo
   if (aluno.status === "ativo" && metricas) {

@@ -32,6 +32,7 @@ import Inscricoes from "./pages/Inscricoes";
 import InscritosEvento from "./pages/InscritosEvento.jsx";
 import Presencas from "./pages/Presencas.jsx";
 import EditarPerfil from "./pages/EditarPerfil.jsx";
+import ConfigSistema from "./pages/ConfigSistema.jsx";
 
 // Imports de páginas públicas
 import LayoutPublic from "./components/layout/LayoutPublic";
@@ -40,7 +41,7 @@ import InscricaoEventoPublic from "./pages/public/InscricaoEventoPublic";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import CartaoPagamento from "./components/public/pagamento/CartaoPagamento.jsx";
-
+import MatriculaPublic from "./pages/public/MatriculaPublic.jsx";
 function App() {
   return (
     <AuthProvider>
@@ -85,6 +86,7 @@ function App() {
             <Route path="/inscricoes/:eventoId" element={<InscritosEvento />} />
             <Route path="/presencas" element={<Presencas />} />
             <Route path="/perfil" element={<EditarPerfil />} />
+            <Route path="/config" element={<ConfigSistema />} />
 
             <Route
               path="/horarios"
@@ -107,6 +109,7 @@ function App() {
               element={<InscricaoEventoPublic />}
             />
             <Route path="/cartao-pagamento" element={<CartaoPagamento />} />
+            <Route path="/matricula" element={<MatriculaPublic />} />
           </Route>
         </Routes>
       </Router>

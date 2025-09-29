@@ -2,7 +2,15 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 
-export default function ModalFicha({ aberto, onClose, titulo, subtitulo, dados = [], onEditar }) {
+export default function ModalFicha({
+  aberto,
+  onClose,
+  titulo,
+  subtitulo,
+  dados = [],
+  onEditar,
+  children,
+}) {
   return (
     <Transition appear show={aberto} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -32,7 +40,6 @@ export default function ModalFicha({ aberto, onClose, titulo, subtitulo, dados =
               leaveTo="opacity-0 scale-95"
             >
               <Dialog.Panel className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-                
                 {/* Título e subtítulo */}
                 <Dialog.Title className="text-center text-lg font-bold mb-1 text-black  ">
                   {titulo}
@@ -43,13 +50,15 @@ export default function ModalFicha({ aberto, onClose, titulo, subtitulo, dados =
                   </p>
                 )}
 
-                {/* Lista dinâmica */}
+                {/* Conteúdo */}
                 <div className="space-y-2 text-sm text-black">
-                  {dados.map((item, idx) => (
-                    <p key={idx}>
-                      <strong>{item.label}:</strong> {item.valor || "-"}
-                    </p>
-                  ))}
+                  {Array.isArray(dados) && dados.length > 0
+                    ? dados.map((item, idx) => (
+                        <p key={idx}>
+                          <strong>{item.label}:</strong> {item.valor || "-"}
+                        </p>
+                      ))
+                    : children}
                 </div>
 
                 {/* Botões */}
@@ -72,7 +81,6 @@ export default function ModalFicha({ aberto, onClose, titulo, subtitulo, dados =
                     Fechar
                   </button>
                 </div>
-
               </Dialog.Panel>
             </Transition.Child>
           </div>
