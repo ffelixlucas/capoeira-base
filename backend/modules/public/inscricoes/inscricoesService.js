@@ -2,6 +2,8 @@
 const crypto = require("crypto");
 const axios = require("axios");
 const { MercadoPagoConfig, Payment } = require("mercadopago");
+const inscricoesRepository = require("./inscricoesRepository");
+
 const {
   buscarInscricaoPendente,
   criarInscricaoPendente,
@@ -10,10 +12,15 @@ const {
   atualizarInscricaoPendente,
   buscarInscricaoComEvento,
   verificarInscricaoPaga,
+  buscarValorEvento,
 } = require("./inscricoesRepository");
-const { enviarEmailConfirmacao } = require("../../../services/emailService.js");
+const {
+  enviarEmailConfirmacao,
+  enviarEmailPendente,
+} = require("../../../services/emailService.js");
 const logger = require("../../../utils/logger.js");
-const { calcularValorComTaxa } = require("../../../utils/calcularValor");
+const { calcularValores, calcularValorComTaxa } = require("../../../utils/calcularValor");
+
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
@@ -625,6 +632,193 @@ const buscarInscricaoDetalhadaService = async (id) => {
   };
 };
 
+// dentro de inscricoesService.js
+
+const gerarPagamentoBoletoService = async (dadosFormulario) => {
+  try {
+    logger.log("➡️ [Boleto] Dados recebidos:", {
+      ...dadosFormulario,
+      cpf: logger.mascararCpf(dadosFormulario.cpf),
+      telefone: logger.mascararTelefone(dadosFormulario.telefone),
+    });
+
+    const {
+      cpf,
+      responsavel_documento,
+      nome,
+      apelido,
+      email,
+      telefone,
+      valor,
+      evento_id,
+      responsavel_nome,
+      responsavel_email,
+    } = dadosFormulario;
+
+    // 🔒 Validações básicas
+    if (!validarCPF(cpf)) throw new Error("CPF do inscrito inválido.");
+    if (responsavel_documento && !validarCPF(responsavel_documento)) {
+      throw new Error("CPF do responsável inválido.");
+    }
+    if (!validarEmail(email)) throw new Error("E-mail inválido.");
+    if (!validarTelefone(telefone)) throw new Error("Telefone inválido.");
+
+    let valorNum = parseFloat(dadosFormulario.total_amount || valor);
+    if (isNaN(valorNum) || valorNum <= 0) {
+      throw new Error("Valor da inscrição inválido.");
+    }
+
+    // ✅ aplicar taxa do boleto
+    valorNum = calcularValorComTaxa(valorNum, "boleto");
+
+    // 🔒 Verifica duplicidade
+    const jaPago = await verificarInscricaoPaga(cpf, evento_id);
+    if (jaPago) {
+      throw new Error("Este CPF já possui inscrição confirmada neste evento.");
+    }
+
+    // 🔄 Busca ou cria inscrição pendente
+    let inscricaoId;
+    const pendente = await buscarInscricaoPendente(cpf, evento_id);
+    if (pendente) {
+      await atualizarInscricaoPendente(pendente.id, dadosFormulario);
+      inscricaoId = pendente.id;
+    } else {
+      inscricaoId = await criarInscricaoPendente({
+        ...dadosFormulario,
+        status: "pendente",
+        metodo_pagamento: "boleto",
+      });
+    }
+
+    const documentoCPF = responsavel_documento
+      ? responsavel_documento.replace(/\D/g, "")
+      : cpf.replace(/\D/g, "");
+    const nomePagador = responsavel_nome || nome;
+    const emailPagador = responsavel_email || email;
+
+    const baseUrl = process.env.SERVER_URL.endsWith("/api")
+      ? process.env.SERVER_URL
+      : `${process.env.SERVER_URL}/api`;
+
+    // 📦 Monta body do boleto
+    const body = {
+      transaction_amount: valorNum,
+      description: `Inscrição ${nome}${apelido ? ` (${apelido})` : ""}`,
+      payment_method_id: "bolbradesco",
+      payer: {
+        email: emailPagador,
+        first_name: nomePagador.split(" ")[0],
+        last_name: nomePagador.split(" ").slice(1).join(" ") || "-",
+        identification: {
+          type: "CPF",
+          number: documentoCPF,
+        },
+        address: {
+          zip_code: dadosFormulario.zip_code,
+          street_name: dadosFormulario.street_name,
+          street_number: dadosFormulario.street_number,
+          neighborhood: dadosFormulario.neighborhood,
+          city: dadosFormulario.city,
+          federal_unit: dadosFormulario.federal_unit,
+        },
+      },
+
+      notification_url: `${baseUrl}/public/inscricoes/webhook`,
+      external_reference: inscricaoId.toString(),
+    };
+
+    logger.log("📦 [Boleto] Body enviado ao MP:", body);
+
+    const result = await payment.create({
+      body,
+      requestOptions: { idempotencyKey: crypto.randomUUID() },
+    });
+
+    logger.log("📦 [Boleto] Resposta MP:", {
+      id: result.id,
+      status: result.status,
+      status_detail: result.status_detail,
+    });
+
+    // 📝 Atualiza inscrição com dados do boleto
+    await atualizarInscricaoPendente(inscricaoId, {
+      ...dadosFormulario,
+      pagamento_id: result.id,
+      metodo_pagamento: "boleto",
+      status: "pendente",
+    });
+
+    // 🔙 Monta retorno
+    const inscricao = {
+      id: inscricaoId,
+      pagamento_id: result.id,
+      status: "pendente",
+      ticket_url: result.transaction_details?.external_resource_url || null,
+      date_of_expiration: result.date_of_expiration || null,
+      status_detail: result.status_detail,
+      codigo_inscricao: `GCB-${new Date().getFullYear()}-EVT${evento_id}-${String(
+        inscricaoId
+      ).padStart(4, "0")}`,
+      nome,
+      apelido,
+      email,
+      telefone,
+      cpf,
+      data_nascimento: dadosFormulario.data_nascimento,
+      evento: {
+        titulo: dadosFormulario.evento_titulo || "Evento Capoeira Base",
+        data_inicio: dadosFormulario.evento_data_inicio || null,
+        data_fim: dadosFormulario.evento_data_fim || null,
+        local: dadosFormulario.evento_local || "",
+        endereco: dadosFormulario.evento_endereco || "",
+      },
+    };
+
+    // 📧 Dispara e-mail de pendência
+    try {
+      await enviarEmailPendente(inscricao);
+    } catch (emailErr) {
+      logger.error("❌ Falha ao enviar e-mail de pendência:", emailErr);
+    }
+
+    return inscricao;
+  } catch (err) {
+    logger.error("❌ [Service] Erro gerarPagamentoBoletoService:", err);
+    throw err;
+  }
+};
+
+async function getValoresEvento(eventoId) {
+  logger.debug("[inscricoesService.getValoresEvento] eventoId:", eventoId);
+
+  const evento = await inscricoesRepository.buscarValorEvento(eventoId);
+
+  if (!evento) {
+    logger.error(
+      "[inscricoesService.getValoresEvento] evento não encontrado:",
+      eventoId
+    );
+    throw new Error("Evento não encontrado");
+  }
+
+  logger.debug(
+    "[inscricoesService.getValoresEvento] valor base:",
+    evento.valor
+  );
+
+  // ✅ usa direto a função que retorna { pix, cartao, boleto }
+  const valores = calcularValores(evento.valor);
+
+  logger.debug(
+    "[inscricoesService.getValoresEvento] valores calculados:",
+    valores
+  );
+
+  return valores;
+}
+
+
 module.exports = {
   gerarPagamentoPixService,
   gerarPagamentoCartaoService,
@@ -632,6 +826,8 @@ module.exports = {
   processarWebhookService,
   buscarInscricaoDetalhadaService,
   verificarInscricaoPaga,
+  gerarPagamentoBoletoService,
+  getValoresEvento,
 };
 
 function gerarCodigoInscricao(idInscricao, idEvento) {

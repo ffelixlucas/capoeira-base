@@ -1,11 +1,21 @@
 // utils/calcularValor.js
-const TAXA_CARTAO = 0.0499; // 4.99% (ajuste se necessário)
+const TAXA_CARTAO = 0.0499; // 4,99%
+const TAXA_BOLETO = 3.49;   // fixo
 
-function calcularValorComTaxa(valorBase, metodoPagamento) {
-  if (metodoPagamento === "cartao") {
-    return parseFloat((valorBase / (1 - TAXA_CARTAO)).toFixed(2));
-  }
-  return valorBase;
+function calcularValores(valorBase) {
+  const valor = Number(valorBase);
+
+  return {
+    pix: valor,
+    cartao: parseFloat((valor / (1 - TAXA_CARTAO)).toFixed(2)),
+    boleto: parseFloat((valor + TAXA_BOLETO).toFixed(2)),
+  };
 }
 
-module.exports = { calcularValorComTaxa };
+// 🔥 Nova função que o service está usando
+function calcularValorComTaxa(valorBase, metodo) {
+  const valores = calcularValores(valorBase);
+  return valores[metodo] ?? valorBase;
+}
+
+module.exports = { calcularValores, calcularValorComTaxa };
