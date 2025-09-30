@@ -15,3 +15,12 @@ export async function enviarMatricula(dados) {
     );
   }
 }
+
+export async function buscarGrupo(organizacaoId) {
+  try {
+    const { data } = await api.get(`/public/matricula/grupo/${organizacaoId}`);
+    return data.grupo; // só o nome do grupo
+  } catch (err) {
+    throw new Error("Erro ao buscar grupo da organização.");
+  }
+}

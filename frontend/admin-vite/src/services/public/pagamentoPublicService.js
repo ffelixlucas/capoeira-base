@@ -67,3 +67,43 @@ export const pagarCartao = async (dados) => {
     throw new Error("Erro ao processar pagamento com cartão. Tente novamente.");
   }
 };
+
+/**
+ * Envia pagamento com boleto para o backend
+ * @param {Object} dados - Payload com dados pessoais, evento e endereço
+ */
+export const pagarBoleto = async (dados) => {
+  try {
+    logger.log("[pagamentoPublicService] enviando pagamento boleto...", dados);
+
+    const { data } = await api.post(
+      "/public/inscricoes/pagamento-boleto",
+      dados
+    );
+
+    logger.log("[pagamentoPublicService] resposta pagamento boleto:", data);
+    return data;
+  } catch (error) {
+    logger.error(
+      "[pagamentoPublicService] erro ao enviar pagamento boleto:",
+      error
+    );
+
+    const msg = error.response?.data?.error || "Erro ao gerar boleto.";
+    logger.error("[pagamentoPublicService] msg recebida do backend:", msg);
+
+    // Tratamentos amigáveis
+    if (msg.includes("já possui inscrição confirmada")) {
+      throw new Error(
+        "Este CPF já possui uma inscrição paga para este evento."
+      );
+    }
+
+    if (msg.includes("inválido") || msg.includes("obrigatório")) {
+      throw new Error(msg); // mostra a validação exata
+    }
+
+    // Fallback genérico
+    throw new Error("Erro ao gerar boleto. Tente novamente.");
+  }
+};

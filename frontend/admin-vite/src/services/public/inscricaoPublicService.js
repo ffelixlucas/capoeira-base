@@ -1,4 +1,5 @@
 import api from "../api";
+import logger from "../../utils/logger";
 
 export async function gerarPagamentoPix(dados) {
   try {
@@ -16,3 +17,19 @@ export const buscarStatusInscricao = async (inscricaoId) => {
   const { data } = await api.get(`/public/inscricoes/${inscricaoId}`);
   return data;
 };
+
+/**
+ * Busca os valores de inscrição (pix, cartao, boleto) já calculados no backend
+ * @param {number} eventoId
+ */
+export async function buscarValoresEvento(eventoId) {
+  try {
+    logger.log("[inscricaoPublicService] buscando valores do evento", { eventoId });
+    const { data } = await api.get(`/public/inscricoes/valores/${eventoId}`);
+    logger.log("[inscricaoPublicService] valores recebidos:", data);
+    return data; 
+  } catch (error) {
+    logger.error("[inscricaoPublicService] erro ao buscar valores:", error);
+    throw new Error("Erro ao carregar valores de inscrição.");
+  }
+}
