@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { buscarEventoPublicoPorId } from "../../services/agendaService";
 import { Dialog, Transition } from "@headlessui/react";
 import { gerarPagamentoPix } from "../../services/public/inscricaoPublicService";
+import { pagarBoleto } from "../../services/public/pagamentoPublicService";
 
 import EventoInfo from "../../components/public/EventoInfo.jsx";
 import FormInscricaoPublic from "../../components/public/FormInscricaoPublic.jsx";
@@ -10,6 +11,7 @@ import ModalPagamentoPix from "../../components/public/ModalPagamentoPix.jsx";
 import PoliticaLGPD from "../../docs/politicaLGPD.jsx";
 import { logger } from "../../utils/logger.js";
 import ModalPagamentoCartao from "../../components/public/pagamento/ModalPagamentoCartao.jsx";
+import ModalPagamentoBoleto from "../../components/public/pagamento/ModalPagamentoBoleto.jsx";
 import ModalConfirmacaoPagamento from "../../components/public/ModalConfirmacaoPagamento.jsx";
 import AgendaItem from "../../components/agenda/Item.jsx";
 
@@ -26,6 +28,7 @@ export default function InscricaoEventoPublic() {
   const [modalPagamento, setModalPagamento] = useState(false);
   const [dadosPagamento, setDadosPagamento] = useState(null);
   const [modalCartao, setModalCartao] = useState(false);
+  const [modalBoleto, setModalBoleto] = useState(false);
   const [modalConfirmacao, setModalConfirmacao] = useState(false);
 
   const [form, setForm] = useState({
@@ -111,13 +114,12 @@ export default function InscricaoEventoPublic() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    // Validações principais
+    // ✅ Validações iniciais
     if (!form.aceite_lgpd || !form.autorizacao_imagem) {
       alert("Você precisa aceitar a LGPD e autorizar o uso de imagem.");
       return;
     }
 
-    // Validar CPF do inscrito
     if (!validarCPF(form.cpf)) {
       alert("CPF inválido. Verifique e tente novamente.");
       return;
@@ -133,15 +135,13 @@ export default function InscricaoEventoPublic() {
         return;
       }
 
-      // Validar CPF do responsável
       if (!validarCPF(form.responsavel_documento)) {
         alert("CPF do responsável inválido.");
         return;
       }
     }
 
-    // 🔍 Só valida no backend se ainda não existe inscrição criada
-    // 🔍 Só valida no backend se ainda não existe inscrição criada
+    // ✅ Validação backend (evita duplicar inscrição)
     if (!form.id) {
       try {
         const { data } = await api.get("/public/inscricoes/validar", {
@@ -153,8 +153,8 @@ export default function InscricaoEventoPublic() {
           setForm({
             ...form,
             id: data.inscricao.id,
-            cpf: form.cpf, // mantém o CPF correto
-            evento_id: evento.id, // garante que o evento_id vai junto
+            cpf: form.cpf,
+            evento_id: evento.id,
           });
           toast.info("Inscrição pendente encontrada. Continue o pagamento.");
         } else if (data.ok) {
@@ -173,32 +173,38 @@ export default function InscricaoEventoPublic() {
       }
     }
 
-    // Se marcou restrições, precisa preencher
     if (form.tem_restricoes && !form.alergias_restricoes) {
       alert("Descreva as restrições médicas.");
       return;
     }
+
     if (!form.metodo_pagamento) {
       alert("Selecione a forma de pagamento.");
       return;
     }
+
     setEnviando(true);
+
     try {
       if (form.metodo_pagamento === "pix") {
         const resultado = await gerarPagamentoPix({
           ...form,
           evento_id: evento.id,
-          valor: evento.valor,
+          valor: valores?.pix || evento.valor, // 🔹 usa valor com taxa
           forma_pagamento: "pix",
         });
+
         setForm({ ...form, id: resultado.id });
         setDadosPagamento(resultado);
 
-        setModalCartao(false); // ✅ fecha Cartão antes
-        setModalPagamento(true); // abre Pix
+        setModalCartao(false);
+        setModalPagamento(true);
       } else if (form.metodo_pagamento === "cartao") {
-        setModalPagamento(false); // ✅ fecha Pix antes
-        setModalCartao(true); // abre Cartão
+        setModalPagamento(false);
+        setModalCartao(true);
+      } else if (form.metodo_pagamento === "boleto") {
+        setModalPagamento(false);
+        setModalBoleto(true); // abre o modal de endereço
       } else {
         alert("Selecione a forma de pagamento.");
       }
@@ -351,6 +357,17 @@ export default function InscricaoEventoPublic() {
         setModalPagamento={setModalPagamento}
         setModalConfirmacao={setModalConfirmacao}
       />
+      <ModalPagamentoBoleto
+        aberto={modalBoleto}
+        onClose={() => setModalBoleto(false)}
+        dadosInscricao={{
+          ...form,
+          evento_id: evento.id,
+          valor: form.valor || evento.valor, // 🔥 garante que o valor chegue
+          forma_pagamento: "boleto",
+        }}
+      />
+
       <ModalConfirmacaoPagamento
         isOpen={modalConfirmacao}
         onClose={() => setModalConfirmacao(false)}

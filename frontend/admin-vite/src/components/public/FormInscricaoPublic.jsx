@@ -1,6 +1,10 @@
 // components/public/FormInscricaoPublic.jsx
+import { useState, useEffect } from "react";
 import InputBase from "../../components/ui/InputBase";
 import { calcularValorComTaxa } from "../../utils/calcularValor";
+import { motion } from "framer-motion";
+import { CreditCard, Landmark, QrCode, CheckCircle2 } from "lucide-react";
+import { buscarValoresEvento } from "../../services/public/inscricaoPublicService";
 
 export default function FormInscricaoPublic({
   form,
@@ -13,7 +17,6 @@ export default function FormInscricaoPublic({
   formatarCPF,
   evento,
 }) {
-  
   const valorComTaxa = calcularValorComTaxa(evento?.valor || 0, "cartao");
 
   function handleChange(e) {
@@ -57,6 +60,53 @@ export default function FormInscricaoPublic({
       "Preta",
     ],
   };
+
+  const [valores, setValores] = useState(null);
+  useEffect(() => {
+    if (evento?.id) {
+      buscarValoresEvento(evento.id).then(setValores);
+    }
+  }, [evento]);
+
+  // 🔹 Componente auxiliar dentro do FormInscricaoPublic.jsx
+  const MetodoPagamentoCard = ({
+    ativo,
+    onClick,
+    cor,
+    icon: Icon,
+    label,
+    valor,
+    descricao, // 👈 adicionamos aqui
+  }) => (
+    <motion.button
+      type="button"
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      className={`relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-colors shadow-sm text-center
+      ${
+        ativo
+          ? `${cor.border} ${cor.bg}`
+          : "border-gray-200 bg-white hover:bg-gray-50"
+      }
+    `}
+    >
+      <Icon className={`w-6 h-6 mb-1 ${cor.icon}`} />
+      <span className="text-xs font-medium text-gray-800">{label}</span>
+      <span className="text-sm font-semibold text-gray-900">R$ {valor}</span>
+
+      {/* 👇 só aparece se tiver descricao */}
+      {descricao && (
+        <span className="block text-xs text-gray-500 mt-0.5">{descricao}</span>
+      )}
+
+      {ativo && (
+        <CheckCircle2
+          className={`w-4 h-4 absolute top-2 right-2 ${cor.icon}`}
+        />
+      )}
+    </motion.button>
+  );
 
   return (
     <form
@@ -249,38 +299,54 @@ export default function FormInscricaoPublic({
         Autorizo o uso de minha imagem em fotos e vídeos do evento
       </label>
 
-      {/* Escolha de forma de pagamento */}
-      <div className="border-t pt-3 space-y-2">
+      <div className="border-t pt-6 space-y-4">
         <p className="text-sm font-semibold text-gray-700">
-          Forma de pagamento
+          Escolha a forma de pagamento!
         </p>
-        <label className="flex items-center gap-2 text-black text-sm">
-          <input
-            type="radio"
-            name="metodo_pagamento"
-            value="pix"
-            checked={form.metodo_pagamento === "pix"}
-            onChange={(e) =>
-              setForm({ ...form, metodo_pagamento: e.target.value })
-            }
-            required
-          />
-          <span>Pix — R$ {evento?.valor}</span>
-        </label>
-        <label className="flex items-center gap-2 text-black text-sm">
-          <input
-            type="radio"
-            name="metodo_pagamento"
-            value="cartao"
-            checked={form.metodo_pagamento === "cartao"}
-            onChange={(e) =>
-              setForm({ ...form, metodo_pagamento: e.target.value })
-            }
-            required
-          />
-           <span>Cartão — R$ {valorComTaxa.toFixed(2)} + taxas de parcelamento</span>
 
-        </label>
+        <div className="grid grid-cols-3 gap-3">
+          {/* Pix */}
+          <MetodoPagamentoCard
+            ativo={form.metodo_pagamento === "pix"}
+            onClick={() => setForm({ ...form, metodo_pagamento: "pix" })}
+            cor={{
+              border: "border-green-500",
+              bg: "bg-green-50",
+              icon: "text-green-600",
+            }}
+            icon={QrCode}
+            label="Pix"
+            valor={valores?.pix?.toFixed(2)}
+          />
+
+          <MetodoPagamentoCard
+            ativo={form.metodo_pagamento === "cartao"}
+            onClick={() => setForm({ ...form, metodo_pagamento: "cartao" })}
+            cor={{
+              border: "border-blue-500",
+              bg: "bg-blue-50",
+              icon: "text-blue-600",
+            }}
+            icon={CreditCard}
+            label="Cartão"
+            valor={valores?.cartao?.toFixed(2)}
+            descricao="com taxas de processamento"
+          />
+
+          <MetodoPagamentoCard
+            ativo={form.metodo_pagamento === "boleto"}
+            onClick={() => setForm({ ...form, metodo_pagamento: "boleto" })}
+            cor={{
+              border: "border-yellow-500",
+              bg: "bg-yellow-50",
+              icon: "text-yellow-600",
+            }}
+            icon={Landmark}
+            label="Boleto"
+            valor={valores?.boleto?.toFixed(2)}
+            descricao="com taxas de processamento"
+          /> 
+        </div>
       </div>
 
       {/* Botão */}
