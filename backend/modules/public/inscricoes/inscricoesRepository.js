@@ -1,6 +1,7 @@
 //backend/modules/public/inscricoes/inscricoesRepository.js
 
 const db = require("../../../database/connection");
+const logger = require("../../../utils/logger.js");
 
 /**
  * Busca inscrição pendente por CPF e evento
@@ -243,6 +244,21 @@ const verificarInscricaoPaga = async (cpf, eventoId) => {
   );
   return rows.length > 0;
 };
+// Busca o valor base do evento na tabela agenda
+async function buscarValorEvento(eventoId) {
+  logger.debug("[inscricoesRepository.buscarValorEvento] eventoId:", eventoId);
+
+  const [rows] = await db.execute(
+    "SELECT id, valor FROM agenda WHERE id = ? LIMIT 1",
+    [eventoId]
+  );
+
+  const evento = rows[0] || null;
+
+  logger.debug("[inscricoesRepository.buscarValorEvento] resultado:", evento);
+
+  return evento;
+}
 
 module.exports = {
   buscarInscricaoPendente,
@@ -252,4 +268,5 @@ module.exports = {
   atualizarInscricaoPendente,
   buscarInscricaoComEvento,
   verificarInscricaoPaga,
+  buscarValorEvento,
 };

@@ -36,11 +36,18 @@ function warn(...args) {
   }
 }
 
+function debug(...args) {
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[DEBUG]", ...args);
+  }
+}
+
 module.exports = {
   log,
   info,
   error,
   warn,
+  debug, 
   mascararCpf,
   mascararTelefone,
 };

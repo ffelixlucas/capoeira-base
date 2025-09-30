@@ -12,19 +12,21 @@ async function getEquipe(req, res) {
 }
 
 async function criarEquipe(req, res) {
-    try {
-      const id = await equipeService.criarEquipe(req.body);
-      res.status(201).json({ id, message: "Membro criado com sucesso" });
-    } catch (error) {
-      logger.error("Erro ao criar membro:", error.message);
-      res.status(400).json({ message: error.message });
-    }
+  try {
+    const id = await equipeService.criarEquipe(req.body);
+    res.status(201).json({ id, message: "Membro criado com sucesso" });
+  } catch (error) {
+    logger.error("Erro ao criar membro:", error.message);
+    res.status(400).json({ message: error.message });
   }
-  
+}
 
 async function atualizarEquipe(req, res) {
   try {
-    const atualizado = await equipeService.atualizarEquipe(req.params.id, req.body);
+    const atualizado = await equipeService.atualizarEquipe(
+      req.params.id,
+      req.body
+    );
     if (atualizado) {
       res.json({ message: "Membro atualizado com sucesso" });
     } else {
@@ -52,7 +54,10 @@ async function removerEquipe(req, res) {
 
 async function atualizarPerfil(req, res) {
   try {
-    const atualizado = await equipeService.atualizarEquipe(req.usuario.id, req.body);
+    const atualizado = await equipeService.atualizarEquipe(
+      req.usuario.id,
+      req.body
+    );
     if (atualizado) {
       res.json({ message: "Perfil atualizado com sucesso" });
     } else {
@@ -68,10 +73,16 @@ async function alterarSenha(req, res) {
     const { senhaAtual, novaSenha } = req.body;
 
     if (!senhaAtual || !novaSenha) {
-      return res.status(400).json({ message: "Informe senha atual e nova senha" });
+      return res
+        .status(400)
+        .json({ message: "Informe senha atual e nova senha" });
     }
 
-    const resultado = await equipeService.alterarSenha(req.usuario.id, senhaAtual, novaSenha);
+    const resultado = await equipeService.alterarSenha(
+      req.usuario.id,
+      senhaAtual,
+      novaSenha
+    );
 
     if (!resultado.sucesso) {
       return res.status(400).json({ message: resultado.message });
@@ -94,12 +105,15 @@ async function getPerfil(req, res) {
     // remover hash
     delete usuario.senha_hash;
 
-    // 🔥 garantir que roles seja um array de strings, igual no login
+    // garantir que roles seja array de strings
     if (usuario.roles && Array.isArray(usuario.roles)) {
       usuario.roles = usuario.roles.map((r) => r.nome);
     } else {
       usuario.roles = [];
     }
+
+    // 🔥 agora retorna organizacao_id
+    usuario.organizacao_id = usuario.organizacao_id || null;
 
     res.json(usuario);
   } catch (error) {
@@ -107,9 +121,6 @@ async function getPerfil(req, res) {
     res.status(500).json({ message: "Erro interno ao buscar perfil" });
   }
 }
-
-
-
 
 module.exports = {
   getEquipe,

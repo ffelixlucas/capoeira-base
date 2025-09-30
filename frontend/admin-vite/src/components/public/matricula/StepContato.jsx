@@ -52,13 +52,20 @@ export default function StepContato({
           />
 
           {/* Opcional: telefone do aluno, se já tiver */}
-          <InputBase
-            type="text"
-            name="telefone_aluno"
-            placeholder="Telefone do aluno (opcional)"
-            value={form.telefone_aluno}
-            onChange={handleChange}
-          />
+          <div className="form-field-group">
+            <label htmlFor="telefone_aluno">Telefone do Aluno</label>
+            <InputBase
+              type="tel"
+              name="telefone_aluno"
+              id="telefone_aluno"
+              placeholder="(00) 00000-0000"
+              value={form.telefone_aluno}
+              onChange={handleChange}
+            />
+            <small className="form-text text-muted">
+              **Opcional, caso o aluno possua.
+            </small>
+          </div>
         </>
       )}
 

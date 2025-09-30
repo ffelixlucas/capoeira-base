@@ -22,7 +22,7 @@ export default function StepAluno({ form, handleChange }) {
       <InputBase
         type="text"
         name="cpf"
-        placeholder="CPF *"
+        placeholder="CPF do Aluno *"
         value={form.cpf}
         onChange={handleChange}
         required

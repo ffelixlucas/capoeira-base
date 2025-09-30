@@ -1,7 +1,10 @@
 // backend/modules/public/inscricoes/inscricoesController.js
+const inscricoesService = require("./inscricoesService");
+
 const {
   gerarPagamentoPixService,
   gerarPagamentoCartaoService,
+  gerarPagamentoBoletoService,
   processarWebhookService,
   buscarInscricaoDetalhadaService,
   verificarInscricaoPaga,
@@ -14,6 +17,7 @@ const {
 const { buscarInscricaoPendente } = require("./inscricoesRepository");
 const logger = require("../../../utils/logger");
 const { calcularValorComTaxa } = require("../../../utils/calcularValor");
+
 
 const gerarPagamentoPix = async (req, res) => {
   try {
@@ -212,6 +216,55 @@ const validarInscricao = async (req, res) => {
   }
 };
 
+const gerarPagamentoBoleto = async (req, res) => {
+  try {
+    logger.log("🚀 [Controller] Iniciando pagamento Boleto:", {
+      ...req.body,
+      cpf: logger.mascararCpf(req.body.cpf),
+      telefone: logger.mascararTelefone(req.body.telefone),
+    });
+
+    const { cpf, evento_id } = req.body;
+
+    const jaPago = await verificarInscricaoPaga(cpf, evento_id);
+    if (jaPago) {
+      logger.warn("⚠️ Inscrição já paga via Boleto:", {
+        cpf: logger.mascararCpf(cpf),
+        evento_id,
+      });
+      return res.status(400).json({ error: "Inscrição já realizada e paga." });
+    }
+
+    const pagamento = await gerarPagamentoBoletoService(req.body);
+    logger.log("✅ [Controller] Pagamento Boleto gerado:", pagamento);
+    res.status(201).json(pagamento);
+  } catch (error) {
+    logger.error("❌ [Controller] Erro gerarPagamentoBoleto:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Erro ao gerar pagamento Boleto" });
+  }
+};
+
+
+
+async function getValoresEvento(req, res) {
+  try {
+    const { eventoId } = req.params;
+    logger.debug("[inscricoesController.getValoresEvento] params:", { eventoId });
+
+    const valores = await inscricoesService.getValoresEvento(eventoId);
+
+    logger.debug("[inscricoesController.getValoresEvento] retorno:", valores);
+
+    return res.json(valores);
+  } catch (err) {
+    logger.error("[inscricoesController.getValoresEvento] erro:", err);
+    return res.status(400).json({ error: "Erro ao calcular valores do evento." });
+  }
+}
+
+
 module.exports = {
   gerarPagamentoPix,
   gerarPagamentoCartao,
@@ -220,4 +273,6 @@ module.exports = {
   buscarInscricaoPorId,
   reenviarEmail,
   validarInscricao,
-};
+  gerarPagamentoBoleto,
+  getValoresEvento
+  };

@@ -9,10 +9,12 @@ import {
   validarEmail,
   calcularIdade,
 } from "../../utils/formatters";
+import { buscarGrupo } from "../../services/public/matriculaPublicService";
 
 export function useMatriculaSteps(registrarMatricula) {
   const [step, setStep] = useState(1);
   const [possuiRestricao, setPossuiRestricao] = useState(false);
+
 
   const [form, setForm] = useState({
     nome: "",

@@ -8,6 +8,7 @@ const {
   reenviarEmail,
   calcularParcelas,
   validarInscricao,
+  gerarPagamentoBoleto,
 } = require("./inscricoesController");
 
 const router = express.Router();
@@ -21,8 +22,15 @@ router.post("/pagamento", gerarPagamentoPix);
 // Cartão de crédito
 router.post("/pagamento-cartao", gerarPagamentoCartao);
 
+// Boleto bancário
+router.post("/pagamento-boleto", gerarPagamentoBoleto);
+
 // Consultar opções de parcelamento
 router.get("/parcelas", calcularParcelas);
+
+// 🔹 Retorna os valores (pix, cartao, boleto) de um evento
+router.get("/valores/:eventoId", require("./inscricoesController").getValoresEvento);
+
 
 // Rota chamada pelo Mercado Pago quando o pagamento muda de status
 router.post("/webhook", webhookPagamento);
