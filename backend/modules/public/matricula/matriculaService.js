@@ -6,6 +6,7 @@
 const matriculaRepository = require("./matriculaRepository");
 const emailService = require("../../../services/emailService"); // já existente no projeto
 const logger = require("../../../utils/logger");
+const notificacaoService = require("../../notificacaoDestinos/notificacaoDestinosService"); // para buscar e-mails de notificação
 
 /**
  * Calcula idade exata em anos a partir da data de nascimento
@@ -46,7 +47,13 @@ async function criarMatricula(dados) {
 
     dados.turma_id = turmaId;
 
+    // 🔥 Buscar organizacao_id da turma via repository
+    dados.organizacao_id =
+      await matriculaRepository.buscarOrganizacaoPorTurmaId(turmaId);
+
     // 4. Criar aluno com status pendente
+    logger.debug("[matriculaService] Dados recebidos para criar:", dados);
+
     const novoAluno = await matriculaRepository.criar(dados);
 
     // 5. Disparar e-mails
@@ -61,8 +68,13 @@ async function criarMatricula(dados) {
 
       // Para o admin
       // Buscar e-mails de notificação para matrícula
+      logger.info(
+        "[matriculaService] Disparando notificações para organizacao:",
+        dados.organizacao_id
+      );
+
       const emails = await notificacaoService.getEmails(
-        dados.grupo_id,
+        dados.organizacao_id,
         "matricula"
       );
 
@@ -89,5 +101,10 @@ async function criarMatricula(dados) {
     throw err;
   }
 }
+async function getGrupo(organizacaoId) {
+  return await matriculaRepository.buscarGrupoPorOrganizacaoId(organizacaoId);
+}
 
-module.exports = { criarMatricula };
+
+
+module.exports = { criarMatricula , getGrupo};

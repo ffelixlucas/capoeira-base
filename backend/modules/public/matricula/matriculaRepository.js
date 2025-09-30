@@ -3,6 +3,7 @@
 // Responsável por acessar o banco de dados.
 
 const db = require("../../../database/connection");
+const logger = require("../../../utils/logger");
 
 /**
  * Verifica se já existe um aluno com o CPF informado
@@ -33,16 +34,18 @@ async function buscarTurmaPorNome(nome) {
  */
 async function criar(dados) {
   const sql = `
-  INSERT INTO alunos (
-    nome, apelido, nascimento, cpf, email,
-    telefone_aluno, telefone_responsavel, nome_responsavel, responsavel_documento, responsavel_parentesco,
-    endereco, graduacao, observacoes_medicas,
-    autorizacao_imagem, aceite_lgpd, foto_url,
-    status, criado_em, atualizado_em, turma_id
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', NOW(), NOW(), ?)
-`;
+    INSERT INTO alunos (
+      organizacao_id,
+      nome, apelido, nascimento, cpf, email,
+      telefone_aluno, telefone_responsavel, nome_responsavel, responsavel_documento, responsavel_parentesco,
+      endereco, graduacao, observacoes_medicas,
+      autorizacao_imagem, aceite_lgpd, foto_url,
+      turma_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
   const params = [
+    dados.organizacao_id || null,
     dados.nome,
     dados.apelido || null,
     dados.nascimento,
@@ -63,13 +66,17 @@ async function criar(dados) {
   ];
 
   const [result] = await db.execute(sql, params);
+
+  // 🔎 Debug
+  logger.debug("[matriculaRepository.criar] SQL enviado:", sql);
+  logger.debug("[matriculaRepository.criar] Params:", params);
+
   const alunoId = result.insertId;
 
-  // ✅ Criar matrícula inicial vinculada à turma
   if (dados.turma_id) {
     await db.execute(
-      `INSERT INTO matriculas (aluno_id, turma_id, data_inicio) VALUES (?, ?, CURDATE())`,
-      [alunoId, dados.turma_id]
+      `INSERT INTO matriculas (aluno_id, turma_id, organizacao_id, data_inicio) VALUES (?, ?, ?, CURDATE())`,
+      [alunoId, dados.turma_id, dados.organizacao_id || null]
     );
   }
 
@@ -92,9 +99,28 @@ async function buscarTurmaPorIdade(idade) {
   return rows.length > 0 ? rows[0].id : null;
 }
 
+async function buscarOrganizacaoPorTurmaId(turmaId) {
+  const [rows] = await db.execute(
+    "SELECT organizacao_id FROM turmas WHERE id = ?",
+    [turmaId]
+  );
+  return rows.length > 0 ? rows[0].organizacao_id : null;
+}
+
+async function buscarGrupoPorOrganizacaoId(organizacaoId) {
+  const [rows] = await db.execute(
+    "SELECT grupo FROM organizacoes WHERE id = ?",
+    [organizacaoId]
+  );
+  return rows.length > 0 ? rows[0].grupo : null;
+}
+
+
 module.exports = {
   criar,
   buscarPorCpf,
   buscarTurmaPorNome,
   buscarTurmaPorIdade,
+  buscarOrganizacaoPorTurmaId,
+  buscarGrupoPorOrganizacaoId,
 };

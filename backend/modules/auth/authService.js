@@ -44,8 +44,10 @@ async function login(email, senha) {
       nome: membro.nome,
       email: membro.email,
       roles: membro.roles,
+      organizacao_id: membro.organizacao_id || null, 
     },
   };
+
 }
 
 // fluxo: esqueci minha senha

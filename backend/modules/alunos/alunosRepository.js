@@ -53,9 +53,9 @@ async function buscarPorId(id) {
   return rows[0];
 }
 
-// Cria novo aluno
 async function criarAluno(dados) {
   const {
+    organizacao_id,
     nome,
     apelido,
     nascimento,
@@ -67,23 +67,36 @@ async function criarAluno(dados) {
     turma_id,
   } = dados;
 
-  const [result] = await connection.execute(
-    `INSERT INTO alunos
-    (nome, apelido, nascimento, telefone_responsavel, nome_responsavel, endereco, graduacao, observacoes_medicas)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      nome ?? null,
-      apelido ?? null,
-      nascimento ?? null,
-      telefone_responsavel ?? null,
-      nome_responsavel ?? null,
-      endereco ?? null,
-      graduacao ?? null,
-      observacoes_medicas ?? null,
-    ]
-  );
+  const sql = `
+  INSERT INTO alunos (
+    organizacao_id,
+    nome, apelido, nascimento, telefone_responsavel, nome_responsavel,
+    endereco, graduacao, observacoes_medicas,
+    status, criado_em, atualizado_em, turma_id
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', NOW(), NOW(), ?)
+`;
 
-  const aluno_id = result.insertId;
+const params = [
+  organizacao_id ?? null,
+  nome ?? null,
+  apelido ?? null,
+  nascimento ?? null,
+  telefone_responsavel ?? null,
+  nome_responsavel ?? null,
+  endereco ?? null,
+  graduacao ?? null,
+  observacoes_medicas ?? null,
+  turma_id ?? null,
+];
+
+const [result] = await connection.execute(sql, params);
+const aluno_id = result.insertId;
+
+// 🔎 Debug
+const logger = require("../../utils/logger");
+logger.debug("[alunosRepository.criarAluno] SQL enviado:", sql);
+logger.debug("[alunosRepository.criarAluno] Params:", params);
+
 
   // Criar matrícula inicial vinculando à turma
   await connection.execute(
@@ -93,6 +106,8 @@ async function criarAluno(dados) {
 
   return aluno_id;
 }
+
+
 
 // Edita aluno existente
 async function editarAluno(id, dados) {

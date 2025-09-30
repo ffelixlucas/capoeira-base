@@ -5,6 +5,7 @@ async function buscarMembroPorEmail(email) {
     `
     SELECT 
       e.*, 
+      e.organizacao_id,         -- 🔥 garantir que vem junto
       GROUP_CONCAT(r.nome) AS roles 
     FROM equipe e
     LEFT JOIN equipe_roles er ON e.id = er.equipe_id
@@ -25,6 +26,7 @@ async function buscarMembroPorEmail(email) {
 
   return membro;
 }
+
 
 module.exports = {
   buscarMembroPorEmail,

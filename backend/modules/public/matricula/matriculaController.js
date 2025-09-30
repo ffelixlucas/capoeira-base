@@ -23,5 +23,17 @@ async function criarMatricula(req, res) {
     });
   }
 }
+async function getGrupo(req, res) {
+  try {
+    const { organizacaoId } = req.params;
+    const grupo = await matriculaService.getGrupo(organizacaoId);
+    return res.json({ grupo });
+  } catch (err) {
+    return res.status(400).json({ error: "Erro ao buscar grupo." });
+  }
+}
 
-module.exports = { criarMatricula };
+
+
+
+module.exports = { criarMatricula, getGrupo,};

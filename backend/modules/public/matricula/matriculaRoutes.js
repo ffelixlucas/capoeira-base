@@ -8,5 +8,8 @@ const matriculaController = require("./matriculaController");
 
 // POST /public/matricula
 router.post("/matricula", matriculaController.criarMatricula);
+// GET /public/matricula/grupo/:organizacaoId
+router.get("/matricula/grupo/:organizacaoId", matriculaController.getGrupo);
+
 
 module.exports = router;
