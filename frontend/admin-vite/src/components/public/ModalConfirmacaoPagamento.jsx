@@ -2,10 +2,14 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { CheckCircle } from "lucide-react";
+import { logger } from "../../utils/logger"; // 🔥 usa nosso logger
 
 export default function ModalConfirmacaoPagamento({ isOpen, onClose, dados }) {
   // Se não houver dados ou não estiver aberto, não renderiza nada
   if (!isOpen || !dados) return null;
+
+  // 🔎 Debug usando logger padronizado
+  logger.debug("[ModalConfirmacaoPagamento] dados recebidos:", dados);
 
   // Fallbacks seguros para evitar undefined
   const {
@@ -31,20 +35,16 @@ export default function ModalConfirmacaoPagamento({ isOpen, onClose, dados }) {
   const localEvento = evento?.local || "-";
 
   // Valor pago: prioriza valor_liquido; fallback para valor do evento
-  const valorPago = Number(
-    valor_liquido ?? evento?.valor ?? 0
-  );
+  const valorPago = Number(valor_liquido ?? evento?.valor ?? 0);
   const valorPagoFmt = isFinite(valorPago) ? valorPago.toFixed(2) : "0.00";
 
   // Taxas e parcelas só aparecem no cartão
   const isCartao = metodo_pagamento === "cartao";
   const parcelasFmt = isCartao ? (parcelas || 1) : null;
-  const taxaValorFmt = isCartao && isFinite(Number(taxa_valor))
-    ? Number(taxa_valor).toFixed(2)
-    : "0.00";
-  const taxaPercFmt = isCartao && isFinite(Number(taxa_percentual))
-    ? Number(taxa_percentual).toFixed(2)
-    : "0.00";
+
+  // 🔥 Converte taxa sempre para número seguro
+  const taxaValorNum = parseFloat(taxa_valor ?? 0);
+  const taxaPercNum = parseFloat(taxa_percentual ?? 0);
 
   // Se por algum motivo vier com status diferente de pago, evita abrir modal
   if (status && status !== "pago") return null;
@@ -82,9 +82,7 @@ export default function ModalConfirmacaoPagamento({ isOpen, onClose, dados }) {
               <p>
                 <strong>Data:</strong>{" "}
                 {dataInicio ? dataInicio.toLocaleDateString("pt-BR") : "-"}
-                {dataFim
-                  ? ` até ${dataFim.toLocaleDateString("pt-BR")}`
-                  : ""}
+                {dataFim ? ` até ${dataFim.toLocaleDateString("pt-BR")}` : ""}
               </p>
               <p>
                 <strong>Local:</strong> {localEvento}
@@ -108,8 +106,8 @@ export default function ModalConfirmacaoPagamento({ isOpen, onClose, dados }) {
                       <strong>Parcelas:</strong> {parcelasFmt}x
                     </p>
                     <p className="text-xs text-gray-600">
-                      <strong>Taxas:</strong> R$ {taxaValorFmt} ({taxaPercFmt}
-                      %)
+                      <strong>Taxas:</strong> R$ {taxaValorNum.toFixed(2)} (
+                      {taxaPercNum.toFixed(2)}%)
                     </p>
                   </>
                 )}

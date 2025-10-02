@@ -1,11 +1,14 @@
 // modules/graduacoes/graduacoesService.js
-const graduacoesRepository = require("./graduacoesRepository.js");
+const graduacoesRepository = require("./graduacoesRepository");
+const { logger } = require("../../utils/logger");
 
-async function listarPorCategoria(categoria) {
-  return await graduacoesRepository.listarPorCategoria(categoria);
+async function listarPorCategoria(categoriaId) {
+  logger.info("[graduacoesService] Chamando listarPorCategoria", { categoriaId });
+  return await graduacoesRepository.listarPorCategoria(categoriaId);
 }
 
 async function listarTodas() {
+  logger.info("[graduacoesService] Chamando listarTodas");
   return await graduacoesRepository.listarTodas();
 }
 

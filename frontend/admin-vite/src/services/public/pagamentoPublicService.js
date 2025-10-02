@@ -49,7 +49,7 @@ export const pagarCartao = async (dados) => {
 
     const msg = error.response?.data?.error || "Erro ao processar pagamento.";
     logger.error("[pagamentoPublicService] msg recebida do backend:", msg);
-    
+
     // Tratamentos amigáveis para o usuário
     if (msg.includes("já possui inscrição confirmada")) {
       throw new Error(
@@ -82,7 +82,7 @@ export const pagarBoleto = async (dados) => {
     );
 
     logger.log("[pagamentoPublicService] resposta pagamento boleto:", data);
-    return data;
+    return data; // 🔥 garante que front receba o objeto certo { ticket_url, status, etc. }
   } catch (error) {
     logger.error(
       "[pagamentoPublicService] erro ao enviar pagamento boleto:",

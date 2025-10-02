@@ -1,9 +1,12 @@
 // hooks/useInscritosEvento.js
 import { useState, useEffect } from "react";
-import { buscarInscritosPorEvento, buscarInscritoPorId } from "../services/inscricaoService";
+import {
+  buscarInscritosPorEvento,
+  buscarInscritoPorId,
+} from "../services/inscricaoService";
 import { logger } from "../utils/logger";
 
-export function useInscritosEvento(eventoId, busca) {
+export function useInscritosEvento(eventoId, busca, categoria) {
   const [evento, setEvento] = useState(null);
   const [inscritos, setInscritos] = useState([]);
   const [resumoCamisetas, setResumoCamisetas] = useState([]);
@@ -13,12 +16,12 @@ export function useInscritosEvento(eventoId, busca) {
 
   useEffect(() => {
     carregarInscritos();
-  }, [eventoId, busca]);
+  }, [eventoId, busca, categoria]);
 
   async function carregarInscritos() {
     setCarregando(true);
     try {
-      const dados = await buscarInscritosPorEvento(eventoId, busca);
+      const dados = await buscarInscritosPorEvento(eventoId, busca, categoria);
       setEvento(dados.evento);
       setInscritos(dados.inscritos);
       setResumoCamisetas(dados.resumo_camisetas || []);
@@ -44,10 +47,14 @@ export function useInscritosEvento(eventoId, busca) {
       await carregarInscritos();
     } else {
       setInscritos((lista) =>
-        lista.map((i) => i.id === inscritoAtualizado.id ? { ...i, ...inscritoAtualizado } : i)
+        lista.map((i) =>
+          i.id === inscritoAtualizado.id ? { ...i, ...inscritoAtualizado } : i
+        )
       );
       setInscritoSelecionado((atual) =>
-        atual && atual.id === inscritoAtualizado.id ? { ...atual, ...inscritoAtualizado } : atual
+        atual && atual.id === inscritoAtualizado.id
+          ? { ...atual, ...inscritoAtualizado }
+          : atual
       );
     }
   }

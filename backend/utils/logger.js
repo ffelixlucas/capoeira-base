@@ -1,3 +1,6 @@
+const util = require("util");
+
+// Máscaras de dados sensíveis
 function mascararCpf(cpf) {
   if (!cpf) return "";
   const digits = cpf.replace(/\D/g, "");
@@ -10,44 +13,62 @@ function mascararTelefone(tel) {
   return digits.replace(/.(?=.{4})/g, "*"); // ******4302
 }
 
-function log(...args) {
-  if (process.env.NODE_ENV !== "production") {
-    console.log(...args);
-  }
+// Formatar timestamp
+function timestamp() {
+  return new Date().toISOString();
 }
 
-function info(...args) {
-  if (process.env.NODE_ENV !== "production") {
-    console.info("[INFO]", ...args);
-  }
-}
+// Ambiente
+const isProd = process.env.NODE_ENV === "production";
 
-function error(msg, error) {
-  if (process.env.NODE_ENV !== "production") {
-    console.error("[ERROR]", msg, error);
+// Impressão base
+function print(level, ...args) {
+  const ts = timestamp();
+  const msg = args.map(a =>
+    typeof a === "object" ? util.inspect(a, { depth: null, colors: !isProd }) : a
+  );
+  if (level === "ERROR") {
+    console.error(`[${ts}] [${level}]`, ...msg);
+  } else if (level === "WARN") {
+    console.warn(`[${ts}] [${level}]`, ...msg);
+  } else if (level === "INFO") {
+    console.info(`[${ts}] [${level}]`, ...msg);
   } else {
-    console.error(msg, error?.message || error);
+    console.log(`[${ts}] [${level}]`, ...msg);
   }
 }
 
-function warn(...args) {
-  if (process.env.NODE_ENV !== "production") {
-    console.warn("[WARN]", ...args);
-  }
+// Níveis
+function info(...args) {
+  if (!isProd) print("INFO", ...args);
 }
-
 function debug(...args) {
-  if (process.env.NODE_ENV !== "production") {
-    console.debug("[DEBUG]", ...args);
+  if (!isProd) print("DEBUG", ...args);
+}
+function warn(...args) {
+  if (!isProd) print("WARN", ...args);
+}
+function error(msg, err) {
+  if (err instanceof Error) {
+    print("ERROR", msg, { message: err.message, stack: err.stack });
+  } else {
+    print("ERROR", msg, err);
   }
 }
+function log(...args) {
+  if (!isProd) print("LOG", ...args);
+}
 
-module.exports = {
+// Exportar como objeto logger
+const logger = {
   log,
   info,
   error,
   warn,
-  debug, 
+  debug,
   mascararCpf,
   mascararTelefone,
 };
+
+module.exports = logger;         // permite const logger = require(...)
+module.exports.logger = logger;  

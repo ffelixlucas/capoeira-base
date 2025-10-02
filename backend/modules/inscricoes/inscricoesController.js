@@ -5,9 +5,11 @@ const inscricoesService = require("./inscricoesService");
 const listarPorEvento = async (req, res) => {
   try {
     const busca = req.query.busca || "";
+    const categoria = req.query.categoria || "todos";
     const dados = await inscricoesService.listarPorEvento(
       req.params.eventoId,
-      busca
+      busca,
+      categoria
     );
 
     // Caso o evento não exista

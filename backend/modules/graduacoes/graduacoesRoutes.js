@@ -1,12 +1,12 @@
 // modules/graduacoes/graduacoesRoutes.js
 const express = require("express");
 const router = express.Router();
-const graduacoesController = require("./graduacoesController.js");
+const graduacoesController = require("./graduacoesController");
 
-// GET /graduacoes
+// GET /graduacoes → todas
 router.get("/", graduacoesController.getTodas);
 
-// GET /graduacoes/:categoria
-router.get("/:categoria", graduacoesController.getPorCategoria);
+// GET /graduacoes/categoria/:categoriaId → filtradas por categoria_id
+router.get("/categoria/:categoriaId", graduacoesController.getPorCategoria);
 
 module.exports = router;

@@ -1,22 +1,33 @@
-// frontend/admin-vite/src/utils/logger.js
+// src/utils/logger.js
 const isDev = import.meta.env.MODE !== "production";
 
-export const logger = {
+function timestamp() {
+  return new Date().toISOString();
+}
+
+function formatArgs(level, args) {
+  return [`[${timestamp()}] [${level}]`, ...args];
+}
+
+const loggerCore = {
   log: (...args) => {
-    if (isDev) console.log(...args);
+    if (isDev) console.log(...formatArgs("LOG", args));
   },
   info: (...args) => {
-    if (isDev) console.info(...args);
+    if (isDev) console.info(...formatArgs("INFO", args));
   },
   warn: (...args) => {
-    if (isDev) console.warn(...args);
+    if (isDev) console.warn(...formatArgs("WARN", args));
   },
   error: (...args) => {
-    console.error(...args); // sempre mostra erros
+    // sempre mostra erro (mesmo em prod)
+    console.error(...formatArgs("ERROR", args));
   },
   debug: (...args) => {
-    if (isDev) console.debug(...args);
+    if (isDev) console.debug(...formatArgs("DEBUG", args));
   },
 };
 
-export default logger;
+// Export duplo: compatível com default e nomeado
+export const logger = loggerCore;
+export default loggerCore;

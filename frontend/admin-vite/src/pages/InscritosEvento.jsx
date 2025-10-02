@@ -21,6 +21,7 @@ function InscritosEvento() {
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [camisetasAberto, setCamisetasAberto] = useState(false);
+  const [categoriaFiltro, setCategoriaFiltro] = useState("todos");
 
   const {
     evento,
@@ -32,7 +33,7 @@ function InscritosEvento() {
     setModalAberto,
     verFichaCompleta,
     atualizarInscritoNaLista,
-  } = useInscritosEvento(eventoId, busca);
+  } = useInscritosEvento(eventoId, busca, categoriaFiltro);
 
   // helpers
   const formatarNome = (nome) => {
@@ -71,7 +72,6 @@ function InscritosEvento() {
           Gerencie todos os inscritos, pagamentos e informações do evento.
         </p>
       </header>
-
       {/* Estatísticas lado a lado compactas */}
       <div className="grid grid-cols-2 gap-3">
         <CardEstat
@@ -87,24 +87,38 @@ function InscritosEvento() {
           cor="green"
         />
       </div>
-
-      {/* Busca + Filtro + Contador */}
+      {/* Busca + Filtros + Contador */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <Busca
           placeholder="Buscar por nome, e-mail ou telefone"
           onBuscar={setBusca}
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {/* Filtro de Status */}
           <select
             value={statusFiltro}
             onChange={(e) => setStatusFiltro(e.target.value)}
-            className="border rounded-lg px-2 py-1 text-sm text-black"
+            className="border rounded-lg px-2 py-2 text-sm text-black w-full sm:w-auto"
           >
-            <option value="todos">Todos</option>
+            <option value="todos">Todos os Status</option>
             <option value="pago">Pago</option>
             <option value="pendente">Pendente</option>
             <option value="extornado">Extornado</option>
           </select>
+
+          {/* Filtro de Categoria */}
+          <select
+            value={categoriaFiltro}
+            onChange={(e) => setCategoriaFiltro(e.target.value)}
+            className="border rounded-lg px-2 py-2 text-sm text-black w-full sm:w-auto"
+          >
+            <option value="todos">Todas as Categorias</option>
+            <option value="infantil">Infantil</option>
+            <option value="juvenil">Juvenil</option>
+            <option value="adulto">Adulto</option>
+          </select>
+
+          {/* Contador */}
           <ContadorLista total={inscritosFormatados.length} />
         </div>
       </div>
@@ -141,8 +155,6 @@ function InscritosEvento() {
           </button>
         )}
       </div>
-
-
       {/* Lista */}
       <div className="bg-white rounded-lg border border-cor-secundaria/30 shadow-sm overflow-hidden">
         <InscritoList
@@ -151,7 +163,6 @@ function InscritosEvento() {
           onVerMais={verFichaCompleta}
         />
       </div>
-
       {/* Modal */}
       <ModalInscrito
         aberto={modalAberto}
@@ -159,7 +170,6 @@ function InscritosEvento() {
         inscrito={inscritoSelecionado}
         onEditar={atualizarInscritoNaLista}
       />
-
       <ModalCamisetas
         aberto={camisetasAberto}
         onClose={() => setCamisetasAberto(false)}

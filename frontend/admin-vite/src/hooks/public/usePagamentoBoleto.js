@@ -20,11 +20,12 @@ export function usePagamentoBoleto() {
     setErro(null);
 
     try {
-      const resposta = await pagarBoleto(dados);
+      const boletoData = await pagarBoleto(dados);
 
-      logger.log("[usePagamentoBoleto] Boleto gerado com sucesso:", resposta);
-      setBoleto(resposta);
-      return resposta;
+      logger.log("[usePagamentoBoleto] Boleto gerado com sucesso:", boletoData);
+
+      setBoleto(boletoData);
+      return boletoData;
     } catch (err) {
       logger.error("[usePagamentoBoleto] Erro ao gerar boleto:", err.message);
       setErro(err.message);

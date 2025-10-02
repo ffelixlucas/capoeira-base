@@ -1,4 +1,4 @@
-//backend/modules/public/inscricoes/inscricoesRepository.js
+// backend/modules/public/inscricoes/inscricoesRepository.js
 
 const db = require("../../../database/connection");
 const logger = require("../../../utils/logger.js");
@@ -16,7 +16,6 @@ const buscarInscricaoPendente = async (cpf, eventoId) => {
   );
   return rows[0] || null;
 };
-
 
 /**
  * Cria uma inscrição com status = pendente
@@ -37,8 +36,8 @@ const criarInscricaoPendente = async (dados) => {
     tamanho_camiseta,
     alergias_restricoes,
     aceite_lgpd,
-    categoria,
-    graduacao,
+    categoria_id,
+    graduacao_id,
     metodo_pagamento,
   } = dados;
 
@@ -54,7 +53,7 @@ const criarInscricaoPendente = async (dados) => {
       evento_id, nome, apelido, data_nascimento, email, telefone, cpf,
       autorizacao_participacao, autorizacao_imagem, documento_autorizacao_url,
       responsavel_nome, responsavel_documento, responsavel_contato, responsavel_parentesco,
-      tamanho_camiseta, alergias_restricoes, categoria, graduacao,
+      tamanho_camiseta, alergias_restricoes, categoria_id, graduacao_id,
       aceite_imagem, aceite_responsabilidade, aceite_lgpd, metodo_pagamento,
       status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`,
@@ -76,12 +75,12 @@ const criarInscricaoPendente = async (dados) => {
       responsavel_parentesco || null,
       tamanho_camiseta || null,
       alergias_restricoes || null,
-      categoria || null,
-      graduacao || null,
+      categoria_id || null,
+      graduacao_id || null,
       aceite_imagem,
       aceite_responsabilidade,
       aceite_lgpd ?? 0,
-      metodo_pagamento || null, 
+      metodo_pagamento || null,
     ]
   );
 
@@ -141,7 +140,6 @@ const atualizarInscricaoParaPago = async (id, dados) => {
   return result;
 };
 
-
 /**
  * Atualiza inscrição pendente
  */
@@ -151,9 +149,12 @@ const atualizarInscricaoPendente = async (id, dados) => {
      SET nome = ?, apelido = ?, data_nascimento = ?, email = ?, telefone = ?, 
          responsavel_nome = ?, responsavel_documento = ?, responsavel_contato = ?, 
          responsavel_parentesco = ?, tamanho_camiseta = ?, alergias_restricoes = ?, 
-         categoria = ?, graduacao = ?, aceite_lgpd = ?, 
+         categoria_id = ?, graduacao_id = ?, aceite_lgpd = ?, 
          status = ?, pagamento_id = ?, metodo_pagamento = ?, 
-         bandeira_cartao = ?, parcelas = ?, atualizado_em = NOW()
+         bandeira_cartao = ?, parcelas = ?, 
+         ticket_url = ?, date_of_expiration = ?, 
+         valor_bruto = ?, valor_liquido = ?, taxa_valor = ?, taxa_percentual = ?, 
+         atualizado_em = NOW()
      WHERE id = ? AND status = 'pendente'`,
     [
       dados.nome,
@@ -167,19 +168,28 @@ const atualizarInscricaoPendente = async (id, dados) => {
       dados.responsavel_parentesco || null,
       dados.tamanho_camiseta || null,
       dados.alergias_restricoes || null,
-      dados.categoria || null,
-      dados.graduacao || null,
+      dados.categoria_id || null,
+      dados.graduacao_id || null,
       dados.aceite_lgpd ?? 0,
-      dados.status || "pendente",          // 🔥 agora atualiza status também
-      dados.pagamento_id || null,          // 🔥 salva id do pagamento
-      dados.metodo_pagamento || "cartao",  // 🔥 salva forma
-      dados.bandeira_cartao || null,       // 🔥 salva bandeira se já tiver
-      dados.parcelas || null,              // 🔥 salva parcelas se já tiver
+      dados.status || "pendente",
+      dados.pagamento_id || null,
+      dados.metodo_pagamento || "cartao",
+      dados.bandeira_cartao || null,
+      dados.parcelas || null,
+      dados.ticket_url || null,
+      dados.date_of_expiration || null,
+      dados.valor_bruto || null,
+      dados.valor_liquido || null,
+      dados.taxa_valor || null,
+      dados.taxa_percentual || null,
       id,
     ]
   );
 };
 
+/**
+ * Busca inscrição com detalhes do evento
+ */
 /**
  * Busca inscrição com detalhes do evento
  */
@@ -196,8 +206,10 @@ const buscarInscricaoComEvento = async (id) => {
       i.data_nascimento,
       i.tamanho_camiseta,
       i.alergias_restricoes,
-      i.categoria,
-      i.graduacao,
+      i.categoria_id,
+      c.nome AS categoria_nome,
+      i.graduacao_id,
+      g.nome AS graduacao_nome,
       i.evento_id,
 
       -- 🔥 CAMPOS DE PAGAMENTO
@@ -228,6 +240,8 @@ const buscarInscricaoComEvento = async (id) => {
 
     FROM inscricoes_evento i
     LEFT JOIN agenda a ON i.evento_id = a.id
+    LEFT JOIN categorias c ON i.categoria_id = c.id
+    LEFT JOIN graduacoes g ON i.graduacao_id = g.id
     WHERE i.id = ?`,
     [id]
   );
@@ -244,6 +258,7 @@ const verificarInscricaoPaga = async (cpf, eventoId) => {
   );
   return rows.length > 0;
 };
+
 // Busca o valor base do evento na tabela agenda
 async function buscarValorEvento(eventoId) {
   logger.debug("[inscricoesRepository.buscarValorEvento] eventoId:", eventoId);

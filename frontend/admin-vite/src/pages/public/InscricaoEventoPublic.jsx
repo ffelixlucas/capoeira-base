@@ -48,6 +48,8 @@ export default function InscricaoEventoPublic() {
     aceite_lgpd: false,
     autorizacao_imagem: false,
     metodo_pagamento: "",
+    categoria_id: "",   
+    graduacao_id: "",   
   });
 
   const idade = form.data_nascimento
@@ -190,13 +192,13 @@ export default function InscricaoEventoPublic() {
         const resultado = await gerarPagamentoPix({
           ...form,
           evento_id: evento.id,
-          valor: valores?.pix || evento.valor, // 🔹 usa valor com taxa
+          valor: evento.valor, // ✅ sempre pega o valor direto do backend
           forma_pagamento: "pix",
         });
-
+      
         setForm({ ...form, id: resultado.id });
         setDadosPagamento(resultado);
-
+      
         setModalCartao(false);
         setModalPagamento(true);
       } else if (form.metodo_pagamento === "cartao") {
@@ -208,6 +210,7 @@ export default function InscricaoEventoPublic() {
       } else {
         alert("Selecione a forma de pagamento.");
       }
+      
     } catch (err) {
       logger.error("Erro ao salvar inscrição:", err);
       alert("Erro ao gerar pagamento. Tente novamente.");

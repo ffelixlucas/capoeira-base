@@ -123,8 +123,8 @@ async function extornarPagamentoService(id) {
 
 
 // Lista inscritos de um evento
-async function listarPorEvento(eventoId, busca) {
-  return await inscricoesRepository.listarPorEvento(eventoId, busca);
+async function listarPorEvento(eventoId, busca, categoria = "todos") {
+  return await inscricoesRepository.listarPorEvento(eventoId, busca, categoria);
 }
 
 // Busca inscrição pelo ID

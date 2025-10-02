@@ -4,7 +4,8 @@ const db = require('../../database/connection');
 const { atualizarInscricaoComPix } = require('../public/inscricoes/inscricoesRepository');
 
 // Lista evento, totais e inscritos (com filtro opcional)
-async function listarPorEvento(eventoId, busca = "") {
+async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
+
   // 1) Dados do evento
   const [eventoRows] = await db.execute(
     `SELECT id, titulo, valor, data_inicio 
@@ -41,33 +42,36 @@ async function listarPorEvento(eventoId, busca = "") {
   // 4) Lista de inscritos (com filtro - busca)
   let query = `
   SELECT 
-    id, 
-    nome, 
-    telefone, 
-    status, 
-    evento_id,
-    email,
-    apelido,
-    responsavel_nome,
-    tamanho_camiseta,
-    valor_bruto,
-    valor_liquido,
-    metodo_pagamento,
-    bandeira_cartao,
-    parcelas,
-    taxa_valor,
-    taxa_percentual,
-    cpf,
-    categoria,
-    autorizacao_participacao,
-    autorizacao_imagem,
-    aceite_imagem,
-    aceite_responsabilidade,
-    aceite_lgpd
-FROM inscricoes_evento
-WHERE evento_id = ?
-
+    i.id, 
+    i.nome, 
+    i.telefone, 
+    i.status, 
+    i.evento_id,
+    i.email,
+    i.apelido,
+    i.responsavel_nome,
+    i.tamanho_camiseta,
+    i.valor_bruto,
+    i.valor_liquido,
+    i.metodo_pagamento,
+    i.bandeira_cartao,
+    i.parcelas,
+    i.taxa_valor,
+    i.taxa_percentual,
+    i.cpf,
+    c.nome AS categoria,
+    g.nome AS graduacao,
+    i.autorizacao_participacao,
+    i.autorizacao_imagem,
+    i.aceite_imagem,
+    i.aceite_responsabilidade,
+    i.aceite_lgpd
+  FROM inscricoes_evento i
+  LEFT JOIN categorias c ON i.categoria_id = c.id
+  LEFT JOIN graduacoes g ON i.graduacao_id = g.id
+  WHERE i.evento_id = ?
 `;
+
 
   const params = [eventoId];
 
@@ -84,6 +88,12 @@ WHERE evento_id = ?
     const like = `%${busca}%`;
     params.push(like, like, like, like, like);
   }
+
+  if (categoria && categoria !== "todos") {
+    query += " AND c.nome = ?";
+    params.push(categoria);
+  }
+  
 
   query += " ORDER BY criado_em DESC";
   const [inscritos] = await db.execute(query, params);
@@ -108,43 +118,45 @@ WHERE evento_id = ?
 async function buscarPorId(id) {
   const [rows] = await db.execute(
     `SELECT 
-  id,
-  nome,
-  apelido,
-  email,
-  telefone,
-  cpf,
-  data_nascimento,
-  status,
-  evento_id,
-  responsavel_nome,
-  responsavel_documento,
-  responsavel_contato,
-  responsavel_parentesco,
-  tamanho_camiseta,
-  alergias_restricoes,
-  categoria,
-  graduacao,
-  pagamento_id,
-  valor_bruto,
-  valor_liquido,
-  metodo_pagamento,
-  bandeira_cartao,
-  parcelas,
-  taxa_valor,
-  taxa_percentual,
-  autorizacao_participacao,
-  autorizacao_imagem,
-  aceite_imagem,
-  aceite_responsabilidade,
-  aceite_lgpd,
-  criado_em,
-  atualizado_em
-FROM inscricoes_evento
-WHERE id = ?
-`,
+      i.id,
+      i.nome,
+      i.apelido,
+      i.email,
+      i.telefone,
+      i.cpf,
+      i.data_nascimento,
+      i.status,
+      i.evento_id,
+      i.responsavel_nome,
+      i.responsavel_documento,
+      i.responsavel_contato,
+      i.responsavel_parentesco,
+      i.tamanho_camiseta,
+      i.alergias_restricoes,
+      c.nome AS categoria,
+      g.nome AS graduacao,
+      i.pagamento_id,
+      i.valor_bruto,
+      i.valor_liquido,
+      i.metodo_pagamento,
+      i.bandeira_cartao,
+      i.parcelas,
+      i.taxa_valor,
+      i.taxa_percentual,
+      i.autorizacao_participacao,
+      i.autorizacao_imagem,
+      i.aceite_imagem,
+      i.aceite_responsabilidade,
+      i.aceite_lgpd,
+      i.criado_em,
+      i.atualizado_em
+    FROM inscricoes_evento i
+    LEFT JOIN categorias c ON i.categoria_id = c.id
+    LEFT JOIN graduacoes g ON i.graduacao_id = g.id
+    WHERE i.id = ?`,
     [id]
   );
+  
 
   return rows[0] || null;
 }
@@ -266,33 +278,35 @@ async function atualizarInscricaoParaExtornado(id, dados) {
 const buscarInscricaoComEvento = async (id) => {
   const [rows] = await db.execute(
     `SELECT 
-      i.id,
-      i.status,
-      i.nome,
-      i.apelido,
-      i.email,
-      i.telefone,
-      i.cpf,
-      i.data_nascimento,
-      i.tamanho_camiseta,
-      i.alergias_restricoes,
-      i.categoria,
-      i.graduacao,
-      i.evento_id,
-      i.pagamento_id,
-      a.titulo,
-      a.descricao_curta,
-      a.descricao_completa,
-      a.data_inicio,
-      a.data_fim,
-      a.local,
-      a.endereco,
-      a.telefone_contato,
-      a.valor,
-      a.possui_camiseta
-    FROM inscricoes_evento i
-    JOIN agenda a ON i.evento_id = a.id
-    WHERE i.id = ?`,
+  i.id,
+  i.status,
+  i.nome,
+  i.apelido,
+  i.email,
+  i.telefone,
+  i.cpf,
+  i.data_nascimento,
+  i.tamanho_camiseta,
+  i.alergias_restricoes,
+  c.nome AS categoria,
+  g.nome AS graduacao,
+  i.evento_id,
+  i.pagamento_id,
+  a.titulo,
+  a.descricao_curta,
+  a.descricao_completa,
+  a.data_inicio,
+  a.data_fim,
+  a.local,
+  a.endereco,
+  a.telefone_contato,
+  a.valor,
+  a.possui_camiseta
+FROM inscricoes_evento i
+JOIN agenda a ON i.evento_id = a.id
+LEFT JOIN categorias c ON i.categoria_id = c.id
+LEFT JOIN graduacoes g ON i.graduacao_id = g.id
+WHERE i.id = ?`,
     [id]
   );
   return rows[0];

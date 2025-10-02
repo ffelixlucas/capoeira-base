@@ -19,8 +19,10 @@ const {
   enviarEmailPendente,
 } = require("../../../services/emailService.js");
 const logger = require("../../../utils/logger.js");
-const { calcularValores, calcularValorComTaxa } = require("../../../utils/calcularValor");
-
+const {
+  calcularValores,
+  calcularValorComTaxa,
+} = require("../../../utils/calcularValor");
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
@@ -350,18 +352,27 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
     // Se aprovado -> marcar como pago e retornar inscrição completa (com evento)
     if (result.status === "approved") {
       // 👉 usar o update de "pago", não o "pendente"
+      // pega o valor base do evento (sem taxa)
+      const valorBase = parseFloat(dadosFormulario.valor);
+
+      // valor bruto já vem com taxa do MP
+      const valorBruto = result.transaction_amount;
+
+      // calcula taxas
+      const taxa_valor = valorBruto - valorBase;
+      const taxa_percentual =
+        valorBase > 0 ? ((taxa_valor / valorBase) * 100).toFixed(2) : 0;
+
       await atualizarInscricaoParaPago(inscricaoId, {
         pagamento_id: result.id,
         status: "pago",
         metodo_pagamento: "cartao",
         bandeira_cartao: result.payment_method_id,
         parcelas: result.installments,
-        valor_bruto: result.transaction_amount,
-        // ainda não temos o líquido aqui; coloca 0 ou igual ao bruto (o webhook ajusta depois)
-        valor_liquido: result.transaction_amount,
-        taxa_valor: 0,
-        taxa_percentual: 0,
-        // limpa qualquer resquício de PIX
+        valor_bruto: valorBruto,
+        valor_liquido: valorBase,
+        taxa_valor,
+        taxa_percentual,
         ticket_url: null,
         qr_code: null,
         qr_code_base64: null,
@@ -616,6 +627,8 @@ const buscarInscricaoDetalhadaService = async (id) => {
     valor_liquido: inscricao.valor_liquido,
     taxa_valor: inscricao.taxa_valor,
     taxa_percentual: inscricao.taxa_percentual,
+    ticket_url: inscricao.ticket_url,              // 👈 adicionar
+    date_of_expiration: inscricao.date_of_expiration,  // 👈 adicionar
 
     evento: {
       titulo: inscricao.titulo,
@@ -663,13 +676,16 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
     if (!validarEmail(email)) throw new Error("E-mail inválido.");
     if (!validarTelefone(telefone)) throw new Error("Telefone inválido.");
 
-    let valorNum = parseFloat(dadosFormulario.total_amount || valor);
-    if (isNaN(valorNum) || valorNum <= 0) {
+    let valorBase = parseFloat(dadosFormulario.total_amount || valor);
+    if (isNaN(valorBase) || valorBase <= 0) {
       throw new Error("Valor da inscrição inválido.");
     }
 
-    // ✅ aplicar taxa do boleto
-    valorNum = calcularValorComTaxa(valorNum, "boleto");
+    // ✅ calcular bruto, líquido e taxas
+    const valorBruto = calcularValorComTaxa(valorBase, "boleto");
+    const taxa_valor = valorBruto - valorBase;
+    const taxa_percentual =
+      valorBase > 0 ? ((taxa_valor / valorBase) * 100).toFixed(2) : 0;
 
     // 🔒 Verifica duplicidade
     const jaPago = await verificarInscricaoPaga(cpf, evento_id);
@@ -680,14 +696,18 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
     // 🔄 Busca ou cria inscrição pendente
     let inscricaoId;
     const pendente = await buscarInscricaoPendente(cpf, evento_id);
+
     if (pendente) {
-      await atualizarInscricaoPendente(pendente.id, dadosFormulario);
-      inscricaoId = pendente.id;
+      inscricaoId = pendente.id; // ✅ define corretamente
     } else {
       inscricaoId = await criarInscricaoPendente({
         ...dadosFormulario,
-        status: "pendente",
         metodo_pagamento: "boleto",
+        status: "pendente",
+        valor_bruto: valorBruto,
+        valor_liquido: valorBase,
+        taxa_valor,
+        taxa_percentual,
       });
     }
 
@@ -703,7 +723,7 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
 
     // 📦 Monta body do boleto
     const body = {
-      transaction_amount: valorNum,
+      transaction_amount: valorBruto,
       description: `Inscrição ${nome}${apelido ? ` (${apelido})` : ""}`,
       payment_method_id: "bolbradesco",
       payer: {
@@ -723,9 +743,8 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
           federal_unit: dadosFormulario.federal_unit,
         },
       },
-
       notification_url: `${baseUrl}/public/inscricoes/webhook`,
-      external_reference: inscricaoId.toString(),
+      external_reference: inscricaoId.toString(), // ✅ agora existe
     };
 
     logger.log("📦 [Boleto] Body enviado ao MP:", body);
@@ -740,54 +759,66 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
       status: result.status,
       status_detail: result.status_detail,
     });
+// 📝 Atualiza inscrição com dados do boleto
+// 📝 Atualiza inscrição com dados do boleto
+const boletoUrl =
+  result.transaction_details?.external_resource_url ||
+  result.point_of_interaction?.transaction_data?.ticket_url ||
+  null;
 
-    // 📝 Atualiza inscrição com dados do boleto
-    await atualizarInscricaoPendente(inscricaoId, {
-      ...dadosFormulario,
-      pagamento_id: result.id,
-      metodo_pagamento: "boleto",
-      status: "pendente",
-    });
+await atualizarInscricaoPendente(inscricaoId, {
+  ...dadosFormulario,
+  pagamento_id: result.id,
+  metodo_pagamento: "boleto",
+  status: "pendente",
+  valor_bruto: valorBruto,
+  valor_liquido: valorBase,
+  taxa_valor,
+  taxa_percentual,
+  ticket_url: boletoUrl,
+  date_of_expiration: result.date_of_expiration || null,
+});
 
-    // 🔙 Monta retorno
-    const inscricao = {
-      id: inscricaoId,
-      pagamento_id: result.id,
-      status: "pendente",
-      ticket_url: result.transaction_details?.external_resource_url || null,
-      date_of_expiration: result.date_of_expiration || null,
-      status_detail: result.status_detail,
-      codigo_inscricao: `GCB-${new Date().getFullYear()}-EVT${evento_id}-${String(
-        inscricaoId
-      ).padStart(4, "0")}`,
-      nome,
-      apelido,
-      email,
-      telefone,
-      cpf,
-      data_nascimento: dadosFormulario.data_nascimento,
-      evento: {
-        titulo: dadosFormulario.evento_titulo || "Evento Capoeira Base",
-        data_inicio: dadosFormulario.evento_data_inicio || null,
-        data_fim: dadosFormulario.evento_data_fim || null,
-        local: dadosFormulario.evento_local || "",
-        endereco: dadosFormulario.evento_endereco || "",
-      },
-    };
+const inscricao = {
+  id: inscricaoId,
+  pagamento_id: result.id,
+  status: "pendente",
+  ticket_url: boletoUrl, // 👈 agora garantido
+  date_of_expiration: result.date_of_expiration || null,
+  status_detail: result.status_detail,
+  codigo_inscricao: `GCB-${new Date().getFullYear()}-EVT${evento_id}-${String(
+    inscricaoId
+  ).padStart(4, "0")}`,
+  nome,
+  apelido,
+  email,
+  telefone,
+  cpf,
+  data_nascimento: dadosFormulario.data_nascimento,
+  evento: {
+    titulo: dadosFormulario.evento_titulo || "Evento Capoeira Base",
+    data_inicio: dadosFormulario.evento_data_inicio || null,
+    data_fim: dadosFormulario.evento_data_fim || null,
+    local: dadosFormulario.evento_local || "",
+    endereco: dadosFormulario.evento_endereco || "",
+  },
+};
 
-    // 📧 Dispara e-mail de pendência
-    try {
-      await enviarEmailPendente(inscricao);
-    } catch (emailErr) {
-      logger.error("❌ Falha ao enviar e-mail de pendência:", emailErr);
-    }
+// 📧 Dispara e-mail de pendência
+try {
+  await enviarEmailPendente(inscricao);
+} catch (emailErr) {
+  logger.error("❌ Falha ao enviar e-mail de pendência:", emailErr);
+}
 
-    return inscricao;
+return inscricao; // 👈 aqui volta pro front já com o ticket_url
+
   } catch (err) {
     logger.error("❌ [Service] Erro gerarPagamentoBoletoService:", err);
     throw err;
   }
 };
+
 
 async function getValoresEvento(eventoId) {
   logger.debug("[inscricoesService.getValoresEvento] eventoId:", eventoId);
@@ -817,7 +848,6 @@ async function getValoresEvento(eventoId) {
 
   return valores;
 }
-
 
 module.exports = {
   gerarPagamentoPixService,

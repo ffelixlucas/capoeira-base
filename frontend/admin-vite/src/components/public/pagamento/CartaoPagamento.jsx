@@ -6,7 +6,6 @@ import { logger } from "../../../utils/logger";
 import { usePagamentoCartao } from "../../../hooks/public/usePagamentoCartao";
 import ModalErroPagamento from "../ModalErroPagamento";
 import ModalPagamentoPendente from "../pagamento/ModalPagamentoPendente";
-import { calcularValorComTaxa } from "../../../utils/calcularValor";
 
 // Inicializa SDK
 initMP();
@@ -14,13 +13,13 @@ initMP();
 export default function CartaoPagamento({
   evento,
   form,
+  valores, 
   setDadosPagamento,
   onSucesso,
 }) {
   const { pagar, loading, erro, resposta } = usePagamentoCartao();
   const [modalErro, setModalErro] = useState(false);
   const [modalPendente, setModalPendente] = useState(false);
-  const valorComTaxa = calcularValorComTaxa(evento?.valor || 0, "cartao");
 
   const handleSubmit = async (formData) => {
     try {
@@ -37,7 +36,7 @@ export default function CartaoPagamento({
         token: formData.token,
         installments: formData.installments,
         payment_method_id: formData.payment_method_id,
-        transaction_amount: parseFloat(evento?.valor || 0),
+        transaction_amount: valores?.cartao || evento?.valor, // ✅ valor do backend
         total_amount: evento?.valor,
         description: `Inscrição no evento ${evento?.titulo}`,
         forma_pagamento: "cartao",
@@ -58,8 +57,8 @@ export default function CartaoPagamento({
         responsavel_contato: form.responsavel_contato || null,
         responsavel_parentesco: form.responsavel_parentesco || null,
         tamanho_camiseta: form.tamanho_camiseta || null,
-        categoria: form.categoria || null,
-        graduacao: form.graduacao || null,
+        categoria_id: form.categoria_id || null, // ✅ ID, não string
+        graduacao_id: form.graduacao_id || null, // ✅ ID, não string
         payer: {
           email: form.email,
           first_name: firstName,
@@ -68,11 +67,11 @@ export default function CartaoPagamento({
           phone: { area_code: areaCode, number: number },
         },
         metadata: {
-          evento_id: evento?.id,
-          apelido: form.apelido,
-          data_nascimento: form.data_nascimento,
-          categoria: form.categoria || null,
-          graduacao: form.graduacao || null,
+          nome: form.nome,
+          cpf: form.cpf,
+          evento_id: evento.id,
+          categoria_id: form.categoria_id,
+          graduacao_id: form.graduacao_id,
         },
       };
 
@@ -95,15 +94,15 @@ export default function CartaoPagamento({
   // ✅ abre modal de confirmação assim que aprovado
   useEffect(() => {
     if (resposta?.status === "pago") {
-      setDadosPagamento(resposta); // agora já vem completo (com 'evento')
-      onSucesso?.(resposta); // isso abre o ModalConfirmacaoPagamento
+      setDadosPagamento(resposta);
+      onSucesso?.(resposta);
     }
   }, [resposta]);
 
   return (
     <div className="p-4">
       <CardPayment
-        initialization={{ amount: valorComTaxa }}
+        initialization={{ amount: valores?.cartao || evento?.valor }} // ✅ valor do backend
         locale="pt-BR"
         onSubmit={handleSubmit}
         onError={(err) => logger.error("[CartaoPagamento] erro no Brick:", err)}
@@ -113,7 +112,6 @@ export default function CartaoPagamento({
         <p className="mt-4 text-blue-600">🔄 Processando pagamento...</p>
       )}
 
-      {/* Só erro continua aqui */}
       <ModalErroPagamento
         isOpen={modalErro}
         onClose={() => setModalErro(false)}

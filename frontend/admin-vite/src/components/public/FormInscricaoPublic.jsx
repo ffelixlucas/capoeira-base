@@ -5,6 +5,7 @@ import { calcularValorComTaxa } from "../../utils/calcularValor";
 import { motion } from "framer-motion";
 import { CreditCard, Landmark, QrCode, CheckCircle2 } from "lucide-react";
 import { buscarValoresEvento } from "../../services/public/inscricaoPublicService";
+import { useCategorias } from "../../hooks/useCategorias";
 
 export default function FormInscricaoPublic({
   form,
@@ -18,6 +19,7 @@ export default function FormInscricaoPublic({
   evento,
 }) {
   const valorComTaxa = calcularValorComTaxa(evento?.valor || 0, "cartao");
+  const { categorias, graduacoes, carregarGraduacoes } = useCategorias();
 
   function handleChange(e) {
     const { name, type, value, checked } = e.target;
@@ -27,39 +29,22 @@ export default function FormInscricaoPublic({
     }));
   }
 
-  const graduacoesPorCategoria = {
-    Infantil: [
-      "Branca",
-      "Ponta Amarela",
-      "Ponta Laranja",
-      "Ponta Azul",
-      "Ponta Verde",
-      "Ponta Roxa",
-      "Ponta Marrom",
-    ],
-    Juvenil: [
-      "Branca",
-      "Branca / Amarela",
-      "Branca / Laranja",
-      "Branca / Azul",
-      "Branca / Verde",
-      "Branca / Roxa",
-      "Branca / Marrom",
-    ],
-    "Jovens e Adultos": [
-      "Branca",
-      "Branca e Amarela",
-      "Amarela",
-      "Branca e Laranja",
-      "Laranja",
-      "Vermelha e Azul",
-      "Azul",
-      "Verde",
-      "Roxa",
-      "Marrom",
-      "Preta",
-    ],
-  };
+  function handleCategoriaChange(e) {
+    const categoriaId = e.target.value;
+    setForm((prev) => ({
+      ...prev,
+      categoria_id: categoriaId, // salva id
+      graduacao_id: "", // reseta graduacao
+    }));
+    if (categoriaId) carregarGraduacoes(categoriaId);
+  }
+
+  function handleGraduacaoChange(e) {
+    setForm((prev) => ({
+      ...prev,
+      graduacao_id: e.target.value,
+    }));
+  }
 
   const [valores, setValores] = useState(null);
   useEffect(() => {
@@ -235,31 +220,33 @@ export default function FormInscricaoPublic({
       )}
       {/* Categoria */}
       <select
-        name="categoria"
-        value={form.categoria}
-        onChange={handleChange}
+        name="categoria_id"
+        value={form.categoria_id || ""}
+        onChange={handleCategoriaChange}
         className="w-full border rounded-lg px-3 py-2 text-black text-sm"
         required
       >
         <option value="">Selecione a categoria</option>
-        <option value="Infantil">Infantil (4 a 10 anos)</option>
-        <option value="Juvenil">Juvenil (11 a 16 anos)</option>
-        <option value="Jovens e Adultos">Jovens e Adultos (17+)</option>
+        {categorias.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.nome}
+          </option>
+        ))}
       </select>
 
-      {/* Graduação (dependente da categoria) */}
-      {form.categoria && (
+      {/* Graduação */}
+      {form.categoria_id && (
         <select
-          name="graduacao"
-          value={form.graduacao}
-          onChange={handleChange}
+          name="graduacao_id"
+          value={form.graduacao_id || ""}
+          onChange={handleGraduacaoChange}
           className="w-full border rounded-lg px-3 py-2 text-black text-sm"
           required
         >
           <option value="">Selecione a graduação</option>
-          {graduacoesPorCategoria[form.categoria].map((g) => (
-            <option key={g} value={g}>
-              {g}
+          {graduacoes.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.nome}
             </option>
           ))}
         </select>
@@ -345,7 +332,7 @@ export default function FormInscricaoPublic({
             label="Boleto"
             valor={valores?.boleto?.toFixed(2)}
             descricao="com taxas de processamento"
-          /> 
+          />
         </div>
       </div>
 

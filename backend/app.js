@@ -19,6 +19,9 @@ const lembretesRoutes = require('./modules/lembretes/lembretesRoutes');
 const alunosRoutes = require('./modules/alunos/alunosRoutes');
 const inscricoesRoutes = require('./modules/inscricoes/inscricoesRoutes');
 const notificacaoDestinosRoutes = require("./modules/notificacaoDestinos/notificacaoDestinosRoutes.js");
+const graduacoesRoutes = require("./modules/graduacoes/graduacoesRoutes");
+const categoriasRoutes = require("./modules/categorias/categoriasRoutes");
+
 
 
 
@@ -29,7 +32,8 @@ const notificacaoDestinosRoutes = require("./modules/notificacaoDestinos/notific
 app.use('/api/teste', (_, res) => res.json({ mensagem: 'API no ar!' }));
 const matriculaRoutes = require("./modules/public/matricula/matriculaRoutes");
 app.use("/api/public", matriculaRoutes);
-const graduacoesRoutes = require("./modules/graduacoes/graduacoesRoutes");
+app.use("/api/categorias", categoriasRoutes);
+
 
 
 // Autenticação

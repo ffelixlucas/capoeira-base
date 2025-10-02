@@ -2,7 +2,11 @@ import { useState } from "react";
 import { usePagamentoBoleto } from "../../../hooks/public/usePagamentoBoleto";
 import logger from "../../../utils/logger";
 
-export default function ModalPagamentoBoleto({ aberto, onClose, dadosInscricao }) {
+export default function ModalPagamentoBoleto({
+  aberto,
+  onClose,
+  dadosInscricao,
+}) {
   const { gerarBoleto, boleto, loading, erro } = usePagamentoBoleto();
 
   const [endereco, setEndereco] = useState({
@@ -11,7 +15,7 @@ export default function ModalPagamentoBoleto({ aberto, onClose, dadosInscricao }
     street_number: "",
     neighborhood: "",
     city: "",
-    federal_unit: ""
+    federal_unit: "",
   });
 
   // Atualiza campos
@@ -28,7 +32,9 @@ export default function ModalPagamentoBoleto({ aberto, onClose, dadosInscricao }
 
       logger.log("[ModalPagamentoBoleto] Buscando endereço via CEP:", cepLimpo);
 
-      const resposta = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const resposta = await fetch(
+        `https://viacep.com.br/ws/${cepLimpo}/json/`
+      );
       const data = await resposta.json();
 
       if (data.erro) {
@@ -41,7 +47,7 @@ export default function ModalPagamentoBoleto({ aberto, onClose, dadosInscricao }
         street_name: data.logradouro || "",
         neighborhood: data.bairro || "",
         city: data.localidade || "",
-        federal_unit: data.uf || ""
+        federal_unit: data.uf || "",
       }));
 
       logger.log("[ModalPagamentoBoleto] Endereço preenchido:", data);
@@ -54,18 +60,23 @@ export default function ModalPagamentoBoleto({ aberto, onClose, dadosInscricao }
     try {
       logger.log("[ModalPagamentoBoleto] Gerando boleto com:", {
         ...dadosInscricao,
-        ...endereco
+        ...endereco,
       });
 
       await gerarBoleto({ ...dadosInscricao, ...endereco });
 
       logger.log("[ModalPagamentoBoleto] Boleto gerado com sucesso!");
     } catch (err) {
-      logger.error("[ModalPagamentoBoleto] Falha ao gerar boleto:", err.message);
+      logger.error(
+        "[ModalPagamentoBoleto] Falha ao gerar boleto:",
+        err.message
+      );
     }
   };
 
   if (!aberto) return null;
+
+  logger.log("[ModalPagamentoBoleto] boleto recebido no render:", boleto);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-gray-800">
@@ -131,22 +142,36 @@ export default function ModalPagamentoBoleto({ aberto, onClose, dadosInscricao }
         {/* Resultado */}
         {boleto && (
           <div className="mt-4 p-3 border rounded bg-gray-50">
-            <p><strong>Código de inscrição:</strong> {boleto.codigo_inscricao}</p>
-            <p><strong>Status:</strong> {boleto.status}</p>
+            <p>
+              <strong>Código de inscrição:</strong> {boleto.codigo_inscricao}
+            </p>
+            <p>
+              <strong>Status:</strong> {boleto.status}
+            </p>
             <p>
               <strong>Vencimento:</strong>{" "}
               {boleto.date_of_expiration
-                ? new Date(boleto.date_of_expiration).toLocaleDateString("pt-BR")
+                ? new Date(boleto.date_of_expiration).toLocaleDateString(
+                    "pt-BR"
+                  )
                 : "-"}
             </p>
-            <a
-              href={boleto.ticket_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              Acessar Boleto (PDF)
-            </a>
+            {boleto.ticket_url && (
+              <a
+                href={boleto.ticket_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  logger.log(
+                    "[ModalPagamentoBoleto] Abrindo link do boleto:",
+                    boleto.ticket_url
+                  )
+                }
+                className="text-blue-600 underline cursor-pointer"
+              >
+                Acessar Boleto (PDF)
+              </a>
+            )}
           </div>
         )}
 

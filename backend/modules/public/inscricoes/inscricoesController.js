@@ -61,9 +61,15 @@ const gerarPagamentoCartao = async (req, res) => {
       return res.status(400).json({ error: "Inscrição já realizada e paga." });
     }
 
+    // 🔥 Gera pagamento
     const pagamento = await gerarPagamentoCartaoService(req.body);
     logger.log("✅ [controller] Pagamento Cartão gerado:", pagamento);
-    res.status(201).json(pagamento);
+
+    // 🔥 Busca inscrição detalhada após salvar no banco
+    const inscricaoDetalhada = await buscarInscricaoDetalhadaService(pagamento.id);
+    logger.debug("🔎 [controller] Inscrição detalhada:", inscricaoDetalhada);
+
+    res.status(201).json(inscricaoDetalhada);
   } catch (error) {
     logger.error(
       "❌ [controller] Erro Controller gerarPagamentoCartao:",
@@ -74,6 +80,7 @@ const gerarPagamentoCartao = async (req, res) => {
       .json({ error: error.message || "Erro ao gerar pagamento Cartão" });
   }
 };
+
 
 const calcularParcelas = async (req, res) => {
   try {
@@ -235,9 +242,15 @@ const gerarPagamentoBoleto = async (req, res) => {
       return res.status(400).json({ error: "Inscrição já realizada e paga." });
     }
 
+    // 🔥 Gera pagamento
     const pagamento = await gerarPagamentoBoletoService(req.body);
     logger.log("✅ [Controller] Pagamento Boleto gerado:", pagamento);
-    res.status(201).json(pagamento);
+
+    // 🔥 Busca inscrição detalhada após salvar no banco
+    const inscricaoDetalhada = await buscarInscricaoDetalhadaService(pagamento.id);
+    logger.debug("🔎 [controller] Inscrição detalhada (Boleto):", inscricaoDetalhada);
+
+    res.status(201).json(inscricaoDetalhada);
   } catch (error) {
     logger.error("❌ [Controller] Erro gerarPagamentoBoleto:", error);
     res
@@ -245,6 +258,7 @@ const gerarPagamentoBoleto = async (req, res) => {
       .json({ error: error.message || "Erro ao gerar pagamento Boleto" });
   }
 };
+
 
 
 
