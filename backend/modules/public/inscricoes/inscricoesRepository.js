@@ -236,7 +236,10 @@ const buscarInscricaoComEvento = async (id) => {
       a.endereco,
       a.telefone_contato,
       a.valor,
-      a.possui_camiseta
+      a.possui_camiseta,
+
+      -- gera o código de inscrição
+      CONCAT('GCB-', YEAR(CURDATE()), '-EVT', i.evento_id, '-', LPAD(i.id,4,'0')) AS codigo_inscricao
 
     FROM inscricoes_evento i
     LEFT JOIN agenda a ON i.evento_id = a.id

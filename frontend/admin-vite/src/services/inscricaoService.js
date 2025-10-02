@@ -1,16 +1,20 @@
 // src/services/inscricaoService.js
 import api from "./api";
+import { logger } from "../utils/logger";
 
-export async function buscarInscritosPorEvento(eventoId, busca = "", categoria = "todos") {
+export async function buscarInscritosPorEvento(eventoId, busca = "", categoriaId = "todos") {
   const token = localStorage.getItem("token");
+  logger.log("[inscricaoService] buscando inscritos", { eventoId, busca, categoriaId });
+
 
   const response = await api.get(`/inscricoes/${eventoId}`, {
     headers: { Authorization: `Bearer ${token}` },
-    params: { busca, categoria }, 
+    params: { busca, categoria: categoriaId }, 
   });
 
   return response.data.data;
 }
+
 
 
 

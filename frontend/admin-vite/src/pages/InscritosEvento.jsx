@@ -113,9 +113,9 @@ function InscritosEvento() {
             className="border rounded-lg px-2 py-2 text-sm text-black w-full sm:w-auto"
           >
             <option value="todos">Todas as Categorias</option>
-            <option value="infantil">Infantil</option>
-            <option value="juvenil">Juvenil</option>
-            <option value="adulto">Adulto</option>
+            <option value="1">Infantil</option>
+            <option value="2">Juvenil</option>
+            <option value="3">Jovens e Adultos</option>
           </select>
 
           {/* Contador */}

@@ -2,6 +2,7 @@
 
 const db = require('../../database/connection');
 const { atualizarInscricaoComPix } = require('../public/inscricoes/inscricoesRepository');
+const logger = require('../../utils/logger.js');
 
 // Lista evento, totais e inscritos (com filtro opcional)
 async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
@@ -39,6 +40,7 @@ async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
   evento.valor_bruto_total = Number(totaisRows[0]?.valor_bruto_total ?? 0);
   evento.valor_liquido_total = Number(totaisRows[0]?.valor_liquido_total ?? 0);
 
+
   // 4) Lista de inscritos (com filtro - busca)
   let query = `
   SELECT 
@@ -65,34 +67,57 @@ async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
     i.autorizacao_imagem,
     i.aceite_imagem,
     i.aceite_responsabilidade,
-    i.aceite_lgpd
+    i.aceite_lgpd,
+    i.criado_em,
+    -- gera o código de inscrição com o mesmo padrão usado no service
+    CONCAT('GCB-', YEAR(CURDATE()), '-EVT', i.evento_id, '-', LPAD(i.id,4,'0')) AS codigo_inscricao
   FROM inscricoes_evento i
   LEFT JOIN categorias c ON i.categoria_id = c.id
   LEFT JOIN graduacoes g ON i.graduacao_id = g.id
   WHERE i.evento_id = ?
 `;
 
-
   const params = [eventoId];
 
+
   if (busca) {
-    query += `
-      AND (
-        nome LIKE ? OR
-        apelido LIKE ? OR
-        email LIKE ? OR
-        telefone LIKE ? OR
-        cpf LIKE ?
-      )
-    `;
     const like = `%${busca}%`;
-    params.push(like, like, like, like, like);
+    const digits = busca.replace(/\D/g, "");
+  
+    if (digits.length > 0) {
+      query += `
+        AND (
+          TRIM(i.nome) COLLATE utf8mb4_general_ci LIKE ? OR
+          TRIM(i.apelido) COLLATE utf8mb4_general_ci LIKE ? OR
+          TRIM(i.email) LIKE ? OR
+          REPLACE(REPLACE(REPLACE(REPLACE(i.telefone, '(', ''), ')', ''), '-', ''), ' ', '') LIKE ? OR
+          REPLACE(REPLACE(REPLACE(REPLACE(i.cpf, '.', ''), '-', ''), ' ', ''), '/', '') LIKE ? OR
+          CONCAT('GCB-', YEAR(CURDATE()), '-EVT', i.evento_id, '-', LPAD(i.id,4,'0')) LIKE ?
+        )
+      `;
+      params.push(like, like, like, `%${digits}%`, `%${digits}%`, like);
+    } else {
+      query += `
+        AND (
+          TRIM(i.nome) COLLATE utf8mb4_general_ci LIKE ? OR
+          TRIM(i.apelido) COLLATE utf8mb4_general_ci LIKE ? OR
+          TRIM(i.email) LIKE ? OR
+          CONCAT('GCB-', YEAR(CURDATE()), '-EVT', i.evento_id, '-', LPAD(i.id,4,'0')) LIKE ?
+        )
+      `;
+      params.push(like, like, like, like);
+    }
   }
+  
+  
+  logger.debug("[listarPorEvento] SQL gerada:", { query, params });
+  
 
   if (categoria && categoria !== "todos") {
-    query += " AND c.nome = ?";
+    query += " AND i.categoria_id = ?";
     params.push(categoria);
   }
+  
   
 
   query += " ORDER BY criado_em DESC";
@@ -149,17 +174,19 @@ async function buscarPorId(id) {
       i.aceite_responsabilidade,
       i.aceite_lgpd,
       i.criado_em,
-      i.atualizado_em
+      i.atualizado_em,
+      -- gera o código de inscrição
+      CONCAT('GCB-', YEAR(CURDATE()), '-EVT', i.evento_id, '-', LPAD(i.id,4,'0')) AS codigo_inscricao
     FROM inscricoes_evento i
     LEFT JOIN categorias c ON i.categoria_id = c.id
     LEFT JOIN graduacoes g ON i.graduacao_id = g.id
     WHERE i.id = ?`,
     [id]
   );
-  
 
   return rows[0] || null;
 }
+
 
 
 async function criarInscricao(dados) {
@@ -278,39 +305,42 @@ async function atualizarInscricaoParaExtornado(id, dados) {
 const buscarInscricaoComEvento = async (id) => {
   const [rows] = await db.execute(
     `SELECT 
-  i.id,
-  i.status,
-  i.nome,
-  i.apelido,
-  i.email,
-  i.telefone,
-  i.cpf,
-  i.data_nascimento,
-  i.tamanho_camiseta,
-  i.alergias_restricoes,
-  c.nome AS categoria,
-  g.nome AS graduacao,
-  i.evento_id,
-  i.pagamento_id,
-  a.titulo,
-  a.descricao_curta,
-  a.descricao_completa,
-  a.data_inicio,
-  a.data_fim,
-  a.local,
-  a.endereco,
-  a.telefone_contato,
-  a.valor,
-  a.possui_camiseta
-FROM inscricoes_evento i
-JOIN agenda a ON i.evento_id = a.id
-LEFT JOIN categorias c ON i.categoria_id = c.id
-LEFT JOIN graduacoes g ON i.graduacao_id = g.id
-WHERE i.id = ?`,
+      i.id,
+      i.status,
+      i.nome,
+      i.apelido,
+      i.email,
+      i.telefone,
+      i.cpf,
+      i.data_nascimento,
+      i.tamanho_camiseta,
+      i.alergias_restricoes,
+      c.nome AS categoria,
+      g.nome AS graduacao,
+      i.evento_id,
+      i.pagamento_id,
+      a.titulo,
+      a.descricao_curta,
+      a.descricao_completa,
+      a.data_inicio,
+      a.data_fim,
+      a.local,
+      a.endereco,
+      a.telefone_contato,
+      a.valor,
+      a.possui_camiseta,
+      -- gera o código de inscrição
+      CONCAT('GCB-', YEAR(CURDATE()), '-EVT', i.evento_id, '-', LPAD(i.id,4,'0')) AS codigo_inscricao
+    FROM inscricoes_evento i
+    JOIN agenda a ON i.evento_id = a.id
+    LEFT JOIN categorias c ON i.categoria_id = c.id
+    LEFT JOIN graduacoes g ON i.graduacao_id = g.id
+    WHERE i.id = ?`,
     [id]
   );
   return rows[0];
 };
+
 
 
 

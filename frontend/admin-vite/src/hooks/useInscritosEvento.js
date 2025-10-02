@@ -6,7 +6,7 @@ import {
 } from "../services/inscricaoService";
 import { logger } from "../utils/logger";
 
-export function useInscritosEvento(eventoId, busca, categoria) {
+export function useInscritosEvento(eventoId, busca, categoriaId) {
   const [evento, setEvento] = useState(null);
   const [inscritos, setInscritos] = useState([]);
   const [resumoCamisetas, setResumoCamisetas] = useState([]);
@@ -16,12 +16,12 @@ export function useInscritosEvento(eventoId, busca, categoria) {
 
   useEffect(() => {
     carregarInscritos();
-  }, [eventoId, busca, categoria]);
+  }, [eventoId, busca, categoriaId]);
 
   async function carregarInscritos() {
     setCarregando(true);
     try {
-      const dados = await buscarInscritosPorEvento(eventoId, busca, categoria);
+      const dados = await buscarInscritosPorEvento(eventoId, busca, categoriaId);
       setEvento(dados.evento);
       setInscritos(dados.inscritos);
       setResumoCamisetas(dados.resumo_camisetas || []);
