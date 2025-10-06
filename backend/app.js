@@ -33,6 +33,7 @@ app.use('/api/teste', (_, res) => res.json({ mensagem: 'API no ar!' }));
 const matriculaRoutes = require("./modules/public/matricula/matriculaRoutes");
 app.use("/api/public", matriculaRoutes);
 app.use("/api/categorias", categoriasRoutes);
+app.use("/api/public/agenda", require("./modules/public/agenda/publicAgendaRoutes"));
 
 
 

@@ -1,50 +1,58 @@
-const agendaRepository = require("../../agenda/agendaRepository");
+// backend/modules/public/agenda/publicAgendaService.js
+const db = require("../../../database/connection");
 
 // 🔹 Lista apenas eventos públicos (com_inscricao = true)
 async function listarEventosPublicos() {
-  const todosEventos = await agendaRepository.listarEventos();
-  
-  // Apenas eventos que podem aparecer ao público
-  return todosEventos
-    .filter((evento) => evento.com_inscricao === 1 || evento.com_inscricao === true)
-    .map((evento) => ({
-      id: evento.id,
-      titulo: evento.titulo,
-      descricao_curta: evento.descricao_curta,
-      data_inicio: evento.data_inicio,
-      valor: evento.valor,
-      imagem_url: evento.imagem_url,
-    }));
+  const [rows] = await db.execute(`
+    SELECT 
+      id, titulo, descricao_curta, descricao_completa,
+      local, endereco, telefone_contato,
+      data_inicio, data_fim, inscricoes_ate,
+      imagem_url, valor, possui_camiseta,
+      configuracoes
+    FROM agenda
+    WHERE com_inscricao = 1 AND status = 'ativo'
+    ORDER BY data_inicio ASC
+  `);
+
+  return rows.map((evento) => ({
+    ...evento,
+    configuracoes: (() => {
+      if (!evento.configuracoes) return {};
+      if (typeof evento.configuracoes === "object") return evento.configuracoes;
+      try {
+        return JSON.parse(evento.configuracoes);
+      } catch {
+        return {};
+      }
+    })(),
+  }));
 }
 
-// 🔹 Busca um evento público por ID (somente se for com_inscricao = true)
+// 🔹 Busca um evento público por ID (agora inclui inscricoes_ate)
 async function buscarEventoPublicoPorId(id) {
-  const evento = await agendaRepository.buscarPorId(id);
+  const [rows] = await db.execute(`
+    SELECT 
+      id, titulo, descricao_curta, descricao_completa,
+      local, endereco, telefone_contato,
+      data_inicio, data_fim, inscricoes_ate,
+      imagem_url, valor, possui_camiseta,
+      configuracoes
+    FROM agenda
+    WHERE id = ? AND com_inscricao = 1 AND status = 'ativo'
+    LIMIT 1
+  `, [id]);
 
-  const inscricaoAtiva =
-    evento?.com_inscricao === 1 ||
-    evento?.com_inscricao === true ||
-    evento?.com_inscricao === "1";
+  if (!rows.length) return null;
 
-  if (!evento || !inscricaoAtiva || evento.status !== "ativo") {
-    return null;
+  const evento = rows[0];
+  try {
+    evento.configuracoes = JSON.parse(evento.configuracoes || "{}");
+  } catch {
+    evento.configuracoes = {};
   }
 
-  // Retorna apenas campos públicos
-  return {
-    id: evento.id,
-    titulo: evento.titulo,
-    descricao_curta: evento.descricao_curta,
-    descricao_completa: evento.descricao_completa,
-    data_inicio: evento.data_inicio,
-    valor: evento.valor,
-    imagem_url: evento.imagem_url,
-    local: evento.local,
-    endereco: evento.endereco,             
-    telefone_contato: evento.telefone_contato, 
-    possui_camiseta: evento.possui_camiseta,
-    configuracoes: evento.configuracoes || {},
-  };
+  return evento;
 }
 
 module.exports = {

@@ -1,5 +1,5 @@
 import { useEffect, useState, Fragment } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, data } from "react-router-dom";
 import { buscarEventoPublicoPorId } from "../../services/agendaService";
 import { Dialog, Transition } from "@headlessui/react";
 import { gerarPagamentoPix } from "../../services/public/inscricaoPublicService";
@@ -17,9 +17,16 @@ import AgendaItem from "../../components/agenda/Item.jsx";
 
 import api from "../../services/api";
 import { toast } from "react-toastify";
+import { CalendarDays } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function InscricaoEventoPublic() {
   const { eventoId } = useParams();
+  console.log(
+    "[DEBUG MONTAGEM COMPONENTE] componente carregado para eventoId:",
+    eventoId
+  );
+
   const navigate = useNavigate();
   const [evento, setEvento] = useState(null);
   const [carregando, setCarregando] = useState(true);
@@ -30,6 +37,57 @@ export default function InscricaoEventoPublic() {
   const [modalCartao, setModalCartao] = useState(false);
   const [modalBoleto, setModalBoleto] = useState(false);
   const [modalConfirmacao, setModalConfirmacao] = useState(false);
+  const [encerrado, setEncerrado] = useState(false);
+
+  console.debug("[DEBUG EVENTO COMPLETO]", evento);
+
+  useEffect(() => {
+    if (!evento) {
+      console.debug("[DEBUG BLOQUEIO] evento ainda não carregado");
+      return;
+    }
+
+    // ✅ Função robusta para converter datas de forma segura (inclusive MySQL)
+    function parseDatetimeAsSaoPaulo(value) {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+
+      const s = String(value).trim();
+      if (!s) return null;
+
+      // se já tem 'T' ou timezone explícito
+      if (s.includes("T") || /[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) {
+        const d = new Date(s);
+        return isNaN(d) ? null : d;
+      }
+
+      // formato MySQL "YYYY-MM-DD HH:MM:SS"
+      const d = new Date(s.replace(" ", "T") + "-03:00");
+      return isNaN(d) ? null : d;
+    }
+
+    const dataInicio = parseDatetimeAsSaoPaulo(evento?.data_inicio);
+    const dataLimite = parseDatetimeAsSaoPaulo(evento?.inscricoes_ate);
+    const agora = new Date();
+
+    console.debug("[DEBUG BLOQUEIO DATAS]", {
+      agora: agora.toISOString(),
+      inscricoes_ate_raw: evento.inscricoes_ate,
+      data_inicio_raw: evento.data_inicio,
+      dataLimite: dataLimite ? dataLimite.toISOString() : null,
+      dataInicio: dataInicio ? dataInicio.toISOString() : null,
+    });
+
+    if (dataLimite && agora > dataLimite) {
+      console.warn("[BLOQUEIO ATIVO] Prazo de inscrição encerrado.");
+      setEncerrado(true);
+    } else if (dataInicio && agora > dataInicio) {
+      console.warn("[BLOQUEIO ATIVO] Evento já começou.");
+      setEncerrado(true);
+    } else {
+      console.info("[BLOQUEIO LIVRE] Inscrições abertas.");
+    }
+  }, [evento]);
 
   const [form, setForm] = useState({
     nome: "",
@@ -48,8 +106,8 @@ export default function InscricaoEventoPublic() {
     aceite_lgpd: false,
     autorizacao_imagem: false,
     metodo_pagamento: "",
-    categoria_id: "",   
-    graduacao_id: "",   
+    categoria_id: "",
+    graduacao_id: "",
   });
 
   const idade = form.data_nascimento
@@ -75,6 +133,7 @@ export default function InscricaoEventoPublic() {
       .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
       .slice(0, 14);
   }
+
   function validarCPF(cpf) {
     cpf = cpf.replace(/\D/g, ""); // só números
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
@@ -100,11 +159,18 @@ export default function InscricaoEventoPublic() {
 
   // Buscar evento
   useEffect(() => {
+    console.log("[DEBUG USEEFFECT] executando com eventoId:", eventoId);
+
     async function carregarEvento() {
       try {
         const dados = await buscarEventoPublicoPorId(eventoId);
+
+        console.log("[DEBUG EVENTO DO BACKEND]", dados);
+
+        console.debug("[DEBUG BUSCA EVENTO PUBLICO]", { eventoId, dados });
         setEvento(dados);
       } catch (err) {
+        console.error("[ERRO AO BUSCAR EVENTO PUBLICO]", err);
         logger.error("Erro ao buscar evento público:", err);
       } finally {
         setCarregando(false);
@@ -192,13 +258,12 @@ export default function InscricaoEventoPublic() {
         const resultado = await gerarPagamentoPix({
           ...form,
           evento_id: evento.id,
-          valor: evento.valor, // ✅ sempre pega o valor direto do backend
+          valor: evento.valor,
           forma_pagamento: "pix",
         });
-      
+
         setForm({ ...form, id: resultado.id });
         setDadosPagamento(resultado);
-      
         setModalCartao(false);
         setModalPagamento(true);
       } else if (form.metodo_pagamento === "cartao") {
@@ -206,11 +271,10 @@ export default function InscricaoEventoPublic() {
         setModalCartao(true);
       } else if (form.metodo_pagamento === "boleto") {
         setModalPagamento(false);
-        setModalBoleto(true); // abre o modal de endereço
+        setModalBoleto(true);
       } else {
         alert("Selecione a forma de pagamento.");
       }
-      
     } catch (err) {
       logger.error("Erro ao salvar inscrição:", err);
       alert("Erro ao gerar pagamento. Tente novamente.");
@@ -225,36 +289,23 @@ export default function InscricaoEventoPublic() {
 
   if (!evento) {
     return (
-      <div className="text-center text-white">
-        <p className="mb-4">
-          Evento não encontrado ou não disponível para inscrição.
-        </p>
-        <button
-          onClick={() => navigate(`/inscrever/${evento.id}`)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-        >
-          Voltar para inscrições
-        </button>
+      <div className="text-center text-white py-10">
+        <p>Carregando evento...</p>
       </div>
     );
   }
 
-  // ⛔ Bloquear se o evento já passou
-  const dataHoje = new Date();
-  const dataEvento = new Date(evento.data_inicio);
-  // const dataLimite = new Date(evento.inscricao_ate); // (quando existir no backend)
-
-  if (dataEvento < dataHoje) {
+  if (encerrado) {
     return (
-      <div className="text-center text-white">
-        <p className="mb-4">
-          As inscrições para este evento já estão encerradas.
+      <div className="text-center text-white py-10">
+        <p className="mb-4 text-lg font-semibold">
+          As inscrições para este evento foram encerradas.
         </p>
         <button
-          onClick={() => navigate(`/inscrever/${evento.id}`)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+          onClick={() => navigate("/inscrever")}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
         >
-          Ver outros eventos
+          Ver outros eventos disponíveis
         </button>
       </div>
     );
@@ -262,11 +313,48 @@ export default function InscricaoEventoPublic() {
 
   return (
     <div className="w-full flex flex-col items-center text-white">
-      <div className="w-full px-4 mb-6">
-        <div className="max-w-[350px] w-full mx-auto">
-          <AgendaItem evento={evento} mostrarBotoes={false} />
-        </div>
-      </div>
+      <div className="w-full flex justify-center mb-10 px-4">
+  <div className="w-full max-w-[350px] rounded-2xl overflow-hidden border border-blue-400/30 
+                  bg-gradient-to-b from-blue-950/60 via-blue-900/40 to-blue-950/60 
+                  backdrop-blur-md shadow-[0_0_25px_-4px_rgba(59,130,246,0.3)]">
+
+    {/* Cabeçalho neon translúcido */}
+    {evento?.inscricoes_ate && (
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative flex items-center justify-center gap-2 py-3 px-4 
+                   bg-gradient-to-r from-blue-700/40 via-blue-600/30 to-blue-700/40 
+                   border-b border-blue-400/30 text-blue-100 font-semibold text-sm tracking-wide"
+      >
+        {/* Glow animado */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-transparent animate-pulse-slow" />
+
+        <CalendarDays
+          className="w-5 h-5 text-blue-300 drop-shadow-[0_0_6px_rgba(59,130,246,0.6)]"
+          strokeWidth={2}
+        />
+        <span className="relative z-10">
+          INSCRIÇÕES ATÉ{" "}
+          <span className="text-blue-50 font-bold drop-shadow-[0_0_6px_rgba(59,130,246,0.5)]">
+            {new Date(evento.inscricoes_ate).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            })}
+          </span>
+        </span>
+      </motion.div>
+    )}
+
+    {/* Card do evento */}
+    <div className="bg-white/95 backdrop-blur-md">
+      <AgendaItem evento={evento} mostrarBotoes={false} />
+    </div>
+  </div>
+</div>
+
 
       <FormInscricaoPublic
         form={form}
@@ -287,30 +375,23 @@ export default function InscricaoEventoPublic() {
           className="relative z-50"
           onClose={() => setModalLGPD(false)}
         >
-          {/* backdrop */}
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-
-          {/* container COM SCROLL (mobile-first) */}
           <div className="fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
-              {/* painel */}
               <Dialog.Panel
                 className="
-            w-full sm:max-w-lg 
-            rounded-t-2xl sm:rounded-2xl 
-            bg-white shadow-xl 
-            text-left align-middle 
-            focus:outline-none
-          "
+                  w-full sm:max-w-lg 
+                  rounded-t-2xl sm:rounded-2xl 
+                  bg-white shadow-xl 
+                  text-left align-middle 
+                  focus:outline-none
+                "
               >
-                {/* header fixo */}
                 <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b">
                   <Dialog.Title className="text-base sm:text-lg font-bold text-black">
                     Política de Privacidade e LGPD
                   </Dialog.Title>
                 </div>
-
-                {/* CONTEÚDO ROLÁVEL */}
                 <div
                   className="px-4 sm:px-6 py-4 max-h-[75vh] sm:max-h-[70vh] overflow-y-auto"
                   style={{ WebkitOverflowScrolling: "touch" }}
@@ -322,8 +403,6 @@ export default function InscricaoEventoPublic() {
                     updatedAt="2025-08-20"
                   />
                 </div>
-
-                {/* footer fixo */}
                 <div className="px-4 sm:px-6 py-3 border-t flex justify-end">
                   <button
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg"
@@ -337,6 +416,7 @@ export default function InscricaoEventoPublic() {
           </div>
         </Dialog>
       </Transition>
+
       {modalPagamento && (
         <ModalPagamentoPix
           isOpen={modalPagamento}
@@ -360,13 +440,14 @@ export default function InscricaoEventoPublic() {
         setModalPagamento={setModalPagamento}
         setModalConfirmacao={setModalConfirmacao}
       />
+
       <ModalPagamentoBoleto
         aberto={modalBoleto}
         onClose={() => setModalBoleto(false)}
         dadosInscricao={{
           ...form,
           evento_id: evento.id,
-          valor: form.valor || evento.valor, // 🔥 garante que o valor chegue
+          valor: form.valor || evento.valor,
           forma_pagamento: "boleto",
         }}
       />

@@ -232,6 +232,7 @@ const buscarInscricaoComEvento = async (id) => {
       a.descricao_completa,
       a.data_inicio,
       a.data_fim,
+      a.inscricoes_ate,
       a.local,
       a.endereco,
       a.telefone_contato,
@@ -278,6 +279,28 @@ async function buscarValorEvento(eventoId) {
   return evento;
 }
 
+/**
+ * Verifica se o evento possui data limite de inscrição e se já encerrou
+ */
+async function verificarEncerramentoInscricao(eventoId) {
+  const [rows] = await db.execute(
+    "SELECT inscricoes_ate FROM agenda WHERE id = ? LIMIT 1",
+    [eventoId]
+  );
+
+  if (!rows.length) return false; // evento não existe
+  const dataLimite = rows[0].inscricoes_ate;
+  if (!dataLimite) return false; // sem data limite definida
+
+  // considera fuso horário de Brasília
+  const limite = new Date(`${dataLimite.replace(" ", "T")}-03:00`);
+  const agora = new Date();
+
+  return agora > limite; // true = já encerrou
+}
+ 
+
+
 module.exports = {
   buscarInscricaoPendente,
   criarInscricaoPendente,
@@ -287,4 +310,5 @@ module.exports = {
   buscarInscricaoComEvento,
   verificarInscricaoPaga,
   buscarValorEvento,
+  verificarEncerramentoInscricao,
 };

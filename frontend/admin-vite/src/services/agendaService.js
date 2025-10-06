@@ -9,9 +9,11 @@ export const listarEventosPublicos = async () => {
 };
 
 export const buscarEventoPublicoPorId = async (id) => {
-  const response = await api.get(`/public/agenda/${id}`);
-  return response.data; // apenas campos públicos
+  const response = await api.get(`/public/agenda/${id}`); 
+  console.log("[DEBUG AGENDA SERVICE] response.data:", response.data);
+  return response.data;
 };
+
 
 /* ============================
    ROTAS ADMIN (mantidas 100% como estavam)

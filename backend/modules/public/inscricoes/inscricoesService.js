@@ -13,6 +13,7 @@ const {
   buscarInscricaoComEvento,
   verificarInscricaoPaga,
   buscarValorEvento,
+  verificarEncerramentoInscricao,
 } = require("./inscricoesRepository");
 const {
   enviarEmailConfirmacao,
@@ -86,6 +87,12 @@ function validarTelefone(telefone) {
 const gerarPagamentoPixService = async (dadosFormulario) => {
   const { cpf, responsavel_documento, nome, apelido, valor, evento_id } =
     dadosFormulario;
+
+  // ⛔ Bloqueio de inscrições após data limite
+  const encerrado = await verificarEncerramentoInscricao(evento_id);
+  if (encerrado) {
+    throw new Error("As inscrições para este evento estão encerradas.");
+  }
 
   // 🔒 Validar CPF do inscrito
   if (!validarCPF(cpf)) {
@@ -246,6 +253,11 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
       responsavel_nome,
       responsavel_email,
     } = dadosFormulario;
+    // ⛔ Bloqueio de inscrições após data limite
+    const encerrado = await verificarEncerramentoInscricao(evento_id);
+    if (encerrado) {
+      throw new Error("As inscrições para este evento estão encerradas.");
+    }
 
     if (!token) throw new Error("Token do cartão ausente.");
     if (!payment_method_id)
@@ -627,8 +639,8 @@ const buscarInscricaoDetalhadaService = async (id) => {
     valor_liquido: inscricao.valor_liquido,
     taxa_valor: inscricao.taxa_valor,
     taxa_percentual: inscricao.taxa_percentual,
-    ticket_url: inscricao.ticket_url,              // 👈 adicionar
-    date_of_expiration: inscricao.date_of_expiration,  // 👈 adicionar
+    ticket_url: inscricao.ticket_url, // 👈 adicionar
+    date_of_expiration: inscricao.date_of_expiration, // 👈 adicionar
 
     evento: {
       titulo: inscricao.titulo,
@@ -667,6 +679,12 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
       responsavel_nome,
       responsavel_email,
     } = dadosFormulario;
+
+    // ⛔ Bloqueio de inscrições após data limite
+    const encerrado = await verificarEncerramentoInscricao(evento_id);
+    if (encerrado) {
+      throw new Error("As inscrições para este evento estão encerradas.");
+    }
 
     // 🔒 Validações básicas
     if (!validarCPF(cpf)) throw new Error("CPF do inscrito inválido.");
@@ -759,66 +777,64 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
       status: result.status,
       status_detail: result.status_detail,
     });
-// 📝 Atualiza inscrição com dados do boleto
-// 📝 Atualiza inscrição com dados do boleto
-const boletoUrl =
-  result.transaction_details?.external_resource_url ||
-  result.point_of_interaction?.transaction_data?.ticket_url ||
-  null;
+    // 📝 Atualiza inscrição com dados do boleto
+    // 📝 Atualiza inscrição com dados do boleto
+    const boletoUrl =
+      result.transaction_details?.external_resource_url ||
+      result.point_of_interaction?.transaction_data?.ticket_url ||
+      null;
 
-await atualizarInscricaoPendente(inscricaoId, {
-  ...dadosFormulario,
-  pagamento_id: result.id,
-  metodo_pagamento: "boleto",
-  status: "pendente",
-  valor_bruto: valorBruto,
-  valor_liquido: valorBase,
-  taxa_valor,
-  taxa_percentual,
-  ticket_url: boletoUrl,
-  date_of_expiration: result.date_of_expiration || null,
-});
+    await atualizarInscricaoPendente(inscricaoId, {
+      ...dadosFormulario,
+      pagamento_id: result.id,
+      metodo_pagamento: "boleto",
+      status: "pendente",
+      valor_bruto: valorBruto,
+      valor_liquido: valorBase,
+      taxa_valor,
+      taxa_percentual,
+      ticket_url: boletoUrl,
+      date_of_expiration: result.date_of_expiration || null,
+    });
 
-const inscricao = {
-  id: inscricaoId,
-  pagamento_id: result.id,
-  status: "pendente",
-  ticket_url: boletoUrl, // 👈 agora garantido
-  date_of_expiration: result.date_of_expiration || null,
-  status_detail: result.status_detail,
-  codigo_inscricao: `GCB-${new Date().getFullYear()}-EVT${evento_id}-${String(
-    inscricaoId
-  ).padStart(4, "0")}`,
-  nome,
-  apelido,
-  email,
-  telefone,
-  cpf,
-  data_nascimento: dadosFormulario.data_nascimento,
-  evento: {
-    titulo: dadosFormulario.evento_titulo || "Evento Capoeira Base",
-    data_inicio: dadosFormulario.evento_data_inicio || null,
-    data_fim: dadosFormulario.evento_data_fim || null,
-    local: dadosFormulario.evento_local || "",
-    endereco: dadosFormulario.evento_endereco || "",
-  },
-};
+    const inscricao = {
+      id: inscricaoId,
+      pagamento_id: result.id,
+      status: "pendente",
+      ticket_url: boletoUrl, // 👈 agora garantido
+      date_of_expiration: result.date_of_expiration || null,
+      status_detail: result.status_detail,
+      codigo_inscricao: `GCB-${new Date().getFullYear()}-EVT${evento_id}-${String(
+        inscricaoId
+      ).padStart(4, "0")}`,
+      nome,
+      apelido,
+      email,
+      telefone,
+      cpf,
+      data_nascimento: dadosFormulario.data_nascimento,
+      evento: {
+        titulo: dadosFormulario.evento_titulo || "Evento Capoeira Base",
+        data_inicio: dadosFormulario.evento_data_inicio || null,
+        data_fim: dadosFormulario.evento_data_fim || null,
+        local: dadosFormulario.evento_local || "",
+        endereco: dadosFormulario.evento_endereco || "",
+      },
+    };
 
-// 📧 Dispara e-mail de pendência
-try {
-  await enviarEmailPendente(inscricao);
-} catch (emailErr) {
-  logger.error("❌ Falha ao enviar e-mail de pendência:", emailErr);
-}
+    // 📧 Dispara e-mail de pendência
+    try {
+      await enviarEmailPendente(inscricao);
+    } catch (emailErr) {
+      logger.error("❌ Falha ao enviar e-mail de pendência:", emailErr);
+    }
 
-return inscricao; // 👈 aqui volta pro front já com o ticket_url
-
+    return inscricao; // 👈 aqui volta pro front já com o ticket_url
   } catch (err) {
     logger.error("❌ [Service] Erro gerarPagamentoBoletoService:", err);
     throw err;
   }
 };
-
 
 async function getValoresEvento(eventoId) {
   logger.debug("[inscricoesService.getValoresEvento] eventoId:", eventoId);
