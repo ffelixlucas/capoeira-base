@@ -3,13 +3,18 @@ import { useState } from "react";
 export default function ResumoCamisetas({ resumo = [] }) {
   const [expandido, setExpandido] = useState(false);
 
-  // Total geral
-  const total = resumo.reduce((acc, item) => acc + (item.total || 0), 0);
+  // Filtra apenas tamanhos válidos (ignora null, "-", vazio)
+  const validos = resumo.filter(
+    (item) => item.tamanho && item.tamanho !== "-" && item.tamanho.trim() !== ""
+  );
+
+  // Total geral (somente válidos)
+  const total = validos.reduce((acc, item) => acc + (item.total || 0), 0);
 
   // Copiar texto pronto
   function copiarResumo() {
-    const texto = resumo
-      .map((item) => `${item.tamanho || "Não informado"}: ${item.total}`)
+    const texto = validos
+      .map((item) => `${item.tamanho}: ${item.total}`)
       .join("\n");
     const final = `👕 Camisetas (${total} no total)\n${texto}`;
     navigator.clipboard.writeText(final);
@@ -35,9 +40,9 @@ export default function ResumoCamisetas({ resumo = [] }) {
       {expandido && (
         <div className="mt-3 space-y-1">
           <ul className="text-sm text-gray-600">
-            {resumo.map((item, idx) => (
+            {validos.map((item, idx) => (
               <li key={idx} className="flex justify-between">
-                <span>{item.tamanho || "Não informado"}</span>
+                <span>{item.tamanho}</span>
                 <span className="font-bold">{item.total}</span>
               </li>
             ))}

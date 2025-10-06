@@ -3,8 +3,17 @@ import { Fragment } from "react";
 import { FaClipboard, FaTimes } from "react-icons/fa";
 
 export default function ModalCamisetas({ aberto, onClose, resumo = [] }) {
-  const pagos = resumo.filter((item) => item.status === "pago" || !item.status);
-  const total = pagos.reduce((acc, item) => acc + (item.total || 0), 0);
+// Filtra apenas pagos e com tamanho válido
+const pagos = resumo.filter(
+  (item) =>
+    (item.status === "pago" || !item.status) &&
+    item.tamanho &&
+    item.tamanho !== "-" &&
+    item.tamanho.trim() !== ""
+);
+
+// Calcula o total apenas dos válidos
+const total = pagos.reduce((acc, item) => acc + (item.total || 0), 0);
 
   function copiarResumo() {
     const texto = pagos
@@ -56,7 +65,7 @@ export default function ModalCamisetas({ aberto, onClose, resumo = [] }) {
                     className="flex flex-col items-center justify-center border rounded-lg py-3 bg-gray-50 shadow-sm"
                   >
                     <span className="text-base font-bold text-gray-800">
-                      {item.tamanho || "?"}
+                      {item.tamanho || "Sem camiseta"}
                     </span>
                     <span className="text-lg font-semibold text-blue-600">
                       {item.total}

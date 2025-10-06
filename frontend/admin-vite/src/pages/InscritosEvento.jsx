@@ -125,7 +125,7 @@ function InscritosEvento() {
 
       {/* Botões Camisetas + Exportar */}
       <div className="flex flex-wrap gap-2 justify-between sm:justify-start">
-        {/* Só aparece se houver camisetas */}
+        {/* Só aparece se houver camisetas válidas */}
         {resumoCamisetas && resumoCamisetas.length > 0 && (
           <button
             onClick={() => setCamisetasAberto(true)}
@@ -134,7 +134,13 @@ function InscritosEvento() {
             <span className="text-gray-700 text-lg">👕</span>
             <span className="px-1.5 py-0.5 text-xs rounded-full bg-green-500 text-white font-semibold">
               {resumoCamisetas
-                .filter((item) => item.status === "pago" || !item.status)
+                .filter(
+                  (item) =>
+                    (item.status === "pago" || !item.status) &&
+                    item.tamanho &&
+                    item.tamanho !== "-" &&
+                    item.tamanho.trim() !== ""
+                )
                 .reduce((acc, item) => acc + (item.total || 0), 0)}
             </span>
           </button>
