@@ -284,21 +284,55 @@ async function buscarValorEvento(eventoId) {
  */
 async function verificarEncerramentoInscricao(eventoId) {
   const [rows] = await db.execute(
-    "SELECT inscricoes_ate FROM agenda WHERE id = ? LIMIT 1",
+    "SELECT inscricoes_ate, data_inicio FROM agenda WHERE id = ? LIMIT 1",
     [eventoId]
   );
 
   if (!rows.length) return false; // evento não existe
-  const dataLimite = rows[0].inscricoes_ate;
-  if (!dataLimite) return false; // sem data limite definida
 
-  // considera fuso horário de Brasília
-  const limite = new Date(`${dataLimite.replace(" ", "T")}-03:00`);
+  const { inscricoes_ate: dataLimite, data_inicio: dataInicio } = rows[0];
+  if (!dataLimite && !dataInicio) return false;
+
+  // 🔹 Parser seguro para qualquer formato (Date, string, null)
+  function parseDatetime(value) {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+
+    const s = String(value).trim();
+    if (!s) return null;
+
+    // formato ISO
+    if (s.includes("T") || /[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) {
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
+
+    // formato MySQL "YYYY-MM-DD HH:MM:SS"
+    const d = new Date(s.replace(" ", "T") + "-03:00");
+    return isNaN(d) ? null : d;
+  }
+
+  const limite = parseDatetime(dataLimite);
+  const inicio = parseDatetime(dataInicio);
   const agora = new Date();
 
-  return agora > limite; // true = já encerrou
+  logger.debug("[verificarEncerramentoInscricao]", {
+    eventoId,
+    dataLimite,
+    dataInicio,
+    limite: limite ? limite.toISOString() : null,
+    inicio: inicio ? inicio.toISOString() : null,
+    agora: agora.toISOString(),
+  });
+
+  // 🔸 Bloqueia se o prazo acabou ou o evento já começou
+  if ((limite && agora > limite) || (inicio && agora > inicio)) {
+    return true; // inscrições encerradas
+  }
+
+  return false;
 }
- 
+
 
 
 module.exports = {
