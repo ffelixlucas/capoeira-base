@@ -1,5 +1,5 @@
 // src/hooks/public/useMatriculaSteps.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { logger } from "../../utils/logger";
 import {
@@ -153,6 +153,27 @@ export function useMatriculaSteps(registrarMatricula) {
     logger.log("[useMatriculaSteps] Enviando payload", payload);
     await registrarMatricula(payload);
   }
+  useEffect(() => {
+    async function carregarGrupo() {
+      try {
+        // só busca se o usuário marcou "sim" e o grupo ainda não foi definido
+        if (form.ja_treinou === "sim" && !form.grupo) {
+          const nomeGrupo = await buscarGrupo(1); // organizacaoId fixa por enquanto
+          setForm((prev) => ({ ...prev, grupo: nomeGrupo || "" }));
+          logger.info("[useMatriculaSteps] Grupo carregado automaticamente:", nomeGrupo);
+        }
+  
+        // se o usuário mudar pra "não", limpa o campo grupo
+        if (form.ja_treinou === "nao" && form.grupo) {
+          setForm((prev) => ({ ...prev, grupo: "" }));
+        }
+      } catch (err) {
+        logger.error("[useMatriculaSteps] Erro ao buscar grupo:", err.message);
+      }
+    }
+  
+    carregarGrupo();
+  }, [form.ja_treinou]);
 
   return {
     step,

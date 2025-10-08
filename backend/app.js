@@ -1,69 +1,83 @@
-const express = require('express');
-const app = express();
-const cors = require('cors');
-require('dotenv').config();
+// 🚀 CAPOEIRA BASE - APP.JS
+// -----------------------------------------------------------
+// Configuração principal do servidor Express
+// Estrutura padronizada: públicas / administrativas / mistas
+// -----------------------------------------------------------
 
-// Middlewares
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+
+const app = express();
+
+// -----------------------------------------------------------
+// 🧩 Middlewares globais
+// -----------------------------------------------------------
 app.use(cors());
 app.use(express.json());
 
-// Importar rotas
-const galeriaRoutes = require('./modules/galeria/galeriaRoutes');
-const authRoutes = require('./modules/auth/auth.Routes');
-const agendaRoutes = require('./modules/agenda/agendaRoutes');
-const horariosRoutes = require('./modules/horarios/horariosRoutes'); 
-const equipeRoutes = require('./modules/equipe/equipeRoutes'); 
-const rolesRoutes = require('./modules/roles/rolesRoutes'); 
-const equipeRolesRoutes = require('./modules/equipe/equipeRoles/equipeRolesRoutes');
-const lembretesRoutes = require('./modules/lembretes/lembretesRoutes');
-const alunosRoutes = require('./modules/alunos/alunosRoutes');
-const inscricoesRoutes = require('./modules/inscricoes/inscricoesRoutes');
-const notificacaoDestinosRoutes = require("./modules/notificacaoDestinos/notificacaoDestinosRoutes.js");
-const graduacoesRoutes = require("./modules/graduacoes/graduacoesRoutes");
+// -----------------------------------------------------------
+// 📦 Importar rotas de módulos
+// -----------------------------------------------------------
+const authRoutes = require("./modules/auth/auth.Routes");
+const agendaRoutes = require("./modules/agenda/agendaRoutes");
+const alunosRoutes = require("./modules/alunos/alunosRoutes");
 const categoriasRoutes = require("./modules/categorias/categoriasRoutes");
+const equipeRoutes = require("./modules/equipe/equipeRoutes");
+const equipeRolesRoutes = require("./modules/equipe/equipeRoles/equipeRolesRoutes");
+const galeriaRoutes = require("./modules/galeria/galeriaRoutes");
+const graduacoesRoutes = require("./modules/graduacoes/graduacoesRoutes");
+const horariosRoutes = require("./modules/horarios/horariosRoutes");
+const inscricoesRoutes = require("./modules/inscricoes/inscricoesRoutes");
+const lembretesRoutes = require("./modules/lembretes/lembretesRoutes");
+const matriculaRoutes = require("./modules/matricula/matriculaRoutes");
+const notificacaoDestinosRoutes = require("./modules/notificacaoDestinos/notificacaoDestinosRoutes");
+const preMatriculasRoutes = require("./modules/public/preMatriculas/preMatriculasRoutes");
+const rolesRoutes = require("./modules/roles/rolesRoutes");
 
+// -----------------------------------------------------------
+// 🌐 ROTAS PÚBLICAS
+// -----------------------------------------------------------
 
+// Status da API
+app.use("/api/teste", (_, res) => res.json({ mensagem: "API no ar!" }));
 
-
-
-// Configurações do servidor
-
-// Rotas públicas
-app.use('/api/teste', (_, res) => res.json({ mensagem: 'API no ar!' }));
-const matriculaRoutes = require("./modules/public/matricula/matriculaRoutes");
-app.use("/api/public", matriculaRoutes);
+// Páginas e dados públicos
 app.use("/api/categorias", categoriasRoutes);
-app.use("/api/public/agenda", require("./modules/public/agenda/publicAgendaRoutes"));
-
-
-
-// Autenticação
-app.use('/api/auth', authRoutes);
-
-// Módulos administrativos
-app.use('/api/equipe', equipeRoutes);
-app.use('/api/equipe', equipeRolesRoutes);
-app.use('/api/roles', rolesRoutes);
-app.use('/api/galeria', galeriaRoutes);
-app.use('/api/agenda', agendaRoutes);
-app.use('/api/horarios', horariosRoutes);
-app.use('/api/lembretes', lembretesRoutes);
-app.use('/api/whatsapp-destinos', require('./modules/whatsappdestinos/whatsappDestinosRoutes'));
-app.use('/api/alunos', alunosRoutes);
-app.use("/api/notas-aluno", require("./modules/notasAluno/notasAlunoRoutes"));
-app.use("/api/turmas", require("./modules/turmas/turmasRoutes.js"));
-app.use('/api/inscricoes', inscricoesRoutes);
-app.use('/api/presencas', require('./modules/presencas/presencasRoutes'));
-app.use("/api/notificacoes", notificacaoDestinosRoutes);
-
-// Rotas públicas
-app.use('/api/public/agenda', require('./modules/public/agenda/publicAgendaRoutes'));
-app.use('/api/public/inscricoes', require('./modules/public/inscricoes/inscricoesRoutes'));
 app.use("/api/graduacoes", graduacoesRoutes);
+app.use("/api/public/agenda", require("./modules/public/agenda/publicAgendaRoutes"));
+app.use("/api/public/inscricoes", require("./modules/public/inscricoes/inscricoesRoutes"));
 
+// -----------------------------------------------------------
+// 🔒 AUTENTICAÇÃO
+// -----------------------------------------------------------
+app.use("/api/auth", authRoutes);
 
+// -----------------------------------------------------------
+// 🧠 MÓDULOS ADMINISTRATIVOS
+// -----------------------------------------------------------
+app.use("/api/admin", matriculaRoutes);
+app.use("/api/agenda", agendaRoutes);
+app.use("/api/alunos", alunosRoutes);
+app.use("/api/equipe", equipeRoutes);
+app.use("/api/equipe", equipeRolesRoutes);
+app.use("/api/galeria", galeriaRoutes);
+app.use("/api/horarios", horariosRoutes);
+app.use("/api/inscricoes", inscricoesRoutes);
+app.use("/api/lembretes", lembretesRoutes);
+app.use("/api/notas-aluno", require("./modules/notasAluno/notasAlunoRoutes"));
+app.use("/api/notificacoes", notificacaoDestinosRoutes);
+app.use("/api/presencas", require("./modules/presencas/presencasRoutes"));
+app.use("/api/roles", rolesRoutes);
+app.use("/api/turmas", require("./modules/turmas/turmasRoutes"));
+app.use("/api/whatsapp-destinos", require("./modules/whatsappdestinos/whatsappDestinosRoutes"));
 
+// -----------------------------------------------------------
+// 🔄 ROTAS MISTAS (Públicas + Administrativas)
+// -----------------------------------------------------------
+app.use("/api/public", preMatriculasRoutes);
 
-
-
+// -----------------------------------------------------------
+// ✅ Exportar app configurado
+// -----------------------------------------------------------
 module.exports = app;

@@ -1,32 +1,16 @@
-// modules/public/matricula/matriculaRepository.js
-// 🎯 Repository da Matrícula Pública
-// Responsável por acessar o banco de dados.
+// 🎯 Repository da Matrícula (Admin)
+// Responsável por criar aluno e matrícula após aprovação da pré-matrícula
 
-const db = require("../../../database/connection");
-const logger = require("../../../utils/logger");
+const db = require("../../database/connection");
+const logger = require("../../utils/logger");
 
 /**
  * Verifica se já existe um aluno com o CPF informado
  */
 async function buscarPorCpf(cpf) {
-  // normaliza CPF → só números
   const normalizado = cpf.replace(/\D/g, "");
-
-  const [rows] = await db.execute("SELECT id FROM alunos WHERE cpf = ?", [
-    normalizado,
-  ]);
-
+  const [rows] = await db.execute("SELECT id FROM alunos WHERE cpf = ?", [normalizado]);
   return rows.length > 0 ? rows[0] : null;
-}
-
-/**
- * Busca turma pelo nome (Infantil, Juvenil, Adulto, etc.)
- */
-async function buscarTurmaPorNome(nome) {
-  const [rows] = await db.execute("SELECT id FROM turmas WHERE nome = ?", [
-    nome,
-  ]);
-  return rows.length > 0 ? rows[0].id : null;
 }
 
 /**
@@ -67,7 +51,6 @@ async function criar(dados) {
 
   const [result] = await db.execute(sql, params);
 
-  // 🔎 Debug
   logger.debug("[matriculaRepository.criar] SQL enviado:", sql);
   logger.debug("[matriculaRepository.criar] Params:", params);
 
@@ -80,12 +63,12 @@ async function criar(dados) {
     );
   }
 
+  logger.info(`[matriculaRepository] Aluno criado com ID ${alunoId}`);
   return { id: alunoId, ...dados, status: "pendente" };
 }
 
 /**
- * Busca turma compatível com a idade informada,
- * ignorando a turma "Sem turma" (usada apenas para realocação interna).
+ * Busca turma compatível com a idade informada
  */
 async function buscarTurmaPorIdade(idade) {
   const [rows] = await db.execute(
@@ -99,6 +82,9 @@ async function buscarTurmaPorIdade(idade) {
   return rows.length > 0 ? rows[0].id : null;
 }
 
+/**
+ * Retorna o organizacao_id de uma turma
+ */
 async function buscarOrganizacaoPorTurmaId(turmaId) {
   const [rows] = await db.execute(
     "SELECT organizacao_id FROM turmas WHERE id = ?",
@@ -107,20 +93,9 @@ async function buscarOrganizacaoPorTurmaId(turmaId) {
   return rows.length > 0 ? rows[0].organizacao_id : null;
 }
 
-async function buscarGrupoPorOrganizacaoId(organizacaoId) {
-  const [rows] = await db.execute(
-    "SELECT grupo FROM organizacoes WHERE id = ?",
-    [organizacaoId]
-  );
-  return rows.length > 0 ? rows[0].grupo : null;
-}
-
-
 module.exports = {
   criar,
   buscarPorCpf,
-  buscarTurmaPorNome,
   buscarTurmaPorIdade,
   buscarOrganizacaoPorTurmaId,
-  buscarGrupoPorOrganizacaoId,
 };
