@@ -53,40 +53,42 @@ export default function StepAluno({ form, handleChange }) {
       </div>
 
       {form.ja_treinou === "sim" && (
-  <div className="flex flex-col gap-1">
-    <label className="text-sm font-medium text-gray-700">
-      Grupo de capoeira
-    </label>
-    <select
-      name="grupo"
-      value={form.grupo}
-      onChange={handleChange}
-      className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-800 bg-white text-sm"
-      required
-    >
-      <option value="">Selecione o grupo</option>
-      <option value="Capoeira Brasil">Capoeira Brasil</option>
-      <option value="Outros">Outros</option>
-    </select>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Grupo de capoeira
+          </label>
+          <select
+            name="grupo_origem"
+            value={form.grupo_origem}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-800 bg-white text-sm"
+            required
+          >
+            <option value="">Selecione o grupo</option>
+            <option value="Capoeira Brasil">Capoeira Brasil</option>
+            <option value="Outros">Outros</option>
+          </select>
 
-    {form.grupo === "Outros" && (
-      <InputBase
-        type="text"
-        name="grupo_personalizado"
-        placeholder="Digite o nome do grupo"
-        value={form.grupo_personalizado || ""}
-        onChange={(e) =>
-          handleChange({
-            target: { name: "grupo_personalizado", value: e.target.value },
-          })
-        }
-        className="mt-2"
-        required
-      />
-    )}
-  </div>
-)}
-
+          {form.grupo_origem === "Outros" && (
+            <InputBase
+              type="text"
+              name="grupo_personalizado"
+              placeholder="Digite o nome do grupo"
+              value={form.grupo_personalizado || ""}
+              onChange={(e) =>
+                handleChange({
+                  target: {
+                    name: "grupo_personalizado",
+                    value: e.target.value,
+                  },
+                })
+              }
+              className="mt-2"
+              required
+            />
+          )}
+        </div>
+      )}
     </>
   );
 }

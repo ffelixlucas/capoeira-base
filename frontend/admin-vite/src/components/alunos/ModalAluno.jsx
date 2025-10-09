@@ -14,6 +14,19 @@ export default function ModalAluno({
   onEditar,
   onExcluido,
 }) {
+  // ✅ caso seja uma pré-matrícula (vindo do ModalPendentes)
+  if (aluno?.isPreMatricula) {
+    return (
+      <ModalFicha
+        aberto={aberto}
+        onClose={onClose}
+        titulo="Pré-Matrícula"
+        subtitulo={aluno.nome}
+        dados={aluno.dadosFicha}
+      />
+    );
+  }
+
   const [foto, setFoto] = useState(aluno?.foto_url || null);
   const [metricas, setMetricas] = useState(aluno?.metricas || null);
   const [inicio, setInicio] = useState("");

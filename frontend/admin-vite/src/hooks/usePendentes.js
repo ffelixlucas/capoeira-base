@@ -1,49 +1,54 @@
+// src/hooks/usePendentes.js
 import { useState, useEffect } from "react";
-import api from "../services/api";
 import { toast } from "react-toastify";
+import {
+  listarPendentes,
+  atualizarStatusPreMatricula,
+} from "../services/preMatriculasService";
 
-export function usePendentes() {
+export function usePendentes(organizacaoId = 1) {
   const [pendentes, setPendentes] = useState([]);
   const [carregando, setCarregando] = useState(false);
 
+  // 🔹 Carrega lista de pré-matrículas pendentes
   async function carregarPendentes() {
     try {
       setCarregando(true);
-      const { data } = await api.get("/alunos/pendentes");
-      setPendentes(data);
+      const lista = await listarPendentes(organizacaoId);
+      setPendentes(lista || []);
     } catch (err) {
-      toast.error("Erro ao carregar matrículas pendentes");
+      toast.error("Erro ao carregar pré-matrículas pendentes");
     } finally {
       setCarregando(false);
     }
   }
 
+  // 🔹 Aprovar pré-matrícula
   async function aprovarAluno(id) {
     try {
-      await api.patch(`/alunos/${id}/status`, { status: "ativo" });
-      toast.success("Aluno aprovado com sucesso!");
-      // remove da lista local
+      await atualizarStatusPreMatricula(id, "aprovado");
+      toast.success("Pré-matrícula aprovada! Matrícula criada com sucesso.");
       setPendentes((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
-      toast.error("Erro ao aprovar aluno");
+      toast.error("Erro ao aprovar pré-matrícula");
     }
   }
 
+  // 🔹 Rejeitar pré-matrícula
   async function rejeitarAluno(id) {
     try {
-      await api.patch(`/alunos/${id}/status`, { status: "inativo" });
-      toast.success("Aluno rejeitado e removido.");
-      // remove da lista local
+      await atualizarStatusPreMatricula(id, "rejeitado");
+      toast.info("Pré-matrícula rejeitada.");
       setPendentes((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
-      toast.error("Erro ao rejeitar aluno");
+      toast.error("Erro ao rejeitar pré-matrícula");
     }
   }
 
-  // Carrega logo ao montar
+  // 🔹 Carregar automaticamente ao montar o hook
   useEffect(() => {
     carregarPendentes();
-  }, []);
+  }, [organizacaoId]);
 
   return {
     pendentes,

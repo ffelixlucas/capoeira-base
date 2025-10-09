@@ -1,19 +1,18 @@
-// src/pages/public/MatriculaPublic.jsx
+// src/pages/public/PreMatriculaPublic.jsx
 import { useState } from "react";
-import { useMatricula } from "../../hooks/public/useMatricula";
-import { useMatriculaSteps } from "../../hooks/public/useMatriculaSteps";
+import { usePreMatricula } from "../../hooks/public/usePreMatricula";
+import { usePreMatriculaSteps } from "../../hooks/public/usePreMatriculaSteps";
 import ModalFicha from "../../components/ui/ModalFicha";
 import PoliticaLGPD from "../../docs/politicaLGPD";
-import CardEstat from "../../components/ui/CardEstat";
 import { User, Shield, Home, FileText } from "lucide-react";
-import StepAluno from "../../components/public/matricula/StepAluno";
-import StepResponsavel from "../../components/public/matricula/StepResponsavel";
-import StepContato from "../../components/public/matricula/StepContato";
-import StepAutorizacoes from "../../components/public/matricula/StepAutorizacoes";
+import StepAluno from "../../components/public/PreMatricula/StepAluno";
+import StepResponsavel from "../../components/public/PreMatricula/StepResponsavel";
+import StepContato from "../../components/public/PreMatricula/StepContato";
+import StepAutorizacoes from "../../components/public/PreMatricula/StepAutorizacoes";
 import { calcularIdade } from "../../utils/formatters";
 
-export default function MatriculaPublic() {
-  const { registrarMatricula, carregando, sucesso } = useMatricula();
+export default function PreMatriculaPublic() {
+  const { registrarPreMatricula, carregando, sucesso } = usePreMatricula();
   const [mostrarLGPD, setMostrarLGPD] = useState(false);
 
   const {
@@ -25,7 +24,7 @@ export default function MatriculaPublic() {
     nextStep,
     prevStep,
     handleSubmit,
-  } = useMatriculaSteps(registrarMatricula);
+  } = usePreMatriculaSteps(registrarPreMatricula);
 
   const idade = calcularIdade(form.nascimento);
 
@@ -43,12 +42,13 @@ export default function MatriculaPublic() {
           { icon: FileText, label: "Autorizações" },
         ];
 
+  // ✅ Sucesso (pré-matrícula enviada)
   if (sucesso) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-cor-fundo">
         <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full text-center">
           <h1 className="text-xl font-bold text-green-600 mb-3">
-            ✅ Matrícula enviada!
+            ✅ Pré-matrícula enviada!
           </h1>
           <p className="text-gray-700">{sucesso}</p>
           <p className="text-gray-600 mt-2">
@@ -59,14 +59,14 @@ export default function MatriculaPublic() {
     );
   }
 
+  // 🧾 Formulário principal
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-cor-fundo">
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full">
         {/* Header */}
         <h1 className="text-2xl font-bold text-center text-black mb-4">
-          Matrícula Online
+          Pré-Matrícula Online
         </h1>
-
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3 text-gray-800">
@@ -114,7 +114,7 @@ export default function MatriculaPublic() {
                 className="btn-primary ml-auto"
                 disabled={carregando}
               >
-                {carregando ? "Enviando..." : "Enviar matrícula"}
+                {carregando ? "Enviando..." : "Enviar pré-matrícula"}
               </button>
             )}
           </div>
@@ -127,10 +127,7 @@ export default function MatriculaPublic() {
         onClose={() => setMostrarLGPD(false)}
         titulo="Política de Privacidade (LGPD)"
       >
-        <PoliticaLGPD
-          contexto="matricula"
-          organization="Espaço Cultural CN10"
-        />
+        <PoliticaLGPD contexto="matricula" organization="Espaço Cultural CN10" />
       </ModalFicha>
     </div>
   );

@@ -31,41 +31,68 @@ function Alunos() {
   useEffect(() => {
     if (usuario?.roles?.includes("admin")) {
       api
-        .get("/alunos/pendentes/count")
-        .then(({ data }) => setContadorPendentes(data.count))
-        .catch(() => toast.error("Erro ao carregar pendentes"));
+        .get(`/public/admin/pre-matriculas/pendentes/${usuario.organizacao_id}`)
+        .then(({ data }) => setContadorPendentes(data.length || 0))
+        .catch(() => toast.error("Erro ao carregar pré-matrículas pendentes"));
     }
   }, [usuario]);
 
   async function atualizarContadorPendentes() {
     try {
-      const { data } = await api.get("/alunos/pendentes/count");
-      setContadorPendentes(data.count);
+      const { data } = await api.get(
+        `/public/admin/pre-matriculas/pendentes/${usuario.organizacao_id}`
+      );
+      setContadorPendentes(data.length || 0);
     } catch {
       toast.error("Erro ao atualizar contador de pendentes");
     }
   }
-
   useEffect(() => {
     carregarAlunos();
   }, []);
 
-  async function abrirFichaCompleta(aluno) {
+  async function abrirFichaCompleta(item) {
+    // 🟢 Se for uma pré-matrícula pendente, monta ficha local
+    if (item.status === "pendente") {
+      const dadosFicha = [
+        { label: "Nome", valor: item.nome },
+        { label: "E-mail", valor: item.email || "-" },
+        { label: "Telefone", valor: item.telefone || "-" },
+        {
+          label: "Já treinou",
+          valor: item.ja_treinou === "sim" ? "Sim" : "Não",
+        },
+        { label: "Grupo de origem", valor: item.grupo_origem || "-" },
+        {
+          label: "Observações médicas",
+          valor: item.observacoes_medicas || "Não informado",
+        },
+        { label: "Status", valor: item.status },
+      ];
+  
+      setAlunoSelecionado({
+        ...item,
+        dadosFicha,
+        isPreMatricula: true,
+      });
+      return;
+    }
+  
+    // 🔵 Caso contrário (aluno matriculado), busca normalmente
     try {
-      const alunoCompleto = await buscarAluno(aluno.id);
+      const alunoCompleto = await buscarAluno(item.id);
       const anoAtual = new Date().getFullYear();
       const inicio = `${anoAtual}-01-01`;
       const fim = new Date().toISOString().split("T")[0];
-
-      const { data: metricas } = await api.get(`/alunos/${aluno.id}/metricas`, {
+      const { data: metricas } = await api.get(`/alunos/${item.id}/metricas`, {
         params: { inicio, fim },
       });
-
       setAlunoSelecionado({ ...alunoCompleto, metricas });
     } catch (err) {
       toast.error("Erro ao carregar ficha do aluno");
     }
   }
+  
 
   const alunosFiltrados = alunos
     .filter((a) => {
@@ -121,7 +148,7 @@ function Alunos() {
               onClick={() => setMostrarPendentes(true)}
               className="relative bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition"
             >
-              Matrículas Pendentes
+              Pré-Matrículas Pendentes
               {contadorPendentes > 0 && (
                 <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow">
                   {contadorPendentes}
@@ -170,8 +197,9 @@ function Alunos() {
           aberto={mostrarPendentes}
           onClose={() => setMostrarPendentes(false)}
           onAtualizarContador={atualizarContadorPendentes}
-          onAtualizarAlunos={carregarAlunos}   
+          onAtualizarAlunos={carregarAlunos}
           onAbrirFicha={abrirFichaCompleta}
+          organizacaoId={usuario.organizacao_id}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-// src/hooks/public/useMatriculaSteps.js
+// src/hooks/public/usePreMatriculaSteps.js
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { logger } from "../../utils/logger";
@@ -9,16 +9,13 @@ import {
   validarEmail,
   calcularIdade,
 } from "../../utils/formatters";
-import { buscarGrupo } from "../../services/public/matriculaPublicService";
 
-export function useMatriculaSteps(registrarMatricula) {
+export function usePreMatriculaSteps(registrarPreMatricula) {
   const [step, setStep] = useState(1);
   const [possuiRestricao, setPossuiRestricao] = useState(false);
 
-
   const [form, setForm] = useState({
     nome: "",
-    apelido: "",
     nascimento: "",
     cpf: "",
     email: "",
@@ -32,10 +29,11 @@ export function useMatriculaSteps(registrarMatricula) {
     autorizacao_imagem: false,
     aceite_lgpd: false,
     ja_treinou: null,
-    grupo: "",
-    graduacao: "",
+    grupo_origem: "",
+    grupo_personalizado: "",
   });
 
+  // Atualiza os valores digitados
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
     let novoValor = value;
@@ -56,10 +54,10 @@ export function useMatriculaSteps(registrarMatricula) {
     }));
   }
 
+  // Validação de cada etapa
   function validarStep() {
     const idade = calcularIdade(form.nascimento);
 
-    // Step 1 - Dados básicos do aluno
     if (step === 1) {
       if (!form.nome || !form.nascimento || !form.cpf || !form.ja_treinou) {
         toast.error("Preencha todos os campos obrigatórios do passo 1");
@@ -69,17 +67,12 @@ export function useMatriculaSteps(registrarMatricula) {
         toast.error("CPF inválido");
         return false;
       }
-      if (
-        form.ja_treinou === "sim" &&
-        form.grupo.toLowerCase().includes("capoeira brasil") &&
-        !form.graduacao
-      ) {
-        toast.error("Informe a graduação se já treinou no Capoeira Brasil");
+      if (form.ja_treinou === "sim" && !form.grupo_origem) {
+        toast.error("Informe o grupo de capoeira");
         return false;
       }
     }
 
-    // Step 2 (se menor de idade) - Responsável
     if (step === 2 && idade < 18) {
       if (
         !form.nome_responsavel ||
@@ -87,30 +80,26 @@ export function useMatriculaSteps(registrarMatricula) {
         !form.responsavel_parentesco ||
         !form.telefone_responsavel
       ) {
-        toast.error("Preencha todos os campos do responsável (passo 2)");
+        toast.error("Preencha todos os campos do responsável");
         return false;
       }
     }
 
-    // Step contato (adulto = passo 2, menor = passo 3)
     if ((step === 2 && idade >= 18) || (step === 3 && idade < 18)) {
       if (!form.email || !validarEmail(form.email)) {
         toast.error("Informe um e-mail válido");
         return false;
       }
-
       if (idade >= 18 && !form.telefone_aluno) {
         toast.error("Informe o telefone do aluno");
         return false;
       }
-
       if (idade < 18 && !form.telefone_responsavel) {
         toast.error("Informe o telefone do responsável");
         return false;
       }
     }
 
-    // Step autorizações
     if ((step === 3 && idade >= 18) || (step === 4 && idade < 18)) {
       if (!form.aceite_lgpd) {
         toast.error("Você precisa aceitar a política de privacidade (LGPD)");
@@ -122,58 +111,45 @@ export function useMatriculaSteps(registrarMatricula) {
   }
 
   function nextStep() {
-    if (validarStep()) {
-      setStep((s) => s + 1);
-    }
+    if (validarStep()) setStep((s) => s + 1);
   }
 
   function prevStep() {
     setStep((s) => Math.max(s - 1, 1));
   }
 
+  // Submissão final
   async function handleSubmit(e) {
     e.preventDefault();
     if (!validarStep()) return;
 
     const idade = calcularIdade(form.nascimento);
 
+    // Monta payload conforme backend pre_matriculas
     const payload = {
-      ...form,
+      organizacao_id: 1, // por enquanto fixo
+      nome: form.nome,
+      nascimento: form.nascimento,
       cpf: limparNumeros(form.cpf),
-      telefone_aluno: limparNumeros(form.telefone_aluno || ""),
-      telefone_responsavel:
-        idade < 18 ? limparNumeros(form.telefone_responsavel || "") : null,
-      responsavel_documento:
-        idade < 18 ? limparNumeros(form.responsavel_documento || "") : null,
-      nome_responsavel: idade < 18 ? form.nome_responsavel : null,
-      responsavel_parentesco: idade < 18 ? form.responsavel_parentesco : null,
       email: form.email.toLowerCase(),
+      telefone:
+        idade >= 18
+          ? limparNumeros(form.telefone_aluno)
+          : limparNumeros(form.telefone_responsavel),
+      ja_treinou: form.ja_treinou, 
+
+      grupo_origem:
+        form.grupo_origem === "Outros"
+          ? form.grupo_personalizado
+          : form.grupo_origem,
+      observacoes_medicas: possuiRestricao ? form.observacoes_medicas : null,
+      autorizacao_imagem: form.autorizacao_imagem,
+      aceite_lgpd: form.aceite_lgpd,
     };
 
-    logger.log("[useMatriculaSteps] Enviando payload", payload);
-    await registrarMatricula(payload);
+    logger.info("[usePreMatriculaSteps] Enviando payload", payload);
+    await registrarPreMatricula(payload);
   }
-  useEffect(() => {
-    async function carregarGrupo() {
-      try {
-        // só busca se o usuário marcou "sim" e o grupo ainda não foi definido
-        if (form.ja_treinou === "sim" && !form.grupo) {
-          const nomeGrupo = await buscarGrupo(1); // organizacaoId fixa por enquanto
-          setForm((prev) => ({ ...prev, grupo: nomeGrupo || "" }));
-          logger.info("[useMatriculaSteps] Grupo carregado automaticamente:", nomeGrupo);
-        }
-  
-        // se o usuário mudar pra "não", limpa o campo grupo
-        if (form.ja_treinou === "nao" && form.grupo) {
-          setForm((prev) => ({ ...prev, grupo: "" }));
-        }
-      } catch (err) {
-        logger.error("[useMatriculaSteps] Erro ao buscar grupo:", err.message);
-      }
-    }
-  
-    carregarGrupo();
-  }, [form.ja_treinou]);
 
   return {
     step,
@@ -184,6 +160,5 @@ export function useMatriculaSteps(registrarMatricula) {
     nextStep,
     prevStep,
     handleSubmit,
-    setStep,
   };
 }
