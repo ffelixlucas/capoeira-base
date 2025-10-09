@@ -13,4 +13,29 @@ async function getTodas(req, res) {
     }
   }
   
-module.exports = { getTodas };
+  async function getPorIdade(req, res) {
+    try {
+      const idade = parseInt(req.params.idade);
+      logger.info(`[categoriasController] getPorIdade chamado com idade ${idade}`);
+  
+      const categoria = await categoriasService.buscarPorIdade(idade);
+      if (!categoria) {
+        return res.json({
+          sucesso: true,
+          mensagem: "Sem turma disponível para essa faixa etária",
+          data: null,
+        });
+      }
+  
+      return res.json({ sucesso: true, data: categoria });
+    } catch (err) {
+      logger.error("[categoriasController] Erro em getPorIdade:", err);
+      return res.status(500).json({
+        sucesso: false,
+        erro: "Erro ao buscar categoria por idade",
+      });
+    }
+  }
+  
+  module.exports = { getTodas, getPorIdade };
+  

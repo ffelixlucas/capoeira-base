@@ -72,15 +72,26 @@ async function criar(dados) {
  */
 async function buscarTurmaPorIdade(idade) {
   const [rows] = await db.execute(
-    `SELECT id FROM turmas 
-     WHERE nome <> 'Sem turma'
-       AND (idade_min IS NULL OR idade_min <= ?) 
-       AND (idade_max IS NULL OR idade_max >= ?)
+    `SELECT 
+       t.id AS turma_id,
+       t.nome AS turma_nome,
+       t.faixa_etaria,
+       t.idade_min,
+       t.idade_max,
+       t.categoria_id,
+       c.nome AS categoria_nome
+     FROM turmas t
+     LEFT JOIN categorias c ON c.id = t.categoria_id
+     WHERE t.nome <> 'Sem turma'
+       AND (t.idade_min IS NULL OR t.idade_min <= ?)
+       AND (t.idade_max IS NULL OR t.idade_max >= ?)
      LIMIT 1`,
     [idade, idade]
   );
-  return rows.length > 0 ? rows[0].id : null;
+
+  return rows.length > 0 ? rows[0] : null;
 }
+
 
 /**
  * Retorna o organizacao_id de uma turma

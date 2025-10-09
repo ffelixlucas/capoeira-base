@@ -34,18 +34,32 @@ async function criarMatricula(dados) {
 
     // Calcula idade e busca turma compatível
     const idade = calcularIdade(dados.nascimento);
-    const turmaId = await matriculaRepository.buscarTurmaPorIdade(idade);
+    const turma = await matriculaRepository.buscarTurmaPorIdade(idade);
 
-    if (!turmaId) {
+    if (!turma) {
       throw new Error("Nenhuma turma disponível para esta idade.");
     }
 
-    dados.turma_id = turmaId;
-    dados.organizacao_id = await matriculaRepository.buscarOrganizacaoPorTurmaId(turmaId);
+    // Atribui dados completos da turma
+    dados.turma_id = turma.turma_id;
+    dados.categoria_id = turma.categoria_id || null;
+    dados.categoria_nome = turma.categoria_nome || null;
+
+    // Busca organização da turma
+    dados.organizacao_id =
+      await matriculaRepository.buscarOrganizacaoPorTurmaId(turma.turma_id);
+
+    logger.info("[matriculaService] Turma encontrada:", {
+      idade,
+      turma_id: turma.turma_id,
+      categoria: turma.categoria_nome,
+    });
 
     // Cria aluno + matrícula
     const novoAluno = await matriculaRepository.criar(dados);
-    logger.info("[matriculaService] Matrícula criada com sucesso", { alunoId: novoAluno.id });
+    logger.info("[matriculaService] Matrícula criada com sucesso", {
+      alunoId: novoAluno.id,
+    });
 
     // Envia e-mails de confirmação (já aprovado)
     try {

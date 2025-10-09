@@ -7,4 +7,9 @@ async function listarTodas() {
   return await categoriasRepository.listarTodas();
 }
 
-module.exports = { listarTodas };
+async function buscarPorIdade(idade) {
+  logger.info("[categoriasService] Chamando buscarPorIdade");
+  return await categoriasRepository.buscarPorIdade(idade);
+}
+
+module.exports = { listarTodas, buscarPorIdade };
