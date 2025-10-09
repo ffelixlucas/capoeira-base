@@ -12,26 +12,28 @@ const logger = require("../../../utils/logger");
 async function criarPreMatricula(dados) {
   try {
     const sql = `
-      INSERT INTO pre_matriculas (
-        organizacao_id,
-        nome,
-        nascimento,
-        cpf,
-        email,
-        telefone,
-        grupo_origem,
-        observacoes_medicas,
-        status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendente')
-    `;
+  INSERT INTO pre_matriculas (
+    organizacao_id,
+    nome,
+    nascimento,
+    cpf,
+    email,
+    telefone,
+    ja_treinou,
+    grupo_origem,
+    observacoes_medicas,
+    status
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')
+`;
 
     const params = [
       dados.organizacao_id || null,
       dados.nome,
       dados.nascimento,
-      dados.cpf.replace(/\D/g, ""), // normaliza CPF
+      dados.cpf.replace(/\D/g, ""), 
       dados.email.toLowerCase(),
       dados.telefone || null,
+      dados.ja_treinou || "nao", 
       dados.grupo_origem || null,
       dados.observacoes_medicas || null,
     ];

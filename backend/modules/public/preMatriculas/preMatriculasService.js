@@ -12,7 +12,9 @@ const logger = require("../../../utils/logger");
  */
 async function criarPreMatricula(dados) {
   try {
-    logger.info("[preMatriculasService] Recebendo solicitação de pré-matrícula");
+    logger.info(
+      "[preMatriculasService] Recebendo solicitação de pré-matrícula"
+    );
 
     // 🔍 Validações básicas
     if (!dados.nome || !dados.nascimento || !dados.cpf || !dados.email) {
@@ -29,9 +31,17 @@ async function criarPreMatricula(dados) {
       dados.grupo_origem = dados.grupo_personalizado;
     }
 
+    // Normaliza o campo ja_treinou
+    dados.ja_treinou =
+      dados.ja_treinou === "sim" || dados.ja_treinou === "nao"
+        ? dados.ja_treinou
+        : "nao";
+
     // Grava no banco
     const id = await preMatriculasRepository.criarPreMatricula(dados);
-    logger.info("[preMatriculasService] Pré-matrícula registrada com sucesso", { id });
+    logger.info("[preMatriculasService] Pré-matrícula registrada com sucesso", {
+      id,
+    });
 
     // ✉️ Envia e-mails de confirmação e notificação
     try {
@@ -68,7 +78,10 @@ async function criarPreMatricula(dados) {
         });
       }
     } catch (err) {
-      logger.error("[preMatriculasService] Erro ao enviar e-mails:", err.message);
+      logger.error(
+        "[preMatriculasService] Erro ao enviar e-mails:",
+        err.message
+      );
     }
 
     return {
@@ -76,7 +89,10 @@ async function criarPreMatricula(dados) {
       id,
     };
   } catch (err) {
-    logger.error("[preMatriculasService] Erro ao criar pré-matrícula:", err.message);
+    logger.error(
+      "[preMatriculasService] Erro ao criar pré-matrícula:",
+      err.message
+    );
     throw err;
   }
 }
@@ -89,7 +105,10 @@ async function listarPendentes(organizacaoId) {
     const lista = await preMatriculasRepository.listarPendentes(organizacaoId);
     return lista;
   } catch (err) {
-    logger.error("[preMatriculasService] Erro ao listar pendentes:", err.message);
+    logger.error(
+      "[preMatriculasService] Erro ao listar pendentes:",
+      err.message
+    );
     throw err;
   }
 }
@@ -102,18 +121,23 @@ async function atualizarStatus(id, status) {
     await preMatriculasRepository.atualizarStatus(id, status);
     return { message: `Status atualizado para ${status}` };
   } catch (err) {
-    logger.error("[preMatriculasService] Erro ao atualizar status:", err.message);
+    logger.error(
+      "[preMatriculasService] Erro ao atualizar status:",
+      err.message
+    );
     throw err;
   }
 }
 async function buscarPorId(id) {
-    const [rows] = await db.execute("SELECT * FROM pre_matriculas WHERE id = ?", [id]);
-    return rows.length ? rows[0] : null;
-  }
+  const [rows] = await db.execute("SELECT * FROM pre_matriculas WHERE id = ?", [
+    id,
+  ]);
+  return rows.length ? rows[0] : null;
+}
 
 module.exports = {
   criarPreMatricula,
   listarPendentes,
   atualizarStatus,
-    buscarPorId,
+  buscarPorId,
 };
