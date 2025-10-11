@@ -52,46 +52,65 @@ function adicionarRodape(doc, eventoTitulo) {
  * Lista simples de confirmados (com espaço para assinatura) - formato paisagem
  */
 export function exportarListaPDF(inscritos, eventoId) {
-  const doc = criarDocumento("landscape"); // paisagem
+  const doc = criarDocumento("landscape"); // formato paisagem
   let y = adicionarTitulo(doc, "Lista de Confirmados", 20);
 
-  // 🔹 Só pega os pagos
-  const confirmados = inscritos.filter((i) => i.status === "pago");
+  // 🔹 Filtra apenas pagos e ordena alfabeticamente
+  const confirmados = inscritos
+    .filter((i) => i.status === "pago")
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
 
-  // Cabeçalho
+  // 🔹 Cabeçalho enxuto
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.text("Nº", 10, y);
-  doc.text("Nome", 25, y);
-  doc.text("Documento", 90, y);
-  doc.text("Categoria", 140, y);
-  doc.text("Camiseta", 180, y);
-  doc.text("Assinatura", 220, y);
-  y += 8;
+  doc.text("Nome", 22, y);
+  doc.text("Apelido", 80, y);
+  doc.text("Graduação", 115, y);
+  doc.text("Categoria", 150, y);
+  doc.text("Camiseta", 185, y);
+  doc.text("Assinatura", 215, y);
+  y += 7;
 
-  // Linhas
+  // 🔹 Linhas com menor espaçamento
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+
   confirmados.forEach((i, idx) => {
     doc.text(String(idx + 1), 10, y);
-    doc.text(formatarTexto(i.nome), 25, y);
-    doc.text(i.cpf || "-", 90, y);
-    doc.text(formatarTexto(i.categoria), 140, y);
-    doc.text((i.tamanho_camiseta || "-").toUpperCase(), 180, y);
+    doc.text(formatarTexto(i.nome), 22, y);
+    doc.text(formatarTexto(i.apelido), 80, y);
+    doc.text(formatarTexto(i.graduacao), 115, y);
+    doc.text(formatarTexto(i.categoria), 150, y);
+    doc.text((i.tamanho_camiseta || "-").toUpperCase(), 185, y);
 
-    // Linha de assinatura
-    doc.line(220, y + 1, 290, y + 1);
+    // 🔹 Linha de assinatura mais longa (mais espaço)
+    doc.line(215, y + 1, 285, y + 1);
 
-    y += 10;
+    y += 8; // altura de linha reduzida
 
-    // Quebra de página
-    if (y > 190) {
+    // Quebra de página automática
+    if (y > 185) {
       doc.addPage("landscape");
       y = 20;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text("Nº", 10, y);
+      doc.text("Nome", 22, y);
+      doc.text("Apelido", 80, y);
+      doc.text("Graduação", 115, y);
+      doc.text("Categoria", 150, y);
+      doc.text("Camiseta", 185, y);
+      doc.text("Assinatura", 215, y);
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
     }
   });
 
   salvarPDF(doc, `lista_confirmados_${eventoId}.pdf`);
 }
+
 
 /**
  * Relatório completo do evento (versão profissional)
