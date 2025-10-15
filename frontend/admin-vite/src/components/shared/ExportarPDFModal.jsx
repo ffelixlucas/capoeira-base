@@ -1,24 +1,42 @@
+// components/ExportarPDFModal.jsx
 import { useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { FileText, FileSpreadsheet, X } from "lucide-react";
 
-export default function ExportarPDFModal({ onExportLista, onExportRelatorio }) {
+/**
+ * Modal unificado de exportação
+ *
+ * Agora permite escolher o tipo de lista (Lista / Relatório)
+ * e o formato desejado (PDF / Excel).
+ *
+ * ✅ 100% compatível com versões anteriores:
+ *    - Se não forem passadas props de Excel, ele exporta apenas PDF.
+ */
+export default function ExportarPDFModal({
+  onExportListaPDF,
+  onExportRelatorioPDF,
+  onExportListaExcel,
+  onExportRelatorioExcel,
+}) {
   const [aberto, setAberto] = useState(false);
+  const [tipo, setTipo] = useState(null); // "lista" | "relatorio"
+
+  // reset modal ao fechar
+  const fechar = () => {
+    setAberto(false);
+    setTipo(null);
+  };
 
   return (
     <>
       {/* Botão principal */}
       <button onClick={() => setAberto(true)} className="btn-danger">
-        <FileText className="w-4 h-4" /> Exportar PDF
+        <FileText className="w-4 h-4" /> Exportar
       </button>
 
       {/* Modal */}
       <Transition appear show={aberto} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-[999]"
-          onClose={() => setAberto(false)}
-        >
+        <Dialog as="div" className="relative z-[999]" onClose={fechar}>
           {/* Overlay */}
           <Transition.Child
             as={Fragment}
@@ -48,41 +66,70 @@ export default function ExportarPDFModal({ onExportLista, onExportRelatorio }) {
                   
                   {/* Título */}
                   <Dialog.Title className="text-lg font-bold text-center mb-6 text-black">
-                    Escolher exportação
+                    {tipo
+                      ? "Escolher formato de exportação"
+                      : "Escolher tipo de relatório"}
                   </Dialog.Title>
 
-                  {/* Botões */}
-                  <div className="flex flex-col gap-3">
-                    <button
-                      onClick={() => {
-                        setAberto(false);
-                        onExportLista?.();
-                      }}
-                      className="btn-info justify-start"
-                    >
-                      <FileText className="w-5 h-5" />
-                      <span>Lista de inscritos</span>
-                    </button>
+                  {/* Etapa 1 – Escolher tipo */}
+                  {!tipo && (
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={() => setTipo("lista")}
+                        className="btn-info justify-start"
+                      >
+                        <FileText className="w-5 h-5" />
+                        <span>Lista de inscritos</span>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        setAberto(false);
-                        onExportRelatorio?.();
-                      }}
-                      className="btn-success justify-start"
-                    >
-                      <FileSpreadsheet className="w-5 h-5" />
-                      <span>Relatório completo</span>
-                    </button>
+                      <button
+                        onClick={() => setTipo("relatorio")}
+                        className="btn-success justify-start"
+                      >
+                        <FileSpreadsheet className="w-5 h-5" />
+                        <span>Relatório completo</span>
+                      </button>
 
-                    <button
-                      onClick={() => setAberto(false)}
-                      className="btn-light justify-start"
-                    >
-                      <X className="w-5 h-5" />
-                      <span>Cancelar</span>
-                    </button>
-                  </div>
+                      <button onClick={fechar} className="btn-light justify-start">
+                        <X className="w-5 h-5" />
+                        <span>Cancelar</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Etapa 2 – Escolher formato */}
+                  {tipo && (
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={() => {
+                          fechar();
+                          if (tipo === "lista") onExportListaPDF?.();
+                          else onExportRelatorioPDF?.();
+                        }}
+                        className="btn-danger justify-start"
+                      >
+                        <FileText className="w-5 h-5" />
+                        <span>Exportar em PDF</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          fechar();
+                          if (tipo === "lista") onExportListaExcel?.();
+                          else onExportRelatorioExcel?.();
+                        }}
+                        className="btn-success justify-start"
+                      >
+                        <FileSpreadsheet className="w-5 h-5" />
+                        <span>Exportar em Excel (.xlsx)</span>
+                      </button>
+
+                      <button onClick={() => setTipo(null)} className="btn-light justify-start">
+                        <X className="w-5 h-5" />
+                        <span>Voltar</span>
+                      </button>
+                    </div>
+                  )}
                 </Dialog.Panel>
               </Transition.Child>
             </div>

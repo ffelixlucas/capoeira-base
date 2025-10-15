@@ -13,6 +13,7 @@ import {
   exportarRelatorioPDF,
   exportarRelatorioSemCamisetasPDF,
 } from "../utils/relatorioInscritosPDF";
+import { exportarListaExcel, exportarRelatorioExcel } from "../utils/relatorioInscritosExcel";
 import ModalCamisetas from "../components/ui/ModalCamisetas";
 import ExportarPDFModal from "../components/shared/ExportarPDFModal";
 
@@ -149,9 +150,12 @@ function InscritosEvento() {
         {/* Exportar PDF */}
         {resumoCamisetas && resumoCamisetas.length > 0 ? (
           <ExportarPDFModal
-            onExportLista={() => exportarListaPDF(inscritos, evento)}
-            onExportRelatorio={() => exportarRelatorioPDF(inscritos, evento)}
-          />
+          onExportListaPDF={() => exportarListaPDF(inscritos, evento.id)}
+          onExportRelatorioPDF={() => exportarRelatorioPDF(inscritos, evento, evento.id)}
+          onExportListaExcel={() => exportarListaExcel(inscritos, evento.id)}
+          onExportRelatorioExcel={() => exportarRelatorioExcel(inscritos, evento, evento.id)}
+        />
+        
         ) : (
           <button
             onClick={() => exportarRelatorioSemCamisetasPDF(inscritos, evento)}
