@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext"; 
+
 import AlunoList from "../components/alunos/AlunoList";
 import AlunoForm from "../components/alunos/AlunoForm";
 import Busca from "../components/ui/Busca";
@@ -11,11 +13,12 @@ import { useMinhasTurmas } from "../hooks/useMinhasTurmas";
 import api from "../services/api";
 
 function Alunos() {
+  const { token, usuario, carregando: carregandoAuth } = useAuth(); // 👈 pega estado global do Auth
+
   const [mostrarForm, setMostrarForm] = useState(false);
   const [alunoSelecionado, setAlunoSelecionado] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
 
-  const [usuario] = useState(() => JSON.parse(localStorage.getItem("usuario")));
   const [busca, setBusca] = useState("");
   const { alunos, carregando, carregarAlunos } = useAlunos();
   const {
@@ -24,6 +27,12 @@ function Alunos() {
     setTurmaSelecionada,
     carregando: carregandoTurmas,
   } = useMinhasTurmas(usuario);
+
+    // ✅ Aguarda AuthContext pronto antes de buscar alunos
+    useEffect(() => {
+      if (carregandoAuth || !token || !usuario) return;
+      carregarAlunos();
+    }, [carregandoAuth, token, usuario]);
 
   const [contadorPendentes, setContadorPendentes] = useState(0);
   const [mostrarPendentes, setMostrarPendentes] = useState(false);

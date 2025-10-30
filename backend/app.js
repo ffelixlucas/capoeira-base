@@ -14,7 +14,11 @@ const app = express();
 // 🧩 Middlewares globais
 // -----------------------------------------------------------
 app.use(cors());
-app.use(express.json());
+
+// 📦 Body parsers com limite aumentado (para fotos em Base64)
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
 
 // -----------------------------------------------------------
 // 📦 Importar rotas de módulos
@@ -34,6 +38,10 @@ const matriculaRoutes = require("./modules/matricula/matriculaRoutes");
 const notificacaoDestinosRoutes = require("./modules/notificacaoDestinos/notificacaoDestinosRoutes");
 const preMatriculasRoutes = require("./modules/public/preMatriculas/preMatriculasRoutes");
 const rolesRoutes = require("./modules/roles/rolesRoutes");
+
+// Uploads (fotos de perfil, eventos, loja, etc.)
+const uploadRoutes = require("./modules/uploads/uploadRoutes");
+
 
 // -----------------------------------------------------------
 // 🌐 ROTAS PÚBLICAS
@@ -72,10 +80,14 @@ app.use("/api/roles", rolesRoutes);
 app.use("/api/turmas", require("./modules/turmas/turmasRoutes"));
 app.use("/api/whatsapp-destinos", require("./modules/whatsappdestinos/whatsappDestinosRoutes"));
 
+
 // -----------------------------------------------------------
 // 🔄 ROTAS MISTAS (Públicas + Administrativas)
 // -----------------------------------------------------------
 app.use("/api/public", preMatriculasRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/public/organizacoes", require("./modules/shared/organizacoes/organizacaoPublicRoutes"));
+
 
 // -----------------------------------------------------------
 // ✅ Exportar app configurado

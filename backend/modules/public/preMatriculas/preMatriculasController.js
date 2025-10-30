@@ -1,18 +1,42 @@
-// 🎯 Controller - Pré-Matrículas Públicas
-// Responsável por receber as requisições HTTP e chamar o service correspondente.
+// 🎯 Controller - Pré-Matrículas Públicas e Administrativas
+// Responsável por receber requisições HTTP e chamar o service correspondente.
 
 const preMatriculasService = require("./preMatriculasService");
-const matriculaService = require("../../matricula/matriculaService"); // 👈 integração direta
+const matriculaService = require("../../matricula/matriculaService");
 const logger = require("../../../utils/logger");
 
-/**
- * Cria uma nova pré-matrícula (rota pública)
- */
+/* -------------------------------------------------------------------------- */
+/* 🔹 Criação de pré-matrícula (rota pública ou autenticada)                  */
+/* -------------------------------------------------------------------------- */
 async function criarPreMatricula(req, res) {
   try {
-    const dados = req.body;
+    // 🧭 Se vier slug na rota (ex: /pre-matriculas/:slug), injeta no body
+    if (req.params.slug) {
+      req.body.slug = req.params.slug;
+      logger.debug(
+        `[preMatriculasController] Slug detectado na rota: ${req.params.slug}`
+      );
+    }
+
+    const dados = req.body; // 👈 importante vir depois do bloco acima
+
+    // 🔐 Fluxo seguro para multi-organização:
+    const usuario = req.usuario || req.user;
+    if (usuario?.organizacao_id) {
+      dados.organizacao_id = usuario.organizacao_id;
+    } else {
+      dados.organizacao_id = req.body.organizacao_id;
+    }
+
+    // ✅ Validação final (permite organizacao_id ou slug)
+    if (!dados.organizacao_id && !dados.slug) {
+      return res
+        .status(400)
+        .json({ error: "Organização não informada ou inválida." });
+    }
+
     logger.info(
-      "[preMatriculasController] Nova solicitação de pré-matrícula recebida"
+      `[preMatriculasController] Nova pré-matrícula recebida (${dados.organizacao_id ? "org " + dados.organizacao_id : "via slug"})`
     );
 
     const resultado = await preMatriculasService.criarPreMatricula(dados);
@@ -22,18 +46,26 @@ async function criarPreMatricula(req, res) {
       "[preMatriculasController] Erro ao criar pré-matrícula:",
       err.message
     );
-    return res.status(400).json({
-      error: err.message || "Erro ao criar pré-matrícula.",
-    });
+    return res
+      .status(400)
+      .json({ error: err.message || "Erro ao criar pré-matrícula." });
   }
 }
 
-/**
- * Lista todas as pré-matrículas pendentes (rota interna/admin)
- */
+/* -------------------------------------------------------------------------- */
+/* 🔹 Listagem de pré-matrículas pendentes (admin autenticado)                */
+/* -------------------------------------------------------------------------- */
 async function listarPendentes(req, res) {
   try {
-    const { organizacaoId } = req.params;
+    const usuario = req.usuario || req.user;
+    const organizacaoId = usuario?.organizacao_id;
+
+    if (!organizacaoId) {
+      return res.status(403).json({
+        error: "Acesso negado: organização não identificada no token.",
+      });
+    }
+
     const lista = await preMatriculasService.listarPendentes(organizacaoId);
     return res.json(lista);
   } catch (err) {
@@ -47,61 +79,60 @@ async function listarPendentes(req, res) {
   }
 }
 
-/**
- * Atualiza o status de uma pré-matrícula (aprovar/rejeitar)
- */
+/* -------------------------------------------------------------------------- */
+/* 🔹 Atualização de status (aprovar / rejeitar)                              */
+/* -------------------------------------------------------------------------- */
 async function atualizarStatus(req, res) {
+  const { id } = req.params;
+  const { status } = req.body;
+  const organizacao_id = req.usuario?.organizacao_id;
+
   try {
-    const { id } = req.params;
-    const { status } = req.body;
+    logger.info(
+      `[preMatriculasController] org ${organizacao_id} - requisição recebida para atualizar status da pré ${id} → ${status}`
+    );
+
+    // 🎯 Encaminha tudo pro service (ele já trata aprovado/rejeitado internamente)
+    const resultado = await preMatriculasService.atualizarStatus(
+      id,
+      status,
+      organizacao_id
+    );
 
     logger.info(
-      `[preMatriculasController] Atualizando status da pré-matrícula #${id} → ${status}`
+      `[preMatriculasController] org ${organizacao_id} - status ${status} processado com sucesso`
     );
 
-    const resultado = await preMatriculasService.atualizarStatus(id, status);
-
-    // 🚀 Se aprovado, cria automaticamente aluno e matrícula real
-    if (status === "aprovado") {
-      try {
-        // Busca os dados completos da pré-matrícula no banco
-        const pre = await preMatriculasService.buscarPorId(id);
-
-        if (!pre)
-          throw new Error("Pré-matrícula não encontrada para criar matrícula.");
-
-        await matriculaService.criarMatricula(pre);
-        logger.info(
-          `[preMatriculasController] Matrícula criada automaticamente para ID ${id}`
-        );
-      } catch (err) {
-        logger.error(
-          "[preMatriculasController] Erro ao criar matrícula após aprovação:",
-          err.message
-        );
-      }
-    }
-
-    return res.json(resultado);
+    return res.json({
+      sucesso: resultado?.sucesso ?? true,
+      mensagem:
+        resultado?.mensagem ||
+        `Status atualizado para ${status} com sucesso.`,
+    });
   } catch (err) {
     logger.error(
-      "[preMatriculasController] Erro ao atualizar status:",
+      `[preMatriculasController] org ${organizacao_id} - erro ao atualizar status da pré ${id}:`,
       err.message
     );
-    return res
-      .status(400)
-      .json({ error: "Erro ao atualizar status da pré-matrícula." });
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: "Erro ao atualizar status da pré-matrícula.",
+      erro: err.message,
+    });
   }
 }
 
-/**
- * Retorna o nome do grupo (usado no formulário público)
- */
+
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Retorna nome do grupo da organização (usado no formulário público)      */
+/* -------------------------------------------------------------------------- */
 async function getGrupo(req, res) {
   try {
     const { organizacaoId } = req.params;
     const grupo =
       await preMatriculasService.buscarGrupoPorOrganizacaoId(organizacaoId);
+
     return res.json({ grupo });
   } catch (err) {
     logger.error(

@@ -54,7 +54,9 @@ exports.salvarBatch = async ({ user, turma_id, data, itens }) => {
     data,
     status: i.status === "presente" ? "presente" : "falta",
     created_by: user?.id || null,
+    organizacao_id: user?.organizacao_id || null, // 🔹 novo campo
   }));
+  
 
   // antes: await repo.upsertBatch(linhas);
   const upsert = await repo.upsertBatch(linhas);

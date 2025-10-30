@@ -29,42 +29,41 @@ function CardAluno({
   }, [aluno.nascimento]);
 
   // Busca categoria com cache
-useEffect(() => {
-  async function carregarCategoria() {
-    if (!idade || isNaN(idade)) {
-      setCategoria("-");
-      return;
+  useEffect(() => {
+    async function carregarCategoria() {
+      if (!idade || isNaN(idade)) {
+        setCategoria("-");
+        return;
+      }
+
+      // ✅ 1. Se já está no cache, usa direto
+      if (cacheCategorias.current[idade]) {
+        setCategoria(cacheCategorias.current[idade]);
+        return;
+      }
+
+      // ✅ 2. Se não está no cache, busca do backend
+      try {
+        const resp = await fetch(`/api/categorias/por-idade/${idade}`);
+        if (!resp.ok) throw new Error("Falha ao buscar categoria");
+        const data = await resp.json();
+
+        let categoriaEncontrada =
+          data?.data?.categoria_nome ||
+          "Sem turma disponível para essa faixa etária";
+
+        // salva no cache
+        cacheCategorias.current[idade] = categoriaEncontrada;
+
+        setCategoria(categoriaEncontrada);
+      } catch (err) {
+        console.error("Erro ao buscar categoria:", err);
+        setCategoria("Erro ao obter categoria");
+      }
     }
 
-    // ✅ 1. Se já está no cache, usa direto
-    if (cacheCategorias.current[idade]) {
-      setCategoria(cacheCategorias.current[idade]);
-      return;
-    }
-
-    // ✅ 2. Se não está no cache, busca do backend
-    try {
-      const resp = await fetch(`/api/categorias/por-idade/${idade}`);
-      if (!resp.ok) throw new Error("Falha ao buscar categoria");
-      const data = await resp.json();
-
-      let categoriaEncontrada =
-        data?.data?.categoria_nome ||
-        "Sem turma disponível para essa faixa etária";
-
-      // salva no cache
-      cacheCategorias.current[idade] = categoriaEncontrada;
-
-      setCategoria(categoriaEncontrada);
-    } catch (err) {
-      console.error("Erro ao buscar categoria:", err);
-      setCategoria("Erro ao obter categoria");
-    }
-  }
-
-  carregarCategoria();
-}, [idade, cacheCategorias]);
-
+    carregarCategoria();
+  }, [idade, cacheCategorias]);
 
   const grupoSistema = "Capoeira Brasil";
   const veioOutroGrupo =
@@ -82,21 +81,35 @@ useEffect(() => {
       onClick={() => onAbrirFicha?.(aluno)}
       className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all duration-200 flex flex-col items-center"
     >
-      {/* Avatar */}
-      <div className="h-14 w-14 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg mb-3">
-        {(aluno.nome || "?").substring(0, 1).toUpperCase()}
+      {/* Avatar (foto ou inicial) */}
+      <div className="h-14 w-14 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg mb-3 border border-gray-200">
+        {aluno.foto_url ? (
+          <img
+            src={aluno.foto_url}
+            alt={aluno.nome}
+            className="object-cover w-full h-full"
+            onError={(e) => (e.target.style.display = "none")}
+          />
+        ) : (
+          (aluno.nome || "?").substring(0, 1).toUpperCase()
+        )}
       </div>
 
       {/* Nome e grupo */}
       <h3 className="text-base font-semibold text-gray-800 leading-tight text-center mb-1">
-        {aluno.nome}
+        {aluno.apelido || aluno.nome || "Sem nome"}
       </h3>
+
+      {aluno.apelido && aluno.nome && (
+        <p className="text-sm text-gray-500 font-medium text-center mb-2">
+          {aluno.nome}
+        </p>
+      )}
 
       {/* Destaque se veio de outro grupo */}
       {veioOutroGrupo && (
         <p className="text-[13px] text-amber-700 font-medium text-center mb-2">
-          Veio do grupo{" "}
-          <span className="underline">{aluno.grupo_origem}</span>
+          Veio do grupo <span className="underline">{aluno.grupo_origem}</span>
         </p>
       )}
 
@@ -105,6 +118,25 @@ useEffect(() => {
         Idade: <strong>{idade}</strong> &nbsp;•&nbsp; Categoria:{" "}
         <strong>{categoria}</strong>
       </p>
+
+      {/* Graduação (se já tiver) */}
+      {aluno.graduacao_nome && (
+        <p className="text-sm text-amber-700 font-medium text-center mb-2">
+          Graduação:{" "}
+          <span className="font-semibold">{aluno.graduacao_nome}</span>
+        </p>
+      )}
+
+      {/* Observação médica (se existir) */}
+      {aluno.observacoes_medicas && aluno.observacoes_medicas.trim() !== "" && (
+        <div className="bg-red-50 border border-red-200 rounded-md px-2 py-1 text-center mb-3">
+          <p className="text-[13px] text-red-700 leading-snug">
+            <span className="font-semibold">Obs Médicas:</span>{" "}
+            {aluno.observacoes_medicas.charAt(0).toUpperCase() +
+              aluno.observacoes_medicas.slice(1).toLowerCase()}
+          </p>
+        </div>
+      )}
 
       {/* Clique */}
       <div className="flex items-center justify-center gap-1 text-gray-400 text-xs mb-3">

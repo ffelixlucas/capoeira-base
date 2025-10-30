@@ -19,14 +19,14 @@ exports.turmasDoInstrutor = async (equipeId) => {
 };
 
 /** Lista presenças por turma e data (dia) */
-exports.listarPorTurmaEData = async (turmaId, data) => {
+exports.listarPorTurmaEData = async (turmaId, data, organizacaoId) => {
   const [rows] = await db.execute(
     `SELECT p.*, a.nome AS aluno_nome, a.apelido
        FROM presencas p
        JOIN alunos a ON a.id = p.aluno_id
-      WHERE p.turma_id = ? AND p.data = ?
+      WHERE p.turma_id = ? AND p.data = ? AND p.organizacao_id = ?
       ORDER BY a.nome ASC`,
-    [turmaId, data]
+    [turmaId, data, organizacaoId]
   );
   return rows;
 };
@@ -37,17 +37,27 @@ exports.upsertBatch = async (linhas = []) => {
   if (!linhas || linhas.length === 0) return { affectedRows: 0, info: "" };
 
   const values = [];
-  const placeholders = linhas.map(() => "(?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)").join(",");
-  for (const l of linhas) values.push(l.aluno_id, l.turma_id, l.data, l.status, l.created_by ?? null);
+  const placeholders = linhas.map(() => "(?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)").join(",");
+for (const l of linhas) {
+  values.push(
+    l.aluno_id,
+    l.turma_id,
+    l.data,
+    l.status,
+    l.created_by ?? null,
+    l.organizacao_id ?? null // 🔹 novo campo
+  );
+}
 
-  const sql = `
-    INSERT INTO presencas (aluno_id, turma_id, data, status, created_by, created_at, updated_at)
-    VALUES ${placeholders}
-    ON DUPLICATE KEY UPDATE
-      status = VALUES(status),
-      created_by = VALUES(created_by),
-      updated_at = CURRENT_TIMESTAMP
-  `;
+const sql = `
+  INSERT INTO presencas (aluno_id, turma_id, data, status, created_by, organizacao_id, created_at, updated_at)
+  VALUES ${placeholders}
+  ON DUPLICATE KEY UPDATE
+    status = VALUES(status),
+    created_by = VALUES(created_by),
+    updated_at = CURRENT_TIMESTAMP
+`;
+
   const [result] = await db.execute(sql, values);
   return { affectedRows: result.affectedRows ?? 0, info: result.info ?? "" };
 };
@@ -115,7 +125,7 @@ exports.alunosForaDaTurma = async (turmaId, alunoIds = []) => {
  * - inicio/fim no formato 'YYYY-MM-DD'
  * - turmaIds opcional: limita o relatório a um conjunto de turmas
  */
-exports.relatorioPorPeriodo = async ({ inicio, fim, turmaIds = [] }) => {
+exports.relatorioPorPeriodo = async ({ inicio, fim, turmaIds = [], organizacaoId }) => {
   const filtros = ["DATE(p.data) BETWEEN ? AND ?"];
   const params = [inicio, fim];
 
@@ -124,6 +134,10 @@ exports.relatorioPorPeriodo = async ({ inicio, fim, turmaIds = [] }) => {
     filtros.push(`p.turma_id IN (${inPh})`);
     params.push(...turmaIds);
   }
+
+  // 🔹 Filtro principal de organização
+  filtros.push("p.organizacao_id = ?");
+  params.push(organizacaoId);
 
   const sql = `
     SELECT 
@@ -142,3 +156,4 @@ exports.relatorioPorPeriodo = async ({ inicio, fim, turmaIds = [] }) => {
   const [rows] = await db.execute(sql, params);
   return rows;
 };
+

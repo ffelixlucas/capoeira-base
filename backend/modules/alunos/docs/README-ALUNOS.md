@@ -1,170 +1,196 @@
-
-# 🧾 README – Módulo Alunos
-
-## 🎯 Objetivo
-
-Gerenciar os alunos de forma segura e flexível, permitindo:
-
-- Cadastro de dados pessoais e médicos
-- Troca de turmas com histórico
-- Controle de presença (frequência)
-- Anotações internas por instrutores
-- Permissões diferentes para admin e instrutor
-- Aprovação e rejeição de matrículas públicas
+# 🧾 Módulo – Alunos (Admin + Instrutores)
 
 ---
 
-## 🧱 Tabelas Relacionadas
+## 🎯 Descrição e Objetivo
 
-- `alunos`
-- `matriculas`
-- `turmas`
-- `frequencia`
-- `notas_aluno`
+Gerenciar os **alunos matriculados** de forma segura, escalável e multi-organização,  
+mantendo o controle completo de vínculo com turmas, histórico, frequência e status.
+
+Cada organização (professor, mestre ou academia) visualiza e manipula apenas os próprios alunos.
 
 ---
 
-## 🔐 Permissões (RBAC)
+## 🧱 Tecnologias Utilizadas
 
-| Papel       | Acesso                            |
-|-------------|-----------------------------------|
-| `admin`     | Acesso total a todos os dados     |
-| `instrutor` | Somente aos seus alunos e turmas  |
+- **Node.js + Express**
+- **MySQL (Railway)**
+- **JWT + RBAC** (controle de acesso por papel)
+- **Logger customizado** (`utils/logger.js`)
+- **Arquitetura em camadas** → Controller → Service → Repository
+
+---
+
+## 📂 Estrutura do Módulo
+
+```
+
+/modules/alunos/
+│
+├── alunosController.js   → Recebe requisições e injeta organizacao_id
+├── alunosService.js      → Regras de negócio e filtragem por organização
+├── alunosRepository.js   → Queries SQL com WHERE organizacao_id = ?
+├── alunosRoutes.js       → Rotas protegidas com verifyToken + checkRole
+└── docs/README-ALUNOS.md → (este arquivo)
+
+````
+
+---
+
+## ⚙️ Fluxo de Funcionamento
+
+1️⃣ **Criação Automática:**  
+Quando uma pré-matrícula é aprovada, o sistema cria um aluno real e vincula à turma correta.
+
+2️⃣ **Criação Manual (Painel Admin):**  
+O admin pode cadastrar um aluno diretamente no painel.  
+O campo `organizacao_id` é injetado automaticamente pelo token JWT.
+
+3️⃣ **Listagem e Edição:**  
+- Admin vê todos os alunos da sua organização.  
+- Instrutor vê apenas alunos das turmas que ele gerencia.  
+- Nenhum usuário pode acessar alunos de outras academias.
+
+4️⃣ **Exclusão / Status:**  
+- Admin pode excluir ou mudar status (`ativo`, `inativo`, `pendente`).  
+- Exclusão remove o aluno apenas da sua organização (com CASCADE ativo).
+
+---
+
+## 🔒 Segurança Multi-Organização
+
+| Camada | Responsabilidade | Detalhes |
+|---------|------------------|-----------|
+| **Controller** | Injeta `req.usuario.organizacao_id` em todas as rotas | Evita que o front envie IDs falsos |
+| **Service** | Repassa e valida `organizacao_id` antes de qualquer operação | Isolamento entre academias |
+| **Repository** | Todas as queries incluem `WHERE a.organizacao_id = ?` | Segurança no nível do banco |
+| **Banco de Dados** | FK `ON DELETE CASCADE ON UPDATE CASCADE` | Integridade automática entre módulos |
+
+✅ Nenhum instrutor/admin pode acessar alunos de outra organização.  
+✅ Toda operação (listar, editar, deletar) é restrita ao `organizacao_id` do token.
+
+---
+
+## 🧠 Regras de Negócio
+
+- `nome` e `turma_id` obrigatórios  
+- `cpf` único por organização  
+- `organizacao_id` obrigatório em toda operação  
+- Exclusão → física, limitada à organização  
+- Troca de turma → encerra matrícula anterior (`data_fim`) e cria nova  
+- `status` padrão = `"pendente"` até aprovação
+
+---
+
+## 🧩 Relacionamentos de Banco
+
+### 🔹 Tabela `alunos`
+
+| Campo | Tipo | Regra |
+|--------|------|-------|
+| `id` | INT | PK |
+| `organizacao_id` | INT | FK → `organizacoes(id)` `ON DELETE CASCADE ON UPDATE CASCADE` |
+| `turma_id` | INT | FK → `turmas(id)` `ON DELETE SET NULL` |
+| `criado_por` | INT | FK → `equipe(id)` `ON DELETE SET NULL` |
+| `status` | ENUM('pendente','ativo','inativo') | padrão `pendente` |
+| `cpf` | VARCHAR(20) | único |
+| `graduacao` | VARCHAR(50) | opcional |
+| `foto_url` | TEXT | opcional |
+
+### 🔹 Outras relações diretas
+- `matriculas` → define vínculo técnico aluno ↔ turma  
+- `frequencia` → controle de presença por data  
+- `organizacoes` → isola cada academia  
+
+---
+
+## 📊 Permissões (RBAC)
+
+| Papel | Permissões |
+|-------|-------------|
+| **admin** | listar, criar, editar, excluir, aprovar/rejeitar pendentes |
+| **instrutor** | listar alunos das suas turmas, editar dados básicos |
+| **visitante** | nenhum acesso (rota protegida por JWT) |
 
 ---
 
 ## 📦 Endpoints
 
-### 🔍 Listar todos os alunos
-`GET /api/alunos`  
-- Retorna alunos com turma atual
-- Admin: todos
-- Instrutor: apenas seus
+| Método | Rota | Descrição | Acesso |
+|---------|------|------------|---------|
+| `GET` | `/api/alunos` | Lista alunos da organização | admin, instrutor |
+| `GET` | `/api/alunos/:id` | Busca aluno por ID | admin, instrutor |
+| `POST` | `/api/alunos` | Cadastra aluno (injeta org automática) | admin, instrutor |
+| `PUT` | `/api/alunos/:id` | Edita aluno | admin, instrutor |
+| `DELETE` | `/api/alunos/:id` | Exclui aluno (org isolada) | admin |
+| `PUT` | `/api/alunos/:id/trocar-turma` | Troca de turma | admin, instrutor |
+| `GET` | `/api/alunos/pendentes` | Lista pendentes (status=pendente) | admin |
+| `PATCH` | `/api/alunos/:id/status` | Atualiza status (ativo/inativo) | admin |
 
-### 🔍 Buscar aluno por ID
-`GET /api/alunos/:id`
+---
 
-### ➕ Cadastrar novo aluno
-`POST /api/alunos`
+## 🧾 Exemplo de Criação (via painel)
+
 ```json
+POST /api/alunos
 {
-  "nome": "Lucas",
+  "nome": "Lucas Silva",
   "apelido": "Luquinha",
   "nascimento": "2015-02-01",
   "telefone_responsavel": "41999999999",
-  "nome_responsavel": "Mãe",
-  "endereco": "Rua A",
-  "graduacao": "corda azul",
+  "nome_responsavel": "Maria Silva",
+  "endereco": "Rua da Capoeira, 123",
+  "graduacao": "corda amarela",
   "observacoes_medicas": "asmático",
-  "foto_url": "https://...jpg",
-  "turma_id": 2,
-  "criado_por": 1
+  "turma_id": 2
 }
 ````
 
-### ✏️ Editar aluno
+📎 O campo `organizacao_id` é injetado automaticamente pelo token JWT.
 
-`PUT /api/alunos/:id`
+---
 
-### 🗑️ Excluir aluno
+## 🧮 Estrutura SQL Simplificada
 
-`DELETE /api/alunos/:id` *(apenas admin)*
-
-### 🔁 Trocar aluno de turma
-
-`PUT /api/alunos/:id/trocar-turma`
-
-```json
-{ "nova_turma_id": 3 }
-```
-
-### 🔔 Contar alunos pendentes
-
-`GET /api/alunos/pendentes/count` *(apenas admin)*
-Retorna a quantidade de alunos aguardando aprovação.
-
-```json
-{ "count": 3 }
-```
-
-### 📋 Listar alunos pendentes
-
-`GET /api/alunos/pendentes` *(apenas admin)*
-Retorna lista detalhada de alunos em `status = pendente`.
-
-```json
-[
-  {
-    "id": 19,
-    "nome": "Aluno Infantil",
-    "apelido": null,
-    "telefone_responsavel": "41999999999",
-    "email": "infantil@example.com",
-    "status": "pendente"
-  }
-]
-```
-
-### ✅ Aprovar / ❌ Rejeitar matrícula
-
-`PATCH /api/alunos/:id/status` *(apenas admin)*
-
-* Aprovar matrícula → `{ "status": "ativo" }`
-* Rejeitar matrícula → `{ "status": "inativo" }` (⚠️ no fluxo atual, isso **exclui o aluno** do banco)
-
-Resposta:
-
-```json
-{ "sucesso": true }
+```sql
+CREATE TABLE alunos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  organizacao_id INT NOT NULL DEFAULT 1,
+  nome VARCHAR(100) NOT NULL,
+  cpf VARCHAR(20) UNIQUE,
+  status ENUM('pendente','ativo','inativo') DEFAULT 'pendente',
+  turma_id INT DEFAULT NULL,
+  FOREIGN KEY (organizacao_id) REFERENCES organizacoes(id)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (turma_id) REFERENCES turmas(id)
+    ON DELETE SET NULL
+);
 ```
 
 ---
 
-## 🧩 Funcionamento da Matrícula
+## 🚦 Validações
 
-* Matrículas públicas entram como `pendente`.
-* Admin aprova → aluno vira `ativo` e permanece vinculado à sua turma.
-* Admin rejeita → aluno é excluído do banco.
-* Troca de turma encerra a matrícula anterior (`data_fim = hoje`) e cria nova (`data_inicio = hoje`).
-* Consultas sempre usam a matrícula ativa (`data_fim IS NULL`).
-
----
-
-## 🚦 Validações obrigatórias
-
-* `nome` é obrigatório
-* `turma_id` deve existir
-* Não permite cadastro sem matrícula
-* Apenas admin pode excluir alunos
-* Apenas admin pode aprovar/rejeitar pendentes
+* `cpf` deve ser único
+* `organizacao_id` obrigatório
+* `turma_id` existente
+* Apenas admin pode excluir ou alterar status
+* `instrutor` não pode ver nem editar alunos de outra organização
 
 ---
 
-## 📚 Backend Estruturado
+## 🚀 Status Atual
 
-```
-/modules/alunos/
-├── alunosRepository.js
-├── alunosService.js
-├── alunosController.js
-├── alunosRoutes.js
-└── docs/README-ALUNOS.md
-```
+✅ Multi-organização completo
+✅ RBAC (Admin / Instrutor)
+✅ Filtros e queries protegidos por `organizacao_id`
+✅ Banco com CASCADE ativo
+✅ Pronto para integração com frequência e relatórios
 
 ---
 
-### 🗒️ Notas Internas
+## 👨‍💻 Responsável Técnico
 
-* Cada instrutor pode adicionar observações pessoais por aluno.
-* Admin pode ver todas.
-* Visível no `ModalAluno` do painel admin.
-
----
-
-## ✅ Status: FUNCIONAL
-
-* Estrutura profissional e modular
-* Segurança aplicada (JWT + RBAC)
-* Fluxo de aprovação de matrículas públicas validado
-* Pronto para integração com frequência, observações e gestão de turmas
-
+**Lucas Fanha Felix**
+*Desenvolvedor Full Stack – Projeto Capoeira Base*
+[github.com/ffelixlucas](https://github.com/ffelixlucas)

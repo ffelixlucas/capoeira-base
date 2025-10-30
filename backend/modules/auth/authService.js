@@ -10,33 +10,38 @@ function sha256Hex(str) {
   return crypto.createHash('sha256').update(str).digest('hex');
 }
 
+// 🔐 Login com suporte multi-organização atualizado
 async function login(email, senha) {
   const membro = await authRepository.buscarMembroPorEmail(email);
 
   if (!membro) {
-    throw new Error('Usuário não encontrado');
+    throw new Error("Usuário não encontrado");
   }
 
   if (!membro.senha_hash) {
-    throw new Error('Este usuário não possui acesso ao sistema');
+    throw new Error("Este usuário não possui acesso ao sistema");
   }
 
   const senhaValida = await bcrypt.compare(senha, membro.senha_hash);
   if (!senhaValida) {
-    throw new Error('Senha incorreta');
+    throw new Error("Senha incorreta");
   }
 
+  // 🔥 Gera token JWT com todos os dados necessários para multi-organização
   const token = jwt.sign(
     {
       id: membro.id,
       nome: membro.nome,
       email: membro.email,
       roles: membro.roles,
+      organizacao_id: membro.organizacao_id || null,
+      grupo_id: membro.grupo_id || null, // opcional para futuras permissões
     },
     process.env.JWT_SECRET,
-    { expiresIn: '2h' }
+    { expiresIn: "8h" }
   );
 
+  // 🔁 Retorno padronizado para o frontend (AuthContext)
   return {
     token,
     usuario: {
@@ -44,11 +49,12 @@ async function login(email, senha) {
       nome: membro.nome,
       email: membro.email,
       roles: membro.roles,
-      organizacao_id: membro.organizacao_id || null, 
+      organizacao_id: membro.organizacao_id || null,
+      grupo_id: membro.grupo_id || null,
     },
   };
-
 }
+
 
 // fluxo: esqueci minha senha
 async function requestPasswordReset(email, baseResetUrl) {
