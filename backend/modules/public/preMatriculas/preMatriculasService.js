@@ -6,11 +6,12 @@ const emailService = require("../../../services/emailService");
 const notificacaoService = require("../../notificacaoDestinos/notificacaoDestinosService");
 const db = require("../../../database/connection");
 const logger = require("../../../utils/logger");
-const bucket = require("../../../config/firebase"); // ✅ bucket centralizado e correto
+const bucket = require("../../../config/firebase"); 
 const organizacaoService = require("../../shared/organizacoes/organizacaoService");
 const {
-  gerarEmailPreMatriculaAdmin,
+  gerarEmailPreMatriculaAdmin, 
 } = require("../../../services/templates/preMatriculaAdmin");
+const { gerarEmailPreMatriculaAluno } = require("../../../services/templates/preMatriculaAluno");
 
 // Loga apenas 1x no startup, útil para debug
 logger.debug(`[preMatriculasService] Bucket em uso: ${bucket.name}`);
@@ -128,16 +129,23 @@ async function criarPreMatricula(dados) {
     );
 
     // ✉️ Envio de e-mails
+
+    // 🔎 Buscar nome da organização para personalizar o e-mail
+    const orgInfo = await preMatriculasRepository.buscarGrupoPorOrganizacaoId(
+      dados.organizacao_id
+    );
+    const nomeInstituicao =
+      orgInfo?.nome_fantasia || orgInfo?.nome || "Capoeira Base";
+
     try {
       // Para o aluno/responsável
       await emailService.enviarEmailCustom({
         to: dados.email,
-        subject: "📩 Pré-matrícula recebida",
-        html: `
-          <p>Olá ${dados.nome},</p>
-          <p>Sua pré-matrícula foi recebida e está <b>aguardando aprovação</b>.</p>
-          <p>Em breve entraremos em contato com mais informações.</p>
-        `,
+        subject: "📩 Pré-matrícula recebida – estamos quase lá!",
+        html: gerarEmailPreMatriculaAluno({
+          ...dados,
+          nome_fantasia: nomeInstituicao,
+        }),
       });
 
       // Para administradores
@@ -146,13 +154,23 @@ async function criarPreMatricula(dados) {
         "matricula"
       );
 
+      // 🔎 Buscar a pré-matrícula completa (com nomes de categoria e graduação)
+      const preCompleta = await preMatriculasRepository.buscarPorId(
+        id,
+        dados.organizacao_id
+      );
+
       for (const email of emailsAdmin) {
         await emailService.enviarEmailCustom({
           to: email,
-          subject: `👥 Nova pré-matrícula pendente (${dados.nome})`,
-          html: gerarEmailPreMatriculaAdmin(dados),
+          subject: `👥 Nova pré-matrícula pendente (${preCompleta.nome})`,
+          html: gerarEmailPreMatriculaAdmin(preCompleta),
         });
       }
+
+      logger.info(
+        `[preMatriculasService] org ${dados.organizacao_id} - e-mails de notificação enviados (${emailsAdmin.length})`
+      );
     } catch (emailErr) {
       logger.error(
         "[preMatriculasService] Erro ao enviar e-mails:",

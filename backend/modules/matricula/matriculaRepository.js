@@ -128,9 +128,67 @@ async function buscarOrganizacaoPorTurmaId(turmaId) {
   return rows.length > 0 ? rows[0].organizacao_id : null;
 }
 
+/**
+ * Busca dados completos para o e-mail de matrícula aprovada
+ * (turma, dias, horários, responsável e endereço da organização)
+ * Agora inclui também `professor_funcao`.
+ */
+async function buscarDadosEmailAprovacao(turmaId, organizacaoId) {
+  const sql = `
+    SELECT
+      t.nome AS turma_nome,
+      COALESCE(et.nome, eh.nome) AS professor_nome,                      -- responsável pelo aluno
+      COALESCE(et.funcao, eh.funcao) AS professor_funcao,                -- NOVO: função/cargo (Instrutor, Professor, Mestre...)
+      COALESCE(GROUP_CONCAT(DISTINCT h.dias ORDER BY h.id SEPARATOR ', '), '—') AS dias,
+      COALESCE(GROUP_CONCAT(DISTINCT h.horario ORDER BY h.id SEPARATOR ', '), '—') AS horario,
+      o.endereco,
+      o.nome_fantasia,
+      o.nome AS nome_organizacao
+    FROM turmas t
+    LEFT JOIN horarios_aula h 
+           ON h.turma_id = t.id 
+          AND h.organizacao_id = t.organizacao_id
+    LEFT JOIN equipe et 
+           ON et.id = t.equipe_id                                       -- responsável principal da turma
+    LEFT JOIN equipe eh 
+           ON eh.id = h.responsavel_id                                  -- responsável do horário (fallback)
+    INNER JOIN organizacoes o 
+            ON o.id = t.organizacao_id
+    WHERE t.id = ? AND t.organizacao_id = ?
+    GROUP BY t.id, turma_nome, professor_nome, professor_funcao, o.endereco, o.nome_fantasia, o.nome
+    LIMIT 1
+  `;
+
+  const params = [turmaId, organizacaoId];
+
+  // 🔎 Logs de depuração
+  logger.debug("[matriculaRepository.buscarDadosEmailAprovacao] SQL:", sql.trim());
+  logger.debug("[matriculaRepository.buscarDadosEmailAprovacao] Params:", params);
+
+  const [rows] = await db.execute(sql, params);
+
+  if (!rows.length) {
+    logger.warn(`[matriculaRepository.buscarDadosEmailAprovacao] Nenhum dado encontrado (turma_id=${turmaId}, org=${organizacaoId})`);
+    return null;
+  }
+
+  const row = rows[0];
+
+  logger.info(
+    `[matriculaRepository.buscarDadosEmailAprovacao] OK (turma_id=${turmaId}, org=${organizacaoId}) → ` +
+    `responsavel="${row.professor_funcao || "-"} ${row.professor_nome || "-"}", ` +
+    `dias="${row.dias}", horario="${row.horario}"`
+  );
+
+  return row;
+}
+
+
+
 module.exports = {
   criar,
   buscarPorCpf,
   buscarTurmaPorIdade,
   buscarOrganizacaoPorTurmaId,
+  buscarDadosEmailAprovacao,
 };

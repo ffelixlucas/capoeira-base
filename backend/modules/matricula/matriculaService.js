@@ -6,6 +6,19 @@ const emailService = require("../../services/emailService");
 const logger = require("../../utils/logger");
 const notificacaoService = require("../notificacaoDestinos/notificacaoDestinosService");
 const preMatriculasRepository = require("../public/preMatriculas/preMatriculasRepository");
+const {
+  gerarEmailMatriculaAprovada,
+  gerarEmailMatriculaAprovadaAdmin,
+} = require("../../services/templates/matriculaAprovada");
+
+/**
+ * Normaliza dados de CPF e e-mail
+ */
+function normalizarDadosPessoa(obj) {
+  obj.cpf = obj.cpf?.replace(/\D/g, "") || "";
+  obj.email = obj.email?.toLowerCase().trim() || null;
+  return obj;
+}
 
 /**
  * Calcula idade exata a partir da data de nascimento
@@ -24,9 +37,8 @@ function calcularIdade(nascimento) {
  */
 async function criarMatricula(dados) {
   try {
-    // Normalizações básicas
-    dados.cpf = dados.cpf?.replace(/\D/g, "") || "";
-    dados.email = dados.email?.toLowerCase().trim() || null;
+    // 🧩 Normalizações básicas
+    normalizarDadosPessoa(dados);
 
     // 🔒 Garante que a organização esteja presente
     const usuario = dados.usuario || null;
@@ -45,21 +57,23 @@ async function criarMatricula(dados) {
 
     // 🚫 Evita duplicidade de CPF
     const existente = await matriculaRepository.buscarPorCpf(dados.cpf);
-    if (existente) {
-      throw new Error("Já existe um aluno com este CPF.");
-    }
+    if (existente) throw new Error("Já existe um aluno com este CPF.");
 
     // 📅 Calcula idade
     const idade = calcularIdade(dados.nascimento);
+    logger.debug(`[matriculaService] Idade calculada → ${idade}`);
 
     // 🔍 Busca turma compatível com a idade
     const turma = await matriculaRepository.buscarTurmaPorIdade(idade);
+    logger.debug("[matriculaService] Turma detectada:", turma);
+
     if (!turma) throw new Error("Nenhuma turma disponível para esta idade.");
 
     // Atribui dados da turma
     dados.turma_id = turma.turma_id;
     dados.categoria_id = turma.categoria_id || null;
     dados.categoria_nome = turma.categoria_nome || null;
+    logger.debug(`[matriculaService] turma_id atribuído → ${dados.turma_id}`);
 
     // 🔹 Fallback: busca organização da turma, caso ainda não tenha sido definida
     if (!dados.organizacao_id) {
@@ -70,9 +84,8 @@ async function criarMatricula(dados) {
       );
     }
 
-    if (!dados.organizacao_id) {
+    if (!dados.organizacao_id)
       throw new Error("Falha ao determinar organização da matrícula.");
-    }
 
     logger.info("[matriculaService] Criando aluno/matrícula", {
       nome: dados.nome,
@@ -81,7 +94,7 @@ async function criarMatricula(dados) {
       organizacao_id: dados.organizacao_id,
     });
 
-    // 🧾 Cria aluno + matrícula
+    // 💾 Cria aluno + matrícula
     const novoAluno = await matriculaRepository.criar(dados);
 
     logger.info("[matriculaService] Matrícula criada com sucesso", {
@@ -91,37 +104,82 @@ async function criarMatricula(dados) {
 
     // ✉️ Envio de e-mails e notificações
     try {
+      // 🧩 Garante que o turma_id exista antes do e-mail
+      if (!dados.turma_id) {
+        logger.warn(
+          `[matriculaService] org ${dados.organizacao_id} - turma_id ausente antes do e-mail, tentando fallback...`
+        );
+        const turmaFallback = await matriculaRepository.buscarTurmaPorIdade(
+          idade
+        );
+        if (turmaFallback) {
+          dados.turma_id = turmaFallback.turma_id;
+          logger.info(
+            `[matriculaService] org ${dados.organizacao_id} - turma_id recuperado via fallback (${turmaFallback.turma_id}, ${turmaFallback.turma_nome})`
+          );
+        } else {
+          logger.error(
+            `[matriculaService] org ${dados.organizacao_id} - nenhum turma_id encontrado mesmo após fallback`
+          );
+        }
+      }
+
+      logger.debug(
+        `[matriculaService] org ${dados.organizacao_id} - preparando envio de e-mail (turma_id=${dados.turma_id || "N/A"})`
+      );
+
+      const dadosEmail = await matriculaRepository.buscarDadosEmailAprovacao(
+        dados.turma_id,
+        dados.organizacao_id
+      );
+
+      logger.debug(
+        "[matriculaService] Dados do e-mail de matrícula:",
+        dadosEmail
+      );
+
+      // 🔹 E-mail do aluno
       if (dados.email) {
+        const htmlAluno = gerarEmailMatriculaAprovada({
+          ...dados,
+          ...dadosEmail,
+        });
+
         await emailService.enviarEmailCustom({
           to: dados.email,
-          subject: "🎓 Matrícula confirmada",
-          html: `
-            <p>Olá ${dados.nome},</p>
-            <p>Sua matrícula foi <b>confirmada</b> com sucesso!</p>
-            <p>Bem-vindo(a) à nossa organização 🎉</p>
-          `,
+          subject: "🎉 Matrícula aprovada – bem-vindo(a)!",
+          html: htmlAluno,
         });
       }
 
+      // 🔹 E-mails administrativos
       const emailsAdmin = await notificacaoService.getEmails(
         dados.organizacao_id,
         "matricula"
       );
 
+      const htmlAdmin = gerarEmailMatriculaAprovadaAdmin({
+        ...dados,
+        ...dadosEmail,
+      });
+
       for (const email of emailsAdmin) {
-        await emailService.enviarEmailCustom({
-          to: email,
-          subject: "✅ Nova matrícula confirmada",
-          html: `
-            <p>Nova matrícula confirmada:</p>
-            <ul>
-              <li><b>Nome:</b> ${dados.nome}</li>
-              <li><b>CPF:</b> ${dados.cpf}</li>
-              <li><b>Turma:</b> ${turma.turma_nome || "Não especificada"}</li>
-            </ul>
-          `,
-        });
+        try {
+          await emailService.enviarEmailCustom({
+            to: email,
+            subject: "✅ Nova matrícula confirmada",
+            html: htmlAdmin,
+          });
+        } catch (err) {
+          logger.warn(
+            `[matriculaService] Falha ao enviar e-mail admin ${email}: ${err.message}`
+          );
+        }
       }
+
+      logger.info(
+        `[matriculaService] org ${dados.organizacao_id} - e-mails de matrícula enviados (aluno + admin)`
+      );
     } catch (err) {
       logger.error("[matriculaService] Erro ao enviar e-mails:", err.message);
     }
@@ -145,40 +203,23 @@ async function criarMatriculaDireta(pre) {
 
   try {
     // 🧩 Normalizações básicas
-    pre.cpf = pre.cpf?.replace(/\D/g, "") || "";
-    pre.email = pre.email?.toLowerCase().trim() || null;
+    normalizarDadosPessoa(pre);
 
-    if (!pre.organizacao_id) {
+    if (!pre.organizacao_id)
       throw new Error("Organização não identificada na pré-matrícula.");
-    }
 
     // 🚫 Evita duplicidade
     const existente = await matriculaRepository.buscarPorCpf(pre.cpf);
-    if (existente) {
-      logger.warn(
-        `[matriculaService] org ${organizacao_id} - CPF duplicado detectado: ${pre.cpf}`
-      );
-      throw new Error("Já existe um aluno com este CPF.");
-    }
+    if (existente)
+      throw new Error("Já existe um aluno com este CPF nesta organização.");
 
-    // 🎯 Define status e turma
-    pre.status = "ativo";
-    pre.turma_id = pre.turma_id || null;
-
-    // 🧮 Calcula idade atual a partir da data de nascimento
-    const nascimento = new Date(pre.nascimento);
-    const hoje = new Date();
-    const idade =
-      hoje.getFullYear() -
-      nascimento.getFullYear() -
-      (hoje.getMonth() < nascimento.getMonth() ||
-      (hoje.getMonth() === nascimento.getMonth() &&
-        hoje.getDate() < nascimento.getDate())
-        ? 1
-        : 0);
+    // 🧮 Calcula idade atual
+    const idade = calcularIdade(pre.nascimento);
+    logger.debug(`[matriculaService] Idade calculada → ${idade}`);
 
     // 🔍 Busca turma automaticamente pela idade
     const turma = await matriculaRepository.buscarTurmaPorIdade(idade);
+    logger.debug("[matriculaService] Turma detectada:", turma);
 
     if (turma) {
       pre.turma_id = turma.turma_id;
@@ -191,7 +232,7 @@ async function criarMatriculaDireta(pre) {
       );
     }
 
-    // 🧾 Mapeamento 100% compatível com a tabela alunos
+    // 🧾 Mapeamento compatível com tabela alunos
     const dadosAluno = {
       organizacao_id: pre.organizacao_id,
       nome: pre.nome,
@@ -221,7 +262,7 @@ async function criarMatriculaDireta(pre) {
       dadosAluno
     );
 
-    // 💾 Cria aluno e matrícula vinculada
+    // 💾 Cria aluno
     const novoAluno = await matriculaRepository.criar(dadosAluno);
     logger.info(
       `[matriculaService] org ${organizacao_id} - aluno criado com ID ${novoAluno.id} a partir da pré ${pre.id}`
@@ -234,65 +275,84 @@ async function criarMatriculaDireta(pre) {
       organizacao_id
     );
 
-    // 🧩 Vínculo com tabela matriculas (se existir)
-    if (matriculaRepository.criarMatriculaInicial) {
-      const matriculaId = await matriculaRepository.criarMatriculaInicial(
-        novoAluno.id,
-        organizacao_id
+    // ✉️ Envio de e-mails (aluno + admin)
+    // 🧩 Garante que o turma_id exista antes de montar o e-mail
+    if (!pre.turma_id) {
+      logger.warn(
+        `[matriculaService] org ${organizacao_id} - turma_id ausente antes do e-mail, tentando fallback por idade...`
       );
-      logger.info(
-        `[matriculaService] org ${organizacao_id} - matrícula ${matriculaId} criada com sucesso para aluno ${novoAluno.id}`
-      );
-    } else {
-      logger.debug(
-        `[matriculaService] org ${organizacao_id} - método criarMatriculaInicial não encontrado (ignorando etapa de vínculo)`
-      );
-    }
-
-    // ✉️ Envia e-mails
-    try {
-      if (pre.email) {
-        await emailService.enviarEmailCustom({
-          to: pre.email,
-          subject: "🎓 Matrícula confirmada",
-          html: `
-            <p>Olá ${pre.nome},</p>
-            <p>Sua matrícula foi <b>confirmada</b> com sucesso!</p>
-            <p>Bem-vindo(a) à nossa organização 🎉</p>
-          `,
-        });
+      const turmaFallback = await matriculaRepository.buscarTurmaPorIdade(idade);
+      if (turmaFallback) {
+        pre.turma_id = turmaFallback.turma_id;
         logger.info(
-          `[matriculaService] org ${organizacao_id} - e-mail de confirmação enviado para ${pre.email}`
+          `[matriculaService] org ${organizacao_id} - turma_id recuperado via fallback (${turmaFallback.turma_id}, ${turmaFallback.turma_nome})`
+        );
+      } else {
+        logger.error(
+          `[matriculaService] org ${organizacao_id} - nenhuma turma encontrada mesmo após fallback (idade ${idade})`
         );
       }
+    }
 
-      const emailsAdmin = await notificacaoService.getEmails(
-        pre.organizacao_id,
-        "matricula"
-      );
+    logger.debug(
+      `[matriculaService] org ${organizacao_id} - preparando envio de e-mail (turma_id=${pre.turma_id || "N/A"})`
+    );
 
-      for (const email of emailsAdmin) {
-        await emailService.enviarEmailCustom({
-          to: email,
-          subject: "✅ Nova matrícula confirmada",
-          html: `
-            <p>Nova matrícula confirmada:</p>
-            <ul>
-              <li><b>Nome:</b> ${pre.nome}</li>
-              <li><b>CPF:</b> ${pre.cpf}</li>
-              <li><b>Email:</b> ${pre.email}</li>
-            </ul>
-          `,
+    const dadosEmail = await matriculaRepository.buscarDadosEmailAprovacao(
+      pre.turma_id,
+      pre.organizacao_id
+    );
+
+    logger.debug(
+      "[matriculaService] Dados do e-mail de matrícula direta:",
+      dadosEmail
+    );
+
+    if (pre.email) {
+      try {
+        const htmlAluno = gerarEmailMatriculaAprovada({
+          ...pre,
+          ...dadosEmail,
         });
-      }
 
-      logger.info(
-        `[matriculaService] org ${organizacao_id} - e-mails administrativos enviados`
-      );
-    } catch (emailErr) {
-      logger.error(
-        `[matriculaService] org ${organizacao_id} - erro ao enviar e-mails: ${emailErr.message}`
-      );
+        await emailService.enviarEmailCustom({
+          to: pre.email,
+          subject: "🎉 Matrícula aprovada – bem-vindo(a)!",
+          html: htmlAluno,
+        });
+
+        const emailsAdmin = await notificacaoService.getEmails(
+          pre.organizacao_id,
+          "matricula"
+        );
+
+        const htmlAdmin = gerarEmailMatriculaAprovadaAdmin({
+          ...pre,
+          ...dadosEmail,
+        });
+
+        for (const email of emailsAdmin) {
+          try {
+            await emailService.enviarEmailCustom({
+              to: email,
+              subject: "✅ Nova matrícula confirmada",
+              html: htmlAdmin,
+            });
+          } catch (err) {
+            logger.warn(
+              `[matriculaService] Falha ao enviar e-mail admin ${email}: ${err.message}`
+            );
+          }
+        }
+
+        logger.info(
+          `[matriculaService] org ${organizacao_id} - e-mails de matrícula aprovados enviados`
+        );
+      } catch (err) {
+        logger.error(
+          `[matriculaService] org ${organizacao_id} - erro ao enviar e-mails de matrícula aprovada: ${err.message}`
+        );
+      }
     }
 
     logger.info(

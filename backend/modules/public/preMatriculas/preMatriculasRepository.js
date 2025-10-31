@@ -195,25 +195,37 @@ async function atualizarStatus(id, novoStatus, organizacaoId) {
     throw err;
   }
 }
-
 /**
- * Busca o nome do grupo (organização) para exibir no formulário público
+ * Busca informações básicas da organização (nome, nome_fantasia e grupo)
+ * Usado em e-mails e formulários públicos
  */
 async function buscarGrupoPorOrganizacaoId(organizacaoId) {
   try {
     const [rows] = await db.execute(
-      "SELECT grupo FROM organizacoes WHERE id = ?",
+      "SELECT nome, nome_fantasia, grupo FROM organizacoes WHERE id = ?",
       [organizacaoId]
     );
-    return rows.length > 0 ? rows[0].grupo : null;
+
+    if (rows.length > 0) {
+      logger.debug(
+        `[preMatriculasRepository] org ${organizacaoId} - dados da organização encontrados`
+      );
+      return rows[0];
+    } else {
+      logger.warn(
+        `[preMatriculasRepository] org ${organizacaoId} - organização não encontrada`
+      );
+      return null;
+    }
   } catch (err) {
     logger.error(
-      "[preMatriculasRepository] Erro ao buscar grupo:",
+      `[preMatriculasRepository] Erro ao buscar dados da organização (id ${organizacaoId}):`,
       err.message
     );
     throw err;
   }
 }
+
 
 /**
  * Remove uma pré-matrícula específica da organização
@@ -250,18 +262,23 @@ async function deletar(id, organizacao_id) {
 
 /**
  * 🔎 Busca uma pré-matrícula específica por ID e organização
+ * Agora retorna também nomes da categoria e graduação
  */
 async function buscarPorId(id, organizacao_id) {
   try {
-    const [rows] = await db.execute(
-      `
-      SELECT *
-      FROM pre_matriculas
-      WHERE id = ? AND organizacao_id = ?
+    const sql = `
+      SELECT 
+        pm.*,
+        c.nome AS categoria_nome,
+        g.nome AS graduacao_nome
+      FROM pre_matriculas pm
+      LEFT JOIN categorias c ON pm.categoria_id = c.id
+      LEFT JOIN graduacoes g ON pm.graduacao_id = g.id
+      WHERE pm.id = ? AND pm.organizacao_id = ?
       LIMIT 1
-      `,
-      [id, organizacao_id]
-    );
+    `;
+
+    const [rows] = await db.execute(sql, [id, organizacao_id]);
 
     if (rows.length > 0) {
       logger.debug(
@@ -281,6 +298,9 @@ async function buscarPorId(id, organizacao_id) {
     throw err;
   }
 }
+
+
+
 
 module.exports = {
   criarPreMatricula,
