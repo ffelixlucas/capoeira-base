@@ -68,7 +68,14 @@ function Alunos() {
       const dadosFicha = [
         { label: "Nome", valor: item.nome },
         { label: "E-mail", valor: item.email || "-" },
-        { label: "Telefone", valor: item.telefone || "-" },
+        {
+          label: "Telefone",
+          valor:
+            item.telefone_aluno ||
+            item.telefone ||
+            item.telefone_responsavel ||
+            "-",
+        },
         {
           label: "Já treinou",
           valor: item.ja_treinou === "sim" ? "Sim" : "Não",
@@ -147,54 +154,53 @@ function Alunos() {
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
           {/* 🔹 Barra de ações — duas linhas, layout equilibrado */}
-<div className="flex flex-col items-center sm:items-start w-full gap-2 mt-2">
-  {/* Linha principal */}
-  <div className="flex flex-wrap justify-center sm:justify-start gap-2 w-full">
-    {/* Cadastrar aluno */}
-    <button
-      onClick={() => setMostrarForm(!mostrarForm)}
-      className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
-    >
-      <UserPlus size={16} /> {mostrarForm ? "Fechar" : "Cadastrar"}
-    </button>
+          <div className="flex flex-col items-center sm:items-start w-full gap-2 mt-2">
+            {/* Linha principal */}
+            <div className="flex flex-wrap justify-center sm:justify-start gap-2 w-full">
+              {/* Cadastrar aluno */}
+              <button
+                onClick={() => setMostrarForm(!mostrarForm)}
+                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+              >
+                <UserPlus size={16} /> {mostrarForm ? "Fechar" : "Cadastrar"}
+              </button>
 
-    {/* Pré-matrículas pendentes */}
-    {usuario?.roles?.includes("admin") && (
-      <button
-        onClick={() => setMostrarPendentes(true)}
-        className="relative flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
-      >
-        <Bell size={16} /> Pré-Matrículas
-        {contadorPendentes > 0 && (
-          <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
-            {contadorPendentes}
-          </span>
-        )}
-      </button>
-    )}
-  </div>
+              {/* Pré-matrículas pendentes */}
+              {usuario?.roles?.includes("admin") && (
+                <button
+                  onClick={() => setMostrarPendentes(true)}
+                  className="relative flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+                >
+                  <Bell size={16} /> Pré-Matrículas
+                  {contadorPendentes > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
+                      {contadorPendentes}
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
 
-  {/* Linha secundária — Atualizar + hora */}
-  <div className="flex items-center justify-center sm:justify-start gap-2 w-full">
-    <button
-      onClick={atualizarContadorPendentes}
-      className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium transition-all active:scale-[0.97]"
-    >
-      <RefreshCcw size={14} className="text-gray-600" /> Atualizar
-    </button>
+            {/* Linha secundária — Atualizar + hora */}
+            <div className="flex items-center justify-center sm:justify-start gap-2 w-full">
+              <button
+                onClick={atualizarContadorPendentes}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium transition-all active:scale-[0.97]"
+              >
+                <RefreshCcw size={14} className="text-gray-600" /> Atualizar
+              </button>
 
-    {ultimaAtualizacao && (
-      <span className="text-xs text-gray-400 italic whitespace-nowrap">
-        Última atualização{" "}
-        {ultimaAtualizacao.toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </span>
-    )}
-  </div>
-</div>
-
+              {ultimaAtualizacao && (
+                <span className="text-xs text-gray-400 italic whitespace-nowrap">
+                  Última atualização{" "}
+                  {ultimaAtualizacao.toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

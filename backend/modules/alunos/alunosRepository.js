@@ -56,16 +56,28 @@ async function buscarPorId(id, organizacaoId) {
   const [rows] = await connection.execute(
     `
     SELECT 
-      a.*, t.nome AS turma, t.id AS turma_id
+      a.*,
+      t.nome AS turma,
+      t.id AS turma_id,
+      c.nome AS categoria_nome,
+      g.nome AS graduacao_nome
     FROM alunos a
-    LEFT JOIN matriculas m ON m.aluno_id = a.id AND m.data_fim IS NULL
-    LEFT JOIN turmas t ON t.id = m.turma_id
+    LEFT JOIN matriculas m 
+      ON m.aluno_id = a.id AND m.data_fim IS NULL
+    LEFT JOIN turmas t 
+      ON t.id = m.turma_id
+    LEFT JOIN categorias c 
+      ON a.categoria_id = c.id
+    LEFT JOIN graduacoes g 
+      ON a.graduacao_id = g.id
     WHERE a.id = ? AND a.organizacao_id = ?
     `,
     [id, organizacaoId]
   );
+
   return rows[0];
 }
+
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Cria novo aluno e matrícula inicial                                     */
