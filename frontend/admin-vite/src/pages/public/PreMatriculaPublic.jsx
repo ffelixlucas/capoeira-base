@@ -55,8 +55,8 @@ export default function PreMatriculaPublic() {
             ✅ Pré-matrícula enviada!
           </h1>
           <p className="text-gray-700">{sucesso}</p>
-          <p className="text-gray-600 mt-2">
-            A administração entrará em contato após a análise.
+          <p className="mt-3 text-sm italic text-gray-600">
+            Sua pré-matrícula está em análise.
           </p>
         </div>
       </div>
