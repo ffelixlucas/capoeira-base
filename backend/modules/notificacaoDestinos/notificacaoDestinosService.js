@@ -37,9 +37,17 @@ async function deletar(id, organizacaoId) {
 /**
  * Retorna apenas lista de e-mails (uso interno em matrículas/eventos/pagamentos)
  */
-async function getEmails(organizacaoId, grupoId, tipo) {
-  const lista = await repo.listarPorTipo(organizacaoId, grupoId, tipo);
-  return lista.map((r) => r.email);
+async function getEmails(organizacaoId, tipo) {
+  const tipoFinal = tipo ?? "matricula";
+  const orgFinal = organizacaoId ?? null;
+
+  logger.debug(
+    `[notificacaoDestinosService] org ${orgFinal} - buscando e-mails tipo ${tipoFinal}`
+  );
+
+  // Busca todos os e-mails cadastrados para o tipo dentro da org (qualquer grupo)
+  const rows = await repo.listarPorTipo(orgFinal, 1, tipoFinal); // ⚠️ grupo_id fixo 1 por padrão
+  return rows.map((r) => r.email);
 }
 
 module.exports = { listar, adicionar, deletar, getEmails };

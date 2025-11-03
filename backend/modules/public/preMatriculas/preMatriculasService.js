@@ -240,16 +240,26 @@ const resposta = {
     });
 
     // Para administradores
-    const emailsAdmin = await notificacaoService.getEmails(
-      dados.organizacao_id,
+    const emailsAdmin =
+    (await notificacaoService.getEmails(
+      dados.organizacao_id ?? null,
       "matricula"
-    );
+    )) || [];
+  
 
     // 🔎 Buscar a pré-matrícula completa (com nomes de categoria e graduação)
     const preCompleta = await preMatriculasRepository.buscarPorId(
       id,
       dados.organizacao_id
     );
+
+    if (!Array.isArray(emailsAdmin) || emailsAdmin.length === 0) {
+      logger.warn(
+        `[preMatriculasService] org ${dados.organizacao_id} - nenhum e-mail admin configurado para tipo 'matricula'`
+      );
+      return;
+    }
+    
 
     for (const email of emailsAdmin) {
       await emailService.enviarEmailCustom({
