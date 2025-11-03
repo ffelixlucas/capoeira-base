@@ -2,16 +2,20 @@
 // Contém as regras de negócio e validações antes de salvar no banco.
 
 const preMatriculasRepository = require("./preMatriculasRepository");
+const matriculaService = require("../../matricula/matriculaService");
+
 const emailService = require("../../../services/emailService");
 const notificacaoService = require("../../notificacaoDestinos/notificacaoDestinosService");
 const db = require("../../../database/connection");
 const logger = require("../../../utils/logger");
-const bucket = require("../../../config/firebase"); 
+const bucket = require("../../../config/firebase");
 const organizacaoService = require("../../shared/organizacoes/organizacaoService");
 const {
-  gerarEmailPreMatriculaAdmin, 
+  gerarEmailPreMatriculaAdmin,
 } = require("../../../services/templates/preMatriculaAdmin");
-const { gerarEmailPreMatriculaAluno } = require("../../../services/templates/preMatriculaAluno");
+const {
+  gerarEmailPreMatriculaAluno,
+} = require("../../../services/templates/preMatriculaAluno");
 
 // Loga apenas 1x no startup, útil para debug
 logger.debug(`[preMatriculasService] Bucket em uso: ${bucket.name}`);
@@ -78,23 +82,87 @@ async function criarPreMatricula(dados) {
         const base64Data = dados.imagemBase64.split(",")[1];
         const buffer = Buffer.from(base64Data, "base64");
 
-        const destino = `fotos-perfil/pre-matriculas/${Date.now()}_${dados.cpf}.jpg`;
-        const file = bucket.file(destino);
+        // Caminho da imagem original
+        const nomeArquivo = `${Date.now()}_${dados.cpf}.jpg`;
+        const destinoOriginal = `fotos-perfil/pre-matriculas/${nomeArquivo}`;
+        const fileOriginal = bucket.file(destinoOriginal);
 
-        await file.save(buffer, { contentType: "image/jpeg" });
+        await fileOriginal.save(buffer, { contentType: "image/jpeg" });
 
-        logger.debug(
-          `[preMatriculasService] Upload concluído → aguardando resize automático (extensão Firebase) para ${destino}`
+        logger.info(
+          `[preMatriculasService] Upload concluído → ${destinoOriginal}`
         );
 
-        const [url] = await file.getSignedUrl({
-          action: "read",
-          expires: "03-01-2030",
-        });
+        // 🚀 Aguarda o processamento da extensão "Resize Images"
+        const LABEL = process.env.RESIZED_LABEL || "400x400";
+        const baseDir = "fotos-perfil/pre-matriculas";
+        const resizedSub = `${baseDir}/fotos-perfil-resized`; // ✅ subpasta real
+        const baseName = nomeArquivo.replace(/\.(jpe?g|png|webp)$/i, "");
+        const ext = (nomeArquivo.match(/\.(jpe?g|png|webp)$/i) || [".jpg"])[0];
 
-        fotoUrl = url;
-        dados.foto_url = url;
-        logger.info(`[preMatriculasService] Foto enviada: ${destino}`);
+        // 🔎 candidatos no formato real (sufixo _400x400)
+        const candidatos = [
+          `${resizedSub}/${baseName}_${LABEL}${ext}`, // ✅ padrão real
+          `${baseDir}/${baseName}_${LABEL}${ext}`, // compat
+          `${baseDir}/${LABEL}_${nomeArquivo}`, // compat prefixo
+        ];
+
+        let caminhoResizedEncontrado = null;
+
+        // ⏳ tenta até 20s (20 x 1s)
+        for (
+          let tentativa = 0;
+          tentativa < 20 && !caminhoResizedEncontrado;
+          tentativa++
+        ) {
+          for (const path of candidatos) {
+            const [exists] = await bucket.file(path).exists();
+            if (exists) {
+              caminhoResizedEncontrado = path;
+              break;
+            }
+          }
+          if (!caminhoResizedEncontrado) {
+            await new Promise((r) => setTimeout(r, 1000));
+          }
+        }
+
+        if (caminhoResizedEncontrado) {
+          const [resizedUrl] = await bucket
+            .file(caminhoResizedEncontrado)
+            .getSignedUrl({
+              action: "read",
+              expires: "03-01-2030",
+            });
+          fotoUrl = resizedUrl;
+          dados.foto_url = resizedUrl;
+          logger.info(
+            `[preMatriculasService] Imagem redimensionada usada → ${caminhoResizedEncontrado}`
+          );
+
+          // 🧹 remove o original
+          try {
+            await fileOriginal.delete();
+            logger.debug(
+              `[preMatriculasService] Original removido: ${destinoOriginal}`
+            );
+          } catch (err) {
+            logger.warn(
+              `[preMatriculasService] Falha ao remover original (${destinoOriginal}): ${err.message}`
+            );
+          }
+        } else {
+          // ⚠️ fallback: usa original
+          const [urlOriginal] = await fileOriginal.getSignedUrl({
+            action: "read",
+            expires: "03-01-2030",
+          });
+          fotoUrl = urlOriginal;
+          dados.foto_url = urlOriginal;
+          logger.warn(
+            `[preMatriculasService] Redimensionado não encontrado; usando original (${destinoOriginal})`
+          );
+        }
       } catch (err) {
         logger.error(
           "[preMatriculasService] Falha ao enviar imagem:",
@@ -117,6 +185,20 @@ async function criarPreMatricula(dados) {
         "Já existe uma pré-matrícula com este CPF nesta organização."
       );
     }
+    // 🔍 Verifica se já existe aluno cadastrado com este CPF
+    const cpfEmAluno = await preMatriculasRepository.verificarCpfEmAlunos(
+      dados.cpf,
+      dados.organizacao_id
+    );
+
+    if (cpfEmAluno) {
+      logger.warn(
+        `[preMatriculasService] CPF já pertence a um aluno ativo: ${dados.cpf}`
+      );
+      throw new Error(
+        "Este CPF já está matriculado. Não é possível criar nova pré-matrícula."
+      );
+    }
 
     // 💾 Grava no banco via
     const id = await preMatriculasRepository.criarPreMatricula({
@@ -130,6 +212,16 @@ async function criarPreMatricula(dados) {
 
     // ✉️ Envio de e-mails
 
+    // 🔁 Retorna resposta rápida ao usuário antes dos e-mails
+const resposta = {
+  message: "Pré-matrícula enviada com sucesso! 👊 Aguarde confirmação por e-mail.",
+  id,
+  foto_url: fotoUrl,
+};
+
+// 🚀 Dispara envio de e-mails em segundo plano (não bloqueia resposta)
+(async () => {
+  try {
     // 🔎 Buscar nome da organização para personalizar o e-mail
     const orgInfo = await preMatriculasRepository.buscarGrupoPorOrganizacaoId(
       dados.organizacao_id
@@ -137,52 +229,50 @@ async function criarPreMatricula(dados) {
     const nomeInstituicao =
       orgInfo?.nome_fantasia || orgInfo?.nome || "Capoeira Base";
 
-    try {
-      // Para o aluno/responsável
+    // Para o aluno/responsável
+    await emailService.enviarEmailCustom({
+      to: dados.email,
+      subject: "📩 Pré-matrícula recebida – estamos quase lá!",
+      html: gerarEmailPreMatriculaAluno({
+        ...dados,
+        nome_fantasia: nomeInstituicao,
+      }),
+    });
+
+    // Para administradores
+    const emailsAdmin = await notificacaoService.getEmails(
+      dados.organizacao_id,
+      "matricula"
+    );
+
+    // 🔎 Buscar a pré-matrícula completa (com nomes de categoria e graduação)
+    const preCompleta = await preMatriculasRepository.buscarPorId(
+      id,
+      dados.organizacao_id
+    );
+
+    for (const email of emailsAdmin) {
       await emailService.enviarEmailCustom({
-        to: dados.email,
-        subject: "📩 Pré-matrícula recebida – estamos quase lá!",
-        html: gerarEmailPreMatriculaAluno({
-          ...dados,
-          nome_fantasia: nomeInstituicao,
-        }),
+        to: email,
+        subject: `👥 Nova pré-matrícula pendente (${preCompleta.nome})`,
+        html: gerarEmailPreMatriculaAdmin(preCompleta),
       });
-
-      // Para administradores
-      const emailsAdmin = await notificacaoService.getEmails(
-        dados.organizacao_id,
-        "matricula"
-      );
-
-      // 🔎 Buscar a pré-matrícula completa (com nomes de categoria e graduação)
-      const preCompleta = await preMatriculasRepository.buscarPorId(
-        id,
-        dados.organizacao_id
-      );
-
-      for (const email of emailsAdmin) {
-        await emailService.enviarEmailCustom({
-          to: email,
-          subject: `👥 Nova pré-matrícula pendente (${preCompleta.nome})`,
-          html: gerarEmailPreMatriculaAdmin(preCompleta),
-        });
-      }
-
-      logger.info(
-        `[preMatriculasService] org ${dados.organizacao_id} - e-mails de notificação enviados (${emailsAdmin.length})`
-      );
-    } catch (emailErr) {
-      logger.error(
-        "[preMatriculasService] Erro ao enviar e-mails:",
-        emailErr.message
-      );
     }
 
-    return {
-      message: "Pré-matrícula criada com sucesso. Aguarde aprovação.",
-      id,
-      foto_url: fotoUrl,
-    };
+    logger.info(
+      `[preMatriculasService] org ${dados.organizacao_id} - e-mails enviados (modo assíncrono)`
+    );
+  } catch (emailErr) {
+    logger.error(
+      "[preMatriculasService] Erro no envio assíncrono de e-mails:",
+      emailErr.message
+    );
+  }
+})();
+
+// 🔚 Retorna imediatamente para o front
+return resposta;
+
   } catch (err) {
     logger.error(
       "[preMatriculasService] Erro ao criar pré-matrícula:",
@@ -219,23 +309,19 @@ async function atualizarStatus(id, status, organizacaoId) {
       `[preMatriculasService] org ${organizacaoId} - status atualizado para ${status} (pré ${id})`
     );
 
-    // ⚙️ Quando aprovado, cria aluno e matrícula real
+    // ⚙️ Quando aprovado → cria aluno e matrícula real
     if (status === "aprovado") {
       logger.debug(
         `[preMatriculasService] org ${organizacaoId} - status aprovado → iniciando criação de matrícula`
       );
 
-      const matriculaService = require("../../matricula/matriculaService");
       const pre = await preMatriculasRepository.buscarPorId(id, organizacaoId);
 
       if (!pre) {
         logger.warn(
           `[preMatriculasService] org ${organizacaoId} - pré-matrícula ${id} não encontrada ao tentar aprovar`
         );
-        return {
-          sucesso: false,
-          erro: "Pré-matrícula não encontrada.",
-        };
+        return { sucesso: false, erro: "Pré-matrícula não encontrada." };
       }
 
       await matriculaService.criarMatriculaDireta(pre);
@@ -247,10 +333,86 @@ async function atualizarStatus(id, status, organizacaoId) {
       );
     }
 
-    return {
-      sucesso: true,
-      mensagem: `Status atualizado para ${status}`,
-    };
+    // ⚠️ Quando rejeitado → exclui foto, registro e envia e-mail
+    if (status === "rejeitado") {
+      logger.debug(
+        `[preMatriculasService] org ${organizacaoId} - status rejeitado → iniciando limpeza e notificação`
+      );
+
+      const pre = await preMatriculasRepository.buscarPorId(id, organizacaoId);
+
+      if (!pre) {
+        logger.warn(
+          `[preMatriculasService] org ${organizacaoId} - pré-matrícula ${id} não encontrada ao rejeitar`
+        );
+        return { sucesso: false, erro: "Pré-matrícula não encontrada." };
+      }
+
+      // 🧹 1. Exclui foto do Firebase (original + resized), se existir
+      if (pre.foto_url) {
+        try {
+          // 🔍 Extrai caminho da URL salva
+          const filePath = decodeURIComponent(
+            pre.foto_url.split(`${bucket.name}/`)[1].split("?")[0]
+          );
+
+          // Nome base (sem prefixo do resize)
+          const nomeArquivo = filePath.split("/").pop();
+
+          // Caminhos possíveis (completo para todos os formatos conhecidos)
+          const baseDir = "fotos-perfil/pre-matriculas";
+          const candidatos = [
+            `${baseDir}/${nomeArquivo}`, // original
+            `${baseDir}/400x400_${nomeArquivo}`, // prefixo antigo
+            `fotos-perfil-resized/400x400_${nomeArquivo}`, // raiz antiga
+            `${baseDir}/fotos-perfil-resized/${nomeArquivo}`, // ✅ caminho atual (redimensionada dentro da pasta)
+            `${baseDir}/fotos-perfil-resized/${nomeArquivo.replace(".jpg", "_400x400.jpg")}`, // ✅ variação com sufixo
+          ];
+
+          logger.debug(
+            `[preMatriculasService] Tentando deletar possíveis caminhos:`
+          );
+          for (const c of candidatos) logger.debug(`→ ${c}`);
+
+          // 🧹 Deleta todos silenciosamente (mesmo se não existirem)
+          await Promise.allSettled(
+            candidatos.map((path) => bucket.file(path).delete())
+          );
+
+          logger.info(
+            `[preMatriculasService] org ${organizacaoId} - fotos removidas do Firebase (${nomeArquivo})`
+          );
+        } catch (err) {
+          logger.warn(
+            `[preMatriculasService] org ${organizacaoId} - falha ao excluir fotos do Firebase (${id}): ${err.message}`
+          );
+        }
+      }
+
+      // 🧹 2. Remove registro da tabela
+      await preMatriculasRepository.deletar(id, organizacaoId);
+      logger.info(
+        `[preMatriculasService] org ${organizacaoId} - pré-matrícula ${id} removida do banco após rejeição`
+      );
+
+      // 📧 3. Envia e-mail de recusa
+      if (pre.email) {
+        await matriculaService.enviarEmailRecusaMatricula({
+          nome: pre.nome,
+          email: pre.email,
+          organizacao_id: pre.organizacao_id,
+        });
+        logger.info(
+          `[preMatriculasService] org ${organizacaoId} - e-mail de recusa enviado com sucesso (pré ${id})`
+        );
+      } else {
+        logger.warn(
+          `[preMatriculasService] org ${organizacaoId} - pré ${id} sem e-mail, recusa não enviada`
+        );
+      }
+    }
+
+    return { sucesso: true, mensagem: `Status atualizado para ${status}` };
   } catch (err) {
     logger.error(
       `[preMatriculasService] Erro ao atualizar status (pré ${id}):`,

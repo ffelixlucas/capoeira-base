@@ -6,7 +6,6 @@ function gerarEmailPreMatriculaAluno(dados) {
 
   return `
       <div style="font-family: Poppins, Arial, sans-serif; color: #222; line-height: 1.6;">
-        <h2 style="color:#166534; font-weight:600;">📩 Pré-matrícula recebida – estamos quase lá!</h2>
         <p>Olá, <b>${nome}</b>! 👋</p>
   
         <p>
@@ -19,7 +18,7 @@ function gerarEmailPreMatriculaAluno(dados) {
         </p>
   
         <p style="margin-top:20px; font-weight:600; color:#166534;">
-            💚 Equipe ${dados.nome_fantasia}
+            🤸 Equipe ${dados.nome_fantasia}
         </p>
 
       </div>

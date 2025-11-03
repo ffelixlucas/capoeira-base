@@ -10,6 +10,7 @@ const {
   gerarEmailMatriculaAprovada,
   gerarEmailMatriculaAprovadaAdmin,
 } = require("../../services/templates/matriculaAprovada");
+const { gerarEmailMatriculaRecusada } = require("../../services/templates/matriculaRecusada");
 
 /**
  * Normaliza dados de CPF e e-mail
@@ -368,4 +369,41 @@ async function criarMatriculaDireta(pre) {
   }
 }
 
-module.exports = { criarMatricula, criarMatriculaDireta };
+/**
+ * Envia e-mail de recusa de matrícula (admin)
+ */
+async function enviarEmailRecusaMatricula(matricula) {
+  try {
+    const org = await matriculaRepository.buscarDadosOrganizacao(matricula.organizacao_id);
+    if (!org) {
+      logger.warn(`[matriculaService] Organização não encontrada para matrícula rejeitada (org ${matricula.organizacao_id})`);
+      return;
+    }
+
+    if (!matricula.email) {
+      logger.warn(`[matriculaService] Matrícula rejeitada sem e-mail disponível para envio (aluno ${matricula.nome})`);
+      return;
+    }
+
+    const html = gerarEmailMatriculaRecusada({
+      ...matricula,
+      nome_fantasia: org.nome_fantasia,
+      telefone: org.telefone,
+    });
+
+    await emailService.enviarEmailCustom({
+      to: matricula.email,
+      subject: "⚠️ Atualização sobre sua matrícula",
+      html,
+    });
+
+    logger.info(
+      `[matriculaService] org ${matricula.organizacao_id} - e-mail de recusa enviado para ${matricula.email}`
+    );
+  } catch (err) {
+    logger.error(`[matriculaService] Erro ao enviar e-mail de recusa: ${err.message}`);
+  }
+}
+
+
+module.exports = { criarMatricula, criarMatriculaDireta, enviarEmailRecusaMatricula };

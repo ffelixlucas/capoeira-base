@@ -31,6 +31,32 @@ async function verificarCpfExistente(cpf, organizacao_id) {
 }
 
 /**
+ * Verifica se já existe um aluno ativo com o mesmo CPF
+ */
+async function verificarCpfEmAlunos(cpf, organizacao_id) {
+  try {
+    const [rows] = await db.execute(
+      "SELECT id FROM alunos WHERE cpf = ? AND organizacao_id = ? LIMIT 1",
+      [cpf.replace(/\D/g, ""), organizacao_id]
+    );
+
+    const existe = rows.length > 0;
+    if (existe) {
+      logger.warn(
+        `[preMatriculasRepository] CPF já cadastrado em alunos: ${cpf} (org ${organizacao_id})`
+      );
+    }
+    return existe;
+  } catch (err) {
+    logger.error(
+      "[preMatriculasRepository] Erro ao verificar CPF em alunos:",
+      err.message
+    );
+    throw err;
+  }
+}
+
+/**
  * Cria uma nova pré-matrícula
  * @param {Object} dados - dados do formulário público
  * @returns {number} id da nova pré-matrícula
@@ -226,7 +252,6 @@ async function buscarGrupoPorOrganizacaoId(organizacaoId) {
   }
 }
 
-
 /**
  * Remove uma pré-matrícula específica da organização
  * @param {number} id - ID da pré-matrícula
@@ -299,15 +324,13 @@ async function buscarPorId(id, organizacao_id) {
   }
 }
 
-
-
-
 module.exports = {
   criarPreMatricula,
   listarPendentes,
   atualizarStatus,
   buscarGrupoPorOrganizacaoId,
   verificarCpfExistente,
+  verificarCpfEmAlunos,
   deletar,
   buscarPorId,
 };

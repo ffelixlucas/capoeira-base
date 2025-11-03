@@ -34,28 +34,28 @@ async function criar(dados) {
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
-const params = [
-  dados.organizacao_id,
-  dados.nome,
-  dados.apelido || null,
-  dados.nascimento,
-  dados.cpf,
-  dados.email,
-  dados.telefone_aluno || null,
-  dados.telefone_responsavel || null,
-  dados.nome_responsavel || null,
-  dados.responsavel_documento || null,
-  dados.responsavel_parentesco || null,
-  dados.endereco || null,
-  dados.observacoes_medicas || null,
-  dados.autorizacao_imagem ? 1 : 0,
-  dados.aceite_lgpd ? 1 : 0,
-  dados.foto_url || null,
-  dados.turma_id || null,
-  dados.categoria_id || null,
-  dados.graduacao_id || null,
-  dados.status || "ativo",
-];
+  const params = [
+    dados.organizacao_id,
+    dados.nome,
+    dados.apelido || null,
+    dados.nascimento,
+    dados.cpf,
+    dados.email,
+    dados.telefone_aluno || null,
+    dados.telefone_responsavel || null,
+    dados.nome_responsavel || null,
+    dados.responsavel_documento || null,
+    dados.responsavel_parentesco || null,
+    dados.endereco || null,
+    dados.observacoes_medicas || null,
+    dados.autorizacao_imagem ? 1 : 0,
+    dados.aceite_lgpd ? 1 : 0,
+    dados.foto_url || null,
+    dados.turma_id || null,
+    dados.categoria_id || null,
+    dados.graduacao_id || null,
+    dados.status || "ativo",
+  ];
 
   logger.debug("[matriculaRepository.criar] SQL (aluno):", sql.trim());
   logger.debug("[matriculaRepository.criar] Params:", params);
@@ -162,13 +162,21 @@ async function buscarDadosEmailAprovacao(turmaId, organizacaoId) {
   const params = [turmaId, organizacaoId];
 
   // 🔎 Logs de depuração
-  logger.debug("[matriculaRepository.buscarDadosEmailAprovacao] SQL:", sql.trim());
-  logger.debug("[matriculaRepository.buscarDadosEmailAprovacao] Params:", params);
+  logger.debug(
+    "[matriculaRepository.buscarDadosEmailAprovacao] SQL:",
+    sql.trim()
+  );
+  logger.debug(
+    "[matriculaRepository.buscarDadosEmailAprovacao] Params:",
+    params
+  );
 
   const [rows] = await db.execute(sql, params);
 
   if (!rows.length) {
-    logger.warn(`[matriculaRepository.buscarDadosEmailAprovacao] Nenhum dado encontrado (turma_id=${turmaId}, org=${organizacaoId})`);
+    logger.warn(
+      `[matriculaRepository.buscarDadosEmailAprovacao] Nenhum dado encontrado (turma_id=${turmaId}, org=${organizacaoId})`
+    );
     return null;
   }
 
@@ -176,14 +184,59 @@ async function buscarDadosEmailAprovacao(turmaId, organizacaoId) {
 
   logger.info(
     `[matriculaRepository.buscarDadosEmailAprovacao] OK (turma_id=${turmaId}, org=${organizacaoId}) → ` +
-    `responsavel="${row.professor_funcao || "-"} ${row.professor_nome || "-"}", ` +
-    `dias="${row.dias}", horario="${row.horario}"`
+      `responsavel="${row.professor_funcao || "-"} ${row.professor_nome || "-"}", ` +
+      `dias="${row.dias}", horario="${row.horario}"`
   );
 
   return row;
 }
 
+/**
+ * Busca informações básicas da organização (para e-mail de recusa)
+ */
+async function buscarDadosOrganizacao(organizacaoId) {
+  const sql = `
+    SELECT 
+      nome,
+      nome_fantasia,
+      telefone,
+      email,
+      endereco
+    FROM organizacoes
+    WHERE id = ?
+    LIMIT 1
+  `;
 
+  const params = [organizacaoId];
+
+  // 🔎 Logs de depuração
+  logger.debug(
+    "[matriculaRepository.buscarDadosOrganizacao] SQL:",
+    sql.trim()
+  );
+  logger.debug(
+    "[matriculaRepository.buscarDadosOrganizacao] Params:",
+    params
+  );
+
+  const [rows] = await db.execute(sql, params);
+
+  if (!rows.length) {
+    logger.warn(
+      `[matriculaRepository.buscarDadosOrganizacao] Nenhuma organização encontrada (id=${organizacaoId})`
+    );
+    return null;
+  }
+
+  const row = rows[0];
+
+  logger.info(
+    `[matriculaRepository.buscarDadosOrganizacao] OK (org=${organizacaoId}) → ` +
+      `nome_fantasia="${row.nome_fantasia || "-"}", telefone="${row.telefone || "-"}"`
+  );
+
+  return row;
+}
 
 module.exports = {
   criar,
@@ -191,4 +244,5 @@ module.exports = {
   buscarTurmaPorIdade,
   buscarOrganizacaoPorTurmaId,
   buscarDadosEmailAprovacao,
+  buscarDadosOrganizacao,
 };
