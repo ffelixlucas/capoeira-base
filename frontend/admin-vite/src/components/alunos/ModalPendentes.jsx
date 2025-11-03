@@ -22,11 +22,25 @@ function CardAluno({
   // Calcula idade do aluno
   useEffect(() => {
     if (!aluno.nascimento) return;
-    const nasc = new Date(aluno.nascimento);
-    const diff = Date.now() - nasc.getTime();
-    const idadeCalc = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  
+    const [anoStr, mesStr, diaStr] = aluno.nascimento.split("-");
+    const ano = parseInt(anoStr, 10);
+    const mes = parseInt(mesStr, 10);
+    const dia = parseInt(diaStr, 10);
+  
+    const hoje = new Date();
+    let idadeCalc = hoje.getFullYear() - ano;
+  
+    if (
+      hoje.getMonth() + 1 < mes ||
+      (hoje.getMonth() + 1 === mes && hoje.getDate() < dia)
+    ) {
+      idadeCalc--;
+    }
+  
     setIdade(idadeCalc);
   }, [aluno.nascimento]);
+  
 
   // Busca categoria com cache
   useEffect(() => {
