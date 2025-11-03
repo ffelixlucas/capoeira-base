@@ -143,13 +143,131 @@ export default function StepAluno({
           required
         />
 
-        <InputBase
-          type="date"
-          name="nascimento"
-          value={form.nascimento}
-          onChange={handleChange}
-          required
-        />
+        {/* 🔹 Data de nascimento (3 inputs separados, mobile-friendly) */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Data de Nascimento
+          </label>
+
+          <div className="grid grid-cols-3 gap-2">
+            {/* Dia */}
+            <select
+              name="dia"
+              value={form.nascimento ? new Date(form.nascimento).getDate() : ""}
+              onChange={(e) => {
+                const atual = form.nascimento
+                  ? new Date(form.nascimento)
+                  : new Date();
+                const novaData = new Date(
+                  atual.getFullYear(),
+                  atual.getMonth(),
+                  Number(e.target.value)
+                );
+                handleChange({
+                  target: {
+                    name: "nascimento",
+                    value: novaData.toISOString().split("T")[0],
+                  },
+                });
+              }}
+              className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              required
+            >
+              <option value="">Dia</option>
+              {Array.from({ length: 31 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
+
+            {/* Mês */}
+            <select
+              name="mes"
+              value={
+                form.nascimento ? new Date(form.nascimento).getMonth() + 1 : ""
+              }
+              onChange={(e) => {
+                const atual = form.nascimento
+                  ? new Date(form.nascimento)
+                  : new Date();
+                const novaData = new Date(
+                  atual.getFullYear(),
+                  e.target.value - 1,
+                  atual.getDate()
+                );
+                handleChange({
+                  target: {
+                    name: "nascimento",
+                    value: novaData.toISOString().split("T")[0],
+                  },
+                });
+              }}
+              className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              required
+            >
+              <option value="">Mês</option>
+              {[
+                "Jan",
+                "Fev",
+                "Mar",
+                "Abr",
+                "Mai",
+                "Jun",
+                "Jul",
+                "Ago",
+                "Set",
+                "Out",
+                "Nov",
+                "Dez",
+              ].map((m, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {m}
+                </option>
+              ))}
+            </select>
+
+            {/* Ano */}
+            <select
+              name="ano"
+              value={
+                form.nascimento ? new Date(form.nascimento).getFullYear() : ""
+              }
+              onChange={(e) => {
+                const atual = form.nascimento
+                  ? new Date(form.nascimento)
+                  : new Date();
+                const novaData = new Date(
+                  e.target.value,
+                  atual.getMonth(),
+                  atual.getDate()
+                );
+                handleChange({
+                  target: {
+                    name: "nascimento",
+                    value: novaData.toISOString().split("T")[0],
+                  },
+                });
+              }}
+              className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              required
+            >
+              <option value="">Ano</option>
+              {Array.from(
+                { length: 100 },
+                (_, i) => new Date().getFullYear() - i
+              ).map((ano) => (
+                <option key={ano} value={ano}>
+                  {ano}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="text-xs text-gray-500 italic mt-1">
+            Selecione o dia, mês e ano do nascimento
+          </p>
+        </div>
 
         <InputBase
           type="text"

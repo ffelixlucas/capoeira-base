@@ -5,6 +5,8 @@ import "./index.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { initMP } from "./utils/mercadoPago";
 import { useRipple } from "./hooks/useRipple"; // 🔹 importa hook ripple
+import "flowbite";
+
 
 // inicializa Mercado Pago SDK
 initMP();
