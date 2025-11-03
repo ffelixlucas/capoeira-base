@@ -143,7 +143,7 @@ export default function StepAluno({
           required
         />
 
-        {/* 🔹 Data de nascimento (corrigida, sem UTC) */}
+        {/* 🔹 Data de nascimento (corrigida, sem erro de fuso) */}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
             Data de Nascimento
@@ -153,22 +153,19 @@ export default function StepAluno({
             {/* Dia */}
             <select
               name="dia"
-              value={form.nascimento ? new Date(form.nascimento).getDate() : ""}
+              value={
+                form.nascimento ? Number(form.nascimento.split("-")[2]) : ""
+              }
               onChange={(e) => {
-                const dia = Number(e.target.value);
-                const atual = form.nascimento
-                  ? new Date(form.nascimento)
-                  : new Date();
-                const novaData = {
-                  dia,
-                  mes: atual.getMonth() + 1,
-                  ano: atual.getFullYear(),
-                };
-                const formatada = `${novaData.ano}-${String(
-                  novaData.mes
-                ).padStart(2, "0")}-${String(novaData.dia).padStart(2, "0")}`;
+                const dia = e.target.value.padStart(2, "0");
+                const [ano = "", mes = ""] = form.nascimento
+                  ? form.nascimento.split("-")
+                  : ["", ""];
                 handleChange({
-                  target: { name: "nascimento", value: formatada },
+                  target: {
+                    name: "nascimento",
+                    value: `${ano}-${mes}-${dia}`,
+                  },
                 });
               }}
               className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -186,23 +183,18 @@ export default function StepAluno({
             <select
               name="mes"
               value={
-                form.nascimento ? new Date(form.nascimento).getMonth() + 1 : ""
+                form.nascimento ? Number(form.nascimento.split("-")[1]) : ""
               }
               onChange={(e) => {
-                const mes = Number(e.target.value);
-                const atual = form.nascimento
-                  ? new Date(form.nascimento)
-                  : new Date();
-                const novaData = {
-                  dia: atual.getDate(),
-                  mes,
-                  ano: atual.getFullYear(),
-                };
-                const formatada = `${novaData.ano}-${String(
-                  novaData.mes
-                ).padStart(2, "0")}-${String(novaData.dia).padStart(2, "0")}`;
+                const mes = e.target.value.padStart(2, "0");
+                const [ano = "", , dia = ""] = form.nascimento
+                  ? form.nascimento.split("-")
+                  : ["", "", ""];
                 handleChange({
-                  target: { name: "nascimento", value: formatada },
+                  target: {
+                    name: "nascimento",
+                    value: `${ano}-${mes}-${dia}`,
+                  },
                 });
               }}
               className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -233,23 +225,18 @@ export default function StepAluno({
             <select
               name="ano"
               value={
-                form.nascimento ? new Date(form.nascimento).getFullYear() : ""
+                form.nascimento ? Number(form.nascimento.split("-")[0]) : ""
               }
               onChange={(e) => {
-                const ano = Number(e.target.value);
-                const atual = form.nascimento
-                  ? new Date(form.nascimento)
-                  : new Date();
-                const novaData = {
-                  dia: atual.getDate(),
-                  mes: atual.getMonth() + 1,
-                  ano,
-                };
-                const formatada = `${novaData.ano}-${String(
-                  novaData.mes
-                ).padStart(2, "0")}-${String(novaData.dia).padStart(2, "0")}`;
+                const ano = e.target.value;
+                const [, mes = "", dia = ""] = form.nascimento
+                  ? form.nascimento.split("-")
+                  : ["", "", ""];
                 handleChange({
-                  target: { name: "nascimento", value: formatada },
+                  target: {
+                    name: "nascimento",
+                    value: `${ano}-${mes}-${dia}`,
+                  },
                 });
               }}
               className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
