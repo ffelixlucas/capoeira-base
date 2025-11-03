@@ -2,12 +2,19 @@ import api from "../api";
 
 /**
  * Envia dados de pré-matrícula pública
+ * Aceita tanto `organizacao_id` quanto `slug`
  */
-export async function enviarPreMatricula(dados) {
+export async function enviarPreMatricula(dados, slug) {
   try {
-    const { data } = await api.post("/public/pre-matriculas", dados);
+    // 🧭 Decide o endpoint conforme a origem
+    const endpoint = slug
+      ? `/public/pre-matriculas/${slug}` // nova rota com slug
+      : `/public/pre-matriculas`;        // rota tradicional com organizacao_id
+
+    const { data } = await api.post(endpoint, dados);
     return data;
   } catch (err) {
+    console.error("❌ Erro ao enviar pré-matrícula:", err);
     throw new Error(
       err.response?.data?.error || "Erro ao enviar pré-matrícula. Tente novamente."
     );

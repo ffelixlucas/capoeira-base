@@ -1,5 +1,6 @@
 // src/pages/public/PreMatriculaPublic.jsx
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { usePreMatricula } from "../../hooks/public/usePreMatricula";
 import { usePreMatriculaSteps } from "../../hooks/public/usePreMatriculaSteps";
 import ModalFicha from "../../components/ui/ModalFicha";
@@ -10,10 +11,13 @@ import StepResponsavel from "../../components/public/PreMatricula/StepResponsave
 import StepContato from "../../components/public/PreMatricula/StepContato";
 import StepAutorizacoes from "../../components/public/PreMatricula/StepAutorizacoes";
 import { calcularIdade } from "../../utils/formatters";
+import { toast } from "react-toastify";
 
 export default function PreMatriculaPublic() {
+  const { slug } = useParams();
   const { registrarPreMatricula, carregando, sucesso } = usePreMatricula();
   const [mostrarLGPD, setMostrarLGPD] = useState(false);
+  const [fotoPendente, setFotoPendente] = useState(false);
 
   const {
     step,
@@ -24,7 +28,7 @@ export default function PreMatriculaPublic() {
     nextStep,
     prevStep,
     handleSubmit,
-  } = usePreMatriculaSteps(registrarPreMatricula);
+  } = usePreMatriculaSteps(registrarPreMatricula, slug);
 
   const idade = calcularIdade(form.nascimento);
 
@@ -51,8 +55,8 @@ export default function PreMatriculaPublic() {
             ✅ Pré-matrícula enviada!
           </h1>
           <p className="text-gray-700">{sucesso}</p>
-          <p className="text-gray-600 mt-2">
-            A administração entrará em contato após a análise.
+          <p className="mt-3 text-sm italic text-gray-600">
+            Sua pré-matrícula está em análise.
           </p>
         </div>
       </div>
@@ -70,7 +74,14 @@ export default function PreMatriculaPublic() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3 text-gray-800">
-          {step === 1 && <StepAluno form={form} handleChange={handleChange} />}
+          {step === 1 && (
+            <StepAluno
+              form={form}
+              handleChange={handleChange}
+              fotoPendente={fotoPendente}
+              setFotoPendente={setFotoPendente}
+            />
+          )}
           {step === 2 && idade < 18 && (
             <StepResponsavel form={form} handleChange={handleChange} />
           )}
@@ -101,7 +112,13 @@ export default function PreMatriculaPublic() {
             {step < stepsInfo.length && (
               <button
                 type="button"
-                onClick={nextStep}
+                onClick={() => {
+                  if (step === 1 && fotoPendente) {
+                    toast.warn("Confirme a foto antes de prosseguir.");
+                    return;
+                  }
+                  nextStep();
+                }}
                 className="btn-primary ml-auto"
               >
                 Próximo
@@ -127,7 +144,10 @@ export default function PreMatriculaPublic() {
         onClose={() => setMostrarLGPD(false)}
         titulo="Política de Privacidade (LGPD)"
       >
-        <PoliticaLGPD contexto="matricula" organization="Espaço Cultural CN10" />
+        <PoliticaLGPD
+          contexto="matricula"
+          organization="Espaço Cultural CN10"
+        />
       </ModalFicha>
     </div>
   );

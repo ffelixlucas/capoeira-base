@@ -23,7 +23,9 @@ export const AuthProvider = ({ children }) => {
 
   const redirectToLogin = () => {
     sessionStorage.setItem("auth.message", "expired");
-    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    const next = encodeURIComponent(
+      window.location.pathname + window.location.search
+    );
     if (!window.location.pathname.startsWith("/login")) {
       window.location.href = `/login?next=${next}`;
     }
@@ -70,11 +72,15 @@ export const AuthProvider = ({ children }) => {
 
       buscarPerfil()
         .then((dados) => {
-          setUsuario(dados);
-          localStorage.setItem("usuario", JSON.stringify(dados));
-            logger.log("📌 Perfil atualizado:", dados);
-          
+          const usuarioFinal = {
+            ...dados,
+            organizacao_id: dados.organizacao_id ?? 1,
+          };
+          setUsuario(usuarioFinal);
+          localStorage.setItem("usuario", JSON.stringify(usuarioFinal));
+          logger.log("📌 Perfil atualizado:", usuarioFinal);
         })
+
         .catch(() => {
           // não expor erro detalhado ao usuário aqui
           logout();
@@ -95,13 +101,20 @@ export const AuthProvider = ({ children }) => {
       scheduleAutoLogout(tk);
 
       const perfil = await buscarPerfil();
-      localStorage.setItem("usuario", JSON.stringify(perfil));
-      setUsuario(perfil);
+
+      // 🔥 Garante que o organizacao_id sempre venha salvo no usuário local
+      const usuarioFinal = {
+        ...perfil,
+        organizacao_id: perfil.organizacao_id ?? 1, // fallback seguro
+      };
+
+      localStorage.setItem("usuario", JSON.stringify(usuarioFinal));
+      setUsuario(usuarioFinal);
 
       return { sucesso: true };
     } catch (error) {
-        logger.error("Erro ao fazer login:", error);
-      
+      logger.error("Erro ao fazer login:", error);
+
       return {
         sucesso: false,
         mensagem: error?.response?.data?.message || "Erro ao fazer login",

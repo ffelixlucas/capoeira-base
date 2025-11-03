@@ -1,4 +1,3 @@
-// src/hooks/usePendentes.js
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import {
@@ -23,27 +22,37 @@ export function usePendentes(organizacaoId = 1) {
     }
   }
 
-  // 🔹 Aprovar pré-matrícula
-  async function aprovarAluno(id) {
+  // 🔹 Atualiza status genérico (aprovado ou rejeitado)
+  async function atualizarStatus(id, status) {
     try {
-      await atualizarStatusPreMatricula(id, "aprovado");
-      toast.success("Pré-matrícula aprovada! Matrícula criada com sucesso.");
-      setPendentes((prev) => prev.filter((a) => a.id !== id));
+      const res = await atualizarStatusPreMatricula(id, status);
+
+      if (res?.sucesso) {
+        // Remove instantaneamente da lista
+        setPendentes((prev) => prev.filter((a) => a.id !== id));
+
+        if (status === "aprovado") {
+          toast.success(res.mensagem || "Pré-matrícula aprovada!");
+        } else if (status === "rejeitado") {
+          toast.info(res.mensagem || "Pré-matrícula rejeitada.");
+        }
+      } else {
+        // Backend respondeu sem sucesso explícito
+        throw new Error(res?.erro || "Falha ao atualizar status.");
+      }
     } catch (err) {
-      toast.error("Erro ao aprovar pré-matrícula");
+      const msg =
+        err.response?.data?.erro ||
+        err.message ||
+        "Erro ao atualizar status da pré-matrícula.";
+      toast.error(msg);
+      console.error("❌ Erro ao atualizar status:", err);
     }
   }
 
-  // 🔹 Rejeitar pré-matrícula
-  async function rejeitarAluno(id) {
-    try {
-      await atualizarStatusPreMatricula(id, "rejeitado");
-      toast.info("Pré-matrícula rejeitada.");
-      setPendentes((prev) => prev.filter((a) => a.id !== id));
-    } catch (err) {
-      toast.error("Erro ao rejeitar pré-matrícula");
-    }
-  }
+  // 🔹 Funções específicas que usam o genérico
+  const aprovarAluno = (id) => atualizarStatus(id, "aprovado");
+  const rejeitarAluno = (id) => atualizarStatus(id, "rejeitado");
 
   // 🔹 Carregar automaticamente ao montar o hook
   useEffect(() => {

@@ -10,14 +10,14 @@ export function usePreMatricula() {
   const [carregando, setCarregando] = useState(false);
   const [sucesso, setSucesso] = useState(null);
 
-  async function registrarPreMatricula(dados) {
+  async function registrarPreMatricula(dados, slug) {
     try {
       setCarregando(true);
       setSucesso(null);
 
       logger.info("[usePreMatricula] Enviando pré-matrícula", dados);
 
-      const resposta = await enviarPreMatricula(dados);
+      const resposta = await enviarPreMatricula(dados, slug);
 
       logger.info("[usePreMatricula] Pré-matrícula criada com sucesso", resposta);
 

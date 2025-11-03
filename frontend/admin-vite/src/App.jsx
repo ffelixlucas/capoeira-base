@@ -41,7 +41,7 @@ import InscricaoEventoPublic from "./pages/public/InscricaoEventoPublic";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import CartaoPagamento from "./components/public/pagamento/CartaoPagamento.jsx";
-import MatriculaPublic from "./pages/public/MatriculaPublic.jsx";
+import PreMatriculaPublic from "./pages/public/PreMatriculaPublic.jsx";
 function App() {
   return (
     <AuthProvider>
@@ -109,8 +109,8 @@ function App() {
               element={<InscricaoEventoPublic />}
             />
             <Route path="/cartao-pagamento" element={<CartaoPagamento />} />
-            <Route path="/matricula" element={<MatriculaPublic />} />
-          </Route>
+            <Route path="/matricula/:slug" element={<PreMatriculaPublic />} />
+            </Route>
         </Routes>
       </Router>
 

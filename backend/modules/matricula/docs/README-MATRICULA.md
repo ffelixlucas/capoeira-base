@@ -1,16 +1,11 @@
-### 📄 **/docs/README-MATRICULA.md**
-
-```markdown
-# 🎓 Módulo – Matrícula (Admin)
+# 🎓 Módulo – Matrícula (Admin + Integração Automática)
 
 ---
 
 ## 🎯 Descrição e Objetivo
 
-O módulo **Matrícula** é responsável por **criar alunos reais e suas matrículas** após a aprovação de uma pré-matrícula.  
-Ele é acessado **apenas por administradores**, garantindo controle e consistência nos cadastros internos.
-
-Esse módulo substitui a antiga matrícula pública, tornando o processo totalmente controlado e automatizado após aprovação.
+O módulo **Matrícula** é responsável por **criar alunos reais e suas matrículas** após a aprovação de uma pré-matrícula ou de forma manual pelo painel admin.  
+Ele foi atualizado para suportar **multi-organizações**, garantindo que cada aluno e matrícula pertençam exclusivamente à academia, professor ou mestre correto.
 
 ---
 
@@ -18,9 +13,10 @@ Esse módulo substitui a antiga matrícula pública, tornando o processo totalme
 
 - **Node.js + Express**
 - **MySQL (Railway)**
+- **JWT (autenticação admin)**
 - **Resend** – envio de e-mails automáticos
 - **Logger customizado** (`utils/logger.js`)
-- **Arquitetura em camadas:** Controller → Service → Repository
+- **Arquitetura em camadas** → Controller → Service → Repository
 
 ---
 
@@ -30,10 +26,10 @@ Esse módulo substitui a antiga matrícula pública, tornando o processo totalme
 
 /modules/matricula/
 │
-├── matriculaController.js   → Recebe requisições internas (admin)
-├── matriculaService.js      → Regras de negócio e criação real
-├── matriculaRepository.js   → Acesso ao banco de dados (CRUD)
-├── matriculaRoutes.js       → Define rotas internas do admin
+├── matriculaController.js   → Recebe requisições HTTP e injeta organizacao_id
+├── matriculaService.js      → Regras de negócio e fallback de organização
+├── matriculaRepository.js   → Acesso direto ao banco (CRUD + validações)
+├── matriculaRoutes.js       → Rotas internas com autenticação JWT
 └── README-MATRICULA.md      → (este arquivo)
 
 ````
@@ -42,102 +38,65 @@ Esse módulo substitui a antiga matrícula pública, tornando o processo totalme
 
 ## ⚙️ Fluxo de Funcionamento
 
-### 🔹 1. Aprovação da Pré-Matrícula
-- Acontece no módulo `preMatriculas`.
-- Quando o admin muda o status para `aprovado`, o sistema chama automaticamente `matriculaService.criarMatricula()`.
+### 🔹 1. Aprovação Automática da Pré-Matrícula
+- Quando uma pré-matrícula é aprovada no módulo `preMatriculas`,  
+  o sistema chama automaticamente `matriculaService.criarMatricula()`.
 - O processo cria:
-  - Novo aluno (`alunos`)
+  - Aluno real (`alunos`)
   - Registro de matrícula (`matriculas`)
-  - E-mails de confirmação automáticos
+  - Envia e-mails automáticos de confirmação
 
----
-
-### 🔹 2. Criação Manual (opcional)
+### 🔹 2. Criação Manual (painel admin)
 - Endpoint: `POST /api/admin/matricula`
-- Permite ao admin criar um aluno diretamente (sem pré-matrícula).
-
-Payload esperado:
-```json
-{
-  "nome": "João Silva",
-  "cpf": "12345678900",
-  "nascimento": "2010-05-12",
-  "email": "joao@email.com",
-  "telefone_aluno": "41999999999"
-}
-````
+- Protegido por `authMiddleware`
+- O `organizacao_id` é **injetado automaticamente** a partir do token JWT do admin logado.
+- Permite criar um aluno e matrícula direto pelo painel, sem pré-matrícula.
 
 ---
 
-## 🔩 Fluxo Interno (camadas)
+## 🧩 Segurança Multi-Organização
 
-1️⃣ **Controller**
+| Camada | Responsabilidade | Detalhes |
+|---------|------------------|-----------|
+| **Controller** | Injeta `req.user.organizacao_id` automaticamente | Impede que o front defina outra organização |
+| **Service** | Valida e reforça o `organizacao_id` | Usa fallback herdado da turma se necessário |
+| **Repository** | Persiste `organizacao_id` em `alunos` e `matriculas` | Mantém vínculo direto no banco |
+| **Banco de Dados** | Colunas `organizacao_id` com FK e `NOT NULL` | Integridade garantida com `ON DELETE CASCADE` |
 
-* Recebe a requisição admin
-* Valida entrada e repassa para o service
-* Retorna JSON com status e aluno criado
-
-2️⃣ **Service**
-
-* Calcula idade
-* Busca turma compatível por faixa etária
-* Evita duplicidade de CPF
-* Grava aluno + matrícula
-* Envia e-mails de confirmação
-
-3️⃣ **Repository**
-
-* Executa as queries SQL:
-
-  * Inserir aluno
-  * Inserir matrícula
-  * Buscar turma por idade
-  * Buscar organização por turma
-  * Verificar CPF duplicado
+✅ Nenhum admin pode criar ou visualizar matrículas fora da sua organização.  
+✅ Toda matrícula criada tem rastreabilidade total no log (org + aluno + turma).
 
 ---
 
 ## 🧠 Regras de Negócio
 
-* **CPF único** por aluno
-* **Turma automática** definida pela idade
-* **Organização herdada** da turma selecionada
-* **Criação dupla** (aluno + matrícula) com transação simples
-* Envio de **e-mails automáticos** via Resend:
-
-  * Aluno: “Matrícula confirmada”
-  * Admin: “Nova matrícula confirmada”
-
----
-
-## 🧩 Relação com Outros Módulos
-
-| Módulo                | Relação                                        |
-| --------------------- | ---------------------------------------------- |
-| `preMatriculas`       | Origem dos dados (pré-matrículas aprovadas)    |
-| `alunos`              | Recebe o aluno criado aqui                     |
-| `turmas`              | Define turma automaticamente com base na idade |
-| `notificacaoDestinos` | Controla os e-mails que recebem notificações   |
-| `emailService`        | Serviço genérico de envio de e-mails           |
-| `logger`              | Mantém rastreabilidade de todo o processo      |
+- **CPF único** por aluno.
+- **Organização obrigatória** em todos os registros.
+- **Turma automática** definida pela idade.
+- **Fallback seguro**: se o `organizacao_id` não vier do token, é herdado da turma.
+- **Transação lógica dupla**: cria aluno e matrícula na sequência.
+- **E-mails automáticos** disparados após sucesso.
 
 ---
 
 ## 🧪 Banco de Dados
 
-### Tabelas afetadas
+### Tabelas envolvidas
 
-* `alunos`
-* `matriculas`
+| Tabela | Campo | Descrição |
+|---------|--------|------------|
+| `alunos` | `organizacao_id` | FK → `organizacoes(id)` (NOT NULL, CASCADE) |
+| `matriculas` | `organizacao_id` | FK → `organizacoes(id)` (NOT NULL, CASCADE) |
+| `turmas` | `organizacao_id` | Define o vínculo base para novas matrículas |
 
-### Queries principais
+### Principais queries
 
 ```sql
 INSERT INTO alunos (...)
-INSERT INTO matriculas (aluno_id, turma_id, organizacao_id, data_inicio)
+INSERT INTO matriculas (aluno_id, turma_id, organizacao_id, data_inicio) VALUES (...)
 SELECT organizacao_id FROM turmas WHERE id = ?
-SELECT id FROM turmas WHERE idade_min <= ? AND idade_max >= ?
-```
+SELECT * FROM alunos WHERE organizacao_id = ?
+````
 
 ---
 
@@ -164,21 +123,20 @@ Nova matrícula confirmada: [NOME] ([CPF])
 
 ## 🚀 Melhorias Futuras
 
-* [ ] Implementar transação SQL (ROLLBACK em erro)
-* [ ] Permitir seleção manual de turma na criação direta
-* [ ] Adicionar histórico de alterações
-* [ ] Integrar com módulo de pagamentos futuros
+* [ ] Implementar transação SQL real (COMMIT/ROLLBACK)
+* [ ] Seleção manual de turma na criação direta
+* [ ] Histórico de alterações (quem criou/alterou)
+* [ ] Pagamentos vinculados à matrícula
+* [ ] Relatórios por organização
 
 ---
 
 ## 📊 Status Atual
 
-✅ **Funcional e testado.**
-
-* Criação de aluno e matrícula automática via aprovação de pré-matrícula validada.
-* E-mails automáticos operando com sucesso.
-* Logs claros e consistentes.
-* Integração total com `preMatriculas` estável.
+✅ Multi-organização completo
+✅ Criação automática e manual funcional
+✅ E-mails e logs operando
+✅ Banco padronizado com FKs consistentes
 
 ---
 

@@ -1,9 +1,14 @@
-// modules/matricula/matriculaRoutes.js
 const express = require("express");
 const router = express.Router();
 const matriculaController = require("./matriculaController");
+const verifyToken = require("../../middlewares/verifyToken");
+const checkRole = require("../../middlewares/checkRole");
 
-// 🔹 Rota interna/admin — criar aluno real após aprovação
-router.post("/matricula", matriculaController.criarMatricula);
+router.post(
+  "/matricula",
+  verifyToken,
+  checkRole(["admin"]),
+  matriculaController.criarMatricula
+);
 
 module.exports = router;

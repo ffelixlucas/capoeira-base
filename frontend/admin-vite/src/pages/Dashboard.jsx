@@ -12,6 +12,7 @@ import {
   ClipboardDocumentListIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import api from "../services/api";
 
 import {
   UserGroupIcon,
@@ -116,6 +117,7 @@ export default function Dashboard() {
   }, []);
 
   const [qtdFotos, setQtdFotos] = useState(0);
+  const [qtdPreMatriculas, setQtdPreMatriculas] = useState(0);
 
   useEffect(() => {
     const fetchFotos = async () => {
@@ -129,6 +131,23 @@ export default function Dashboard() {
 
     fetchFotos();
   }, []);
+  useEffect(() => {
+    async function fetchPreMatriculas() {
+      try {
+        const { data } = await api.get(
+          `/public/admin/pre-matriculas/pendentes/${usuario.organizacao_id}`
+        );
+        setQtdPreMatriculas(data.length || 0);
+      } catch (error) {
+        logger.error("Erro ao buscar pré-matrículas pendentes:", error);
+        setQtdPreMatriculas(0);
+      }
+    }
+
+    if (usuario?.roles?.includes("admin")) {
+      fetchPreMatriculas();
+    }
+  }, [usuario]);
 
   const eventosOrdenados = Array.isArray(eventosResumo)
     ? [...eventosResumo].sort((a, b) => {
@@ -220,18 +239,27 @@ export default function Dashboard() {
         )}
 
         {/* Estatísticas Rápidas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <CardEstat
-            valor={qtdAlunos}
-            label="Alunos"
-            Icon={UserGroupIcon}
-            cor="green"
-            onClick={() => {
-              navigate("/alunos");
-            }}
-            cursor="pointer"
-          />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative">
+          {/* Card Alunos com badge */}
+          <div className="relative">
+            <CardEstat
+              valor={qtdAlunos}
+              label="Alunos"
+              Icon={UserGroupIcon}
+              cor="green"
+              onClick={() => navigate("/alunos")}
+              cursor="pointer"
+            />
 
+            {/* Badge sobre o ícone */}
+            {usuario?.roles?.includes("admin") && qtdPreMatriculas > 0 && (
+              <span className="absolute top-[1px] left-[37px] sm:top-[8px] sm:left-[48px]  bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
+                {qtdPreMatriculas}
+              </span>
+            )}
+          </div>
+
+          {/* Outros cards */}
           <CardEstat
             valor={lembretes.length}
             label="Lembretes"
@@ -246,10 +274,8 @@ export default function Dashboard() {
             label="Eventos"
             Icon={CalendarIcon}
             cor="blue"
-            onClick={() => {
-              navigate("/agenda");
-            }}
-            cursor={"pointer"}
+            onClick={() => navigate("/agenda")}
+            cursor="pointer"
           />
 
           <CardEstat
@@ -257,9 +283,7 @@ export default function Dashboard() {
             label="Fotos"
             Icon={PhotoIcon}
             cor="amber"
-            onClick={() => {
-              navigate("/galeria");
-            }}
+            onClick={() => navigate("/galeria")}
             cursor="pointer"
           />
         </div>

@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+
 import AlunoList from "../components/alunos/AlunoList";
 import AlunoForm from "../components/alunos/AlunoForm";
 import Busca from "../components/ui/Busca";
@@ -9,13 +11,15 @@ import { buscarAluno } from "../services/alunoService";
 import { toast } from "react-toastify";
 import { useMinhasTurmas } from "../hooks/useMinhasTurmas";
 import api from "../services/api";
+import { RefreshCcw, UserPlus, Bell } from "lucide-react";
 
 function Alunos() {
+  const { token, usuario, carregando: carregandoAuth } = useAuth(); // 👈 pega estado global do Auth
+
   const [mostrarForm, setMostrarForm] = useState(false);
   const [alunoSelecionado, setAlunoSelecionado] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
 
-  const [usuario] = useState(() => JSON.parse(localStorage.getItem("usuario")));
   const [busca, setBusca] = useState("");
   const { alunos, carregando, carregarAlunos } = useAlunos();
   const {
@@ -25,8 +29,15 @@ function Alunos() {
     carregando: carregandoTurmas,
   } = useMinhasTurmas(usuario);
 
+  // ✅ Aguarda AuthContext pronto antes de buscar alunos
+  useEffect(() => {
+    if (carregandoAuth || !token || !usuario) return;
+    carregarAlunos();
+  }, [carregandoAuth, token, usuario]);
+
   const [contadorPendentes, setContadorPendentes] = useState(0);
   const [mostrarPendentes, setMostrarPendentes] = useState(false);
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
 
   useEffect(() => {
     if (usuario?.roles?.includes("admin")) {
@@ -43,13 +54,13 @@ function Alunos() {
         `/public/admin/pre-matriculas/pendentes/${usuario.organizacao_id}`
       );
       setContadorPendentes(data.length || 0);
+      setUltimaAtualizacao(new Date());
+      await carregarAlunos();
+      toast.success("Dados atualizados com sucesso");
     } catch {
-      toast.error("Erro ao atualizar contador de pendentes");
+      toast.error("Erro ao atualizar dados");
     }
   }
-  useEffect(() => {
-    carregarAlunos();
-  }, []);
 
   async function abrirFichaCompleta(item) {
     // 🟢 Se for uma pré-matrícula pendente, monta ficha local
@@ -69,7 +80,7 @@ function Alunos() {
         },
         { label: "Status", valor: item.status },
       ];
-  
+
       setAlunoSelecionado({
         ...item,
         dadosFicha,
@@ -77,7 +88,7 @@ function Alunos() {
       });
       return;
     }
-  
+
     // 🔵 Caso contrário (aluno matriculado), busca normalmente
     try {
       const alunoCompleto = await buscarAluno(item.id);
@@ -92,7 +103,6 @@ function Alunos() {
       toast.error("Erro ao carregar ficha do aluno");
     }
   }
-  
 
   const alunosFiltrados = alunos
     .filter((a) => {
@@ -135,27 +145,56 @@ function Alunos() {
           </select>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition"
-          >
-            {mostrarForm ? "Fechar" : "Cadastrar Aluno"}
-          </button>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+          {/* 🔹 Barra de ações — duas linhas, layout equilibrado */}
+<div className="flex flex-col items-center sm:items-start w-full gap-2 mt-2">
+  {/* Linha principal */}
+  <div className="flex flex-wrap justify-center sm:justify-start gap-2 w-full">
+    {/* Cadastrar aluno */}
+    <button
+      onClick={() => setMostrarForm(!mostrarForm)}
+      className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+    >
+      <UserPlus size={16} /> {mostrarForm ? "Fechar" : "Cadastrar"}
+    </button>
 
-          {usuario?.roles?.includes("admin") && (
-            <button
-              onClick={() => setMostrarPendentes(true)}
-              className="relative bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition"
-            >
-              Pré-Matrículas Pendentes
-              {contadorPendentes > 0 && (
-                <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow">
-                  {contadorPendentes}
-                </span>
-              )}
-            </button>
-          )}
+    {/* Pré-matrículas pendentes */}
+    {usuario?.roles?.includes("admin") && (
+      <button
+        onClick={() => setMostrarPendentes(true)}
+        className="relative flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+      >
+        <Bell size={16} /> Pré-Matrículas
+        {contadorPendentes > 0 && (
+          <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
+            {contadorPendentes}
+          </span>
+        )}
+      </button>
+    )}
+  </div>
+
+  {/* Linha secundária — Atualizar + hora */}
+  <div className="flex items-center justify-center sm:justify-start gap-2 w-full">
+    <button
+      onClick={atualizarContadorPendentes}
+      className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium transition-all active:scale-[0.97]"
+    >
+      <RefreshCcw size={14} className="text-gray-600" /> Atualizar
+    </button>
+
+    {ultimaAtualizacao && (
+      <span className="text-xs text-gray-400 italic whitespace-nowrap">
+        Última atualização{" "}
+        {ultimaAtualizacao.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </span>
+    )}
+  </div>
+</div>
+
         </div>
       </div>
 

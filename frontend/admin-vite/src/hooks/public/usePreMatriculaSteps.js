@@ -10,12 +10,13 @@ import {
   calcularIdade,
 } from "../../utils/formatters";
 
-export function usePreMatriculaSteps(registrarPreMatricula) {
+export function usePreMatriculaSteps(registrarPreMatricula, slug) {
   const [step, setStep] = useState(1);
   const [possuiRestricao, setPossuiRestricao] = useState(false);
 
   const [form, setForm] = useState({
     nome: "",
+    apelido: "",
     nascimento: "",
     cpf: "",
     email: "",
@@ -31,6 +32,7 @@ export function usePreMatriculaSteps(registrarPreMatricula) {
     ja_treinou: null,
     grupo_origem: "",
     grupo_personalizado: "",
+    imagemBase64: "",
   });
 
   // Atualiza os valores digitados
@@ -127,28 +129,33 @@ export function usePreMatriculaSteps(registrarPreMatricula) {
 
     // Monta payload conforme backend pre_matriculas
     const payload = {
-      organizacao_id: 1, // por enquanto fixo
+      slug,
       nome: form.nome,
+      apelido: form.apelido || null,
       nascimento: form.nascimento,
       cpf: limparNumeros(form.cpf),
       email: form.email.toLowerCase(),
-      telefone:
-        idade >= 18
-          ? limparNumeros(form.telefone_aluno)
-          : limparNumeros(form.telefone_responsavel),
-      ja_treinou: form.ja_treinou, 
-
+      telefone_aluno: limparNumeros(form.telefone_aluno) || null,
+      telefone_responsavel: limparNumeros(form.telefone_responsavel) || null,
+      nome_responsavel: form.nome_responsavel || null,
+      responsavel_documento: limparNumeros(form.responsavel_documento) || null,
+      responsavel_parentesco: form.responsavel_parentesco || null,
+      endereco: form.endereco || null,
+      ja_treinou: form.ja_treinou,
       grupo_origem:
         form.grupo_origem === "Outros"
           ? form.grupo_personalizado
           : form.grupo_origem,
+      categoria_id: form.categoria_id || null,
+      graduacao_id: form.graduacao_id || null,
       observacoes_medicas: possuiRestricao ? form.observacoes_medicas : null,
-      autorizacao_imagem: form.autorizacao_imagem,
-      aceite_lgpd: form.aceite_lgpd,
+      autorizacao_imagem: form.autorizacao_imagem ? 1 : 0,
+      aceite_lgpd: form.aceite_lgpd ? 1 : 0,
+      imagemBase64: form.imagemBase64 || null,
     };
-
+    
     logger.info("[usePreMatriculaSteps] Enviando payload", payload);
-    await registrarPreMatricula(payload);
+    await registrarPreMatricula(payload, slug);
   }
 
   return {
