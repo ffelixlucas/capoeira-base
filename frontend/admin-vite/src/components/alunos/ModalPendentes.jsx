@@ -58,8 +58,10 @@ function CardAluno({
 
       // ✅ 2. Se não está no cache, busca do backend
       try {
-        const resp = await fetch(`/api/categorias/por-idade/${idade}`);
-        if (!resp.ok) throw new Error("Falha ao buscar categoria");
+        const resp = await fetch(
+          `${import.meta.env.VITE_API_URL}/categorias/por-idade/${idade}`
+        );
+                if (!resp.ok) throw new Error("Falha ao buscar categoria");
         const data = await resp.json();
 
         let categoriaEncontrada =
