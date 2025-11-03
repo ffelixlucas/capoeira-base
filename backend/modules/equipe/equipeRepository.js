@@ -89,15 +89,32 @@ async function deleteEquipe(id) {
 }
 
 async function buscarPorId(id) {
-  const [rows] = await db.query("SELECT * FROM equipe WHERE id = ?", [id]);
+  const [rows] = await db.query(
+    `SELECT 
+       id,
+       nome,
+       email,
+       telefone,
+       whatsapp,
+       status,
+       observacoes,
+       organizacao_id,
+       grupo_id,
+       senha_hash
+     FROM equipe
+     WHERE id = ?
+     LIMIT 1`,
+    [id]
+  );
+
   const usuario = rows[0];
   if (!usuario) return null;
 
   const [roles] = await db.query(
     `SELECT r.id, r.nome
-     FROM equipe_roles er
-     JOIN roles r ON er.role_id = r.id
-     WHERE er.equipe_id = ?`,
+       FROM equipe_roles er
+       JOIN roles r ON er.role_id = r.id
+       WHERE er.equipe_id = ?`,
     [id]
   );
 

@@ -112,8 +112,11 @@ async function getPerfil(req, res) {
       usuario.roles = [];
     }
 
-    // 🔥 agora retorna organizacao_id
+    // 🔥 agora retorna organizacao_id e grupo_id para multi-organização
     usuario.organizacao_id = usuario.organizacao_id || null;
+    usuario.grupo_id = usuario.grupo_id || null;
+
+    logger.log("📌 Perfil atualizado:", usuario);
 
     res.json(usuario);
   } catch (error) {

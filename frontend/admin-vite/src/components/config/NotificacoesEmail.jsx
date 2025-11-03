@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import logger from "../../utils/logger";
 export default function NotificacoesEmail() {
   const { usuario } = useAuth();
+
   const { lista, tipo, setTipo, loading, adicionar, remover } = useNotificacoes(
     usuario?.grupo_id
   );
@@ -19,7 +20,12 @@ export default function NotificacoesEmail() {
     });
 
     try {
-      await adicionar(novoEmail);
+      await adicionar({
+        organizacaoId: usuario?.organizacao_id,
+        grupoId: usuario?.grupo_id,
+        tipo,
+        email: novoEmail,
+      });
       setNovoEmail("");
     } catch (err) {
       logger.error("[NotificacoesEmail] Erro ao adicionar:", err);
@@ -77,7 +83,7 @@ export default function NotificacoesEmail() {
           value={novoEmail}
           onChange={(e) => setNovoEmail(e.target.value)}
           placeholder="Digite o e-mail"
-          className="flex-1 rounded-lg border px-3 py-2 text-sm bg-cor-input text-cor-texto"
+          className="flex-1 rounded-lg border px-3 py-2 text-sm bg-cor-input text-black"
         />
         <button
           onClick={handleAdicionar}

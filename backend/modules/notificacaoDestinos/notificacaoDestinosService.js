@@ -1,21 +1,45 @@
+// modules/notificacaoDestinos/notificacaoDestinosService.js
 const repo = require("./notificacaoDestinosRepository");
+const logger = require("../../utils/logger");
 
-async function listar(grupoId, tipo) {
-  return await repo.listarPorTipo(grupoId, tipo);
+/**
+ * Lista e-mails de notificação por tipo (multi-organização)
+ */
+async function listar(organizacaoId, grupoId, tipo) {
+  logger.debug(
+    `[notificacaoDestinosService] org ${organizacaoId} - listando notificações tipo ${tipo}`
+  );
+  return await repo.listarPorTipo(organizacaoId, grupoId, tipo);
 }
 
-async function adicionar(grupoId, tipo, email) {
-  return await repo.criar(grupoId, tipo, email);
+async function adicionar(organizacaoId, grupoId, tipo, email) {
+  // 🔥 Caso o front tenha enviado um objeto em vez de string
+  const emailFinal = typeof email === "object" ? email.email : email;
+
+  logger.info(
+    `[notificacaoDestinosService] org ${organizacaoId} - adicionando e-mail ${emailFinal} (${tipo})`
+  );
+
+  return await repo.criar(organizacaoId, grupoId, tipo, emailFinal);
 }
 
-async function deletar(id) {
-  return await repo.remover(id);
+
+/**
+ * Remove e-mail de notificação
+ */
+async function deletar(id, organizacaoId) {
+  logger.warn(
+    `[notificacaoDestinosService] org ${organizacaoId} - removendo notificação id ${id}`
+  );
+  return await repo.remover(id, organizacaoId);
 }
 
-// usado especificamente no fluxo da matrícula
-async function getEmails(grupoId, tipo) {
-  const rows = await repo.listarPorTipo(grupoId, tipo);
-  return rows.map(r => r.email);
+/**
+ * Retorna apenas lista de e-mails (uso interno em matrículas/eventos/pagamentos)
+ */
+async function getEmails(organizacaoId, grupoId, tipo) {
+  const lista = await repo.listarPorTipo(organizacaoId, grupoId, tipo);
+  return lista.map((r) => r.email);
 }
 
 module.exports = { listar, adicionar, deletar, getEmails };
