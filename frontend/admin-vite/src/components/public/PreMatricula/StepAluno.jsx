@@ -143,7 +143,7 @@ export default function StepAluno({
           required
         />
 
-        {/* 🔹 Data de nascimento (3 inputs separados, mobile-friendly) */}
+        {/* 🔹 Data de nascimento (corrigida, sem UTC) */}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
             Data de Nascimento
@@ -155,19 +155,20 @@ export default function StepAluno({
               name="dia"
               value={form.nascimento ? new Date(form.nascimento).getDate() : ""}
               onChange={(e) => {
+                const dia = Number(e.target.value);
                 const atual = form.nascimento
                   ? new Date(form.nascimento)
                   : new Date();
-                const novaData = new Date(
-                  atual.getFullYear(),
-                  atual.getMonth(),
-                  Number(e.target.value)
-                );
+                const novaData = {
+                  dia,
+                  mes: atual.getMonth() + 1,
+                  ano: atual.getFullYear(),
+                };
+                const formatada = `${novaData.ano}-${String(
+                  novaData.mes
+                ).padStart(2, "0")}-${String(novaData.dia).padStart(2, "0")}`;
                 handleChange({
-                  target: {
-                    name: "nascimento",
-                    value: novaData.toISOString().split("T")[0],
-                  },
+                  target: { name: "nascimento", value: formatada },
                 });
               }}
               className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -188,19 +189,20 @@ export default function StepAluno({
                 form.nascimento ? new Date(form.nascimento).getMonth() + 1 : ""
               }
               onChange={(e) => {
+                const mes = Number(e.target.value);
                 const atual = form.nascimento
                   ? new Date(form.nascimento)
                   : new Date();
-                const novaData = new Date(
-                  atual.getFullYear(),
-                  e.target.value - 1,
-                  atual.getDate()
-                );
+                const novaData = {
+                  dia: atual.getDate(),
+                  mes,
+                  ano: atual.getFullYear(),
+                };
+                const formatada = `${novaData.ano}-${String(
+                  novaData.mes
+                ).padStart(2, "0")}-${String(novaData.dia).padStart(2, "0")}`;
                 handleChange({
-                  target: {
-                    name: "nascimento",
-                    value: novaData.toISOString().split("T")[0],
-                  },
+                  target: { name: "nascimento", value: formatada },
                 });
               }}
               className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -234,19 +236,20 @@ export default function StepAluno({
                 form.nascimento ? new Date(form.nascimento).getFullYear() : ""
               }
               onChange={(e) => {
+                const ano = Number(e.target.value);
                 const atual = form.nascimento
                   ? new Date(form.nascimento)
                   : new Date();
-                const novaData = new Date(
-                  e.target.value,
-                  atual.getMonth(),
-                  atual.getDate()
-                );
+                const novaData = {
+                  dia: atual.getDate(),
+                  mes: atual.getMonth() + 1,
+                  ano,
+                };
+                const formatada = `${novaData.ano}-${String(
+                  novaData.mes
+                ).padStart(2, "0")}-${String(novaData.dia).padStart(2, "0")}`;
                 handleChange({
-                  target: {
-                    name: "nascimento",
-                    value: novaData.toISOString().split("T")[0],
-                  },
+                  target: { name: "nascimento", value: formatada },
                 });
               }}
               className="border border-gray-300 rounded-lg px-2 py-2 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"

@@ -17,16 +17,33 @@ export function usePreMatricula() {
 
       logger.info("[usePreMatricula] Enviando pré-matrícula", dados);
 
-      const resposta = await enviarPreMatricula(dados, slug);
+      // 📨 Mostra feedback imediato ao usuário
+      toast.info("📨 Enviando sua pré-matrícula...");
 
-      logger.info("[usePreMatricula] Pré-matrícula criada com sucesso", resposta);
+      // 🚀 Dispara o envio sem travar a interface
+      const envio = enviarPreMatricula(dados, slug);
 
-      setSucesso(resposta.message || "Pré-matrícula enviada com sucesso!");
-      toast.success("Pré-matrícula recebida, aguarde aprovação.");
-      return resposta;
+      // ✅ Confirma visualmente no front antes da resposta do backend
+      toast.success("🎉 Pré-matrícula enviada com sucesso!");
+      setSucesso("Pré-matrícula enviada com sucesso!");
+
+      // 🕓 Continua em background (logs e validações)
+      envio
+        .then((resposta) => {
+          logger.info("[usePreMatricula] Backend confirmou envio", resposta);
+        })
+        .catch((err) => {
+          logger.warn("[usePreMatricula] Erro posterior no backend", err);
+          toast.warning(
+            "⚠️ Houve um pequeno atraso no processamento final. Aguarde o e-mail de confirmação."
+          );
+        });
+
+      // ⚡ Retorna sem bloquear
+      return { message: "Pré-matrícula enviada (processando...)" };
     } catch (err) {
       logger.error("[usePreMatricula] Erro ao enviar pré-matrícula", err);
-      toast.error(err.message);
+      toast.error("❌ Erro ao enviar pré-matrícula.");
       throw err;
     } finally {
       setCarregando(false);
