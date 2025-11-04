@@ -91,11 +91,11 @@ if (aluno.telefone_aluno) {
 if (aluno.telefone_responsavel) {
   const nomeResp = aluno.nome_responsavel || "Responsável";
   const parentesco = aluno.responsavel_parentesco
-    ? ` – ${aluno.responsavel_parentesco}`
+    ? `  ${aluno.responsavel_parentesco} - `
     : "";
 
   telefones.push({
-    label: `${nomeResp}${parentesco}`,
+    label: `${parentesco}${nomeResp}`,
     valor: (
       <span className="inline-flex items-center gap-2">
         <span>{aluno.telefone_responsavel}</span>
@@ -222,18 +222,25 @@ if (aluno.isPreMatricula) {
   /* -------------------------------------------------------------------------- */
   const dadosFicha = [
     ...dadosBase,
-    { label: "Categoria", valor: aluno.categoria_nome || "-" },
+    {
+      label: "Categoria",
+      valor: aluno.categoria_nome || "-",
+    },
+    ...(aluno.turma_nome && aluno.turma_nome !== aluno.categoria_nome
+      ? [{ label: "Turma", valor: aluno.turma_nome }]
+      : []),
+    
     {
       label: "Graduação",
-      valor: aluno.graduacao_nome || aluno.graduacao ? (
+      valor: aluno.graduacao_nome ? (
         <span className="text-amber-700 font-semibold">
-          {aluno.graduacao_nome || aluno.graduacao}
+          {aluno.graduacao_nome}
         </span>
       ) : (
         <span className="text-gray-500">Branca</span>
       ),
     },
-    { label: "Turma", valor: aluno.turma || "-" },
+  
     {
       label: "Obs Médicas",
       valor:

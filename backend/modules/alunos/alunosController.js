@@ -36,12 +36,22 @@ async function listar(req, res) {
 /* 🔹 Buscar aluno por ID                                                     */
 /* -------------------------------------------------------------------------- */
 async function buscar(req, res) {
-  const usuario = req.usuario || req.user;
-  const organizacaoId = usuario.organizacao_id;
+  try {
+    const usuario = req.usuario || req.user;
+    const organizacaoId = usuario.organizacao_id;
+    const { id } = req.params;
 
-  const aluno = await alunoService.buscarPorId(req.params.id, organizacaoId);
-  res.json(aluno);
+    const aluno = await alunoService.buscarPorId(id, organizacaoId);
+
+    logger.info(`[alunosController] Aluno carregado com sucesso (ID: ${id}, org: ${organizacaoId})`);
+
+    return res.status(200).json(aluno);
+  } catch (err) {
+    logger.error(`[alunosController] Erro ao buscar aluno: ${err.message}`);
+    return res.status(404).json({ erro: err.message || "Aluno não encontrado." });
+  }
 }
+
 
 
 /* -------------------------------------------------------------------------- */

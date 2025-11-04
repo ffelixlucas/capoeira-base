@@ -1,6 +1,7 @@
 // alunosService.js
 const alunoRepo = require("./alunosRepository");
 const turmaRepo = require("../turmas/turmasRepository");
+const logger = require("../../utils/logger");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Listar todos os alunos (multi-org)                                      */
@@ -35,7 +36,20 @@ async function listarTodos(usuario, turmaId = null, organizacaoId) {
 /* -------------------------------------------------------------------------- */
 async function buscarPorId(id, organizacaoId) {
   const aluno = await alunoRepo.buscarPorId(id, organizacaoId);
-  if (!aluno) throw new Error("Aluno não encontrado ou não pertence à sua organização.");
+
+  if (!aluno) {
+    logger.warn(`[alunosService] Aluno não encontrado ou sem permissão (ID: ${id}, org: ${organizacaoId})`);
+    throw new Error("Aluno não encontrado ou não pertence à sua organização.");
+  }
+
+  logger.debug("[alunosService] Aluno carregado:", {
+    id: aluno.id,
+    nome: aluno.nome,
+    categoria: aluno.categoria_nome,
+    turma: aluno.turma_nome,
+    graduacao: aluno.graduacao_nome,
+  });
+
   return aluno;
 }
 
