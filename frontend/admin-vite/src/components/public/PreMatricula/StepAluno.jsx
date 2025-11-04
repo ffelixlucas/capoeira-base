@@ -5,6 +5,7 @@ import axios from "axios";
 import { buscarOrganizacaoPorSlug } from "../../../services/shared/organizacaoService";
 import InputBase from "../../ui/InputBase";
 import FotoPerfil from "../../ui/FotoPerfil";
+import { logger } from "../../../utils/logger";
 
 export default function StepAluno({
   form,
@@ -17,6 +18,24 @@ export default function StepAluno({
   const [grupoOrg, setGrupoOrg] = useState("");
   const [categoria, setCategoria] = useState(null);
   const [graduacoes, setGraduacoes] = useState([]);
+  const [categoriasDisponiveis, setCategoriasDisponiveis] = useState([]);
+
+  // 🔹 Buscar todas as categorias disponíveis (para opção de alterar manualmente)
+  useEffect(() => {
+    async function carregarCategorias() {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL}/categorias`
+        );
+        if (response.data?.data?.length) {
+          setCategoriasDisponiveis(response.data.data);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar categorias:", err);
+      }
+    }
+    carregarCategorias();
+  }, []);
 
   // 🔹 Buscar grupo da organização (dinâmico via slug)
   useEffect(() => {
@@ -32,10 +51,14 @@ export default function StepAluno({
     carregarGrupo();
   }, [slug]);
 
-  // 🔹 Buscar categoria conforme idade
+  // 🔹 Buscar categoria conforme idade (somente se não tiver sido alterada manualmente)
   useEffect(() => {
     async function carregarCategoria() {
       if (!form.nascimento) return;
+
+      // ⚠️ Se o usuário já alterou manualmente, não recalcula
+      if (form.categoria_id && form.editandoCategoria === false) return;
+
       try {
         const nascimento = new Date(form.nascimento);
         const hoje = new Date();
@@ -271,8 +294,63 @@ export default function StepAluno({
         {/* Categoria detectada */}
         {categoria && (
           <div className="text-sm text-gray-700 mt-1">
-            <span>Categoria detectada: </span>
-            <span className="font-semibold">{categoria.categoria_nome}</span>
+            {!form.editandoCategoria ? (
+              <>
+                <span>Categoria detectada: </span>
+                <span className="font-semibold">
+                  {categoria.categoria_nome}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleChange({
+                      target: { name: "editandoCategoria", value: true },
+                    })
+                  }
+                  className="text-blue-600 ml-2 text-xs underline hover:text-blue-800"
+                >
+                  alterar
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2 mt-1">
+                <select
+                  name="categoria_id"
+                  value={form.categoria_id || ""}
+                  onChange={(e) => {
+                    logger.debug(
+                      "[StepAluno] Categoria alterada manualmente →",
+                      e.target.value
+                    );
+                    handleChange(e);
+                    handleChange({
+                      target: { name: "editandoCategoria", value: true },
+                    });
+                    setCategoria({ categoria_id: e.target.value }); // garante atualização visual
+                  }}
+                  className="border border-gray-300 rounded-md px-3 py-1 text-sm text-gray-800 bg-white"
+                >
+                  <option value="">Selecione uma categoria</option>
+                  {categoriasDisponiveis.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.nome}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleChange({
+                      target: { name: "editandoCategoria", value: false },
+                    })
+                  }
+                  className="text-gray-500 text-xs underline hover:text-gray-700"
+                >
+                  cancelar
+                </button>
+              </div>
+            )}
           </div>
         )}
 
