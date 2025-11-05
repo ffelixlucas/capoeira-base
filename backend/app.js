@@ -89,7 +89,5 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/public/organizacoes", require("./modules/shared/organizacoes/organizacaoPublicRoutes"));
 
 
-// -----------------------------------------------------------
-// ✅ Exportar app configurado
-// -----------------------------------------------------------
+
 module.exports = app;

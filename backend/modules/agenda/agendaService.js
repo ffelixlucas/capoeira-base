@@ -1,9 +1,13 @@
+// backend/modules/agenda/agendaService.js
 const bucket = require("../../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 const agendaRepository = require("./agendaRepository");
 const logger = require("../../utils/logger");
 
-const normalizarConfig = (conf) => {
+/* -------------------------------------------------------------------------- */
+/* 🧩 Utilitário - Normalização de JSON                                       */
+/* -------------------------------------------------------------------------- */
+function normalizarConfig(conf) {
   if (!conf) return {};
   if (typeof conf === "object") return conf;
   try {
@@ -11,27 +15,31 @@ const normalizarConfig = (conf) => {
   } catch {
     return {};
   }
-};
+}
 
-const listarEventos = async (status, situacao) => {
-  const eventos = await agendaRepository.listarEventos(status, situacao);
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listar eventos (multi-org)                                              */
+/* -------------------------------------------------------------------------- */
+async function listarEventos(organizacaoId, status, situacao) {
+  logger.debug("[agendaService] Listando eventos", { organizacaoId, status, situacao });
+  const eventos = await agendaRepository.listarEventos(organizacaoId, status, situacao);
+
   return eventos.map((e) => ({
     ...e,
-    configuracoes: e.configuracoes
-      ? typeof e.configuracoes === "string"
-        ? JSON.parse(e.configuracoes)
-        : e.configuracoes
-      : {},
+    configuracoes: normalizarConfig(e.configuracoes),
   }));
-};
+}
 
-const criarEvento = async (dados, usuarioId) => {
+/* -------------------------------------------------------------------------- */
+/* 🧱 Criar evento                                                            */
+/* -------------------------------------------------------------------------- */
+async function criarEvento(dados, usuarioId, organizacaoId) {
   if (!dados.titulo || !dados.data_inicio) {
     throw new Error("Título e data de início são obrigatórios.");
   }
 
-  // Garantimos que os campos novos estejam presentes
   const evento = {
+    organizacao_id: organizacaoId,
     titulo: dados.titulo,
     descricao_curta: dados.descricao_curta || "",
     descricao_completa: dados.descricao_completa || "",
@@ -50,71 +58,82 @@ const criarEvento = async (dados, usuarioId) => {
   };
 
   const id = await agendaRepository.criarEvento(evento);
+  logger.debug("[agendaService] Evento criado", { id, organizacaoId });
   return { id };
-};
-
-async function processarUploadEvento(imagem, dados, usuarioId) {
-  let imagem_url = null;
-
-  if (imagem) {
-    const nomeArquivo = `eventos/${uuidv4()}-${imagem.originalname}`;
-    const file = bucket.file(nomeArquivo);
-
-    await file.save(imagem.buffer, {
-      metadata: { contentType: imagem.mimetype },
-    });
-
-    imagem_url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
-  }
-
-  const evento = {
-    titulo: dados.titulo || "",
-    descricao_curta: dados.descricao_curta || "",
-    descricao_completa: dados.descricao_completa || "",
-    local: dados.local || "",
-    endereco: dados.endereco || "",
-    telefone_contato: dados.telefone_contato || "",
-    data_inicio: dados.data_inicio || null,
-    data_fim: dados.data_fim || null,
-    imagem_url,
-    com_inscricao: dados.com_inscricao || false,
-    valor: dados.valor || 0,
-    responsavel_id: dados.responsavel_id || null,
-    configuracoes: normalizarConfig(dados.configuracoes),
-    criado_por: usuarioId || null,
-    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0,
-  };
-
-  const id = await agendaRepository.criarEvento(evento);
-  return { id, imagem_url };
 }
 
-const excluirEvento = async (id) => {
-  const evento = await agendaRepository.buscarPorId(id);
+/* -------------------------------------------------------------------------- */
+/* 🖼️ Criar evento com upload de imagem (Firebase)                           */
+/* -------------------------------------------------------------------------- */
+async function processarUploadEvento(imagem, dados, usuarioId, organizacaoId) {
+  let imagem_url = null;
 
-  if (!evento) {
-    throw new Error("Evento não encontrado ou já removido.");
+  try {
+    if (imagem) {
+      const nomeArquivo = `eventos/${uuidv4()}-${imagem.originalname}`;
+      const file = bucket.file(nomeArquivo);
+
+      await file.save(imagem.buffer, {
+        metadata: { contentType: imagem.mimetype },
+      });
+
+      imagem_url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
+      logger.debug("[agendaService] Imagem salva no Firebase", { nomeArquivo });
+    }
+
+    const evento = {
+      organizacao_id: organizacaoId,
+      titulo: dados.titulo || "",
+      descricao_curta: dados.descricao_curta || "",
+      descricao_completa: dados.descricao_completa || "",
+      local: dados.local || "",
+      endereco: dados.endereco || "",
+      telefone_contato: dados.telefone_contato || "",
+      data_inicio: dados.data_inicio || null,
+      data_fim: dados.data_fim || null,
+      imagem_url,
+      com_inscricao: dados.com_inscricao || false,
+      valor: dados.valor || 0,
+      responsavel_id: dados.responsavel_id || null,
+      configuracoes: normalizarConfig(dados.configuracoes),
+      criado_por: usuarioId || null,
+      possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0,
+    };
+
+    const id = await agendaRepository.criarEvento(evento);
+    return { id, imagem_url };
+  } catch (error) {
+    logger.error("[agendaService] Erro ao salvar imagem", error);
+    throw error;
   }
+}
 
-  // Deletar imagem do Firebase se houver
+/* -------------------------------------------------------------------------- */
+/* ❌ Excluir evento                                                          */
+/* -------------------------------------------------------------------------- */
+async function excluirEvento(id, organizacaoId) {
+  const evento = await agendaRepository.buscarPorId(id, organizacaoId);
+  if (!evento) throw new Error("Evento não encontrado ou já removido.");
+
   if (evento.imagem_url) {
-    const caminho = decodeURIComponent(
-      new URL(evento.imagem_url).pathname.replace(/^\/[^/]+\//, "")
-    );
-
     try {
+      const caminho = decodeURIComponent(
+        new URL(evento.imagem_url).pathname.replace(/^\/[^/]+\//, "")
+      );
       await bucket.file(caminho).delete();
-      logger.log("🗑️ Imagem do evento excluída do Firebase:", caminho);
+      logger.debug("[agendaService] Imagem excluída do Firebase", { caminho });
     } catch (error) {
-      logger.warn("⚠️ Erro ao excluir imagem do evento:", error.message);
+      logger.warn("[agendaService] Erro ao excluir imagem", { erro: error.message });
     }
   }
 
-  return await agendaRepository.excluirEvento(id);
-};
+  return agendaRepository.excluirEvento(id, organizacaoId);
+}
 
-async function atualizarEvento(id, dados) {
-  // Garante que todos os campos tenham valor padrão
+/* -------------------------------------------------------------------------- */
+/* ✏️ Atualizar evento                                                       */
+/* -------------------------------------------------------------------------- */
+async function atualizarEvento(id, organizacaoId, dados) {
   const evento = {
     titulo: dados.titulo ?? "",
     descricao_curta: dados.descricao_curta ?? "",
@@ -130,35 +149,40 @@ async function atualizarEvento(id, dados) {
     responsavel_id: dados.responsavel_id ?? null,
     configuracoes: normalizarConfig(dados.configuracoes),
     possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0,
+    status: dados.status || "ativo",
   };
 
-  return agendaRepository.atualizar(id, evento);
+  return agendaRepository.atualizar(id, organizacaoId, evento);
 }
 
-async function atualizarStatus(id, status) {
-  return agendaRepository.atualizarStatus(id, status);
+/* -------------------------------------------------------------------------- */
+/* 🔄 Atualizar status                                                       */
+/* -------------------------------------------------------------------------- */
+async function atualizarStatus(id, organizacaoId, status) {
+  return agendaRepository.atualizarStatus(id, organizacaoId, status);
 }
 
-async function arquivarEvento(id) {
-  const evento = await agendaRepository.buscarPorId(id);
+/* -------------------------------------------------------------------------- */
+/* 🗂️ Arquivar evento                                                        */
+/* -------------------------------------------------------------------------- */
+async function arquivarEvento(id, organizacaoId) {
+  const evento = await agendaRepository.buscarPorId(id, organizacaoId);
   if (!evento) return false;
 
-  // Apaga imagem do Firebase, se existir
   if (evento.imagem_url) {
     try {
       const caminho = decodeURIComponent(
         new URL(evento.imagem_url).pathname.replace(/^\/[^/]+\//, "")
       );
       await bucket.file(caminho).delete();
-      logger.log("🗑️ Imagem do evento excluída:", caminho);
+      logger.debug("[agendaService] Imagem do evento arquivada/excluída", { caminho });
     } catch (error) {
-      logger.warn("⚠️ Erro ao excluir imagem:", error.message);
+      logger.warn("[agendaService] Erro ao excluir imagem no arquivamento", { erro: error.message });
     }
   }
 
-  // Atualiza no banco
   const dataFim = evento.data_fim || new Date();
-  return agendaRepository.atualizar(id, {
+  return agendaRepository.atualizar(id, organizacaoId, {
     ...evento,
     status: "concluido",
     data_fim: dataFim,
@@ -166,6 +190,7 @@ async function arquivarEvento(id) {
   });
 }
 
+/* -------------------------------------------------------------------------- */
 module.exports = {
   listarEventos,
   criarEvento,
