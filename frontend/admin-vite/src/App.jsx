@@ -102,15 +102,15 @@ function App() {
           <Route path="*" element={<NotFound />} />
 
           <Route element={<LayoutPublic />}>
-            {/* 🔹 NOVAS ROTAS PÚBLICAS (usando outro nome) */}
-            <Route path="/inscrever" element={<InscricoesPublic />} />
+            {/* 🔹 Multi-org: listagem e inscrição de eventos */}
+            <Route path="/inscrever/:slug" element={<InscricoesPublic />} />
             <Route
-              path="/inscrever/:eventoId"
+              path="/inscrever/:slug/:eventoId"
               element={<InscricaoEventoPublic />}
             />
             <Route path="/cartao-pagamento" element={<CartaoPagamento />} />
             <Route path="/matricula/:slug" element={<PreMatriculaPublic />} />
-            </Route>
+          </Route>
         </Routes>
       </Router>
 

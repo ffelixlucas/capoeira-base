@@ -1,29 +1,63 @@
 import api from './api';
+import logger from '../utils/logger';
 
 /* ============================
    ROTAS PÚBLICAS (somente leitura)
 ============================ */
-export const listarEventosPublicos = async () => {
-  const response = await api.get('/public/agenda');
-  return response.data.data; // apenas eventos com inscrição pública
-};
+export async function listarEventosPublicos(slug) {
+  try {
+    const endpoint = slug
+      ? `/public/agenda?slug=${slug}`
+      : "/public/agenda";
 
-export const buscarEventoPublicoPorId = async (id) => {
-  const response = await api.get(`/public/agenda/${id}`); 
-  console.log("[DEBUG AGENDA SERVICE] response.data:", response.data);
-  return response.data;
+    const { data } = await api.get(endpoint);
+    return data.data || [];
+  } catch (error) {
+    console.error("[listarEventosPublicos] Erro ao buscar eventos:", error);
+    return [];
+  }
+}
+
+
+// 🔹 Busca evento público por ID e slug (multi-org seguro)
+export const buscarEventoPublicoPorId = async (id, slug) => {
+  try {
+    const { data } = await api.get(`/public/agenda/${id}?slug=${slug}`);
+    console.log("[DEBUG AGENDA SERVICE] Evento público carregado:", data);
+    return data;
+  } catch (error) {
+    console.error("[AGENDA SERVICE] Erro ao buscar evento público:", error);
+    throw error;
+  }
 };
 
 
 /* ============================
    ROTAS ADMIN (mantidas 100% como estavam)
 ============================ */
-export const listarEventos = async (params = {}) => {
-  const qs = new URLSearchParams(params).toString();
-  const url = qs ? `/agenda?${qs}` : `/agenda`;
-  const response = await api.get(url);
-  return response.data.data;
-};
+export async function listarEventos() {
+  logger.log("📡 Chamando backend /api/agenda...");
+  try {
+    const token = localStorage.getItem("token");
+    const orgAtiva = JSON.parse(localStorage.getItem("organizacaoAtiva") || "{}");
+
+    // tenta pegar slug da org ativa (multi-org)
+    const slug = orgAtiva?.slug || localStorage.getItem("slug") || null;
+
+    const response = await api.get("/agenda", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      params: slug ? { slug } : {}, // manda slug só se existir
+    });
+
+    logger.log("✅ Resposta bruta da API:", response);
+    return response.data?.data || [];
+  } catch (error) {
+    logger.warn("⚠️ Erro na chamada /api/agenda:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+
 
 export const buscarEventoPorId = async (id) => {
   const response = await api.get(`/agenda/${id}`);

@@ -21,7 +21,7 @@ import { CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function InscricaoEventoPublic() {
-  const { eventoId } = useParams();
+  const { slug, eventoId } = useParams(); 
   console.log(
     "[DEBUG MONTAGEM COMPONENTE] componente carregado para eventoId:",
     eventoId
@@ -158,29 +158,41 @@ export default function InscricaoEventoPublic() {
   }
 
   // Buscar evento
-  useEffect(() => {
-    console.log("[DEBUG USEEFFECT] executando com eventoId:", eventoId);
 
+  useEffect(() => {
+    console.log("[DEBUG USEEFFECT] executando com slug:", slug, "eventoId:", eventoId);
+  
     async function carregarEvento() {
       try {
-        const dados = await buscarEventoPublicoPorId(eventoId);
-
+        const dados = await buscarEventoPublicoPorId(eventoId, slug);
         console.log("[DEBUG EVENTO DO BACKEND]", dados);
-
-        console.debug("[DEBUG BUSCA EVENTO PUBLICO]", { eventoId, dados });
         setEvento(dados);
       } catch (err) {
         console.error("[ERRO AO BUSCAR EVENTO PUBLICO]", err);
         logger.error("Erro ao buscar evento público:", err);
+  
+        // ⚠️ Mostra mensagem visual amigável e volta para listagem
+        toast.error("Este evento não existe ou não pertence a esta organização.");
+        setTimeout(() => navigate(`/inscrever/${slug}`), 3000);
       } finally {
         setCarregando(false);
       }
     }
+  
     carregarEvento();
-  }, [eventoId]);
+  }, [slug, eventoId]);
+  
+  
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (!evento) {
+      toast.error("Evento não encontrado ou indisponível.");
+      navigate(`/inscrever/${slug}`);
+      return;
+    }
+    
 
     // ✅ Validações iniciais
     if (!form.aceite_lgpd || !form.autorizacao_imagem) {
@@ -213,7 +225,7 @@ export default function InscricaoEventoPublic() {
     if (!form.id) {
       try {
         const { data } = await api.get("/public/inscricoes/validar", {
-          params: { cpf: form.cpf, evento_id: evento.id },
+          params: { cpf: form.cpf, evento_id: evento?.id },
         });
 
         if (data.status === "pendente") {
@@ -222,7 +234,7 @@ export default function InscricaoEventoPublic() {
             ...form,
             id: data.inscricao.id,
             cpf: form.cpf,
-            evento_id: evento.id,
+            evento_id: evento?.id,
           });
           toast.info("Inscrição pendente encontrada. Continue o pagamento.");
         } else if (data.ok) {
@@ -257,8 +269,8 @@ export default function InscricaoEventoPublic() {
       if (form.metodo_pagamento === "pix") {
         const resultado = await gerarPagamentoPix({
           ...form,
-          evento_id: evento.id,
-          valor: evento.valor,
+          evento_id: evento?.id,
+          valor: evento?.valor,
           forma_pagamento: "pix",
         });
 
@@ -283,17 +295,22 @@ export default function InscricaoEventoPublic() {
     }
   }
 
-  if (carregando) {
-    return <p className="text-center text-white/80">Carregando evento...</p>;
-  }
-
-  if (!evento) {
+  if (!carregando && !evento) {
     return (
       <div className="text-center text-white py-10">
-        <p>Carregando evento...</p>
+        <h2 className="text-xl font-semibold mb-3">
+          Evento não encontrado ou indisponível.
+        </h2>
+        <button
+          onClick={() => navigate(`/inscrever/${slug}`)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          Voltar à lista de eventos
+        </button>
       </div>
     );
   }
+  
 
   if (encerrado) {
     return (
@@ -432,7 +449,7 @@ export default function InscricaoEventoPublic() {
         isOpen={modalCartao}
         onClose={() => {
           setModalCartao(false);
-          navigate(`/inscrever/${evento.id}`);
+          navigate(`/inscrever/${slug}/${evento?.id}`);
         }}
         evento={evento}
         form={form}
@@ -446,10 +463,11 @@ export default function InscricaoEventoPublic() {
         onClose={() => setModalBoleto(false)}
         dadosInscricao={{
           ...form,
-          evento_id: evento.id,
-          valor: form.valor || evento.valor,
+          evento_id: evento?.id,
+          valor: form.valor || evento?.valor,
           forma_pagamento: "boleto",
         }}
+        
       />
 
       <ModalConfirmacaoPagamento

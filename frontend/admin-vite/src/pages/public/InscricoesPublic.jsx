@@ -1,27 +1,32 @@
-// pages/public/InscricoesPublic.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { listarEventosPublicos } from "../../services/agendaService"; // 🔹 função pública
+import { useNavigate, useParams } from "react-router-dom";
+import { listarEventosPublicos } from "../../services/agendaService";
 import { logger } from "../../utils/logger";
 
 function InscricoesPublic() {
   const navigate = useNavigate();
+  const { slug } = useParams(); // 🟦 pega o slug da URL
   const [eventos, setEventos] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     async function carregarEventos() {
+      if (!slug) return; // evita chamadas sem org
+
+      setCarregando(true);
       try {
-        const dados = await listarEventosPublicos(); // 🔹 usa rota pública
-        setEventos(dados);
+        logger.info("📡 Carregando eventos públicos para org:", slug);
+        const dados = await listarEventosPublicos(slug); // 🟦 passa slug
+        setEventos(Array.isArray(dados) ? dados : []);
       } catch (err) {
-        logger.error("Erro ao carregar eventos públicos:", err);
+        logger.error("❌ Erro ao carregar eventos públicos:", err);
       } finally {
         setCarregando(false);
       }
     }
+
     carregarEventos();
-  }, []);
+  }, [slug]);
 
   return (
     <div className="w-full">
@@ -76,7 +81,7 @@ function InscricoesPublic() {
 
             <button
               className="bg-cor-primaria text-white py-2 px-4 rounded-lg text-sm font-medium self-stretch hover:bg-cor-primaria/90 transition"
-              onClick={() => navigate(`/inscrever/${evento.id}`)} // usa rota pública
+              onClick={() => navigate(`/inscrever/${slug}/${evento.id}`)} // 🟦 mantém slug na navegação
             >
               Inscrever-se
             </button>
