@@ -27,6 +27,9 @@ async function login(email, senha) {
     throw new Error("Senha incorreta");
   }
 
+
+  logger.debug("[authService] Dados do membro antes de gerar token:", membro);
+
   // 🔥 Gera token JWT com todos os dados necessários para multi-organização
   const token = jwt.sign(
     {
