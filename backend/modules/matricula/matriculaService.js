@@ -65,7 +65,7 @@ async function criarMatricula(dados) {
     logger.debug(`[matriculaService] Idade calculada → ${idade}`);
 
     // 🔍 Busca turma compatível com a idade
-    const turma = await matriculaRepository.buscarTurmaPorIdade(idade);
+    const turma = await matriculaRepository.buscarTurmaPorIdade(idade, dados.organizacao_id);
     logger.debug("[matriculaService] Turma detectada:", turma);
 
     if (!turma) throw new Error("Nenhuma turma disponível para esta idade.");
@@ -219,7 +219,7 @@ async function criarMatriculaDireta(pre) {
     logger.debug(`[matriculaService] Idade calculada → ${idade}`);
 
     // 🔍 Busca turma automaticamente pela idade
-    const turma = await matriculaRepository.buscarTurmaPorIdade(idade);
+    const turma = await matriculaRepository.buscarTurmaPorIdade(idade, pre.organizacao_id);
     logger.debug("[matriculaService] Turma detectada:", turma);
 
     if (turma) {

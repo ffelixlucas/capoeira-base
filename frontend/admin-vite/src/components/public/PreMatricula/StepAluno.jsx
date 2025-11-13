@@ -51,45 +51,53 @@ export default function StepAluno({
     carregarGrupo();
   }, [slug]);
 
-  // 🔹 Buscar categoria conforme idade (somente se não tiver sido alterada manualmente)
-  useEffect(() => {
-    async function carregarCategoria() {
-      if (!form.nascimento) return;
+ // 🔹 Detectar turma conforme idade (rota pública via slug)
+useEffect(() => {
+  async function detectarTurma() {
+    if (!form.nascimento || !slug) return;
 
-      // ⚠️ Se o usuário já alterou manualmente, não recalcula
-      if (form.categoria_id && form.editandoCategoria === false) return;
+    try {
+      const nascimento = new Date(form.nascimento);
+      const hoje = new Date();
+      let idade = hoje.getFullYear() - nascimento.getFullYear();
+      const mes = hoje.getMonth() - nascimento.getMonth();
+      if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate()))
+        idade--;
 
-      try {
-        const nascimento = new Date(form.nascimento);
-        const hoje = new Date();
-        let idade = hoje.getFullYear() - nascimento.getFullYear();
-        const mes = hoje.getMonth() - nascimento.getMonth();
-        if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate()))
-          idade--;
+      logger.debug("[StepAluno] Idade calculada →", idade);
 
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/categorias/por-idade/${idade}`
-        );
+      const url = `${import.meta.env.VITE_API_URL}/public/pre-matriculas/${slug}/turma-por-idade/${idade  }`;
 
-        if (response.data?.data) {
-          setCategoria(response.data.data);
-          handleChange({
-            target: {
-              name: "categoria_id",
-              value: response.data.data.categoria_id,
-            },
-          });
-        } else {
-          setCategoria(null);
-          setGraduacoes([]);
-          handleChange({ target: { name: "categoria_id", value: "" } });
-        }
-      } catch (err) {
-        console.error("Erro ao buscar categoria:", err);
+      const response = await axios.get(url);
+
+      if (response.data?.data) {
+        const turma = response.data.data;
+
+        setCategoria({
+          categoria_id: turma.categoria_id,
+          categoria_nome: turma.nome, // nome da TURMA
+        });
+
+        handleChange({
+          target: {
+            name: "categoria_id",
+            value: turma.categoria_id,
+          },
+        });
+
+        logger.debug("[StepAluno] Turma detectada →", turma.nome);
+      } else {
+        setCategoria(null);
+        handleChange({ target: { name: "categoria_id", value: "" } });
       }
+    } catch (err) {
+      console.error("Erro ao detectar turma:", err);
     }
-    carregarCategoria();
-  }, [form.nascimento]);
+  }
+
+  detectarTurma();
+}, [form.nascimento, slug]);
+
 
   // 🔹 Buscar graduações quando o grupo selecionado for o da organização
   useEffect(() => {

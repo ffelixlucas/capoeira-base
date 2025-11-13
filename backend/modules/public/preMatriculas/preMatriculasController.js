@@ -143,9 +143,39 @@ async function getGrupo(req, res) {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* 🔍 Detectar turma por idade + slug (público)                               */
+/* -------------------------------------------------------------------------- */
+async function detectarTurmaPorIdade(req, res) {
+  try {
+    const { slug, idade } = req.params;
+
+    logger.debug(
+      `[preMatriculasController] Detectando turma para slug=${slug} idade=${idade}`
+    );
+
+    const turma = await preMatriculasService.detectarTurmaPorIdade({
+      slug,
+      idade: Number(idade),
+    });
+
+    return res.json({ data: turma });
+  } catch (err) {
+    logger.error(
+      "[preMatriculasController] Erro ao detectar turma:",
+      err.message
+    );
+    return res.status(400).json({
+      error: "Erro ao detectar turma para a idade informada.",
+    });
+  }
+}
+
+
 module.exports = {
   criarPreMatricula,
   listarPendentes,
   atualizarStatus,
   getGrupo,
+  detectarTurmaPorIdade,
 };

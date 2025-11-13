@@ -95,27 +95,55 @@ async function criar(dados) {
 /**
  * Busca turma compatível com a idade informada
  */
-async function buscarTurmaPorIdade(idade) {
-  const [rows] = await db.execute(
-    `SELECT 
-       t.id AS turma_id,
-       t.nome AS turma_nome,
-       t.faixa_etaria,
-       t.idade_min,
-       t.idade_max,
-       t.categoria_id,
-       c.nome AS categoria_nome
-     FROM turmas t
-     LEFT JOIN categorias c ON c.id = t.categoria_id
-     WHERE t.nome <> 'Sem turma'
-       AND (t.idade_min IS NULL OR t.idade_min <= ?)
-       AND (t.idade_max IS NULL OR t.idade_max >= ?)
-     LIMIT 1`,
-    [idade, idade]
-  );
+/**
+ * Busca turma compatível com a idade informada e dentro da mesma organização
+ */
+async function buscarTurmaPorIdade(idade, organizacao_id) {
+  try {
+    const sql = `
+      SELECT 
+        t.id AS turma_id,
+        t.nome AS turma_nome,
+        t.faixa_etaria,
+        t.idade_min,
+        t.idade_max,
+        t.categoria_id,
+        c.nome AS categoria_nome
+      FROM turmas t
+      LEFT JOIN categorias c ON c.id = t.categoria_id
+      WHERE t.nome <> 'Sem turma'
+        AND t.organizacao_id = ?                      -- 🔹 filtro multi-org
+        AND (t.idade_min IS NULL OR t.idade_min <= ?)
+        AND (t.idade_max IS NULL OR t.idade_max >= ?)
+      ORDER BY t.id
+      LIMIT 1
+    `;
 
-  return rows.length > 0 ? rows[0] : null;
+    const params = [organizacao_id, idade, idade];
+    logger.debug("[matriculaRepository.buscarTurmaPorIdade] SQL:", sql.trim());
+    logger.debug("[matriculaRepository.buscarTurmaPorIdade] Params:", params);
+
+    const [rows] = await db.execute(sql, params);
+
+    if (rows.length > 0) {
+      logger.info(
+        `[matriculaRepository] org ${organizacao_id} - turma compatível encontrada (${rows[0].turma_nome})`
+      );
+      return rows[0];
+    }
+
+    logger.warn(
+      `[matriculaRepository] org ${organizacao_id} - nenhuma turma encontrada para idade ${idade}`
+    );
+    return null;
+  } catch (err) {
+    logger.error(
+      `[matriculaRepository.buscarTurmaPorIdade] Erro: ${err.message}`
+    );
+    throw err;
+  }
 }
+
 
 /**
  * Retorna o organizacao_id de uma turma

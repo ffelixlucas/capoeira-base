@@ -1,17 +1,35 @@
+// modules/turmas/turmasRoutes.js
 const express = require("express");
 const router = express.Router();
-const controller = require("./turmasController");
-
+const turmasController = require("./turmasController");
 const verifyToken = require("../../middlewares/verifyToken");
 const checkRole = require("../../middlewares/checkRole");
 
-router.get("/", verifyToken, controller.listarTurmasAtivas);
-router.post("/", verifyToken, checkRole(["admin"]), controller.criarTurma);
-router.put("/:id", verifyToken, checkRole(["admin"]), controller.atualizarTurma);
-router.delete("/:id", verifyToken, checkRole(["admin"]), controller.excluirTurma);
-router.get("/minhas", verifyToken, controller.listarMinhasTurmas);
-router.post("/:id/encerrar", verifyToken, checkRole(["admin"]), controller.encerrarTurma);
+// Todas as rotas exigem token
+router.use(verifyToken);
 
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listagem                                                                 */
+/* -------------------------------------------------------------------------- */
+router.get("/", checkRole(["admin", "instrutor"]), turmasController.listarTurmasAtivas);
+router.get("/minhas", checkRole(["admin", "instrutor"]), turmasController.listarMinhasTurmas);
 
+/* -------------------------------------------------------------------------- */
+/* 🎯 Buscar turma pela idade (USADO NO MODAL DE PENDENTES)                    */
+/* -------------------------------------------------------------------------- */
+router.get(
+  "/turma-por-idade/:idade",
+  checkRole(["admin", "instrutor"]),
+  turmasController.buscarTurmaPorIdade
+);
+
+/* -------------------------------------------------------------------------- */
+/* 🧩 Operações de turma                                                        */
+/* -------------------------------------------------------------------------- */
+router.get("/:id/vinculos", checkRole(["admin", "instrutor"]), turmasController.verificarVinculos);
+router.post("/", checkRole(["admin"]), turmasController.criarTurma);
+router.put("/:id", checkRole(["admin"]), turmasController.atualizarTurma);
+router.delete("/:id", checkRole(["admin"]), turmasController.excluirTurma);
+router.post("/:id/encerrar", checkRole(["admin"]), turmasController.encerrarTurma);
 
 module.exports = router;

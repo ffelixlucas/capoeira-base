@@ -33,6 +33,14 @@ router.get(
   preMatriculasController.getGrupo // 👈 nova função (simples)
 );
 
+// 🔍 Detectar turma pela idade + slug
+// Ex: GET /api/public/pre-matriculas/:slug/turma-por-idade/:idade
+router.get(
+  "/pre-matriculas/:slug/turma-por-idade/:idade",
+  preMatriculasController.detectarTurmaPorIdade
+);
+
+
 // 🧠 ROTAS ADMINISTRATIVAS
 // -------------------------------------------------
 

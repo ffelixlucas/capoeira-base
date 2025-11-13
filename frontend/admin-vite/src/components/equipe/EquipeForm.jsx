@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from "react";
 import {
   criarMembro,
+  atualizarMembro,
   listarRoles,
   atribuirPapel,
-  atualizarMembro,
   removerTodosOsPapeis,
 } from "../../services/equipeService";
+import InputBase from "../ui/InputBase";
+import InputSenha from "../ui/InputSenha";
 import { toast } from "react-toastify";
-import logger from "../../utils/logger";
+import { logger } from "../../utils/logger";
 
-function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
+/**
+ * 🧱 Modal de criação/edição de membro da equipe
+ * Padrão Capoeira Base v2 (mobile-first + clean code)
+ */
+export default function EquipeForm({ onClose, membroSelecionado, onSave }) {
+  const editando = Boolean(membroSelecionado);
+
   const [form, setForm] = useState({
     nome: "",
     telefone: "",
@@ -25,18 +33,26 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
   const [loading, setLoading] = useState(false);
   const [mostrarDescricao, setMostrarDescricao] = useState(false);
 
+  /* -------------------------------------------------------------------------- */
+  /* 🔄 Carregar roles                                                          */
+  /* -------------------------------------------------------------------------- */
   useEffect(() => {
     async function fetchRoles() {
       try {
-        const data = await listarRoles(); // <- aqui recebe direto o array
-        setRoles(data); // <- ajusta aqui também
+        const data = await listarRoles();
+        setRoles(data);
+        logger.debug("[EquipeForm] Roles carregadas", { total: data.length });
       } catch (err) {
         toast.error("Erro ao carregar papéis");
+        logger.error("[EquipeForm] Erro ao carregar roles", { erro: err.message });
       }
     }
     fetchRoles();
   }, []);
 
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 Preencher form ao editar                                                */
+  /* -------------------------------------------------------------------------- */
   useEffect(() => {
     if (membroSelecionado) {
       setForm({
@@ -44,7 +60,7 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
         telefone: membroSelecionado.telefone || "",
         whatsapp: membroSelecionado.whatsapp || "",
         email: membroSelecionado.email || "",
-        senha: "", // nunca preencher senha por segurança
+        senha: "",
         status: membroSelecionado.status || "ativo",
         observacoes: membroSelecionado.observacoes || "",
         role_ids: membroSelecionado.roles?.map((r) => r.id) || [],
@@ -52,39 +68,40 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
     }
   }, [membroSelecionado]);
 
+  /* -------------------------------------------------------------------------- */
+  /* ⚙️ Handlers                                                              */
+  /* -------------------------------------------------------------------------- */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const toggleRole = (id) => {
-    setForm((prev) => {
-      const jaTem = prev.role_ids.includes(id);
-      return {
-        ...prev,
-        role_ids: jaTem
-          ? prev.role_ids.filter((rid) => rid !== id)
-          : [...prev.role_ids, id],
-      };
-    });
+    setForm((prev) => ({
+      ...prev,
+      role_ids: prev.role_ids.includes(id)
+        ? prev.role_ids.filter((r) => r !== id)
+        : [...prev.role_ids, id],
+    }));
   };
 
+  /* -------------------------------------------------------------------------- */
+  /* 💾 Salvar membro                                                          */
+  /* -------------------------------------------------------------------------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const editando = Boolean(membroSelecionado);
-  
+
     if (!form.nome.trim()) {
       toast.warning("Nome é obrigatório");
       return;
     }
-  
+
     setLoading(true);
-  
     try {
       let membroId;
-  
-      // Atualizar membro
-      if (membroSelecionado) {
+
+      if (editando) {
+        // atualização
         const dados = {
           nome: form.nome,
           telefone: form.telefone,
@@ -93,53 +110,52 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
           status: form.status,
           observacoes: form.observacoes,
         };
-        if (form.senha.trim()) {
-          dados.senha = form.senha;
-        }
-  
+        if (form.senha.trim()) dados.senha = form.senha;
+
         await atualizarMembro(membroSelecionado.id, dados);
         membroId = membroSelecionado.id;
+
+        logger.debug("[EquipeForm] Membro atualizado", { id: membroId });
       } else {
-        const resultado = await criarMembro(form);
-        membroId = resultado?.id?.id;
-  
-        if (!membroId) {
-          throw new Error("ID inválido retornado do criarMembro");
-        }
+        // criação
+        const criado = await criarMembro(form);
+        membroId = criado?.id?.id || criado?.id;
+
+        if (!membroId) throw new Error("ID inválido retornado do backend");
+        logger.debug("[EquipeForm] Novo membro criado", { id: membroId });
       }
-  
-      // Só mexe nos papéis se houver pelo menos 1 selecionado
-      if (form.role_ids && form.role_ids.length > 0) {
+
+      // atualizar papéis
+      if (Array.isArray(form.role_ids)) {
         if (editando) {
-          await removerTodosOsPapeis(membroId).catch((err) => {
-            logger.warn(
-              "⚠️ Ignorando erro ao remover papéis (edição):",
-              err.message
-            );
-          });
+          await removerTodosOsPapeis(membroId).catch((err) =>
+            logger.warn("[EquipeForm] Erro ao remover papéis antigos", err.message)
+          );
         }
-  
-        for (let roleId of form.role_ids) {
-          await atribuirPapel(membroId, roleId).catch((err) => {
-            logger.error("❌ Erro ao atribuir papel:", err.message);
-          });
+
+        for (const roleId of form.role_ids) {
+          await atribuirPapel(membroId, roleId).catch((err) =>
+            logger.error("[EquipeForm] Erro ao atribuir papel", { roleId, erro: err.message })
+          );
         }
       }
-  
+
       toast.success("Membro salvo com sucesso!");
-      if (onSave) onSave();
+      logger.debug("[EquipeForm] Membro salvo com sucesso", { id: membroId });
+
+      onSave?.();
+      onClose?.();
     } catch (err) {
-      logger.error(err);
       toast.error("Erro ao salvar membro");
+      logger.error("[EquipeForm] Falha ao salvar membro", { erro: err.message });
     } finally {
       setLoading(false);
     }
   };
-  
 
-  logger.log("roles:", roles);
-  logger.log("form.role_ids:", form.role_ids);
-
+  /* -------------------------------------------------------------------------- */
+  /* 🧱 Render                                                                 */
+  /* -------------------------------------------------------------------------- */
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
@@ -150,70 +166,67 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-bold mb-4 text-cor-titulo">
-          {membroSelecionado ? "Editar Membro" : "Novo Membro"}
+          {editando ? "Editar Membro" : "Novo Membro"}
         </h2>
+
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block font-medium">Nome *</label>
-            <input
-              type="text"
+            <label className="block text-sm font-medium mb-1">Nome *</label>
+            <InputBase
               name="nome"
               value={form.nome}
               onChange={handleChange}
-              className="w-full border border-cor-clara rounded px-3 py-2 bg-transparent text-cor-texto"
+              placeholder="Nome completo"
               required
             />
           </div>
 
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="block font-medium">Telefone</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium mb-1">Telefone</label>
+              <InputBase
                 name="telefone"
                 value={form.telefone}
                 onChange={handleChange}
-                className="w-full border border-cor-clara rounded px-3 py-2 bg-transparent text-cor-texto"
+                placeholder="(41) 99999-9999"
               />
             </div>
             <div className="flex-1">
-              <label className="block font-medium">WhatsApp</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium mb-1">WhatsApp</label>
+              <InputBase
                 name="whatsapp"
                 value={form.whatsapp}
                 onChange={handleChange}
-                className="w-full border border-cor-clara rounded px-3 py-2 bg-transparent text-cor-texto"
+                placeholder="(41) 99999-9999"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-medium">Email (login)</label>
-            <input
+            <label className="block text-sm font-medium mb-1">E-mail</label>
+            <InputBase
               type="email"
               name="email"
               value={form.email}
               onChange={handleChange}
-              className="w-full border border-cor-clara rounded px-3 py-2 bg-transparent text-cor-texto"
+              placeholder="email@exemplo.com"
             />
           </div>
 
-          {(!membroSelecionado || usuarioLogado?.roles?.includes("admin")) && (
+          {!editando && (
             <div>
-              <label className="block font-medium">
-                Senha {membroSelecionado ? "(nova senha opcional)" : "*"}
-              </label>
-              <input
-                type="password"
-                name="senha"
+              <label className="block text-sm font-medium mb-1">Senha *</label>
+              <InputSenha
+                placeholder="Defina uma senha"
                 value={form.senha}
-                onChange={handleChange}
-                className="w-full border border-cor-clara rounded px-3 py-2 bg-transparent text-cor-texto"
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, senha: e.target.value }))
+                }
               />
             </div>
           )}
 
+          {/* PAPÉIS */}
           <div>
             <div className="flex items-center gap-2">
               <label className="block font-medium">Papéis *</label>
@@ -228,21 +241,16 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
 
             {mostrarDescricao && (
               <div className="bg-white text-gray-800 p-2 rounded text-sm mt-2 shadow">
-                ✅ admin: Acesso total a todas as áreas.
+                ✅ admin: Acesso total a todas as áreas.<br />
+                ✅ instrutor: Gerencia horários e eventos.<br />
+                ✅ midia: Gerencia galeria e eventos.<br />
+                ✅ loja: Gerencia produtos e pedidos.<br />
                 <br />
-                ✅ instrutor: Gerencia horários de aulas e eventos.
-                <br />
-                ✅ midia: Gerencia galeria e eventos.
-                <br />
-                ✅ loja: Gerencia produtos e pedidos na loja virtual.
-                <br />
-                <br />
-                Observação: Um membro pode ter **mais de um papel** atribuído ao
-                mesmo tempo.
+                <strong>Um membro pode ter mais de um papel.</strong>
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2 mt-1">
+            <div className="flex flex-wrap gap-2 mt-2">
               {Array.isArray(roles) &&
                 roles.map((role) => {
                   const ativo = form.role_ids.includes(role.id);
@@ -251,7 +259,7 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
                       key={role.id}
                       type="button"
                       onClick={() => toggleRole(role.id)}
-                      className={`px-3 py-1 rounded-full border transition text-sm ${
+                      className={`px-3 py-1 rounded-full border text-sm transition ${
                         ativo
                           ? "bg-cor-primaria text-cor-escura border-cor-primaria"
                           : "bg-cor-secundaria text-cor-texto border-cor-clara hover:border-cor-primaria"
@@ -264,13 +272,14 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
             </div>
           </div>
 
+          {/* STATUS */}
           <div>
-            <label className="block font-medium">Status</label>
+            <label className="block text-sm font-medium mb-1">Status</label>
             <select
               name="status"
               value={form.status}
               onChange={handleChange}
-              className="w-full border border-cor-clara rounded px-3 py-2 bg-cor-secundaria text-cor-texto"
+              className="w-full border rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-blue-500"
             >
               <option value="ativo">Ativo</option>
               <option value="inativo">Inativo</option>
@@ -278,18 +287,20 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
             </select>
           </div>
 
+          {/* OBSERVAÇÕES */}
           <div>
-            <label className="block font-medium">Observações</label>
+            <label className="block text-sm font-medium mb-1">Observações</label>
             <textarea
               name="observacoes"
               value={form.observacoes}
               onChange={handleChange}
-              className="w-full border border-cor-clara rounded px-3 py-2 bg-transparent text-cor-texto"
               rows={2}
+              className="w-full border rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-blue-500"
+              placeholder="Anotações internas (opcional)"
             />
           </div>
 
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-end gap-2 pt-4">
             <button
               type="button"
               onClick={onClose}
@@ -310,5 +321,3 @@ function EquipeForm({ onClose, membroSelecionado, usuarioLogado, onSave }) {
     </div>
   );
 }
-
-export default EquipeForm;
