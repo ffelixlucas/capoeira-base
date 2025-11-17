@@ -2,8 +2,9 @@
 // Contém as regras de negócio e validações antes de salvar no banco.
 
 const preMatriculasRepository = require("./preMatriculasRepository");
+const preMatriculasGraduacoesRepository = require("./preMatriculasGraduacoesRepository");
 const matriculaService = require("../../matricula/matriculaService");
-
+const graduacoesService = require("../../graduacoes/graduacoesService");
 const emailService = require("../../../services/emailService");
 const notificacaoService = require("../../notificacaoDestinos/notificacaoDestinosService");
 const db = require("../../../database/connection");
@@ -576,25 +577,27 @@ async function detectarTurmaPorIdade({ slug, idade }) {
     );
 
     // 2️⃣ Buscar turmas da organização compatíveis com a idade
+    // 2️⃣ Buscar turmas compatíveis com a idade + categoria
     const [rows] = await db.execute(
       `
-      SELECT
-        t.id,
-        t.nome,
-        t.idade_min,
-        t.idade_max,
-        t.categoria_id
-      FROM turmas t
-      WHERE t.organizacao_id = ?
-        AND t.is_fallback = 0
-        AND (t.idade_min IS NULL OR t.idade_min <= ?)
-        AND (t.idade_max IS NULL OR t.idade_max >= ?)
-      ORDER BY t.idade_min ASC, t.idade_max ASC
-      LIMIT 1
-      `,
+    SELECT
+      t.id AS turma_id,
+      t.nome AS turma_nome,
+      t.idade_min,
+      t.idade_max,
+      t.categoria_id,
+      c.nome AS categoria_nome
+    FROM turmas t
+    LEFT JOIN categorias c ON c.id = t.categoria_id
+    WHERE t.organizacao_id = ?
+      AND t.is_fallback = 0
+      AND (t.idade_min IS NULL OR t.idade_min <= ?)
+      AND (t.idade_max IS NULL OR t.idade_max >= ?)
+    ORDER BY t.idade_min ASC, t.idade_max ASC
+    LIMIT 1
+  `,
       [organizacaoId, idade, idade]
     );
-    
 
     if (!rows.length) {
       logger.warn(
@@ -606,13 +609,45 @@ async function detectarTurmaPorIdade({ slug, idade }) {
     const turma = rows[0];
 
     logger.info(
-      `[preMatriculasService] Turma detectada → ${turma.nome} (id ${turma.id})`
+      `[preMatriculasService] Turma detectada → ${turma.turma_nome} | Categoria: ${turma.categoria_nome}`
     );
 
     return turma;
   } catch (err) {
     logger.error(
       `[preMatriculasService] Erro ao detectar turma por idade: ${err.message}`
+    );
+    throw err;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listar graduações por categoria (público + slug)                         */
+/* -------------------------------------------------------------------------- */
+async function listarGraduacoesPorCategoriaPublic({ slug, categoriaId }) {
+  try {
+    logger.debug(
+      `[preMatriculasService] Listando graduações públicas (slug=${slug}, categoria=${categoriaId})`
+    );
+
+    // 1️⃣ Resolver organização via slug
+    const organizacaoId = await organizacaoService.resolverIdPorSlug(slug);
+    if (!organizacaoId) {
+      throw new Error("Organização não encontrada pelo slug.");
+    }
+
+    // 2️⃣ Buscar no repository correto (público!)
+    const graduacoes =
+      await preMatriculasGraduacoesRepository.listarGraduacoesPublic({
+        categoriaId,
+        organizacaoId,
+      });
+
+    return graduacoes;
+  } catch (err) {
+    logger.error(
+      "[preMatriculasService] Erro ao listar graduações públicas:",
+      err.message
     );
     throw err;
   }
@@ -627,4 +662,5 @@ module.exports = {
   deletarPreMatricula,
   deletarPreMatriculaComImagem,
   detectarTurmaPorIdade,
+  listarGraduacoesPorCategoriaPublic,
 };
