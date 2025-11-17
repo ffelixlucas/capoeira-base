@@ -51,8 +51,7 @@ const uploadRoutes = require("./modules/uploads/uploadRoutes");
 app.use("/api/teste", (_, res) => res.json({ mensagem: "API no ar!" }));
 
 // Páginas e dados públicos
-app.use("/api/categorias", categoriasRoutes);
-app.use("/api/graduacoes", graduacoesRoutes);
+
 app.use("/api/public/agenda", require("./modules/public/agenda/publicAgendaRoutes"));
 app.use("/api/public/inscricoes", require("./modules/public/inscricoes/inscricoesRoutes"));
 
@@ -78,6 +77,8 @@ app.use("/api/notificacoes", notificacaoDestinosRoutes);
 app.use("/api/presencas", require("./modules/presencas/presencasRoutes"));
 app.use("/api/roles", rolesRoutes);
 app.use("/api/turmas", require("./modules/turmas/turmasRoutes"));
+app.use("/api/categorias", categoriasRoutes);
+app.use("/api/graduacoes", graduacoesRoutes);
 app.use("/api/whatsapp-destinos", require("./modules/whatsappdestinos/whatsappDestinosRoutes"));
 
 

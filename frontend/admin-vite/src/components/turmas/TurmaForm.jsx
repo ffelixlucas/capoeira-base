@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { criarTurma, atualizarTurma } from "../../services/turmaService";
+import { buscarCategorias } from "../../services/categoriasService";
 import { useEquipe } from "../../hooks/useEquipe";
 import InputBase from "../ui/InputBase";
 import { logger } from "../../utils/logger";
@@ -19,12 +20,19 @@ export default function TurmaForm({ onCriado, turmaEditando = null }) {
   });
 
   const [salvando, setSalvando] = useState(false);
+  const [categorias, setCategorias] = useState([]);
 
   /* -------------------------------------------------------------------------- */
   /* 🔄 Carregar equipe (instrutores)                                          */
   /* -------------------------------------------------------------------------- */
   useEffect(() => {
     carregarEquipe();
+
+    async function carregarCats() {
+      const lista = await buscarCategorias();
+      setCategorias(lista);
+    }
+    carregarCats();
   }, []);
 
   /* -------------------------------------------------------------------------- */
@@ -36,6 +44,9 @@ export default function TurmaForm({ onCriado, turmaEditando = null }) {
         nome: turmaEditando.nome || "",
         faixa_etaria: turmaEditando.faixa_etaria || "",
         equipe_id: turmaEditando.equipe_id?.toString() || "",
+        categoria_id: turmaEditando.categoria_id?.toString() || "",
+        idade_min: turmaEditando.idade_min || "",
+        idade_max: turmaEditando.idade_max || "",
       });
     }
   }, [turmaEditando]);
@@ -52,6 +63,10 @@ export default function TurmaForm({ onCriado, turmaEditando = null }) {
 
     if (!form.nome.trim()) {
       toast.warn("O nome da turma é obrigatório.");
+      return;
+    }
+    if (!form.categoria_id) {
+      toast.warn("Selecione uma categoria para continuar.");
       return;
     }
 
@@ -71,6 +86,7 @@ export default function TurmaForm({ onCriado, turmaEditando = null }) {
       idade_min: form.idade_min ? Number(form.idade_min) : null,
       idade_max: form.idade_max ? Number(form.idade_max) : null,
       equipe_id: form.equipe_id || null,
+      categoria_id: form.categoria_id ? Number(form.categoria_id) : null,
     };
 
     try {
@@ -93,6 +109,7 @@ export default function TurmaForm({ onCriado, turmaEditando = null }) {
         equipe_id: "",
         idade_min: "",
         idade_max: "",
+        categoria_id: "",
       });
     } catch (error) {
       logger.error("[TurmaForm] Erro ao salvar turma", { erro: error.message });
@@ -195,6 +212,40 @@ export default function TurmaForm({ onCriado, turmaEditando = null }) {
           <a href="/equipe">+ Criar novo membro</a>
         </p>
       </div>
+
+     {/* Categoria da turma */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Categoria *
+  </label>
+
+  {categorias.length === 0 ? (
+    <p className="text-sm text-gray-500">Carregando categorias...</p>
+  ) : (
+    <>
+      <select
+        name="categoria_id"
+        value={form.categoria_id || ""}
+        onChange={handleChange}
+        className="w-full border rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:ring-2 focus:ring-cor-primaria"
+        required
+      >
+        <option value="">Selecione...</option>
+        {categorias.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.nome}
+          </option>
+        ))}
+      </select>
+
+      {/* 🔗 Atalho para criar nova categoria */}
+      <p className="text-xs text-cor-primaria underline mt-1">
+        <a href="/config#categorias">+ Criar nova categoria</a>
+      </p>
+    </>
+  )}
+</div>
+
 
       {/* Botão salvar */}
       <button

@@ -2,14 +2,90 @@
 const graduacoesRepository = require("./graduacoesRepository");
 const { logger } = require("../../utils/logger");
 
-async function listarPorCategoria(categoriaId) {
-  logger.info("[graduacoesService] Chamando listarPorCategoria", { categoriaId });
-  return await graduacoesRepository.listarPorCategoria(categoriaId);
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listar por categoria                                                    */
+/* -------------------------------------------------------------------------- */
+async function listarPorCategoria(categoriaId, organizacaoId) {
+  logger.debug("[graduacoesService] listarPorCategoria", {
+    categoriaId,
+    organizacaoId,
+  });
+
+  return graduacoesRepository.listarPorCategoria(categoriaId, organizacaoId);
 }
 
-async function listarTodas() {
-  logger.info("[graduacoesService] Chamando listarTodas");
-  return await graduacoesRepository.listarTodas();
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listar todas                                                            */
+/* -------------------------------------------------------------------------- */
+async function listarTodas(organizacaoId) {
+  logger.debug("[graduacoesService] listarTodas", { organizacaoId });
+
+  return graduacoesRepository.listarTodas(organizacaoId);
 }
 
-module.exports = { listarPorCategoria, listarTodas };
+/* -------------------------------------------------------------------------- */
+/* ➕ Criar graduação                                                          */
+/* -------------------------------------------------------------------------- */
+async function criar({ categoriaId, nome, ordem, organizacaoId }) {
+  logger.info("[graduacoesService] criar", {
+    categoriaId,
+    nome,
+    ordem,
+    organizacaoId,
+  });
+
+  return graduacoesRepository.criar({
+    categoriaId,
+    nome,
+    ordem,
+    organizacaoId,
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* ✏️ Atualizar                                                               */
+/* -------------------------------------------------------------------------- */
+async function atualizar(id, { nome, ordem, organizacaoId }) {
+  logger.info("[graduacoesService] atualizar", {
+    id,
+    nome,
+    ordem,
+    organizacaoId,
+  });
+
+  return graduacoesRepository.atualizar(id, {
+    nome,
+    ordem,
+    organizacaoId,
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* ❌ Remover                                                                 */
+/* -------------------------------------------------------------------------- */
+async function remover(id, organizacaoId) {
+  logger.warn("[graduacoesService] remover", { id, organizacaoId });
+
+  return graduacoesRepository.remover(id, organizacaoId);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔎 Buscar por ID                                                           */
+/* -------------------------------------------------------------------------- */
+async function buscarPorId(id, organizacaoId) {
+  logger.debug("[graduacoesService] buscarPorId", {
+    id,
+    organizacaoId,
+  });
+
+  return graduacoesRepository.buscarPorId(id, organizacaoId);
+}
+
+module.exports = {
+  listarPorCategoria,
+  listarTodas,
+  criar,
+  atualizar,
+  remover,
+  buscarPorId,
+};
