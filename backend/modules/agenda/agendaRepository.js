@@ -1,12 +1,16 @@
 // backend/modules/agenda/agendaRepository.js
 const db = require("../../database/connection");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar eventos por organização                                          */
 /* -------------------------------------------------------------------------- */
 async function listarEventos(organizacaoId, status, situacao) {
-  logger.debug("[agendaRepository] Listando eventos", { organizacaoId, status, situacao });
+  logger.debug("[agendaRepository] Listando eventos", {
+    organizacaoId,
+    status,
+    situacao,
+  });
 
   let sql = `
     SELECT 
@@ -74,7 +78,10 @@ async function criarEvento(evento) {
     ]
   );
 
-  logger.debug("[agendaRepository] Evento criado", { id: result.insertId, organizacao_id: evento.organizacao_id });
+  logger.debug("[agendaRepository] Evento criado", {
+    id: result.insertId,
+    organizacao_id: evento.organizacao_id,
+  });
   return result.insertId;
 }
 
@@ -125,7 +132,11 @@ async function atualizar(id, organizacaoId, dados) {
   ];
 
   const [result] = await db.execute(sql, params);
-  logger.debug("[agendaRepository] Evento atualizado", { id, organizacaoId, linhas: result.affectedRows });
+  logger.debug("[agendaRepository] Evento atualizado", {
+    id,
+    organizacaoId,
+    linhas: result.affectedRows,
+  });
   return result.affectedRows > 0;
 }
 
@@ -137,7 +148,11 @@ async function excluirEvento(id, organizacaoId) {
     `DELETE FROM agenda WHERE id = ? AND organizacao_id = ?`,
     [id, organizacaoId]
   );
-  logger.debug("[agendaRepository] Evento excluído", { id, organizacaoId, linhas: result.affectedRows });
+  logger.debug("[agendaRepository] Evento excluído", {
+    id,
+    organizacaoId,
+    linhas: result.affectedRows,
+  });
   return result.affectedRows > 0;
 }
 
@@ -149,7 +164,11 @@ async function atualizarStatus(id, organizacaoId, status) {
     `UPDATE agenda SET status = ? WHERE id = ? AND organizacao_id = ?`,
     [status, id, organizacaoId]
   );
-  logger.debug("[agendaRepository] Status atualizado", { id, organizacaoId, status });
+  logger.debug("[agendaRepository] Status atualizado", {
+    id,
+    organizacaoId,
+    status,
+  });
   return result.affectedRows > 0;
 }
 

@@ -1,5 +1,5 @@
 // modules/turmas/turmasController.js
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 const turmasService = require("./turmasService");
 
 /* -------------------------------------------------------------------------- */
@@ -57,10 +57,11 @@ async function buscarTurmaPorIdade(req, res) {
 
     return res.json({ sucesso: true, data: turma });
   } catch (err) {
-    logger.error("[turmasController] Erro ao buscar turma por idade", err.message);
-    return res
-      .status(500)
-      .json({ erro: "Erro ao buscar turma por idade" });
+    logger.error(
+      "[turmasController] Erro ao buscar turma por idade",
+      err.message
+    );
+    return res.status(500).json({ erro: "Erro ao buscar turma por idade" });
   }
 }
 

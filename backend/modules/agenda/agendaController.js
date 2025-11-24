@@ -1,7 +1,7 @@
 // backend/modules/agenda/agendaController.js
 const agendaService = require("./agendaService");
-const organizacaoService = require("../shared/organizacoes/organizacaoService"); 
-const logger = require("../../utils/logger");
+const organizacaoService = require("../shared/organizacoes/organizacaoService");
+const logger = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🕒 Utilitário: formatação de data e hora                                   */
@@ -31,7 +31,7 @@ async function listarEventos(req, res) {
       logger.debug("[agendaController] Detectando slug público", {
         querySlug: req.query.slug,
       });
-      
+
       const org = await organizacaoService.buscarPorSlug(req.query.slug);
       organizacaoId = org?.id || null;
     }
@@ -41,21 +41,35 @@ async function listarEventos(req, res) {
         .status(400)
         .json({ sucesso: false, erro: "Organização não identificada." });
     }
-    logger.debug("[agendaController] Organização identificada", { organizacaoId });
-
+    logger.debug("[agendaController] Organização identificada", {
+      organizacaoId,
+    });
 
     const { status, situacao } = req.query;
-    logger.debug("[agendaController] Listando eventos", { organizacaoId, status, situacao });
+    logger.debug("[agendaController] Listando eventos", {
+      organizacaoId,
+      status,
+      situacao,
+    });
 
-    const eventos = await agendaService.listarEventos(organizacaoId, status, situacao);
+    const eventos = await agendaService.listarEventos(
+      organizacaoId,
+      status,
+      situacao
+    );
     const eventosFormatados = eventos.map((evento) => {
       const raw =
         typeof evento.data_inicio === "string"
           ? evento.data_inicio.replace(" ", "T")
-          : evento.data_inicio?.toISOString?.() ?? null;
+          : (evento.data_inicio?.toISOString?.() ?? null);
 
       const { data, horario } = formatarDataHora(raw);
-      return { ...evento, data_inicio: raw, data_formatada: data, horario_formatado: horario };
+      return {
+        ...evento,
+        data_inicio: raw,
+        data_formatada: data,
+        horario_formatado: horario,
+      };
     });
 
     return res.status(200).json({ sucesso: true, data: eventosFormatados });
@@ -74,9 +88,15 @@ async function criarEvento(req, res) {
   try {
     const usuarioId = req.usuario?.id || null;
     const organizacaoId = req.usuario?.organizacao_id;
-    const idCriado = await agendaService.criarEvento(req.body, usuarioId, organizacaoId);
+    const idCriado = await agendaService.criarEvento(
+      req.body,
+      usuarioId,
+      organizacaoId
+    );
 
-    res.status(201).json({ mensagem: "Evento criado com sucesso.", id: idCriado });
+    res
+      .status(201)
+      .json({ mensagem: "Evento criado com sucesso.", id: idCriado });
   } catch (error) {
     logger.error("[agendaController] Erro ao criar evento", error);
     res.status(400).json({ erro: error.message });
@@ -103,7 +123,12 @@ async function criarEventoComImagem(req, res) {
       imagem: imagem?.originalname,
     });
 
-    const resultado = await agendaService.processarUploadEvento(imagem, dados, usuarioId, organizacaoId);
+    const resultado = await agendaService.processarUploadEvento(
+      imagem,
+      dados,
+      usuarioId,
+      organizacaoId
+    );
 
     return res.status(201).json({
       mensagem: "Evento criado com imagem com sucesso.",
@@ -125,7 +150,8 @@ async function excluirEvento(req, res) {
     const organizacaoId = req.usuario?.organizacao_id;
 
     const sucesso = await agendaService.excluirEvento(id, organizacaoId);
-    if (!sucesso) return res.status(404).json({ erro: "Evento não encontrado." });
+    if (!sucesso)
+      return res.status(404).json({ erro: "Evento não encontrado." });
 
     res.json({ mensagem: "Evento excluído com sucesso." });
   } catch (error) {
@@ -168,11 +194,19 @@ async function atualizarStatus(req, res) {
 
   try {
     const ok = await agendaService.atualizarStatus(id, organizacaoId, status);
-    if (!ok) return res.status(404).json({ sucesso: false, erro: "Evento não encontrado" });
+    if (!ok)
+      return res
+        .status(404)
+        .json({ sucesso: false, erro: "Evento não encontrado" });
 
-    return res.status(200).json({ sucesso: true, mensagem: `Evento marcado como ${status}` });
+    return res
+      .status(200)
+      .json({ sucesso: true, mensagem: `Evento marcado como ${status}` });
   } catch (error) {
-    logger.error("[agendaController] Erro ao atualizar status do evento", error);
+    logger.error(
+      "[agendaController] Erro ao atualizar status do evento",
+      error
+    );
     return res.status(500).json({ sucesso: false, erro: error.message });
   }
 }
@@ -186,12 +220,19 @@ async function arquivarEvento(req, res) {
     const organizacaoId = req.usuario?.organizacao_id;
 
     const ok = await agendaService.arquivarEvento(id, organizacaoId);
-    if (!ok) return res.status(404).json({ sucesso: false, erro: "Evento não encontrado" });
+    if (!ok)
+      return res
+        .status(404)
+        .json({ sucesso: false, erro: "Evento não encontrado" });
 
-    return res.status(200).json({ sucesso: true, mensagem: "Evento arquivado com sucesso" });
+    return res
+      .status(200)
+      .json({ sucesso: true, mensagem: "Evento arquivado com sucesso" });
   } catch (error) {
     logger.error("[agendaController] Erro ao arquivar evento", error);
-    return res.status(500).json({ sucesso: false, erro: "Erro ao arquivar evento" });
+    return res
+      .status(500)
+      .json({ sucesso: false, erro: "Erro ao arquivar evento" });
   }
 }
 

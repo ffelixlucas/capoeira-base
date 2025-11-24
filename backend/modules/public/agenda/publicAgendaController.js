@@ -1,4 +1,4 @@
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 const publicAgendaService = require("./publicAgendaService");
 const organizacaoService = require("../../shared/organizacoes/organizacaoService");
 
@@ -38,12 +38,10 @@ async function listarEventosPublicos(req, res) {
     return res.status(200).json({ sucesso: true, data: eventos });
   } catch (error) {
     logger.error("❌ Erro ao listar eventos públicos:", error);
-    return res
-      .status(500)
-      .json({
-        sucesso: false,
-        erro: "Erro interno ao listar eventos públicos.",
-      });
+    return res.status(500).json({
+      sucesso: false,
+      erro: "Erro interno ao listar eventos públicos.",
+    });
   }
 }
 
@@ -51,12 +49,17 @@ async function buscarEventoPublicoPorId(req, res) {
   try {
     const { id } = req.params;
     const { slug } = req.query; // ✅ slug vem na query
-    logger.debug("[publicAgendaController] Buscando evento público por ID", { id, slug });
+    logger.debug("[publicAgendaController] Buscando evento público por ID", {
+      id,
+      slug,
+    });
 
     // 🔹 1. Validar se a organização existe via slug
     const org = slug ? await organizacaoService.buscarPorSlug(slug) : null;
     if (!org) {
-      logger.warn("[publicAgendaController] Organização não encontrada", { slug });
+      logger.warn("[publicAgendaController] Organização não encontrada", {
+        slug,
+      });
       return res.status(404).json({
         sucesso: false,
         erro: "Organização não encontrada.",
@@ -64,12 +67,18 @@ async function buscarEventoPublicoPorId(req, res) {
     }
 
     // 🔹 2. Buscar o evento e garantir que pertence à organização
-    const evento = await publicAgendaService.buscarEventoPublicoPorId(id, org.id);
+    const evento = await publicAgendaService.buscarEventoPublicoPorId(
+      id,
+      org.id
+    );
     if (!evento) {
-      logger.warn("[publicAgendaController] Evento não pertence à organização", {
-        id,
-        slug,
-      });
+      logger.warn(
+        "[publicAgendaController] Evento não pertence à organização",
+        {
+          id,
+          slug,
+        }
+      );
       return res.status(404).json({
         sucesso: false,
         erro: "Evento não encontrado ou não pertence à organização informada.",

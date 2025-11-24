@@ -1,6 +1,6 @@
 // backend/modules/equipeRoles/equipeRolesRepository.js
 const db = require("../../../database/connection");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔍 Buscar todos os papéis de um membro específico (multi-org seguro)       */
@@ -13,7 +13,11 @@ async function buscarRolesPorMembro(equipeId, organizacaoId) {
     WHERE er.equipe_id = ? AND er.organizacao_id = ?
   `;
   const [rows] = await db.query(query, [equipeId, organizacaoId]);
-  logger.debug("[equipeRolesRepository] Roles carregadas", { equipeId, organizacaoId, total: rows.length });
+  logger.debug("[equipeRolesRepository] Roles carregadas", {
+    equipeId,
+    organizacaoId,
+    total: rows.length,
+  });
   return rows;
 }
 
@@ -27,7 +31,10 @@ async function atribuirRoleAMembro(equipeId, roleId) {
     FROM equipe
     WHERE id = ?
   `;
-  logger.debug("[equipeRolesRepository] Atribuindo papel", { equipeId, roleId });
+  logger.debug("[equipeRolesRepository] Atribuindo papel", {
+    equipeId,
+    roleId,
+  });
   await db.query(query, [equipeId, roleId, equipeId]);
 }
 
@@ -39,7 +46,11 @@ async function removerRoleDeMembro(equipeId, roleId, organizacaoId) {
     DELETE FROM equipe_roles
     WHERE equipe_id = ? AND role_id = ? AND organizacao_id = ?
   `;
-  logger.debug("[equipeRolesRepository] Removendo papel", { equipeId, roleId, organizacaoId });
+  logger.debug("[equipeRolesRepository] Removendo papel", {
+    equipeId,
+    roleId,
+    organizacaoId,
+  });
   await db.query(query, [equipeId, roleId, organizacaoId]);
 }
 
@@ -56,7 +67,11 @@ async function removerTodosOsRoles(equipeId, organizacaoId) {
     WHERE equipe_id = ? AND organizacao_id = ?
   `;
   const [result] = await db.query(sql, [equipeId, organizacaoId]);
-  logger.debug("[equipeRolesRepository] Todos os papéis removidos", { equipeId, organizacaoId, result });
+  logger.debug("[equipeRolesRepository] Todos os papéis removidos", {
+    equipeId,
+    organizacaoId,
+    result,
+  });
   return result;
 }
 
@@ -71,7 +86,12 @@ async function checarSePapelExiste(membroId, roleId, organizacaoId) {
   `;
   const [rows] = await db.query(query, [membroId, roleId, organizacaoId]);
   const existe = rows.length > 0;
-  logger.debug("[equipeRolesRepository] Papel existe?", { membroId, roleId, organizacaoId, existe });
+  logger.debug("[equipeRolesRepository] Papel existe?", {
+    membroId,
+    roleId,
+    organizacaoId,
+    existe,
+  });
   return existe;
 }
 

@@ -1,5 +1,5 @@
 const db = require("../../database/connection");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar turmas da organização (com nome do instrutor e categoria)        */
@@ -26,10 +26,14 @@ async function buscarTodasComInstrutor(organizacaoId) {
       `,
       [organizacaoId]
     );
-    logger.debug("[turmasRepository] Turmas carregadas", { total: rows.length });
+    logger.debug("[turmasRepository] Turmas carregadas", {
+      total: rows.length,
+    });
     return rows;
   } catch (error) {
-    logger.error("[turmasRepository] Erro ao buscar turmas", { erro: error.message });
+    logger.error("[turmasRepository] Erro ao buscar turmas", {
+      erro: error.message,
+    });
     throw error;
   }
 }
@@ -37,19 +41,35 @@ async function buscarTodasComInstrutor(organizacaoId) {
 /* -------------------------------------------------------------------------- */
 /* ➕ Inserir nova turma                                                      */
 /* -------------------------------------------------------------------------- */
-async function inserirTurma({ nome, faixa_etaria, equipe_id, organizacao_id, idade_min, idade_max, categoria_id }) {
+async function inserirTurma({
+  nome,
+  faixa_etaria,
+  equipe_id,
+  organizacao_id,
+  idade_min,
+  idade_max,
+  categoria_id,
+}) {
   const sql = `
     INSERT INTO turmas (
       nome, faixa_etaria, equipe_id, organizacao_id, idade_min, idade_max, categoria_id
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   const params = [
-    nome, faixa_etaria || null, equipe_id || null, organizacao_id,
-    idade_min || null, idade_max || null, categoria_id || null,
+    nome,
+    faixa_etaria || null,
+    equipe_id || null,
+    organizacao_id,
+    idade_min || null,
+    idade_max || null,
+    categoria_id || null,
   ];
 
   const [result] = await db.query(sql, params);
-  logger.debug("[turmasRepository] Turma criada", { id: result.insertId, nome });
+  logger.debug("[turmasRepository] Turma criada", {
+    id: result.insertId,
+    nome,
+  });
   return { id: result.insertId };
 }
 
@@ -59,7 +79,14 @@ async function inserirTurma({ nome, faixa_etaria, equipe_id, organizacao_id, ida
 async function atualizarTurma(id, organizacaoId, dados) {
   const campos = [];
   const valores = [];
-  const permitidos = ["nome", "faixa_etaria", "equipe_id", "idade_min", "idade_max", "categoria_id"];
+  const permitidos = [
+    "nome",
+    "faixa_etaria",
+    "equipe_id",
+    "idade_min",
+    "idade_max",
+    "categoria_id",
+  ];
 
   permitidos.forEach((campo) => {
     if (dados[campo] !== undefined) {
@@ -86,7 +113,10 @@ async function deletarTurma(id, organizacaoId) {
     [id, organizacaoId]
   );
 
-  logger.debug("[turmasRepository] Turma deletada", { id, afetados: result.affectedRows });
+  logger.debug("[turmasRepository] Turma deletada", {
+    id,
+    afetados: result.affectedRows,
+  });
   return result.affectedRows;
 }
 
@@ -170,5 +200,5 @@ module.exports = {
   deletarTurma,
   listarPorEquipe,
   verificarVinculos,
-  buscarTurmaPorIdade, 
+  buscarTurmaPorIdade,
 };

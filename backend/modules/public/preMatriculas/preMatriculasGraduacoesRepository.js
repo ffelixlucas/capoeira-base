@@ -2,7 +2,7 @@
 // Exclusivo para rotas públicas da pré-matrícula
 
 const db = require("../../../database/connection");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 
 /**
  * Lista graduações filtradas pela categoria e pela organização (multi-org)

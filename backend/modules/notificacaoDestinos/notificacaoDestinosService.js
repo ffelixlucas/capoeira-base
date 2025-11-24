@@ -1,6 +1,6 @@
 // modules/notificacaoDestinos/notificacaoDestinosService.js
 const repo = require("./notificacaoDestinosRepository");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /**
  * Lista e-mails de notificação por tipo (multi-organização)
@@ -22,7 +22,6 @@ async function adicionar(organizacaoId, grupoId, tipo, email) {
 
   return await repo.criar(organizacaoId, grupoId, tipo, emailFinal);
 }
-
 
 /**
  * Remove e-mail de notificação

@@ -1,7 +1,7 @@
 // alunosService.js
 const alunoRepo = require("./alunosRepository");
 const turmaRepo = require("../turmas/turmasRepository");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Listar todos os alunos (multi-org)                                      */
@@ -38,7 +38,9 @@ async function buscarPorId(id, organizacaoId) {
   const aluno = await alunoRepo.buscarPorId(id, organizacaoId);
 
   if (!aluno) {
-    logger.warn(`[alunosService] Aluno não encontrado ou sem permissão (ID: ${id}, org: ${organizacaoId})`);
+    logger.warn(
+      `[alunosService] Aluno não encontrado ou sem permissão (ID: ${id}, org: ${organizacaoId})`
+    );
     throw new Error("Aluno não encontrado ou não pertence à sua organização.");
   }
 
@@ -52,7 +54,6 @@ async function buscarPorId(id, organizacaoId) {
 
   return aluno;
 }
-
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Cadastrar novo aluno                                                    */
@@ -72,7 +73,8 @@ async function cadastrarAluno(dados) {
 /* -------------------------------------------------------------------------- */
 async function editarAluno(id, dados, organizacaoId) {
   const aluno = await alunoRepo.buscarPorId(id, organizacaoId);
-  if (!aluno) throw new Error("Aluno não encontrado ou fora da sua organização.");
+  if (!aluno)
+    throw new Error("Aluno não encontrado ou fora da sua organização.");
 
   await alunoRepo.editarAluno(id, dados, organizacaoId);
 }
@@ -82,7 +84,8 @@ async function editarAluno(id, dados, organizacaoId) {
 /* -------------------------------------------------------------------------- */
 async function deletarAluno(id, organizacaoId) {
   const aluno = await alunoRepo.buscarPorId(id, organizacaoId);
-  if (!aluno) throw new Error("Aluno não encontrado ou fora da sua organização.");
+  if (!aluno)
+    throw new Error("Aluno não encontrado ou fora da sua organização.");
 
   await alunoRepo.excluirAluno(id, organizacaoId);
 }
@@ -92,7 +95,8 @@ async function deletarAluno(id, organizacaoId) {
 /* -------------------------------------------------------------------------- */
 async function trocarTurma(id, novaTurmaId, organizacaoId) {
   const aluno = await alunoRepo.buscarPorId(id, organizacaoId);
-  if (!aluno) throw new Error("Aluno não encontrado ou fora da sua organização.");
+  if (!aluno)
+    throw new Error("Aluno não encontrado ou fora da sua organização.");
 
   await alunoRepo.trocarTurma(id, novaTurmaId, organizacaoId);
 }
@@ -102,13 +106,19 @@ async function trocarTurma(id, novaTurmaId, organizacaoId) {
 /* -------------------------------------------------------------------------- */
 async function metricasAluno(id, inicio, fim, organizacaoId) {
   const aluno = await alunoRepo.buscarPorId(id, organizacaoId);
-  if (!aluno) throw new Error("Aluno não encontrado ou fora da sua organização.");
+  if (!aluno)
+    throw new Error("Aluno não encontrado ou fora da sua organização.");
 
   const hoje = new Date().toISOString().split("T")[0];
   if (!inicio) inicio = `${new Date().getFullYear()}-01-01`;
   if (!fim) fim = hoje;
 
-  const metricas = await alunoRepo.metricasAluno(id, inicio, fim, organizacaoId);
+  const metricas = await alunoRepo.metricasAluno(
+    id,
+    inicio,
+    fim,
+    organizacaoId
+  );
   const taxa_presenca =
     metricas.total > 0 ? metricas.presentes / metricas.total : 0;
 
@@ -131,7 +141,8 @@ async function listarPendentes(organizacaoId) {
 
 async function atualizarStatus(id, status, organizacaoId) {
   const aluno = await alunoRepo.buscarPorId(id, organizacaoId);
-  if (!aluno) throw new Error("Aluno não encontrado ou fora da sua organização.");
+  if (!aluno)
+    throw new Error("Aluno não encontrado ou fora da sua organização.");
 
   if (status === "inativo") {
     await alunoRepo.excluirAluno(id, organizacaoId);

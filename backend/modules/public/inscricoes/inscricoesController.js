@@ -15,9 +15,8 @@ const {
   buscarPorId: buscarEventoPorId,
 } = require("../../agenda/agendaRepository");
 const { buscarInscricaoPendente } = require("./inscricoesRepository");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 const { calcularValorComTaxa } = require("../../../utils/calcularValor");
-
 
 const gerarPagamentoPix = async (req, res) => {
   try {
@@ -66,7 +65,9 @@ const gerarPagamentoCartao = async (req, res) => {
     logger.log("✅ [controller] Pagamento Cartão gerado:", pagamento);
 
     // 🔥 Busca inscrição detalhada após salvar no banco
-    const inscricaoDetalhada = await buscarInscricaoDetalhadaService(pagamento.id);
+    const inscricaoDetalhada = await buscarInscricaoDetalhadaService(
+      pagamento.id
+    );
     logger.debug("🔎 [controller] Inscrição detalhada:", inscricaoDetalhada);
 
     res.status(201).json(inscricaoDetalhada);
@@ -80,7 +81,6 @@ const gerarPagamentoCartao = async (req, res) => {
       .json({ error: error.message || "Erro ao gerar pagamento Cartão" });
   }
 };
-
 
 const calcularParcelas = async (req, res) => {
   try {
@@ -247,8 +247,13 @@ const gerarPagamentoBoleto = async (req, res) => {
     logger.log("✅ [Controller] Pagamento Boleto gerado:", pagamento);
 
     // 🔥 Busca inscrição detalhada após salvar no banco
-    const inscricaoDetalhada = await buscarInscricaoDetalhadaService(pagamento.id);
-    logger.debug("🔎 [controller] Inscrição detalhada (Boleto):", inscricaoDetalhada);
+    const inscricaoDetalhada = await buscarInscricaoDetalhadaService(
+      pagamento.id
+    );
+    logger.debug(
+      "🔎 [controller] Inscrição detalhada (Boleto):",
+      inscricaoDetalhada
+    );
 
     res.status(201).json(inscricaoDetalhada);
   } catch (error) {
@@ -259,13 +264,12 @@ const gerarPagamentoBoleto = async (req, res) => {
   }
 };
 
-
-
-
 async function getValoresEvento(req, res) {
   try {
     const { eventoId } = req.params;
-    logger.debug("[inscricoesController.getValoresEvento] params:", { eventoId });
+    logger.debug("[inscricoesController.getValoresEvento] params:", {
+      eventoId,
+    });
 
     const valores = await inscricoesService.getValoresEvento(eventoId);
 
@@ -274,10 +278,11 @@ async function getValoresEvento(req, res) {
     return res.json(valores);
   } catch (err) {
     logger.error("[inscricoesController.getValoresEvento] erro:", err);
-    return res.status(400).json({ error: "Erro ao calcular valores do evento." });
+    return res
+      .status(400)
+      .json({ error: "Erro ao calcular valores do evento." });
   }
 }
-
 
 module.exports = {
   gerarPagamentoPix,
@@ -288,5 +293,5 @@ module.exports = {
   reenviarEmail,
   validarInscricao,
   gerarPagamentoBoleto,
-  getValoresEvento
-  };
+  getValoresEvento,
+};

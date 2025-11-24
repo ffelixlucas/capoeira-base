@@ -2,7 +2,7 @@
 // Responsável por criar aluno e matrícula após aprovação da pré-matrícula
 
 const db = require("../../database/connection");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /**
  * Verifica se já existe um aluno com o CPF informado
@@ -144,7 +144,6 @@ async function buscarTurmaPorIdade(idade, organizacao_id) {
   }
 }
 
-
 /**
  * Retorna o organizacao_id de uma turma
  */
@@ -238,14 +237,8 @@ async function buscarDadosOrganizacao(organizacaoId) {
   const params = [organizacaoId];
 
   // 🔎 Logs de depuração
-  logger.debug(
-    "[matriculaRepository.buscarDadosOrganizacao] SQL:",
-    sql.trim()
-  );
-  logger.debug(
-    "[matriculaRepository.buscarDadosOrganizacao] Params:",
-    params
-  );
+  logger.debug("[matriculaRepository.buscarDadosOrganizacao] SQL:", sql.trim());
+  logger.debug("[matriculaRepository.buscarDadosOrganizacao] Params:", params);
 
   const [rows] = await db.execute(sql, params);
 

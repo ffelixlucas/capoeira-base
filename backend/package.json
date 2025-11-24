@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsc --watch"
   },
   "keywords": [],
   "author": "",
@@ -22,5 +24,10 @@
     "multer": "^2.0.0",
     "mysql2": "^3.14.1",
     "resend": "^4.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

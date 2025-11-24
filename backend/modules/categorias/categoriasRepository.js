@@ -1,6 +1,6 @@
 // modules/categorias/categoriasRepository.js
 const db = require("../../database/connection");
-const { logger } = require("../../utils/logger");
+const { logger } = require("../../utils/logger.js");
 
 // Listar todas as categorias da organização
 async function listarTodas(organizacaoId) {
@@ -83,7 +83,10 @@ async function buscarPorId(id, organizacaoId) {
 
 // Buscar categoria compatível por idade (usado na pré-matrícula)
 async function buscarPorIdade(idade, organizacaoId) {
-  logger.debug("[categoriasRepository] buscarPorIdade", { idade, organizacaoId });
+  logger.debug("[categoriasRepository] buscarPorIdade", {
+    idade,
+    organizacaoId,
+  });
 
   const [rows] = await db.execute(
     `

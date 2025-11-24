@@ -1,13 +1,13 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const authRepository = require('./authRepository');
-const passwordResetRepository = require('./passwordResetRepository');
-const logger = require('../../utils/logger');
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const authRepository = require("./authRepository");
+const passwordResetRepository = require("./passwordResetRepository");
+const logger = require("../../utils/logger.js");
 
 // util para hashear o token
 function sha256Hex(str) {
-  return crypto.createHash('sha256').update(str).digest('hex');
+  return crypto.createHash("sha256").update(str).digest("hex");
 }
 
 // 🔐 Login com suporte multi-organização atualizado
@@ -26,7 +26,6 @@ async function login(email, senha) {
   if (!senhaValida) {
     throw new Error("Senha incorreta");
   }
-
 
   logger.debug("[authService] Dados do membro antes de gerar token:", membro);
 
@@ -58,7 +57,6 @@ async function login(email, senha) {
   };
 }
 
-
 // fluxo: esqueci minha senha
 async function requestPasswordReset(email, baseResetUrl) {
   const user = await authRepository.buscarMembroPorEmail(email);
@@ -70,7 +68,7 @@ async function requestPasswordReset(email, baseResetUrl) {
   await passwordResetRepository.invalidateAllForUser(user.id);
 
   // gera token
-  const rawToken = crypto.randomBytes(32).toString('hex');
+  const rawToken = crypto.randomBytes(32).toString("hex");
   const tokenHash = sha256Hex(rawToken);
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1h
 
@@ -82,8 +80,8 @@ async function requestPasswordReset(email, baseResetUrl) {
 
   const resetLink = `${baseResetUrl}?token=${rawToken}`;
 
-    logger.log('[DEV] Link de reset:', resetLink);
-  
+  logger.log("[DEV] Link de reset:", resetLink);
+
   return resetLink;
 }
 
@@ -91,15 +89,20 @@ async function requestPasswordReset(email, baseResetUrl) {
 async function resetPassword(rawToken, novaSenha) {
   const tokenHash = sha256Hex(rawToken);
   const pr = await passwordResetRepository.getValidByTokenHash(tokenHash);
-  if (!pr) throw new Error('Token inválido ou expirado');
+  if (!pr) throw new Error("Token inválido ou expirado");
 
-  const db = require('../../database/connection');
-  const [rows] = await db.execute(`SELECT * FROM equipe WHERE id = ? LIMIT 1`, [pr.user_id]);
+  const db = require("../../database/connection");
+  const [rows] = await db.execute(`SELECT * FROM equipe WHERE id = ? LIMIT 1`, [
+    pr.user_id,
+  ]);
   const user = rows[0];
-  if (!user) throw new Error('Usuário não encontrado');
+  if (!user) throw new Error("Usuário não encontrado");
 
   const senhaHash = await bcrypt.hash(novaSenha, 10);
-  await db.execute(`UPDATE equipe SET senha_hash = ? WHERE id = ?`, [senhaHash, user.id]);
+  await db.execute(`UPDATE equipe SET senha_hash = ? WHERE id = ?`, [
+    senhaHash,
+    user.id,
+  ]);
 
   await passwordResetRepository.markUsed(pr.id);
 

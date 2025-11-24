@@ -2,7 +2,7 @@
 // Responsável por aplicar regras de negócio e validações sobre as organizações
 
 const organizacaoRepository = require("./organizacaoRepository");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Resolver ID da organização a partir do slug                             */
@@ -16,10 +16,15 @@ async function resolverIdPorSlug(slug) {
       throw new Error(`Organização não encontrada para o slug "${slug}"`);
     }
 
-    logger.debug(`[organizacaoService] Slug "${slug}" resolvido para org ${id}`);
+    logger.debug(
+      `[organizacaoService] Slug "${slug}" resolvido para org ${id}`
+    );
     return id;
   } catch (err) {
-    logger.error("[organizacaoService] Erro ao resolver ID por slug:", err.message);
+    logger.error(
+      "[organizacaoService] Erro ao resolver ID por slug:",
+      err.message
+    );
     throw err;
   }
 }
@@ -37,7 +42,10 @@ async function buscarPorSlug(slug) {
     logger.debug(`[organizacaoService] Organização carregada (slug: ${slug})`);
     return organizacao;
   } catch (err) {
-    logger.error("[organizacaoService] Erro ao buscar organização:", err.message);
+    logger.error(
+      "[organizacaoService] Erro ao buscar organização:",
+      err.message
+    );
     throw err;
   }
 }
@@ -54,7 +62,10 @@ async function buscarPorId(id) {
 
     return organizacao;
   } catch (err) {
-    logger.error("[organizacaoService] Erro ao buscar organização por ID:", err.message);
+    logger.error(
+      "[organizacaoService] Erro ao buscar organização por ID:",
+      err.message
+    );
     throw err;
   }
 }

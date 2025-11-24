@@ -3,14 +3,16 @@
 
 const matriculaRepository = require("./matriculaRepository");
 const emailService = require("../../services/emailService");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 const notificacaoService = require("../notificacaoDestinos/notificacaoDestinosService");
 const preMatriculasRepository = require("../public/preMatriculas/preMatriculasRepository");
 const {
   gerarEmailMatriculaAprovada,
   gerarEmailMatriculaAprovadaAdmin,
 } = require("../../services/templates/matriculaAprovada");
-const { gerarEmailMatriculaRecusada } = require("../../services/templates/matriculaRecusada");
+const {
+  gerarEmailMatriculaRecusada,
+} = require("../../services/templates/matriculaRecusada");
 
 /**
  * Normaliza dados de CPF e e-mail
@@ -65,7 +67,10 @@ async function criarMatricula(dados) {
     logger.debug(`[matriculaService] Idade calculada → ${idade}`);
 
     // 🔍 Busca turma compatível com a idade
-    const turma = await matriculaRepository.buscarTurmaPorIdade(idade, dados.organizacao_id);
+    const turma = await matriculaRepository.buscarTurmaPorIdade(
+      idade,
+      dados.organizacao_id
+    );
     logger.debug("[matriculaService] Turma detectada:", turma);
 
     if (!turma) throw new Error("Nenhuma turma disponível para esta idade.");
@@ -110,9 +115,8 @@ async function criarMatricula(dados) {
         logger.warn(
           `[matriculaService] org ${dados.organizacao_id} - turma_id ausente antes do e-mail, tentando fallback...`
         );
-        const turmaFallback = await matriculaRepository.buscarTurmaPorIdade(
-          idade
-        );
+        const turmaFallback =
+          await matriculaRepository.buscarTurmaPorIdade(idade);
         if (turmaFallback) {
           dados.turma_id = turmaFallback.turma_id;
           logger.info(
@@ -219,7 +223,10 @@ async function criarMatriculaDireta(pre) {
     logger.debug(`[matriculaService] Idade calculada → ${idade}`);
 
     // 🔍 Busca turma automaticamente pela idade
-    const turma = await matriculaRepository.buscarTurmaPorIdade(idade, pre.organizacao_id);
+    const turma = await matriculaRepository.buscarTurmaPorIdade(
+      idade,
+      pre.organizacao_id
+    );
     logger.debug("[matriculaService] Turma detectada:", turma);
 
     if (turma) {
@@ -282,7 +289,8 @@ async function criarMatriculaDireta(pre) {
       logger.warn(
         `[matriculaService] org ${organizacao_id} - turma_id ausente antes do e-mail, tentando fallback por idade...`
       );
-      const turmaFallback = await matriculaRepository.buscarTurmaPorIdade(idade);
+      const turmaFallback =
+        await matriculaRepository.buscarTurmaPorIdade(idade);
       if (turmaFallback) {
         pre.turma_id = turmaFallback.turma_id;
         logger.info(
@@ -374,14 +382,20 @@ async function criarMatriculaDireta(pre) {
  */
 async function enviarEmailRecusaMatricula(matricula) {
   try {
-    const org = await matriculaRepository.buscarDadosOrganizacao(matricula.organizacao_id);
+    const org = await matriculaRepository.buscarDadosOrganizacao(
+      matricula.organizacao_id
+    );
     if (!org) {
-      logger.warn(`[matriculaService] Organização não encontrada para matrícula rejeitada (org ${matricula.organizacao_id})`);
+      logger.warn(
+        `[matriculaService] Organização não encontrada para matrícula rejeitada (org ${matricula.organizacao_id})`
+      );
       return;
     }
 
     if (!matricula.email) {
-      logger.warn(`[matriculaService] Matrícula rejeitada sem e-mail disponível para envio (aluno ${matricula.nome})`);
+      logger.warn(
+        `[matriculaService] Matrícula rejeitada sem e-mail disponível para envio (aluno ${matricula.nome})`
+      );
       return;
     }
 
@@ -401,9 +415,14 @@ async function enviarEmailRecusaMatricula(matricula) {
       `[matriculaService] org ${matricula.organizacao_id} - e-mail de recusa enviado para ${matricula.email}`
     );
   } catch (err) {
-    logger.error(`[matriculaService] Erro ao enviar e-mail de recusa: ${err.message}`);
+    logger.error(
+      `[matriculaService] Erro ao enviar e-mail de recusa: ${err.message}`
+    );
   }
 }
 
-
-module.exports = { criarMatricula, criarMatriculaDireta, enviarEmailRecusaMatricula };
+module.exports = {
+  criarMatricula,
+  criarMatriculaDireta,
+  enviarEmailRecusaMatricula,
+};

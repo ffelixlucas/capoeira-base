@@ -1,5 +1,5 @@
 const equipeRepository = require("./equipeRepository");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 const bcrypt = require("bcrypt");
 
 /* -------------------------------------------------------------------------- */
@@ -75,7 +75,11 @@ async function atualizarEquipe(id, dados, organizacaoId) {
       delete dados.senha;
     }
 
-    const atualizado = await equipeRepository.updateEquipe(id, organizacaoId, dados);
+    const atualizado = await equipeRepository.updateEquipe(
+      id,
+      organizacaoId,
+      dados
+    );
 
     logger.debug("[equipeService] Membro atualizado", {
       id,
@@ -138,7 +142,9 @@ async function alterarSenha(id, senhaAtual, novaSenha, organizacaoId) {
     }
 
     const novaHash = await bcrypt.hash(novaSenha, 10);
-    await equipeRepository.updateEquipe(id, organizacaoId, { senha_hash: novaHash });
+    await equipeRepository.updateEquipe(id, organizacaoId, {
+      senha_hash: novaHash,
+    });
 
     logger.debug("[equipeService] Senha alterada com sucesso", {
       id,

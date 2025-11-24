@@ -1,4 +1,4 @@
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 const equipeService = require("./equipeService");
 
 /* -------------------------------------------------------------------------- */
@@ -38,7 +38,9 @@ async function criarEquipe(req, res) {
       id: criado.id,
     });
 
-    res.status(201).json({ id: criado.id, message: "Membro criado com sucesso" });
+    res
+      .status(201)
+      .json({ id: criado.id, message: "Membro criado com sucesso" });
   } catch (error) {
     logger.error("[equipeController] Erro ao criar membro", {
       erro: error.message,
@@ -82,7 +84,10 @@ async function atualizarEquipe(req, res) {
 async function removerEquipe(req, res) {
   try {
     const organizacaoId = req.usuario?.organizacao_id;
-    const removido = await equipeService.removerEquipe(req.params.id, organizacaoId);
+    const removido = await equipeService.removerEquipe(
+      req.params.id,
+      organizacaoId
+    );
 
     if (removido) {
       logger.debug("[equipeController] Membro removido", {
@@ -139,7 +144,9 @@ async function alterarSenha(req, res) {
     const organizacaoId = req.usuario?.organizacao_id;
 
     if (!senhaAtual || !novaSenha) {
-      return res.status(400).json({ message: "Informe senha atual e nova senha" });
+      return res
+        .status(400)
+        .json({ message: "Informe senha atual e nova senha" });
     }
 
     const resultado = await equipeService.alterarSenha(
@@ -173,7 +180,10 @@ async function alterarSenha(req, res) {
 async function getPerfil(req, res) {
   try {
     const organizacaoId = req.usuario?.organizacao_id;
-    const usuario = await equipeService.buscarPorId(req.usuario.id, organizacaoId);
+    const usuario = await equipeService.buscarPorId(
+      req.usuario.id,
+      organizacaoId
+    );
 
     if (!usuario) {
       return res.status(404).json({ message: "Usuário não encontrado" });

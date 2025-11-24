@@ -1,6 +1,6 @@
 // modules/graduacoes/graduacoesRepository.js
 const db = require("../../database/connection");
-const { logger } = require("../../utils/logger");
+const { logger } = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar por categoria                                                    */

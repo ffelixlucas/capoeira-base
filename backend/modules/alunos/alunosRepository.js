@@ -1,6 +1,6 @@
 // alunosRepository.js
 const connection = require("../../database/connection");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Lista todos os alunos ativos com a turma atual                          */

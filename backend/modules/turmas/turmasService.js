@@ -1,5 +1,5 @@
 const turmasRepository = require("./turmasRepository");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar todas as turmas da organização                                   */
@@ -33,11 +33,12 @@ async function criarTurma(data, organizacaoId) {
   }
 
   if (!faixa_etaria && (idade_min || idade_max)) {
-    faixa_etaria = idade_min && idade_max
-      ? `${idade_min} a ${idade_max}`
-      : idade_min
-      ? `${idade_min}+`
-      : `até ${idade_max}`;
+    faixa_etaria =
+      idade_min && idade_max
+        ? `${idade_min} a ${idade_max}`
+        : idade_min
+          ? `${idade_min}+`
+          : `até ${idade_max}`;
   }
 
   const payload = {
@@ -93,7 +94,10 @@ async function buscarTurmaPorIdade(idade, organizacaoId) {
 /* 🔁 Encerrar turma com migração                                             */
 /* -------------------------------------------------------------------------- */
 async function encerrarTurmaComMigracao(origemId, destinoId, organizacaoId) {
-  const possui = await turmasRepository.verificarVinculos(origemId, organizacaoId);
+  const possui = await turmasRepository.verificarVinculos(
+    origemId,
+    organizacaoId
+  );
 
   if (possui) {
     logger.debug("[turmasService] Turma com vínculos, migrando alunos...", {

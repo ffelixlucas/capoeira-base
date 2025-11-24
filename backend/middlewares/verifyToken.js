@@ -1,6 +1,6 @@
 // backend/middlewares/verifyToken.js
 const jwt = require("jsonwebtoken");
-const logger = require("../utils/logger");
+const logger = require("../utils/logger.js");
 
 /**
  * Middleware de verificação de token JWT

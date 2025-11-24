@@ -1,5 +1,5 @@
-const logger = require('../../utils/logger');
-const service = require('./presencasService');
+const logger = require("../../utils/logger.js");
+const service = require("./presencasService");
 
 /**
  * GET /api/presencas?turma_id=1&data=2025-08-09
@@ -8,7 +8,7 @@ exports.listarPorTurmaEData = async (req, res) => {
   try {
     const { turma_id, data } = req.query;
     if (!turma_id || !data) {
-      return res.status(400).json({ erro: 'turma_id e data são obrigatórios' });
+      return res.status(400).json({ erro: "turma_id e data são obrigatórios" });
     }
 
     const result = await service.listarPorTurmaEData({
@@ -21,7 +21,7 @@ exports.listarPorTurmaEData = async (req, res) => {
   } catch (e) {
     logger.error(e);
     return res.status(e.status || 500).json({
-      erro: e.message || 'Falha ao listar presenças',
+      erro: e.message || "Falha ao listar presenças",
     });
   }
 };
@@ -31,15 +31,16 @@ exports.listarPorTurmaEData = async (req, res) => {
  * Body: { turma_id, data, itens: [{ aluno_id, status }] }
  */
 exports.salvarBatch = async (req, res) => {
-
   try {
     const { turma_id, data, itens } = req.body;
     if (!turma_id || !data || !Array.isArray(itens) || itens.length === 0) {
-      return res.status(400).json({ erro: 'turma_id, data e itens[] são obrigatórios' });
+      return res
+        .status(400)
+        .json({ erro: "turma_id, data e itens[] são obrigatórios" });
     }
 
     const result = await service.salvarBatch({
-      user: req.user,              // (mantém igual ao seu middleware)
+      user: req.user, // (mantém igual ao seu middleware)
       turma_id: Number(turma_id),
       data,
       itens,
@@ -50,7 +51,7 @@ exports.salvarBatch = async (req, res) => {
   } catch (e) {
     logger.error(e);
     return res.status(e.status || 500).json({
-      erro: e.message || 'Falha ao salvar presenças',
+      erro: e.message || "Falha ao salvar presenças",
     });
   }
 };
@@ -64,10 +65,10 @@ exports.atualizarUma = async (req, res) => {
     const id = Number(req.params.id);
     const { status, observacao } = req.body;
 
-    if (!id || (!status && typeof observacao === 'undefined')) {
+    if (!id || (!status && typeof observacao === "undefined")) {
       return res
         .status(400)
-        .json({ erro: 'id e (status ou observacao) são obrigatórios' });
+        .json({ erro: "id e (status ou observacao) são obrigatórios" });
     }
 
     await service.atualizarUma({
@@ -81,7 +82,7 @@ exports.atualizarUma = async (req, res) => {
   } catch (e) {
     logger.error(e);
     return res.status(e.status || 500).json({
-      erro: e.message || 'Falha ao atualizar presença',
+      erro: e.message || "Falha ao atualizar presença",
     });
   }
 };
@@ -94,7 +95,7 @@ exports.relatorioPorPeriodo = async (req, res) => {
   try {
     const { inicio, fim } = req.query;
     if (!inicio || !fim) {
-      return res.status(400).json({ erro: 'inicio e fim são obrigatórios' });
+      return res.status(400).json({ erro: "inicio e fim são obrigatórios" });
     }
 
     const result = await service.relatorioPorPeriodo({
@@ -107,7 +108,7 @@ exports.relatorioPorPeriodo = async (req, res) => {
   } catch (e) {
     logger.error(e);
     return res.status(e.status || 500).json({
-      erro: e.message || 'Falha ao gerar relatório',
+      erro: e.message || "Falha ao gerar relatório",
     });
   }
 };

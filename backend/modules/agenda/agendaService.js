@@ -2,7 +2,7 @@
 const bucket = require("../../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 const agendaRepository = require("./agendaRepository");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🧩 Utilitário - Normalização de JSON                                       */
@@ -21,8 +21,16 @@ function normalizarConfig(conf) {
 /* 🔍 Listar eventos (multi-org)                                              */
 /* -------------------------------------------------------------------------- */
 async function listarEventos(organizacaoId, status, situacao) {
-  logger.debug("[agendaService] Listando eventos", { organizacaoId, status, situacao });
-  const eventos = await agendaRepository.listarEventos(organizacaoId, status, situacao);
+  logger.debug("[agendaService] Listando eventos", {
+    organizacaoId,
+    status,
+    situacao,
+  });
+  const eventos = await agendaRepository.listarEventos(
+    organizacaoId,
+    status,
+    situacao
+  );
 
   return eventos.map((e) => ({
     ...e,
@@ -123,7 +131,9 @@ async function excluirEvento(id, organizacaoId) {
       await bucket.file(caminho).delete();
       logger.debug("[agendaService] Imagem excluída do Firebase", { caminho });
     } catch (error) {
-      logger.warn("[agendaService] Erro ao excluir imagem", { erro: error.message });
+      logger.warn("[agendaService] Erro ao excluir imagem", {
+        erro: error.message,
+      });
     }
   }
 
@@ -175,9 +185,13 @@ async function arquivarEvento(id, organizacaoId) {
         new URL(evento.imagem_url).pathname.replace(/^\/[^/]+\//, "")
       );
       await bucket.file(caminho).delete();
-      logger.debug("[agendaService] Imagem do evento arquivada/excluída", { caminho });
+      logger.debug("[agendaService] Imagem do evento arquivada/excluída", {
+        caminho,
+      });
     } catch (error) {
-      logger.warn("[agendaService] Erro ao excluir imagem no arquivamento", { erro: error.message });
+      logger.warn("[agendaService] Erro ao excluir imagem no arquivamento", {
+        erro: error.message,
+      });
     }
   }
 

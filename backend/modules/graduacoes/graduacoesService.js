@@ -1,6 +1,6 @@
 // modules/graduacoes/graduacoesService.js
 const graduacoesRepository = require("./graduacoesRepository");
-const { logger } = require("../../utils/logger");
+const { logger } = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar por categoria                                                    */

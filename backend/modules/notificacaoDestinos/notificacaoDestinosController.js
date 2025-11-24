@@ -1,6 +1,6 @@
 // modules/notificacaoDestinos/notificacaoDestinosController.js
 const service = require("./notificacaoDestinosService");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /**
  * Lista notificações por tipo (multi-org)

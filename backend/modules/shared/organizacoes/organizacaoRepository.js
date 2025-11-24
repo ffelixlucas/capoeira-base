@@ -3,7 +3,7 @@
 // Usado por módulos públicos e administrativos (multi-organização híbrido)
 
 const db = require("../../../database/connection");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Buscar ID da organização pelo slug público                              */
@@ -48,11 +48,15 @@ async function buscarPorSlug(slug) {
     );
 
     if (!rows.length) {
-      logger.warn(`[organizacaoRepository] Organização não encontrada para slug "${slug}"`);
+      logger.warn(
+        `[organizacaoRepository] Organização não encontrada para slug "${slug}"`
+      );
       return null;
     }
 
-    logger.debug(`[organizacaoRepository] Organização encontrada via slug "${slug}"`);
+    logger.debug(
+      `[organizacaoRepository] Organização encontrada via slug "${slug}"`
+    );
     return rows[0];
   } catch (err) {
     logger.error(
@@ -74,7 +78,9 @@ async function buscarPorId(id) {
     );
 
     if (!rows.length) {
-      logger.warn(`[organizacaoRepository] Organização não encontrada para ID ${id}`);
+      logger.warn(
+        `[organizacaoRepository] Organização não encontrada para ID ${id}`
+      );
       return null;
     }
 

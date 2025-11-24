@@ -1,5 +1,5 @@
 // backend/middlewares/checkRole.js
-const logger = require("../utils/logger");
+const logger = require("../utils/logger.js");
 
 /**
  * Middleware para controle de acesso baseado em papéis (RBAC)

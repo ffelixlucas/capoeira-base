@@ -1,5 +1,5 @@
 // backend/modules/equipeRoles/equipeRolesController.js
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 const equipeRolesService = require("./equipeRolesService");
 
 /* -------------------------------------------------------------------------- */
@@ -8,10 +8,18 @@ const equipeRolesService = require("./equipeRolesService");
 async function listarRoles(req, res) {
   try {
     const { id } = req.params;
-    const organizacaoId = req.usuario?.organizacao_id || req.user?.organizacao_id;
+    const organizacaoId =
+      req.usuario?.organizacao_id || req.user?.organizacao_id;
 
-    const roles = await equipeRolesService.listarRoles(Number(id), organizacaoId);
-    logger.debug("[equipeRolesController] Roles listadas", { id, organizacaoId, total: roles.length });
+    const roles = await equipeRolesService.listarRoles(
+      Number(id),
+      organizacaoId
+    );
+    logger.debug("[equipeRolesController] Roles listadas", {
+      id,
+      organizacaoId,
+      total: roles.length,
+    });
 
     res.json(roles);
   } catch (error) {
@@ -27,15 +35,24 @@ async function adicionarRole(req, res) {
   try {
     const { id } = req.params;
     const { roleId } = req.body;
-    const organizacaoId = req.usuario?.organizacao_id || req.user?.organizacao_id;
+    const organizacaoId =
+      req.usuario?.organizacao_id || req.user?.organizacao_id;
 
-    logger.log("📥 Requisição recebida para atribuir papel:", { id, roleId, organizacaoId });
+    logger.log("📥 Requisição recebida para atribuir papel:", {
+      id,
+      roleId,
+      organizacaoId,
+    });
 
     if (!roleId) {
       return res.status(400).json({ erro: "roleId é obrigatório." });
     }
 
-    await equipeRolesService.adicionarRole(Number(id), Number(roleId), organizacaoId);
+    await equipeRolesService.adicionarRole(
+      Number(id),
+      Number(roleId),
+      organizacaoId
+    );
     res.status(201).json({ mensagem: "Papel atribuído com sucesso." });
   } catch (error) {
     logger.error("❌ Erro no adicionarRole:", error.message);
@@ -49,9 +66,14 @@ async function adicionarRole(req, res) {
 async function removerRole(req, res) {
   try {
     const { id, roleId } = req.params;
-    const organizacaoId = req.usuario?.organizacao_id || req.user?.organizacao_id;
+    const organizacaoId =
+      req.usuario?.organizacao_id || req.user?.organizacao_id;
 
-    await equipeRolesService.removerRole(Number(id), Number(roleId), organizacaoId);
+    await equipeRolesService.removerRole(
+      Number(id),
+      Number(roleId),
+      organizacaoId
+    );
     res.json({ mensagem: "Papel removido com sucesso." });
   } catch (error) {
     logger.error("❌ Erro ao remover papel:", error.message);
@@ -65,10 +87,14 @@ async function removerRole(req, res) {
 async function removerTodosOsRoles(req, res) {
   try {
     const equipeId = Number(req.params.id);
-    const organizacaoId = req.usuario?.organizacao_id || req.user?.organizacao_id;
+    const organizacaoId =
+      req.usuario?.organizacao_id || req.user?.organizacao_id;
 
     await equipeRolesService.removerTodosOsRoles(equipeId, organizacaoId);
-    logger.debug("[equipeRolesController] Todos os roles removidos", { equipeId, organizacaoId });
+    logger.debug("[equipeRolesController] Todos os roles removidos", {
+      equipeId,
+      organizacaoId,
+    });
 
     res.status(204).send(); // No content
   } catch (err) {

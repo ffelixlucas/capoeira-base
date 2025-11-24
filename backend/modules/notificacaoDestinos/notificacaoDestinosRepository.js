@@ -1,6 +1,6 @@
 // modules/notificacaoDestinos/notificacaoDestinosRepository.js
 const db = require("../../database/connection");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /**
  * Lista e-mails de notificação por grupo e tipo (multi-organização)
@@ -35,7 +35,13 @@ async function criar(organizacaoId, grupoId, tipo, email) {
     `[notificacaoDestinosRepository] org ${organizacaoId} - novo destino criado (${email})`
   );
 
-  return { id: result.insertId, organizacao_id: organizacaoId, grupo_id: grupoId, tipo, email };
+  return {
+    id: result.insertId,
+    organizacao_id: organizacaoId,
+    grupo_id: grupoId,
+    tipo,
+    email,
+  };
 }
 
 /**

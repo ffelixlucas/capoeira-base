@@ -8,7 +8,7 @@ const graduacoesService = require("../../graduacoes/graduacoesService");
 const emailService = require("../../../services/emailService");
 const notificacaoService = require("../../notificacaoDestinos/notificacaoDestinosService");
 const db = require("../../../database/connection");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 const bucket = require("../../../config/firebase");
 const organizacaoService = require("../../shared/organizacoes/organizacaoService");
 const {
