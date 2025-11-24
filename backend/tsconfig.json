@@ -10,11 +10,12 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
 
+    "rootDir": "./src-ts",
     "outDir": "./dist",
-    "rootDir": ".",
 
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": "./src-ts"
   },
-  "include": ["./**/*"],
+  "include": ["src-ts/**/*"],
   "exclude": ["node_modules", "dist"]
 }

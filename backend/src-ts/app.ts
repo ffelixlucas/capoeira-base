@@ -1,17 +1,16 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-require("dotenv/config");
-const app = (0, express_1.default)();
+import express from "express";
+import cors from "cors";
+import "dotenv/config";
+
+const app = express();
+
 // 🧩 Middlewares globais
-app.use((0, cors_1.default)());
+app.use(cors());
+
 // 📦 Body parsers com limite aumentado (para fotos em Base64)
-app.use(express_1.default.json({ limit: "10mb" }));
-app.use(express_1.default.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
 // -----------------------------------------------------------
 // 📦 Importar rotas (JS atual) — via require() para manter compatibilidade
 // -----------------------------------------------------------
@@ -29,35 +28,42 @@ const lembretesRoutes = require("../modules/lembretes/lembretesRoutes");
 const matriculaRoutes = require("../modules/matricula/matriculaRoutes");
 const notificacaoDestinosRoutes = require("../modules/notificacaoDestinos/notificacaoDestinosRoutes");
 const uploadRoutes = require("../modules/uploads/uploadRoutes");
+
 // PÚBLICAS
 const preMatriculasRoutes = require("../modules/public/preMatriculas/preMatriculasRoutes");
 const publicAgendaRoutes = require("../modules/public/agenda/publicAgendaRoutes");
 const publicInscricoesRoutes = require("../modules/public/inscricoes/inscricoesRoutes");
 const organizacaoPublicRoutes = require("../modules/shared/organizacoes/organizacaoPublicRoutes");
+
 // Mistas
 const notasAlunoRoutes = require("../modules/notasAluno/notasAlunoRoutes");
 const presencasRoutes = require("../modules/presencas/presencasRoutes");
 const turmasRoutes = require("../modules/turmas/turmasRoutes");
 const whatsappRoutes = require("../modules/whatsappdestinos/whatsappDestinosRoutes");
+
 // 🔍 Health-check Railway
 app.get("/status", (req, res) => {
-    res.json({
-        ok: true,
-        env: process.env.NODE_ENV || "dev",
-        timestamp: new Date().toISOString(),
-        loggerTS: true,
-    });
+  res.json({
+    ok: true,
+    env: process.env.NODE_ENV || "dev",
+    timestamp: new Date().toISOString(),
+    loggerTS: true,
+  });
 });
+
 // -----------------------------------------------------------
 // 🌐 ROTAS PÚBLICAS
 // -----------------------------------------------------------
 app.use("/api/teste", (_, res) => res.json({ mensagem: "API no ar!" }));
+
 app.use("/api/public/agenda", publicAgendaRoutes);
 app.use("/api/public/inscricoes", publicInscricoesRoutes);
+
 // -----------------------------------------------------------
 // 🔒 AUTENTICAÇÃO
 // -----------------------------------------------------------
 app.use("/api/auth", authRoutes);
+
 // -----------------------------------------------------------
 // 🧠 ADMIN
 // -----------------------------------------------------------
@@ -78,10 +84,12 @@ app.use("/api/turmas", turmasRoutes);
 app.use("/api/categorias", categoriasRoutes);
 app.use("/api/graduacoes", graduacoesRoutes);
 app.use("/api/whatsapp-destinos", whatsappRoutes);
+
 // -----------------------------------------------------------
 // 🔄 MISTAS
 // -----------------------------------------------------------
 app.use("/api/public", preMatriculasRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/public/organizacoes", organizacaoPublicRoutes);
-exports.default = app;
+
+export default app;

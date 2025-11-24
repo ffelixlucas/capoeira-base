@@ -20,10 +20,7 @@ const {
   enviarEmailPendente,
 } = require("../../../services/emailService.js");
 const logger = require("../../../utils/logger.js");
-const {
-  calcularValores,
-  calcularValorComTaxa,
-} = require("../../../utils/calcularValor");
+
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,

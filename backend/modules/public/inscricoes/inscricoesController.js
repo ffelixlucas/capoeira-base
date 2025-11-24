@@ -16,7 +16,6 @@ const {
 } = require("../../agenda/agendaRepository");
 const { buscarInscricaoPendente } = require("./inscricoesRepository");
 const logger = require("../../../utils/logger.js");
-const { calcularValorComTaxa } = require("../../../utils/calcularValor");
 
 const gerarPagamentoPix = async (req, res) => {
   try {
