@@ -2,7 +2,7 @@
 // Responsável por acessar o banco e registrar novas pré-matrículas
 
 const db = require("../../../database/connection");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 
 /**
  * Verifica se já existe uma pré-matrícula com o mesmo CPF

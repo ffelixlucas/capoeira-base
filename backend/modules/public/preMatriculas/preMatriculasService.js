@@ -2,12 +2,13 @@
 // Contém as regras de negócio e validações antes de salvar no banco.
 
 const preMatriculasRepository = require("./preMatriculasRepository");
+const preMatriculasGraduacoesRepository = require("./preMatriculasGraduacoesRepository");
 const matriculaService = require("../../matricula/matriculaService");
-
+const graduacoesService = require("../../graduacoes/graduacoesService");
 const emailService = require("../../../services/emailService");
 const notificacaoService = require("../../notificacaoDestinos/notificacaoDestinosService");
 const db = require("../../../database/connection");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 const bucket = require("../../../config/firebase");
 const organizacaoService = require("../../shared/organizacoes/organizacaoService");
 const {
@@ -213,76 +214,75 @@ async function criarPreMatricula(dados) {
     // ✉️ Envio de e-mails
 
     // 🔁 Retorna resposta rápida ao usuário antes dos e-mails
-const resposta = {
-  message: "Pré-matrícula enviada com sucesso! 👊 Aguarde confirmação por e-mail.",
-  id,
-  foto_url: fotoUrl,
-};
-
-// 🚀 Dispara envio de e-mails em segundo plano (não bloqueia resposta)
-(async () => {
-  try {
-    // 🔎 Buscar nome da organização para personalizar o e-mail
-    const orgInfo = await preMatriculasRepository.buscarGrupoPorOrganizacaoId(
-      dados.organizacao_id
-    );
-    const nomeInstituicao =
-      orgInfo?.nome_fantasia || orgInfo?.nome || "Capoeira Base";
-
-    // Para o aluno/responsável
-    await emailService.enviarEmailCustom({
-      to: dados.email,
-      subject: "📩 Pré-matrícula recebida – estamos quase lá!",
-      html: gerarEmailPreMatriculaAluno({
-        ...dados,
-        nome_fantasia: nomeInstituicao,
-      }),
-    });
-
-    // Para administradores
-    const emailsAdmin =
-    (await notificacaoService.getEmails(
-      dados.organizacao_id ?? null,
-      "matricula"
-    )) || [];
-  
-
-    // 🔎 Buscar a pré-matrícula completa (com nomes de categoria e graduação)
-    const preCompleta = await preMatriculasRepository.buscarPorId(
+    const resposta = {
+      message:
+        "Pré-matrícula enviada com sucesso! 👊 Aguarde confirmação por e-mail.",
       id,
-      dados.organizacao_id
-    );
+      foto_url: fotoUrl,
+    };
 
-    if (!Array.isArray(emailsAdmin) || emailsAdmin.length === 0) {
-      logger.warn(
-        `[preMatriculasService] org ${dados.organizacao_id} - nenhum e-mail admin configurado para tipo 'matricula'`
-      );
-      return;
-    }
-    
+    // 🚀 Dispara envio de e-mails em segundo plano (não bloqueia resposta)
+    (async () => {
+      try {
+        // 🔎 Buscar nome da organização para personalizar o e-mail
+        const orgInfo =
+          await preMatriculasRepository.buscarGrupoPorOrganizacaoId(
+            dados.organizacao_id
+          );
+        const nomeInstituicao =
+          orgInfo?.nome_fantasia || orgInfo?.nome || "Capoeira Base";
 
-    for (const email of emailsAdmin) {
-      await emailService.enviarEmailCustom({
-        to: email,
-        subject: `👥 Nova pré-matrícula pendente (${preCompleta.nome})`,
-        html: gerarEmailPreMatriculaAdmin(preCompleta),
-      });
-    }
+        // Para o aluno/responsável
+        await emailService.enviarEmailCustom({
+          to: dados.email,
+          subject: "📩 Pré-matrícula recebida – estamos quase lá!",
+          html: gerarEmailPreMatriculaAluno({
+            ...dados,
+            nome_fantasia: nomeInstituicao,
+          }),
+        });
 
-    logger.info(
-      `[preMatriculasService] org ${dados.organizacao_id} - e-mails enviados (modo assíncrono)`
-    );
-  } catch (emailErr) {
-    logger.error(
-      "[preMatriculasService] Erro no envio assíncrono de e-mails:",
-      emailErr.message
-    );
-  }
-})();
+        // Para administradores
+        const emailsAdmin =
+          (await notificacaoService.getEmails(
+            dados.organizacao_id ?? null,
+            "matricula"
+          )) || [];
 
-// 🔚 Retorna imediatamente para o front
-return resposta;
+        // 🔎 Buscar a pré-matrícula completa (com nomes de categoria e graduação)
+        const preCompleta = await preMatriculasRepository.buscarPorId(
+          id,
+          dados.organizacao_id
+        );
 
+        if (!Array.isArray(emailsAdmin) || emailsAdmin.length === 0) {
+          logger.warn(
+            `[preMatriculasService] org ${dados.organizacao_id} - nenhum e-mail admin configurado para tipo 'matricula'`
+          );
+          return;
+        }
+
+        for (const email of emailsAdmin) {
+          await emailService.enviarEmailCustom({
+            to: email,
+            subject: `👥 Nova pré-matrícula pendente (${preCompleta.nome})`,
+            html: gerarEmailPreMatriculaAdmin(preCompleta),
+          });
+        }
+
+        logger.info(
+          `[preMatriculasService] org ${dados.organizacao_id} - e-mails enviados (modo assíncrono)`
+        );
+      } catch (emailErr) {
+        logger.error(
+          "[preMatriculasService] Erro no envio assíncrono de e-mails:",
+          emailErr.message
+        );
+      }
+    })();
+
+    // 🔚 Retorna imediatamente para o front
+    return resposta;
   } catch (err) {
     logger.error(
       "[preMatriculasService] Erro ao criar pré-matrícula:",
@@ -556,6 +556,103 @@ async function deletarPreMatriculaComImagem(id, organizacao_id) {
   }
 }
 
+/**
+ * 🔍 Detecta turma por idade + slug (público)
+ */
+async function detectarTurmaPorIdade({ slug, idade }) {
+  try {
+    logger.debug(
+      `[preMatriculasService] Detectando turma para slug=${slug} idade=${idade}`
+    );
+
+    // 1️⃣ Resolver organização pelo slug
+    const organizacaoId = await organizacaoService.resolverIdPorSlug(slug);
+
+    if (!organizacaoId) {
+      throw new Error("Organização não encontrada pelo slug.");
+    }
+
+    logger.debug(
+      `[preMatriculasService] Organização resolvida → id ${organizacaoId}`
+    );
+
+    // 2️⃣ Buscar turmas da organização compatíveis com a idade
+    // 2️⃣ Buscar turmas compatíveis com a idade + categoria
+    const [rows] = await db.execute(
+      `
+    SELECT
+      t.id AS turma_id,
+      t.nome AS turma_nome,
+      t.idade_min,
+      t.idade_max,
+      t.categoria_id,
+      c.nome AS categoria_nome
+    FROM turmas t
+    LEFT JOIN categorias c ON c.id = t.categoria_id
+    WHERE t.organizacao_id = ?
+      AND t.is_fallback = 0
+      AND (t.idade_min IS NULL OR t.idade_min <= ?)
+      AND (t.idade_max IS NULL OR t.idade_max >= ?)
+    ORDER BY t.idade_min ASC, t.idade_max ASC
+    LIMIT 1
+  `,
+      [organizacaoId, idade, idade]
+    );
+
+    if (!rows.length) {
+      logger.warn(
+        `[preMatriculasService] Nenhuma turma encontrada para idade ${idade} (org ${organizacaoId})`
+      );
+      return null;
+    }
+
+    const turma = rows[0];
+
+    logger.info(
+      `[preMatriculasService] Turma detectada → ${turma.turma_nome} | Categoria: ${turma.categoria_nome}`
+    );
+
+    return turma;
+  } catch (err) {
+    logger.error(
+      `[preMatriculasService] Erro ao detectar turma por idade: ${err.message}`
+    );
+    throw err;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listar graduações por categoria (público + slug)                         */
+/* -------------------------------------------------------------------------- */
+async function listarGraduacoesPorCategoriaPublic({ slug, categoriaId }) {
+  try {
+    logger.debug(
+      `[preMatriculasService] Listando graduações públicas (slug=${slug}, categoria=${categoriaId})`
+    );
+
+    // 1️⃣ Resolver organização via slug
+    const organizacaoId = await organizacaoService.resolverIdPorSlug(slug);
+    if (!organizacaoId) {
+      throw new Error("Organização não encontrada pelo slug.");
+    }
+
+    // 2️⃣ Buscar no repository correto (público!)
+    const graduacoes =
+      await preMatriculasGraduacoesRepository.listarGraduacoesPublic({
+        categoriaId,
+        organizacaoId,
+      });
+
+    return graduacoes;
+  } catch (err) {
+    logger.error(
+      "[preMatriculasService] Erro ao listar graduações públicas:",
+      err.message
+    );
+    throw err;
+  }
+}
+
 module.exports = {
   criarPreMatricula,
   listarPendentes,
@@ -564,4 +661,6 @@ module.exports = {
   buscarGrupoPorOrganizacaoId,
   deletarPreMatricula,
   deletarPreMatriculaComImagem,
+  detectarTurmaPorIdade,
+  listarGraduacoesPorCategoriaPublic,
 };

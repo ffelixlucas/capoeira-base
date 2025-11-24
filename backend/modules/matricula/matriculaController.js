@@ -2,7 +2,7 @@
 // Responsável por receber requisições HTTP autenticadas e repassar ao service.
 
 const matriculaService = require("./matriculaService");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Criação de matrícula (manual ou automática)                             */
@@ -14,7 +14,8 @@ async function criarMatricula(req, res) {
 
     logger.info("[matriculaController] Criando matrícula", {
       nome: dados.nome,
-      organizacao_id: usuario?.organizacao_id || dados.organizacao_id || "não informado",
+      organizacao_id:
+        usuario?.organizacao_id || dados.organizacao_id || "não informado",
     });
 
     const resultado = await matriculaService.criarMatricula(dados);
@@ -36,7 +37,10 @@ async function buscarPorCpf(req, res) {
     const resultado = await matriculaService.buscarPorCpf(cpf);
     return res.json(resultado);
   } catch (err) {
-    logger.error("[matriculaController] Erro ao buscar matrícula:", err.message);
+    logger.error(
+      "[matriculaController] Erro ao buscar matrícula:",
+      err.message
+    );
     return res.status(400).json({
       error: "Erro ao buscar matrícula por CPF.",
     });

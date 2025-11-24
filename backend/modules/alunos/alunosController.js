@@ -1,5 +1,5 @@
 // alunosController.js
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 const alunoService = require("./alunosService");
 
 /* -------------------------------------------------------------------------- */
@@ -43,16 +43,18 @@ async function buscar(req, res) {
 
     const aluno = await alunoService.buscarPorId(id, organizacaoId);
 
-    logger.info(`[alunosController] Aluno carregado com sucesso (ID: ${id}, org: ${organizacaoId})`);
+    logger.info(
+      `[alunosController] Aluno carregado com sucesso (ID: ${id}, org: ${organizacaoId})`
+    );
 
     return res.status(200).json(aluno);
   } catch (err) {
     logger.error(`[alunosController] Erro ao buscar aluno: ${err.message}`);
-    return res.status(404).json({ erro: err.message || "Aluno não encontrado." });
+    return res
+      .status(404)
+      .json({ erro: err.message || "Aluno não encontrado." });
   }
 }
-
-
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Cadastrar novo aluno                                                    */

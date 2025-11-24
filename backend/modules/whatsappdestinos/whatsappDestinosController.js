@@ -1,4 +1,4 @@
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 const service = require("./whatsappDestinosService");
 
 async function listar(req, res) {

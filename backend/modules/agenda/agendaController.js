@@ -1,7 +1,12 @@
+// backend/modules/agenda/agendaController.js
 const agendaService = require("./agendaService");
-const logger = require("../../utils/logger");
+const organizacaoService = require("../shared/organizacoes/organizacaoService");
+const logger = require("../../utils/logger.js");
 
-const formatarDataHora = (data) => {
+/* -------------------------------------------------------------------------- */
+/* 🕒 Utilitário: formatação de data e hora                                   */
+/* -------------------------------------------------------------------------- */
+function formatarDataHora(data) {
   if (!data) return { data: null, horario: null };
   const d = new Date(data);
   return {
@@ -11,21 +16,54 @@ const formatarDataHora = (data) => {
       minute: "2-digit",
     }),
   };
-};
+}
 
-const listarEventos = async (req, res) => {
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listar eventos (suporte a público e painel)                             */
+/* -------------------------------------------------------------------------- */
+async function listarEventos(req, res) {
   try {
-    const { status, situacao } = req.query;
-    const eventos = await agendaService.listarEventos(status, situacao);
+    // 🔹 tenta identificar a organização pelo token
+    let organizacaoId = req.usuario?.organizacao_id || null;
 
+    // 🔹 se for rota pública com slug (ex: ?slug=cn10)
+    if (!organizacaoId && req.query?.slug) {
+      logger.debug("[agendaController] Detectando slug público", {
+        querySlug: req.query.slug,
+      });
+
+      const org = await organizacaoService.buscarPorSlug(req.query.slug);
+      organizacaoId = org?.id || null;
+    }
+
+    if (!organizacaoId) {
+      return res
+        .status(400)
+        .json({ sucesso: false, erro: "Organização não identificada." });
+    }
+    logger.debug("[agendaController] Organização identificada", {
+      organizacaoId,
+    });
+
+    const { status, situacao } = req.query;
+    logger.debug("[agendaController] Listando eventos", {
+      organizacaoId,
+      status,
+      situacao,
+    });
+
+    const eventos = await agendaService.listarEventos(
+      organizacaoId,
+      status,
+      situacao
+    );
     const eventosFormatados = eventos.map((evento) => {
       const raw =
         typeof evento.data_inicio === "string"
           ? evento.data_inicio.replace(" ", "T")
-          : evento.data_inicio?.toISOString?.() ?? null;
+          : (evento.data_inicio?.toISOString?.() ?? null);
 
       const { data, horario } = formatarDataHora(raw);
-
       return {
         ...evento,
         data_inicio: raw,
@@ -36,42 +74,60 @@ const listarEventos = async (req, res) => {
 
     return res.status(200).json({ sucesso: true, data: eventosFormatados });
   } catch (error) {
-    logger.error("❌ Erro ao listar eventos:", error);
+    logger.error("[agendaController] Erro ao listar eventos", error);
     return res
       .status(500)
       .json({ sucesso: false, erro: "Erro ao listar eventos." });
   }
-};
+}
 
-const criarEvento = async (req, res) => {
+/* -------------------------------------------------------------------------- */
+/* 🧱 Criar evento                                                            */
+/* -------------------------------------------------------------------------- */
+async function criarEvento(req, res) {
   try {
-    const usuarioId = req.usuario?.id || null; // via verifyToken
-    const idCriado = await agendaService.criarEvento(req.body, usuarioId);
+    const usuarioId = req.usuario?.id || null;
+    const organizacaoId = req.usuario?.organizacao_id;
+    const idCriado = await agendaService.criarEvento(
+      req.body,
+      usuarioId,
+      organizacaoId
+    );
+
     res
       .status(201)
       .json({ mensagem: "Evento criado com sucesso.", id: idCriado });
   } catch (error) {
-    logger.error("❌ Erro ao criar evento:", error);
+    logger.error("[agendaController] Erro ao criar evento", error);
     res.status(400).json({ erro: error.message });
   }
-};
+}
 
-const criarEventoComImagem = async (req, res) => {
+/* -------------------------------------------------------------------------- */
+/* 🖼️ Criar evento com imagem (Firebase)                                     */
+/* -------------------------------------------------------------------------- */
+async function criarEventoComImagem(req, res) {
   try {
     const usuarioId = req.usuario?.id || null;
+    const organizacaoId = req.usuario?.organizacao_id;
     const imagem = req.file;
+
     const dados = {
       ...req.body,
       possui_camiseta: parseInt(req.body.possui_camiseta) === 1 ? 1 : 0,
     };
 
-    logger.log("📦 Imagem recebida:", imagem?.originalname);
-    logger.log("📝 Dados recebidos:", dados);
+    logger.debug("[agendaController] Upload recebido", {
+      userId: usuarioId,
+      orgId: organizacaoId,
+      imagem: imagem?.originalname,
+    });
 
     const resultado = await agendaService.processarUploadEvento(
       imagem,
       dados,
-      usuarioId
+      usuarioId,
+      organizacaoId
     );
 
     return res.status(201).json({
@@ -80,85 +136,107 @@ const criarEventoComImagem = async (req, res) => {
       imagem_url: resultado.imagem_url,
     });
   } catch (error) {
-    logger.error("❌ Erro ao criar evento com imagem:", error);
+    logger.error("[agendaController] Erro ao criar evento com imagem", error);
     return res.status(500).json({ erro: "Erro ao criar evento com imagem." });
   }
-};
+}
 
-const excluirEvento = async (req, res) => {
+/* -------------------------------------------------------------------------- */
+/* ❌ Excluir evento                                                          */
+/* -------------------------------------------------------------------------- */
+async function excluirEvento(req, res) {
   try {
-    const sucesso = await agendaService.excluirEvento(req.params.id);
-    if (sucesso) {
-      res.json({ mensagem: "Evento excluído com sucesso." });
-    } else {
-      res.status(404).json({ erro: "Evento não encontrado." });
-    }
+    const { id } = req.params;
+    const organizacaoId = req.usuario?.organizacao_id;
+
+    const sucesso = await agendaService.excluirEvento(id, organizacaoId);
+    if (!sucesso)
+      return res.status(404).json({ erro: "Evento não encontrado." });
+
+    res.json({ mensagem: "Evento excluído com sucesso." });
   } catch (error) {
-    logger.error("❌ Erro ao excluir evento:", error);
+    logger.error("[agendaController] Erro ao excluir evento", error);
     res.status(500).json({ erro: "Erro ao excluir evento." });
   }
-};
+}
 
+/* -------------------------------------------------------------------------- */
+/* ✏️ Atualizar evento                                                       */
+/* -------------------------------------------------------------------------- */
 async function atualizarEvento(req, res) {
-  const { id } = req.params;
-  const dados = {
-    ...req.body,
-    possui_camiseta: parseInt(req.body.possui_camiseta) === 1 ? 1 : 0,
-  };
-
   try {
-    await agendaService.atualizarEvento(id, dados);
+    const { id } = req.params;
+    const organizacaoId = req.usuario?.organizacao_id;
+    const dados = {
+      ...req.body,
+      possui_camiseta: parseInt(req.body.possui_camiseta) === 1 ? 1 : 0,
+    };
+
+    await agendaService.atualizarEvento(id, organizacaoId, dados);
     res.status(200).json({ message: "Evento atualizado com sucesso" });
   } catch (error) {
-    logger.error("❌ Erro ao atualizar evento:", error);
+    logger.error("[agendaController] Erro ao atualizar evento", error);
     res.status(500).json({ message: "Erro ao atualizar evento" });
   }
 }
 
-const atualizarStatus = async (req, res) => {
+/* -------------------------------------------------------------------------- */
+/* 🔄 Atualizar status                                                       */
+/* -------------------------------------------------------------------------- */
+async function atualizarStatus(req, res) {
   const { id } = req.params;
   const { status } = req.body;
+  const organizacaoId = req.usuario?.organizacao_id;
 
   if (!["ativo", "concluido", "cancelado"].includes(status)) {
     return res.status(400).json({ sucesso: false, erro: "Status inválido" });
   }
 
   try {
-    const ok = await agendaService.atualizarStatus(id, status);
-    if (!ok) {
+    const ok = await agendaService.atualizarStatus(id, organizacaoId, status);
+    if (!ok)
       return res
         .status(404)
         .json({ sucesso: false, erro: "Evento não encontrado" });
-    }
+
     return res
       .status(200)
       .json({ sucesso: true, mensagem: `Evento marcado como ${status}` });
   } catch (error) {
-    logger.error("❌ Erro ao atualizar status do evento:", error);
+    logger.error(
+      "[agendaController] Erro ao atualizar status do evento",
+      error
+    );
     return res.status(500).json({ sucesso: false, erro: error.message });
   }
-};
+}
 
-const arquivarEvento = async (req, res) => {
+/* -------------------------------------------------------------------------- */
+/* 🗂️ Arquivar evento                                                        */
+/* -------------------------------------------------------------------------- */
+async function arquivarEvento(req, res) {
   try {
     const { id } = req.params;
-    const ok = await agendaService.arquivarEvento(id);
-    if (!ok) {
+    const organizacaoId = req.usuario?.organizacao_id;
+
+    const ok = await agendaService.arquivarEvento(id, organizacaoId);
+    if (!ok)
       return res
         .status(404)
         .json({ sucesso: false, erro: "Evento não encontrado" });
-    }
+
     return res
       .status(200)
       .json({ sucesso: true, mensagem: "Evento arquivado com sucesso" });
   } catch (error) {
-    logger.error("❌ Erro ao arquivar evento:", error);
+    logger.error("[agendaController] Erro ao arquivar evento", error);
     return res
       .status(500)
       .json({ sucesso: false, erro: "Erro ao arquivar evento" });
   }
-};
+}
 
+/* -------------------------------------------------------------------------- */
 module.exports = {
   listarEventos,
   criarEvento,

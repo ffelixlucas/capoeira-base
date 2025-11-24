@@ -1,126 +1,135 @@
-// 📁 services/equipeService.js
-import { logger } from "../utils/logger";
+// 📁 src/services/equipeService.js
 import api from "./api";
+import { logger } from "../utils/logger";
 
-/**
- * 🔍 Buscar todos os membros da equipe
- */
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listar todos os membros da equipe (multi-org automático via token)      */
+/* -------------------------------------------------------------------------- */
 export async function listarEquipe() {
   try {
-    const response = await api.get("/equipe");
-    return Array.isArray(response.data) ? response.data : [];
+    logger.debug("[equipeService] Listando membros da equipe...");
+    const { data } = await api.get("/equipe");
+    const membros = Array.isArray(data) ? data : [];
+    logger.debug("[equipeService] Equipe carregada", { total: membros.length });
+    return membros;
   } catch (erro) {
-    logger.error("Erro ao listar equipe:", erro);
-    return []; // Fallback seguro
-  }
-}
-
-/**
- * ➕ Criar novo membro da equipe
- * @param {Object} dados - nome, telefone, email, etc.
- */
-export async function criarMembro(dados) {
-  try {
-    const response = await api.post("/equipe", dados);
-    return response.data;
-  } catch (erro) {
-    logger.error("Erro ao criar membro:", erro);
-    throw erro;
-  }
-}
-
-/**
- * 📜 Listar todos os papéis disponíveis
- */
-export async function listarRoles() {
-  try {
-    const response = await api.get("/roles");
-    return Array.isArray(response.data) ? response.data : [];
-  } catch (erro) {
-    logger.error("Erro ao listar roles:", erro);
+    logger.error("[equipeService] Erro ao listar equipe", { erro: erro.message });
     return [];
   }
 }
 
-/**
- * 🎭 Atribuir papel a um membro
- */
-export async function atribuirPapel(equipeId, roleId) {
+/* -------------------------------------------------------------------------- */
+/* ➕ Criar novo membro                                                       */
+/* -------------------------------------------------------------------------- */
+export async function criarMembro(dados) {
   try {
-    const response = await api.post(`/equipe/${equipeId}/roles`, { roleId });
-    return response.data;
+    logger.debug("[equipeService] Criando novo membro", { nome: dados?.nome });
+    const { data } = await api.post("/equipe", dados);
+    return data;
   } catch (erro) {
-    logger.error("Erro ao atribuir papel:", erro);
-    throw erro;
+    logger.error("[equipeService] Erro ao criar membro", { erro: erro.message });
+    throw erro.response?.data || erro;
   }
 }
 
-/**
- * 🛠️ Atualizar dados de um membro
- */
+/* -------------------------------------------------------------------------- */
+/* 🛠️ Atualizar dados de um membro                                            */
+/* -------------------------------------------------------------------------- */
 export async function atualizarMembro(id, dados) {
   try {
-    const response = await api.put(`/equipe/${id}`, dados);
-    return response.data;
+    logger.debug("[equipeService] Atualizando membro", { id });
+    const { data } = await api.put(`/equipe/${id}`, dados);
+    return data;
   } catch (erro) {
-    logger.error("Erro ao atualizar membro:", erro);
-    throw erro;
+    logger.error("[equipeService] Erro ao atualizar membro", { id, erro: erro.message });
+    throw erro.response?.data || erro;
   }
 }
 
-/**
- * ❌ Remover membro da equipe
- */
+/* -------------------------------------------------------------------------- */
+/* ❌ Remover membro da equipe                                                */
+/* -------------------------------------------------------------------------- */
 export async function removerMembro(id) {
   try {
-    const response = await api.delete(`/equipe/${id}`);
-    return response.data;
+    logger.debug("[equipeService] Removendo membro", { id });
+    const { data } = await api.delete(`/equipe/${id}`);
+    return data;
   } catch (erro) {
-    logger.error("Erro ao remover membro:", erro);
-    throw erro;
+    logger.error("[equipeService] Erro ao remover membro", { id, erro: erro.message });
+    throw erro.response?.data || erro;
   }
 }
 
-/**
- * 🧹 Remover todos os papéis atribuídos a um membro
- */
-export async function removerTodosOsPapeis(equipeId) {
-  try {
-    const response = await api.delete(`/equipe/${equipeId}/roles`);
-    return response.data;
-  } catch (erro) {
-    logger.error("Erro ao remover papéis:", erro);
-    throw erro;
-  }
-}
-
-/**
- * 👤 Atualizar perfil do usuário logado
- */
-export async function atualizarPerfil(dados) {
-  try {
-    const response = await api.put("/equipe/me", dados);
-    return response.data;
-  } catch (erro) {
-    logger.error("Erro ao atualizar perfil:", erro);
-    throw erro;
-  }
-}
-
-/**
- * 👤 Buscar perfil do usuário logado
- */
+/* -------------------------------------------------------------------------- */
+/* 👤 Buscar e atualizar perfil do usuário logado                             */
+/* -------------------------------------------------------------------------- */
 export async function buscarPerfil() {
   try {
-    const response = await api.get("/equipe/me");
-    return response.data;
+    logger.debug("[equipeService] Buscando perfil do usuário logado...");
+    const { data } = await api.get("/equipe/me");
+    return data;
   } catch (erro) {
-    logger.error("Erro ao buscar perfil:", erro);
-    throw erro;
+    logger.error("[equipeService] Erro ao buscar perfil", { erro: erro.message });
+    throw erro.response?.data || erro;
   }
 }
 
+export async function atualizarPerfil(dados) {
+  try {
+    logger.debug("[equipeService] Atualizando perfil do usuário logado");
+    const { data } = await api.put("/equipe/me", dados);
+    return data;
+  } catch (erro) {
+    logger.error("[equipeService] Erro ao atualizar perfil", { erro: erro.message });
+    throw erro.response?.data || erro;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔑 Atualizar senha do usuário logado                                       */
+/* -------------------------------------------------------------------------- */
 export async function atualizarSenha(dados) {
-  const response = await api.put("/equipe/me/senha", dados);
-  return response.data;
+  try {
+    logger.debug("[equipeService] Alterando senha do usuário logado");
+    const { data } = await api.put("/equipe/me/senha", dados);
+    return data;
+  } catch (erro) {
+    logger.error("[equipeService] Erro ao alterar senha", { erro: erro.message });
+    throw erro.response?.data || erro;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🎭 Papéis (Roles) - gerenciamento secundário                              */
+/* -------------------------------------------------------------------------- */
+export async function listarRoles() {
+  try {
+    const { data } = await api.get("/roles");
+    return Array.isArray(data) ? data : [];
+  } catch (erro) {
+    logger.error("[equipeService] Erro ao listar roles", { erro: erro.message });
+    return [];
+  }
+}
+
+export async function atribuirPapel(equipeId, roleId) {
+  try {
+    logger.debug("[equipeService] Atribuindo papel", { equipeId, roleId });
+    const { data } = await api.post(`/equipe/${equipeId}/roles`, { roleId });
+    return data;
+  } catch (erro) {
+    logger.error("[equipeService] Erro ao atribuir papel", { equipeId, roleId, erro: erro.message });
+    throw erro.response?.data || erro;
+  }
+}
+
+export async function removerTodosOsPapeis(equipeId) {
+  try {
+    logger.debug("[equipeService] Removendo todos os papéis", { equipeId });
+    const { data } = await api.delete(`/equipe/${equipeId}/roles`);
+    return data;
+  } catch (erro) {
+    logger.error("[equipeService] Erro ao remover papéis", { equipeId, erro: erro.message });
+    throw erro.response?.data || erro;
+  }
 }

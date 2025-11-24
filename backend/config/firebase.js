@@ -1,5 +1,5 @@
 const admin = require("firebase-admin");
-const logger = require("../utils/logger");
+const logger = require("../utils/logger.js");
 
 // Variáveis de ambiente para produção
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
@@ -30,18 +30,16 @@ if (
   };
   storageBucketName = FIREBASE_STORAGE_BUCKET;
 
-    logger.log(
-      "Ambiente de produção detectado. Usando variáveis de ambiente para Firebase."
-    );
-  
+  logger.log(
+    "Ambiente de produção detectado. Usando variáveis de ambiente para Firebase."
+  );
 } else {
   // Ambiente local (desenvolvimento)
   try {
     serviceAccount = require("./capoeira-base-firebase-adminsdk-fbsvc-9c895f87be.json");
     storageBucketName = "capoeira-base.firebaseapp.com";
 
-      logger.log("Ambiente local detectado. Usando arquivo JSON para Firebase.");
-    
+    logger.log("Ambiente local detectado. Usando arquivo JSON para Firebase.");
   } catch (error) {
     logger.error("Erro ao carregar credenciais locais:", error);
     throw new Error(
@@ -57,11 +55,10 @@ if (serviceAccount && storageBucketName) {
     storageBucket: storageBucketName,
   });
 
-    logger.log(
-      "Firebase Admin SDK inicializado com sucesso com bucket:",
-      storageBucketName
-    );
-  
+  logger.log(
+    "Firebase Admin SDK inicializado com sucesso com bucket:",
+    storageBucketName
+  );
 } else {
   logger.error("Erro crítico: credenciais ou bucket ausentes.");
   throw new Error("Falha na inicialização do Firebase Admin SDK.");

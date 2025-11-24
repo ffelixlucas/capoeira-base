@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 import { fazerLogin } from "../services/authService";
 import { buscarPerfil } from "../services/equipeService";
 import { logger } from "../utils/logger";
+logger.log("🔍 [AuthContext] Inicializando contexto...");
+
 
 export const AuthContext = createContext(null);
 
@@ -32,6 +34,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    logger.warn("🚪 [AuthContext] Logout disparado!");
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
     setToken("");
@@ -41,6 +44,7 @@ export const AuthProvider = ({ children }) => {
       setLogoutTimer(null);
     }
   };
+  
 
   const scheduleAutoLogout = (jwt) => {
     if (logoutTimer) {
@@ -65,26 +69,26 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const tokenSalvo = localStorage.getItem("token");
-
+  
     if (tokenSalvo) {
       setToken(tokenSalvo);
       scheduleAutoLogout(tokenSalvo);
-
+  
       buscarPerfil()
         .then((dados) => {
+          // 🔹 Agora mantemos o organizacao_id real, sem forçar "1"
           const usuarioFinal = {
             ...dados,
-            organizacao_id: dados.organizacao_id ?? 1,
+            organizacao_id: dados.organizacao_id,
           };
+  
           setUsuario(usuarioFinal);
           localStorage.setItem("usuario", JSON.stringify(usuarioFinal));
           logger.log("📌 Perfil atualizado:", usuarioFinal);
         })
-
-        .catch(() => {
-          // não expor erro detalhado ao usuário aqui
-          logout();
-          redirectToLogin();
+        .catch((erro) => {
+          // 🔥 Novo comportamento: não faz logout imediato
+          logger.warn("⚠️ Falha ao carregar perfil:", erro?.response?.status);
         })
         .finally(() => setCarregando(false));
     } else {
@@ -92,6 +96,7 @@ export const AuthProvider = ({ children }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
 
   const login = async (email, senha) => {
     try {
@@ -105,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       // 🔥 Garante que o organizacao_id sempre venha salvo no usuário local
       const usuarioFinal = {
         ...perfil,
-        organizacao_id: perfil.organizacao_id ?? 1, // fallback seguro
+        organizacao_id: perfil.organizacao_id,
       };
 
       localStorage.setItem("usuario", JSON.stringify(usuarioFinal));

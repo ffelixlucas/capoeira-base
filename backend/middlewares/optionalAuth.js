@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const logger = require("../utils/logger");
+const logger = require("../utils/logger.js");
 
 module.exports = function optionalAuth(req, res, next) {
   const authHeader = req.headers["authorization"];

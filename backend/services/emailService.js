@@ -1,6 +1,6 @@
 // backend/services/emailService.js
 const { Resend } = require("resend");
-const logger = require("../utils/logger");
+const logger = require("../utils/logger.js");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -145,7 +145,10 @@ async function enviarEmailExtorno(inscricao) {
       logger.log("✅ E-mail de estorno enviado via Resend:", data);
     }
   } catch (err) {
-    logger.error("❌ Erro inesperado ao enviar e-mail de estorno:", err.message);
+    logger.error(
+      "❌ Erro inesperado ao enviar e-mail de estorno:",
+      err.message
+    );
   }
 }
 
@@ -269,20 +272,17 @@ async function enviarEmailPendente(inscricao) {
       logger.log("✅ E-mail de pendência enviado via Resend:", data);
     }
   } catch (err) {
-    logger.error("❌ Erro inesperado ao enviar e-mail de pendência:", err.message);
+    logger.error(
+      "❌ Erro inesperado ao enviar e-mail de pendência:",
+      err.message
+    );
   }
 }
 
-
-
-module.exports = { 
-  enviarEmailConfirmacao, 
-  enviarEmailExtorno, 
+module.exports = {
+  enviarEmailConfirmacao,
+  enviarEmailExtorno,
   enviarEmailReset,
   enviarEmailCustom,
-  enviarEmailPendente
+  enviarEmailPendente,
 };
-
-
-
-

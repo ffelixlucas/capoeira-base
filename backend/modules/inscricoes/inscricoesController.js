@@ -1,5 +1,5 @@
 //backend/modules/inscricoes/inscricoesController.js
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 const inscricoesService = require("./inscricoesService");
 
 const listarPorEvento = async (req, res) => {
@@ -92,7 +92,6 @@ async function deletarInscricao(req, res) {
   }
 }
 
-
 async function extornarPagamento(req, res) {
   try {
     const { id } = req.params;
@@ -132,5 +131,4 @@ module.exports = {
   webhookPagamento,
   deletarInscricao,
   extornarPagamento,
-
 };

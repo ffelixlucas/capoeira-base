@@ -4,7 +4,7 @@ import { usePendentes } from "../../hooks/usePendentes";
 import { Check, X, Eye, User, Users, Loader2 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 Subcomponente para cada aluno pendente                                  */
+/* 🔹 Card de cada aluno pendente                                             */
 /* -------------------------------------------------------------------------- */
 function CardAluno({
   aluno,
@@ -14,72 +14,76 @@ function CardAluno({
   rejeitarAluno,
   onAtualizarContador,
   onAtualizarAlunos,
-  cacheCategorias, // referência compartilhada de cache
+  cacheTurmas,
+  organizacaoId,
 }) {
-  const [categoria, setCategoria] = useState("...");
+  const [turma, setTurma] = useState("...");
   const [idade, setIdade] = useState("-");
 
-  // Calcula idade do aluno
+  // 📌 Calcula idade do aluno
   useEffect(() => {
     if (!aluno.nascimento) return;
-  
+
     const [anoStr, mesStr, diaStr] = aluno.nascimento.split("-");
     const ano = parseInt(anoStr, 10);
     const mes = parseInt(mesStr, 10);
     const dia = parseInt(diaStr, 10);
-  
+
     const hoje = new Date();
     let idadeCalc = hoje.getFullYear() - ano;
-  
+
     if (
       hoje.getMonth() + 1 < mes ||
       (hoje.getMonth() + 1 === mes && hoje.getDate() < dia)
     ) {
       idadeCalc--;
     }
-  
+
     setIdade(idadeCalc);
   }, [aluno.nascimento]);
-  
 
-  // Busca categoria com cache
+  // 📌 Buscar T U R M A por idade (não categoria)
   useEffect(() => {
-    async function carregarCategoria() {
+    async function carregarTurma() {
       if (!idade || isNaN(idade)) {
-        setCategoria("-");
+        setTurma("-");
         return;
       }
 
-      // ✅ 1. Se já está no cache, usa direto
-      if (cacheCategorias.current[idade]) {
-        setCategoria(cacheCategorias.current[idade]);
+      // 🔎 1. Cache
+      if (cacheTurmas.current[idade]) {
+        setTurma(cacheTurmas.current[idade]);
         return;
       }
-
-      // ✅ 2. Se não está no cache, busca do backend
       try {
         const resp = await fetch(
-          `${import.meta.env.VITE_API_URL}/categorias/por-idade/${idade}`
+          `${import.meta.env.VITE_API_URL}/turmas/turma-por-idade/${idade}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
         );
-                if (!resp.ok) throw new Error("Falha ao buscar categoria");
+      
+        if (!resp.ok) throw new Error("Falha ao buscar turma");
+      
         const data = await resp.json();
-
-        let categoriaEncontrada =
-          data?.data?.categoria_nome ||
-          "Sem turma disponível para essa faixa etária";
-
-        // salva no cache
-        cacheCategorias.current[idade] = categoriaEncontrada;
-
-        setCategoria(categoriaEncontrada);
+      
+        const turmaEncontrada =
+          data?.data?.nome || "Sem turma disponível para essa faixa etária";
+      
+        cacheTurmas.current[idade] = turmaEncontrada;
+        setTurma(turmaEncontrada);
       } catch (err) {
-        console.error("Erro ao buscar categoria:", err);
-        setCategoria("Erro ao obter categoria");
+        console.error("Erro ao buscar turma:", err);
+        setTurma("Erro ao obter turma");
       }
+      
+      
     }
 
-    carregarCategoria();
-  }, [idade, cacheCategorias]);
+    carregarTurma();
+  }, [idade, organizacaoId, cacheTurmas]);
 
   const grupoSistema = "Capoeira Brasil";
   const veioOutroGrupo =
@@ -97,7 +101,7 @@ function CardAluno({
       onClick={() => onAbrirFicha?.(aluno)}
       className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all duration-200 flex flex-col items-center"
     >
-      {/* Avatar (foto ou inicial) */}
+      {/* Avatar */}
       <div className="h-14 w-14 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg mb-3 border border-gray-200">
         {aluno.foto_url ? (
           <img
@@ -111,7 +115,7 @@ function CardAluno({
         )}
       </div>
 
-      {/* Nome e grupo */}
+      {/* Nome */}
       <h3 className="text-base font-semibold text-gray-800 leading-tight text-center mb-1">
         {aluno.apelido || aluno.nome || "Sem nome"}
       </h3>
@@ -131,11 +135,11 @@ function CardAluno({
 
       {/* Info */}
       <p className="text-sm text-gray-600 text-center mb-3">
-        Idade: <strong>{idade}</strong> &nbsp;•&nbsp; Categoria:{" "}
-        <strong>{categoria}</strong>
+        Idade: <strong>{idade}</strong> &nbsp;•&nbsp; Turma:{" "}
+        <strong>{turma}</strong>
       </p>
 
-      {/* Graduação (se já tiver) */}
+      {/* Graduação */}
       {aluno.graduacao_nome && (
         <p className="text-sm text-amber-700 font-medium text-center mb-2">
           Graduação:{" "}
@@ -143,7 +147,7 @@ function CardAluno({
         </p>
       )}
 
-      {/* Observação médica (se existir) */}
+      {/* Observações médicas */}
       {aluno.observacoes_medicas && aluno.observacoes_medicas.trim() !== "" && (
         <div className="bg-red-50 border border-red-200 rounded-md px-2 py-1 text-center mb-3">
           <p className="text-[13px] text-red-700 leading-snug">
@@ -190,7 +194,7 @@ function CardAluno({
 }
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 Componente principal do modal                                           */
+/* 🔹 Modal principal                                                         */
 /* -------------------------------------------------------------------------- */
 export default function ModalPendentes({
   aberto,
@@ -203,8 +207,7 @@ export default function ModalPendentes({
   const { pendentes, carregando, aprovarAluno, rejeitarAluno } =
     usePendentes(organizacaoId);
 
-  // cacheCategorias é um objeto compartilhado que persiste durante o render
-  const cacheCategorias = useRef({});
+  const cacheTurmas = useRef({});
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();
@@ -278,12 +281,13 @@ export default function ModalPendentes({
                       key={aluno.id}
                       aluno={aluno}
                       index={index}
+                      organizacaoId={organizacaoId}
                       onAbrirFicha={onAbrirFicha}
                       aprovarAluno={aprovarAluno}
                       rejeitarAluno={rejeitarAluno}
                       onAtualizarContador={onAtualizarContador}
                       onAtualizarAlunos={onAtualizarAlunos}
-                      cacheCategorias={cacheCategorias}
+                      cacheTurmas={cacheTurmas}
                     />
                   ))}
                 </div>
@@ -296,9 +300,9 @@ export default function ModalPendentes({
                 <p className="text-center text-xs text-gray-500">
                   Clique em qualquer card para visualizar os detalhes completos
                 </p>
-              </div>
+              </div>  
             )}
-          </motion.div>
+          </motion.div> 
         </motion.div>
       )}
     </AnimatePresence>

@@ -1,29 +1,25 @@
+// src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { initMP } from "./utils/mercadoPago";
-import { useRipple } from "./hooks/useRipple"; // 🔹 importa hook ripple
+import { useRipple } from "./hooks/useRipple";
 import "flowbite";
 
-
-// inicializa Mercado Pago SDK
 initMP();
 
-function Root() {
-  useRipple(); // 🔹 ativa ripple globalmente
-
-  return (
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  );
+// 🔹 Wrapper para ativar ripple depois que AuthProvider já existe
+function AppWithRipple() {
+  useRipple();
+  return <App />;
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <Root />
+    <AuthProvider>
+      <AppWithRipple />
+    </AuthProvider>
   </React.StrictMode>
 );

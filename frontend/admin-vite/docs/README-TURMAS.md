@@ -13,13 +13,13 @@ O módulo **Turmas** tem como objetivo:
 ## 🏗️ Estrutura de Tabelas
 
 ### **Tabela `turmas`**
-| Campo       | Tipo       | Descrição                                      |
-|-------------|------------|------------------------------------------------|
-| id          | INT (PK)   | Identificador único da turma                    |
-| nome        | VARCHAR    | Nome da turma (ex.: Infantil, Juvenil, Adulto)  |
-| faixa_etaria| VARCHAR    | Faixa etária da turma                           |
-| equipe_id   | INT (FK)   | ID do instrutor responsável (tabela `equipe`)   |
-| criado_em   | DATETIME   | Data de criação                                 |
+| Campo        | Tipo        | Descrição                                      |
+|--------------|-------------|------------------------------------------------|
+| id           | INT (PK)    | Identificador único da turma                    |
+| nome         | VARCHAR     | Nome da turma (ex.: Infantil, Juvenil, Adulto) |
+| faixa_etaria | VARCHAR     | Faixa etária da turma                           |
+| equipe_id    | INT (FK)    | ID do instrutor responsável (tabela `equipe`)  |
+| criado_em    | DATETIME    | Data de criação                                |
 
 ---
 
@@ -62,7 +62,7 @@ O módulo **Turmas** tem como objetivo:
 | GET    | `/turmas`               | Lista todas as turmas ativas com instrutor vinculado            |
 | GET    | `/turmas/minhas`        | Lista apenas as turmas vinculadas ao instrutor logado (RBAC)    |
 | POST   | `/turmas`               | Cria nova turma (apenas Admin)                                  |
-| PUT    | `/turmas/:id`           | Atualiza dados de uma turma (apenas Admin)                       |
+| PUT    | `/turmas/:id`           | Atualiza dados de uma turma (apenas Admin)                      |
 | DELETE | `/turmas/:id`           | Exclui turma (apenas Admin)                                     |
 | POST   | `/turmas/:id/encerrar`  | Encerra turma migrando alunos para outra turma ou "Sem turma"   |
 
@@ -81,12 +81,32 @@ O módulo **Turmas** tem como objetivo:
 
 ---
 
+## 🧩 Arquitetura Frontend
+
+**Pasta:** `frontend/admin-vite/src/`
+
+| Tipo | Local | Descrição |
+|------|--------|------------|
+| **Página** | `/pages/Turmas.jsx` | Tela principal com listagem, formulário e modal |
+| **Hook** | `/hooks/useTurmas.js` | Gerencia estado e busca com debounce |
+| **Service** | `/services/turmasService.js` | Comunicação com API REST |
+| **Componentes** | `/components/turmas/` | |
+| → `TurmaList.jsx` | Lista turmas (cards) com ações de editar/excluir |
+| → `TurmaForm.jsx` | Formulário de criação e edição (usa `InputBase`) |
+| → `ModalEncerrarTurma.jsx` | Modal para encerramento e migração de alunos |
+
+**Fluxo visual:**  
+`Turmas.jsx` → chama `useTurmas()` → renderiza `TurmaList` + `TurmaForm` + `ModalEncerrarTurma`.
+
+---
+
 ## 🚀 Status Atual
 
 - ✔️ CRUD completo e testado.
 - ✔️ RBAC implementado no endpoint `/minhas`.
 - ✔️ Integração com módulo Alunos e controle de matrículas.
 - ✔️ Encerramento de turmas com migração automática funcionando.
+- ✔️ Frontend e backend padronizados (Capoeira Base v2).
 
 ---
 
@@ -95,9 +115,11 @@ O módulo **Turmas** tem como objetivo:
 - [ ] Permitir mais de um instrutor responsável por turma.
 - [ ] Permitir adicionar descrição ou informações extras sobre a turma.
 - [ ] Dashboard com métricas de quantidade de alunos por turma/faixa etária.
-- [ ] Histórico detalhado de encerramento de turmas.
+- [ ] Histórico detalhado de encerramento de turmas.  
 
 ---
 
 **Local:** `/docs/README-TURMAS.md`  
-**Versão:** 1.0 – **Status:** ✅ Finalizado e estável.
+**Versão:** 1.0  
+**Status:** ✅ Finalizado e estável.  
+**Arquitetura:** Capoeira Base v2 (multi-organização + RBAC + logger integrado)

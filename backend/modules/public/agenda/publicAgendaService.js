@@ -1,19 +1,27 @@
 // backend/modules/public/agenda/publicAgendaService.js
 const db = require("../../../database/connection");
 
-// 🔹 Lista apenas eventos públicos (com_inscricao = true)
-async function listarEventosPublicos() {
-  const [rows] = await db.execute(`
+/**
+ * Lista eventos públicos de uma organização específica (multi-org)
+ */
+async function listarEventosPublicos(organizacaoId) {
+  const [rows] = await db.execute(
+    `
     SELECT 
-      id, titulo, descricao_curta, descricao_completa,
+      id, organizacao_id, titulo, descricao_curta, descricao_completa,
       local, endereco, telefone_contato,
       data_inicio, data_fim, inscricoes_ate,
       imagem_url, valor, possui_camiseta,
       configuracoes
     FROM agenda
-    WHERE com_inscricao = 1 AND status = 'ativo'
+    WHERE 
+      com_inscricao = 1 
+      AND status = 'ativo'
+      AND organizacao_id = ?
     ORDER BY data_inicio ASC
-  `);
+    `,
+    [organizacaoId]
+  );
 
   return rows.map((evento) => ({
     ...evento,
@@ -29,19 +37,26 @@ async function listarEventosPublicos() {
   }));
 }
 
-// 🔹 Busca um evento público por ID (agora inclui inscricoes_ate)
-async function buscarEventoPublicoPorId(id) {
-  const [rows] = await db.execute(`
+// 🔹 Busca um evento público por ID (mantém igual)
+async function buscarEventoPublicoPorId(id, organizacaoId) {
+  const [rows] = await db.execute(
+    `
     SELECT 
-      id, titulo, descricao_curta, descricao_completa,
+      id, organizacao_id, titulo, descricao_curta, descricao_completa,
       local, endereco, telefone_contato,
       data_inicio, data_fim, inscricoes_ate,
       imagem_url, valor, possui_camiseta,
       configuracoes
     FROM agenda
-    WHERE id = ? AND com_inscricao = 1 AND status = 'ativo'
+    WHERE 
+      id = ? 
+      AND organizacao_id = ? 
+      AND com_inscricao = 1 
+      AND status = 'ativo'
     LIMIT 1
-  `, [id]);
+    `,
+    [id, organizacaoId]
+  );
 
   if (!rows.length) return null;
 
@@ -54,6 +69,7 @@ async function buscarEventoPublicoPorId(id) {
 
   return evento;
 }
+
 
 module.exports = {
   listarEventosPublicos,

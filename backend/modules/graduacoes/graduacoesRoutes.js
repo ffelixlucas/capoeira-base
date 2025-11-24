@@ -2,11 +2,17 @@
 const express = require("express");
 const router = express.Router();
 const graduacoesController = require("./graduacoesController");
+const verifyToken = require("../../middlewares/verifyToken");
+const checkRole = require("../../middlewares/checkRole");
 
-// GET /graduacoes → todas
-router.get("/", graduacoesController.getTodas);
+// Todas as rotas são exclusivas para ADMIN
+router.use(verifyToken, checkRole(["admin"]));
 
-// GET /graduacoes/categoria/:categoriaId → filtradas por categoria_id
-router.get("/categoria/:categoriaId", graduacoesController.getPorCategoria);
+router.get("/", graduacoesController.listarTodas);
+router.get("/categoria/:categoriaId", graduacoesController.listarPorCategoria);
+router.get("/:id", graduacoesController.buscarPorId);
+router.post("/", graduacoesController.criar);
+router.put("/:id", graduacoesController.atualizar);
+router.delete("/:id", graduacoesController.remover);
 
 module.exports = router;

@@ -1,12 +1,13 @@
 // backend/modules/inscricoes/inscricoesRepository.js
 
-const db = require('../../database/connection');
-const { atualizarInscricaoComPix } = require('../public/inscricoes/inscricoesRepository');
-const logger = require('../../utils/logger.js');
+const db = require("../../database/connection");
+const {
+  atualizarInscricaoComPix,
+} = require("../public/inscricoes/inscricoesRepository");
+const logger = require("../../utils/logger.js");
 
 // Lista evento, totais e inscritos (com filtro opcional)
 async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
-
   // 1) Dados do evento
   const [eventoRows] = await db.execute(
     `SELECT id, titulo, valor, data_inicio 
@@ -27,7 +28,6 @@ async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
   );
   evento.total_inscritos = totalRows[0]?.total ?? 0;
 
-
   // 3) Totais financeiros apenas de pagos
   const [totaisRows] = await db.execute(
     `SELECT 
@@ -39,7 +39,6 @@ async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
   );
   evento.valor_bruto_total = Number(totaisRows[0]?.valor_bruto_total ?? 0);
   evento.valor_liquido_total = Number(totaisRows[0]?.valor_liquido_total ?? 0);
-
 
   // 4) Lista de inscritos (com filtro - busca)
   let query = `
@@ -79,11 +78,10 @@ async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
 
   const params = [eventoId];
 
-
   if (busca) {
     const like = `%${busca}%`;
     const digits = busca.replace(/\D/g, "");
-  
+
     if (digits.length > 0) {
       query += `
         AND (
@@ -108,36 +106,30 @@ async function listarPorEvento(eventoId, busca = "", categoria = "todos") {
       params.push(like, like, like, like);
     }
   }
-  
-  
+
   logger.debug("[listarPorEvento] SQL gerada:", { query, params });
-  
 
   if (categoria && categoria !== "todos") {
     query += " AND i.categoria_id = ?";
     params.push(categoria);
   }
-  
-  
 
   query += " ORDER BY criado_em DESC";
   const [inscritos] = await db.execute(query, params);
 
-    // 5) Resumo de camisetas (apenas pagos)
-    const [camisetasRows] = await db.execute(
-      `SELECT tamanho_camiseta AS tamanho, COUNT(*) AS total
+  // 5) Resumo de camisetas (apenas pagos)
+  const [camisetasRows] = await db.execute(
+    `SELECT tamanho_camiseta AS tamanho, COUNT(*) AS total
        FROM inscricoes_evento
        WHERE evento_id = ? AND status = 'pago'
        GROUP BY tamanho_camiseta
        ORDER BY tamanho_camiseta`,
-      [eventoId]
-    );
-  
-    // 6) Retorno padronizado
-    return { evento, inscritos, resumo_camisetas: camisetasRows };
-  }
+    [eventoId]
+  );
 
-
+  // 6) Retorno padronizado
+  return { evento, inscritos, resumo_camisetas: camisetasRows };
+}
 
 // Busca os detalhes completos de um inscrito
 async function buscarPorId(id) {
@@ -187,8 +179,6 @@ async function buscarPorId(id) {
   return rows[0] || null;
 }
 
-
-
 async function criarInscricao(dados) {
   const {
     evento_id,
@@ -210,7 +200,7 @@ async function criarInscricao(dados) {
     alergias_restricoes = null,
     aceite_imagem = 0,
     aceite_responsabilidade = 0,
-    aceite_lgpd = 0
+    aceite_lgpd = 0,
   } = dados;
 
   if (!evento_id || !nome) {
@@ -244,7 +234,7 @@ async function criarInscricao(dados) {
       alergias_restricoes,
       aceite_imagem,
       aceite_responsabilidade,
-      aceite_lgpd
+      aceite_lgpd,
     ]
   );
 
@@ -260,7 +250,7 @@ async function atualizarInscricao(id, dados) {
     throw new Error("Nenhum campo válido para atualização");
   }
 
-  const setClause = campos.map(campo => `${campo} = ?`).join(', ');
+  const setClause = campos.map((campo) => `${campo} = ?`).join(", ");
 
   const [result] = await db.execute(
     `UPDATE inscricoes_evento 
@@ -281,7 +271,10 @@ async function atualizarStatus(payload) {
 }
 
 async function deletarInscricao(id) {
-  const [result] = await db.query("DELETE FROM inscricoes_evento WHERE id = ?", [id]);
+  const [result] = await db.query(
+    "DELETE FROM inscricoes_evento WHERE id = ?",
+    [id]
+  );
   return result.affectedRows > 0;
 }
 
@@ -341,9 +334,6 @@ const buscarInscricaoComEvento = async (id) => {
   return rows[0];
 };
 
-
-
-
 module.exports = {
   listarPorEvento,
   buscarPorId,
@@ -353,4 +343,3 @@ module.exports = {
   atualizarInscricaoParaExtornado,
   buscarInscricaoComEvento,
 };
-

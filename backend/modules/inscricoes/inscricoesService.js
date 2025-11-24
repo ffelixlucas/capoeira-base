@@ -3,14 +3,17 @@ const inscricoesRepository = require("./inscricoesRepository");
 const { registrarLogTransacao } = require("./logsRepository");
 const { enviarEmailExtorno } = require("../../services/emailService");
 const axios = require("axios");
-const logger = require("../../utils/logger");
+const logger = require("../../utils/logger.js");
 
 async function extornarPagamentoService(id) {
   logger.log("🔎 Iniciando extorno para inscrição:", id);
 
   const inscricao = await inscricoesRepository.buscarInscricaoComEvento(id);
   if (!inscricao || !inscricao.pagamento_id) {
-    logger.error("❌ Inscrição não encontrada ou sem pagamento vinculado:", inscricao);
+    logger.error(
+      "❌ Inscrição não encontrada ou sem pagamento vinculado:",
+      inscricao
+    );
     throw new Error("Inscrição não encontrada ou sem pagamento vinculado");
   }
   logger.log("📌 Inscrição encontrada:", {
@@ -68,8 +71,11 @@ async function extornarPagamentoService(id) {
     logger.log("🎉 Extorno concluído com sucesso!");
     return { id, ...refundInfo };
   } catch (err) {
-    logger.error("❌ Erro ao extornar no Mercado Pago:", err?.response?.data || err);
-  
+    logger.error(
+      "❌ Erro ao extornar no Mercado Pago:",
+      err?.response?.data || err
+    );
+
     // 🔎 Fallback: verificar se o pagamento já foi estornado
     try {
       const { data: pagamento } = await axios.get(
@@ -80,17 +86,25 @@ async function extornarPagamentoService(id) {
           },
         }
       );
-  
+
       if (pagamento.status === "refunded") {
         const refundInfo = {
           refund_id: pagamento.id,
           refund_valor: pagamento.transaction_amount,
           status: "extornado",
         };
-  
-        await inscricoesRepository.atualizarInscricaoParaExtornado(id, refundInfo);
-        await registrarLogTransacao(id, "extorno_realizado", "sucesso_fallback", refundInfo);
-  
+
+        await inscricoesRepository.atualizarInscricaoParaExtornado(
+          id,
+          refundInfo
+        );
+        await registrarLogTransacao(
+          id,
+          "extorno_realizado",
+          "sucesso_fallback",
+          refundInfo
+        );
+
         await enviarEmailExtorno({
           ...inscricao,
           refund_valor: refundInfo.refund_valor,
@@ -103,14 +117,17 @@ async function extornarPagamentoService(id) {
             data_fim: inscricao.data_fim,
           },
         });
-  
+
         logger.log("🎉 Extorno confirmado via fallback!");
         return { id, ...refundInfo };
       }
     } catch (checkErr) {
-      logger.error("❌ Falha ao verificar status do pagamento no fallback:", checkErr);
+      logger.error(
+        "❌ Falha ao verificar status do pagamento no fallback:",
+        checkErr
+      );
     }
-  
+
     // Se chegou aqui, realmente não deu certo
     await registrarLogTransacao(id, "erro_extorno", "erro", {
       message: err.message,
@@ -118,9 +135,7 @@ async function extornarPagamentoService(id) {
     });
     throw err;
   }
-  
 }
-
 
 // Lista inscritos de um evento
 async function listarPorEvento(eventoId, busca, categoria = "todos") {

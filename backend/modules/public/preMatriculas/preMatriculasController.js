@@ -3,7 +3,7 @@
 
 const preMatriculasService = require("./preMatriculasService");
 const matriculaService = require("../../matricula/matriculaService");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Criação de pré-matrícula (rota pública ou autenticada)                  */
@@ -106,8 +106,7 @@ async function atualizarStatus(req, res) {
     return res.json({
       sucesso: resultado?.sucesso ?? true,
       mensagem:
-        resultado?.mensagem ||
-        `Status atualizado para ${status} com sucesso.`,
+        resultado?.mensagem || `Status atualizado para ${status} com sucesso.`,
     });
   } catch (err) {
     logger.error(
@@ -121,8 +120,6 @@ async function atualizarStatus(req, res) {
     });
   }
 }
-
-
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Retorna nome do grupo da organização (usado no formulário público)      */
@@ -143,9 +140,68 @@ async function getGrupo(req, res) {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* 🔍 Detectar turma por idade + slug (público)                               */
+/* -------------------------------------------------------------------------- */
+async function detectarTurmaPorIdade(req, res) {
+  try {
+    const { slug, idade } = req.params;
+
+    logger.debug(
+      `[preMatriculasController] Detectando turma para slug=${slug} idade=${idade}`
+    );
+
+    const turma = await preMatriculasService.detectarTurmaPorIdade({
+      slug,
+      idade: Number(idade),
+    });
+
+    return res.json({ data: turma });
+  } catch (err) {
+    logger.error(
+      "[preMatriculasController] Erro ao detectar turma:",
+      err.message
+    );
+    return res.status(400).json({
+      error: "Erro ao detectar turma para a idade informada.",
+    });
+  }
+}
+/* -------------------------------------------------------------------------- */
+/* 🔍 Listar graduações por categoria (público + slug)                         */
+/* -------------------------------------------------------------------------- */
+async function listarGraduacoesPorCategoriaPublic(req, res) {
+  try {
+    const { slug, categoriaId } = req.params;
+
+    logger.debug(
+      `[preMatriculasController] Buscando graduações (slug=${slug}, categoria=${categoriaId})`
+    );
+
+    const graduacoes =
+      await preMatriculasService.listarGraduacoesPorCategoriaPublic({
+        slug,
+        categoriaId,
+      });
+
+    return res.json({ data: graduacoes });
+  } catch (err) {
+    logger.error(
+      "[preMatriculasController] Erro ao listar graduações públicas:",
+      err.message
+    );
+
+    return res
+      .status(400)
+      .json({ error: "Erro ao listar graduações para essa categoria." });
+  }
+}
+
 module.exports = {
   criarPreMatricula,
   listarPendentes,
   atualizarStatus,
   getGrupo,
+  detectarTurmaPorIdade,
+  listarGraduacoesPorCategoriaPublic,
 };

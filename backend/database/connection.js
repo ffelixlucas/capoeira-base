@@ -1,22 +1,21 @@
-const mysql = require('mysql2/promise');
-const logger = require('../utils/logger');
+const mysql = require("mysql2/promise");
+const logger = require("../utils/logger.js");
 
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
   user: process.env.MYSQLUSER,
   password: process.env.MYSQLPASSWORD,
   database: process.env.MYSQLDATABASE,
-  port: parseInt(process.env.MYSQLPORT || '3306', 10),
+  port: parseInt(process.env.MYSQLPORT || "3306", 10),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
-  timezone: "-03:00"  
+  timezone: "-03:00",
 });
 
-
-const transientErrors = ['EAI_AGAIN', 'ETIMEDOUT', 'ECONNRESET'];
+const transientErrors = ["EAI_AGAIN", "ETIMEDOUT", "ECONNRESET"];
 
 // Função helper para criar erro HTTP
 function httpError(message, status) {
@@ -36,7 +35,7 @@ async function getConnectionWithRetry(retries = 3, delayMs = 1000) {
         logger.warn(
           `⚠️ Erro transitório MySQL (${err.code}) — tentativa ${attempt}/${retries}`
         );
-        await new Promise(res => setTimeout(res, delayMs * attempt));
+        await new Promise((res) => setTimeout(res, delayMs * attempt));
         continue;
       }
       throw err;
@@ -51,7 +50,7 @@ async function safeExecute(fn, ...args) {
     return await pool[fn](...args);
   } catch (err) {
     if (transientErrors.includes(err.code)) {
-      throw httpError('Banco de dados temporariamente indisponível', 503);
+      throw httpError("Banco de dados temporariamente indisponível", 503);
     }
     throw err;
   }
@@ -60,6 +59,6 @@ async function safeExecute(fn, ...args) {
 module.exports = {
   pool,
   getConnectionWithRetry,
-  execute: (...args) => safeExecute('execute', ...args),
-  query: (...args) => safeExecute('query', ...args)
+  execute: (...args) => safeExecute("execute", ...args),
+  query: (...args) => safeExecute("query", ...args),
 };

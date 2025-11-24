@@ -252,7 +252,6 @@ const buscarInscricaoComEvento = async (id) => {
   return rows[0];
 };
 
-
 const verificarInscricaoPaga = async (cpf, eventoId) => {
   const [rows] = await db.execute(
     `SELECT id FROM inscricoes_evento
@@ -332,8 +331,6 @@ async function verificarEncerramentoInscricao(eventoId) {
 
   return false;
 }
-
-
 
 module.exports = {
   buscarInscricaoPendente,

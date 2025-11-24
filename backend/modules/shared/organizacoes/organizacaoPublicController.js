@@ -1,5 +1,5 @@
 const organizacaoService = require("./organizacaoService");
-const logger = require("../../../utils/logger");
+const logger = require("../../../utils/logger.js");
 
 /**
  * 🔹 Retorna dados públicos da organização via slug

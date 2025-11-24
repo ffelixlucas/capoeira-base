@@ -1,5 +1,38 @@
+import { toast } from "react-toastify";
+import { logger } from "../../utils/logger";
+
+/**
+ * 🧾 Componente: TurmaList
+ * Lista turmas de forma responsiva, com botões de editar e excluir.
+ */
 export default function TurmaList({ turmas = [], onEditar, onExcluir }) {
-  if (turmas.length === 0) {
+  /* -------------------------------------------------------------------------- */
+  /* 🔄 Handlers                                                                */
+  /* -------------------------------------------------------------------------- */
+  const handleEditar = (turma) => {
+    try {
+      logger.debug("[TurmaList] Editar turma", { id: turma.id, nome: turma.nome });
+      onEditar?.(turma);
+    } catch (err) {
+      logger.error("[TurmaList] Erro ao acionar edição", { erro: err.message });
+      toast.error("Erro ao abrir edição da turma");
+    }
+  };
+
+  const handleExcluir = (turma) => {
+    try {
+      logger.debug("[TurmaList] Excluir turma", { id: turma.id, nome: turma.nome });
+      onExcluir?.(turma);
+    } catch (err) {
+      logger.error("[TurmaList] Erro ao acionar exclusão", { erro: err.message });
+      toast.error("Erro ao excluir turma");
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* 🧱 Renderização                                                            */
+  /* -------------------------------------------------------------------------- */
+  if (!turmas.length) {
     return (
       <p className="text-center text-gray-500 mt-4">
         Nenhuma turma cadastrada ainda.
@@ -12,37 +45,54 @@ export default function TurmaList({ turmas = [], onEditar, onExcluir }) {
       {turmas.map((turma) => (
         <div
           key={turma.id}
-          className="bg-white rounded-lg shadow p-4 border border-gray-200 relative"
+          className="relative bg-white rounded-xl shadow p-4 border border-gray-200 transition hover:shadow-md hover:-translate-y-[1px]"
         >
-          <h2 className="text-lg font-semibold text-cor-primaria">
-            {turma.nome}
-          </h2>
-          <p className="text-sm text-gray-700">
-            Faixa etária: {turma.faixa_etaria || "Não informada"}
-          </p>
-          <p className="text-sm text-gray-500">
-            Instrutor:{" "}
-            <span className="font-medium">{turma.nome_instrutor}</span>
-          </p>
-          <div className="absolute top-2 right-2 flex gap-2">
-            {onEditar && (
-              <button
-                onClick={() => onEditar(turma)}
-                className="text-xs text-cor-primaria underline"
-              >
-                Editar
-              </button>
-            )}
-            {onExcluir && (
-              <button
-                onClick={() => onExcluir(turma)}
-                className="text-xs text-red-500 underline"
-              >
-                Excluir
-              </button>
-            )}
+          {/* Cabeçalho */}
+          <div className="flex justify-between items-start">
+            <h2 className="text-lg font-semibold text-cor-primaria break-words">
+              {turma.nome}
+            </h2>
+            <div className="flex gap-3">
+              {onEditar && (
+                <button
+                  onClick={() => handleEditar(turma)}
+                  className="text-xs text-cor-primaria hover:underline"
+                >
+                  Editar
+                </button>
+              )}
+              {onExcluir && (
+                <button
+                  onClick={() => handleExcluir(turma)}
+                  className="text-xs text-red-500 hover:underline"
+                >
+                  Excluir
+                </button>
+              )}
+            </div>
           </div>
-          
+
+          {/* Detalhes */}
+          <div className="mt-2 text-sm text-gray-700 space-y-1">
+            <p>
+              <strong>Faixa etária:</strong>{" "}
+              {turma.faixa_etaria || "Não informada"}
+            </p>
+            {turma.idade_min !== null && turma.idade_max !== null && (
+              <p>
+                <strong>Idade:</strong> {turma.idade_min} – {turma.idade_max} anos
+              </p>
+            )}
+            {turma.nome_categoria && (
+              <p>
+                <strong>Categoria:</strong> {turma.nome_categoria}
+              </p>
+            )}
+            <p>
+              <strong>Instrutor:</strong>{" "}
+              {turma.nome_instrutor || <span className="italic text-gray-400">Não vinculado</span>}
+            </p>
+          </div>
         </div>
       ))}
     </div>
