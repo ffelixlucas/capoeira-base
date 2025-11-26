@@ -2,7 +2,6 @@ import util from "util";
 
 console.log(`[LOGGER-TS] Versão TypeScript carregada com sucesso`);
 
-
 /** Máscara de CPF */
 export function mascararCpf(cpf?: string): string {
   if (!cpf) return "";
@@ -52,7 +51,7 @@ function print(level: LogLevel, ...args: unknown[]): void {
   }
 }
 
-/** Interface do logger (modelo) */
+/** Interface do logger */
 export interface ILogger {
   log: (...args: unknown[]) => void;
   info: (...args: unknown[]) => void;
@@ -90,6 +89,5 @@ export const logger: ILogger = {
   mascararTelefone,
 };
 
-/** Compatível com require() */
-module.exports = logger;
-module.exports.logger = logger;
+/** Export default — compatível com JS e TS */
+export default logger;

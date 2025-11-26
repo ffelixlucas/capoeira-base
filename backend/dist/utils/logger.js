@@ -77,6 +77,5 @@ exports.logger = {
     mascararCpf,
     mascararTelefone,
 };
-/** Compatível com require() */
-module.exports = exports.logger;
-module.exports.logger = exports.logger;
+/** Export default — compatível com JS e TS */
+exports.default = exports.logger;

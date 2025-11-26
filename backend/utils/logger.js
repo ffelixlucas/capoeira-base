@@ -1,1 +1,1 @@
-module.exports = require("../dist/utils/logger.js")
+module.exports = require("../dist/utils/logger.js").default;

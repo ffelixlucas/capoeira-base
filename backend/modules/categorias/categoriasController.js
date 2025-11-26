@@ -1,6 +1,6 @@
 // modules/categorias/categoriasController.js
 const categoriasService = require("./categoriasService");
-const { logger } = require("../../utils/logger.js");
+const  logger  = require("../../utils/logger.js");
 
 async function listarTodas(req, res) {
   try {

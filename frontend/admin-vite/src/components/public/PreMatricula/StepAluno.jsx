@@ -6,19 +6,29 @@ import { buscarOrganizacaoPorSlug } from "../../../services/shared/organizacaoSe
 import InputBase from "../../ui/InputBase";
 import FotoPerfil from "../../ui/FotoPerfil";
 import { logger } from "../../../utils/logger";
+import InfoTip from "../../ui/InfoTip";
+import { useValidarCpf } from "../../../hooks/public/useValidarCpf";
 
 export default function StepAluno({
   form,
   handleChange,
   fotoPendente,
   setFotoPendente,
+  onCpfInvalido,
 }) {
   const { slug } = useParams();
+  const { cpf, setCpf, status, carregando } = useValidarCpf(slug);
 
   const [grupoOrg, setGrupoOrg] = useState("");
   const [categoria, setCategoria] = useState(null);
   const [graduacoes, setGraduacoes] = useState([]);
   const [categoriasDisponiveis, setCategoriasDisponiveis] = useState([]);
+
+  useEffect(() => {
+    if (onCpfInvalido) {
+      onCpfInvalido(status?.existe || false);
+    }
+  }, [status?.existe]);
 
   // 🔹 Buscar grupo da organização (dinâmico via slug)
   useEffect(() => {
@@ -279,75 +289,42 @@ export default function StepAluno({
           </p>
         </div>
 
-        <InputBase
-          type="text"
-          name="cpf"
-          placeholder="CPF do Aluno *"
-          value={form.cpf}
-          onChange={handleChange}
-          required
-        />
+        {/* CPF com validação e máscara (mantém o padrão visual) */}
+        <div className="flex flex-col gap-[2px]">
+  <InputBase
+    type="text"
+    name="cpf"
+    placeholder="CPF *"
+    value={cpf}
+    onChange={(e) => setCpf(e.target.value)}
+    className={status?.existe ? "border-red-500" : ""}
+    required
+  />
+
+  {status?.existe && (
+    <p className="text-red-600 text-xs italic ml-1">
+      {status.mensagem}
+    </p>
+  )}
+</div>
+
+
+
+
 
         {/* Categoria detectada */}
         {categoria && (
-          <div className="text-sm text-gray-700 mt-1">
-            {!form.editandoCategoria ? (
-              <>
-                <span>Categoria detectada: </span>
-                <span className="font-semibold">
-                  {categoria.categoria_nome}
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleChange({
-                      target: { name: "editandoCategoria", value: true },
-                    })
-                  }
-                  className="text-blue-600 ml-2 text-xs underline hover:text-blue-800"
-                >
-                  alterar
-                </button>
-              </>
-            ) : (
-              <div className="flex items-center gap-2 mt-1">
-                <select
-                  name="categoria_id"
-                  value={form.categoria_id || ""}
-                  onChange={(e) => {
-                    logger.debug(
-                      "[StepAluno] Categoria alterada manualmente →",
-                      e.target.value
-                    );
-                    handleChange(e);
-                    handleChange({
-                      target: { name: "editandoCategoria", value: true },
-                    });
-                    setCategoria({ categoria_id: e.target.value }); // garante atualização visual
-                  }}
-                  className="border border-gray-300 rounded-md px-3 py-1 text-sm text-gray-800 bg-white"
-                >
-                  <option value="">Selecione uma categoria</option>
-                  {categoriasDisponiveis.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.nome}
-                    </option>
-                  ))}
-                </select>
+          <div className="text-sm text-gray-700 mt-1 flex flex-col gap-2">
+            <span>
+              Categoria detectada automaticamente:{" "}
+              <span className="font-semibold">{categoria.categoria_nome}</span>
+            </span>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleChange({
-                      target: { name: "editandoCategoria", value: false },
-                    })
-                  }
-                  className="text-gray-500 text-xs underline hover:text-gray-700"
-                >
-                  cancelar
-                </button>
-              </div>
-            )}
+            <InfoTip>
+              As turmas e categorias são selecionadas automaticamente conforme a
+              idade. Caso seja necessário realocar o aluno, a alteração será
+              feita pelo administrador e enviada por e-mail.
+            </InfoTip>
           </div>
         )}
 

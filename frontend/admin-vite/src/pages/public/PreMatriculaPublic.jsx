@@ -30,6 +30,7 @@ export default function PreMatriculaPublic() {
     handleSubmit,
   } = usePreMatriculaSteps(registrarPreMatricula, slug);
 
+  const [cpfInvalido, setCpfInvalido] = useState(false);
   const idade = calcularIdade(form.nascimento);
 
   const stepsInfo =
@@ -80,6 +81,7 @@ export default function PreMatriculaPublic() {
               handleChange={handleChange}
               fotoPendente={fotoPendente}
               setFotoPendente={setFotoPendente}
+              onCpfInvalido={setCpfInvalido}
             />
           )}
           {step === 2 && idade < 18 && (
@@ -112,14 +114,27 @@ export default function PreMatriculaPublic() {
             {step < stepsInfo.length && (
               <button
                 type="button"
+                disabled={step === 1 && cpfInvalido}
                 onClick={() => {
+                  if (step === 1 && cpfInvalido) {
+                    toast.error(
+                      "Este CPF já está cadastrado. Corrija antes de continuar."
+                    );
+                    return;
+                  }
+
                   if (step === 1 && fotoPendente) {
                     toast.warn("Confirme a foto antes de prosseguir.");
                     return;
                   }
+
                   nextStep();
                 }}
-                className="btn-primary ml-auto"
+                className={`btn-primary ml-auto ${
+                  step === 1 && cpfInvalido
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
               >
                 Próximo
               </button>

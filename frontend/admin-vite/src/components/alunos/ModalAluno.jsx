@@ -4,7 +4,7 @@ import NotasAluno from "./NotasAluno";
 import { excluirAluno } from "../../services/alunoService";
 import api from "../../services/api";
 import { toast } from "react-toastify";
-import { logger } from "../../utils/logger";
+import {logger} from "../../utils/logger";
 import { FaWhatsapp } from "react-icons/fa";
 
 /**

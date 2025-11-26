@@ -5,8 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const app_1 = __importDefault(require("./app"));
-const logger_1 = require("./utils/logger");
+const logger_1 = __importDefault(require("./utils/logger"));
 const PORT = process.env.PORT || 3000;
 app_1.default.listen(PORT, () => {
-    logger_1.logger.log(`[STARTUP] Servidor rodando na porta ${PORT}`);
+    logger_1.default.log(`[STARTUP] Servidor rodando na porta ${PORT}`);
 });

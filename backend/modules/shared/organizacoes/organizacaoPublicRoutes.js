@@ -1,8 +1,2 @@
-const express = require("express");
-const router = express.Router();
-const organizacaoPublicController = require("./organizacaoPublicController");
-
-// 🔹 Endpoint público usado em formulários (pré-matrícula, inscrições, etc.)
-router.get("/:slug", organizacaoPublicController.getOrganizacaoPublica);
-
-module.exports = router;
+// Ponte para o arquivo compilado pelo TypeScript
+module.exports = require("../../../dist/modules/shared/organizacoes/organizacaoPublicRoutes.js").default;

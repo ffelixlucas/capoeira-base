@@ -32,3 +32,20 @@ export async function buscarGrupo(organizacaoId) {
     throw new Error("Erro ao buscar grupo da organização.");
   }
 }
+
+/**
+ * Valida CPF em tempo real
+ * Verifica em pré-matrículas e alunos
+ */
+export async function validarCpf(cpf, slug) {
+  try {
+    const { data } = await api.get(`/public/pre-matriculas/validar-cpf`, {
+      params: { cpf, slug }
+    });
+
+    return data; // { existe: boolean, tipo?, mensagem? }
+  } catch (err) {
+    console.error("❌ Erro ao validar CPF:", err);
+    throw new Error("Erro ao validar CPF.");
+  }
+}

@@ -1,6 +1,6 @@
 // modules/categorias/categoriasRepository.js
 const db = require("../../database/connection");
-const { logger } = require("../../utils/logger.js");
+const  logger  = require("../../utils/logger.js");
 
 // Listar todas as categorias da organização
 async function listarTodas(organizacaoId) {

@@ -1,14 +1,2 @@
-const express = require("express");
-const router = express.Router();
-const matriculaController = require("./matriculaController");
-const verifyToken = require("../../middlewares/verifyToken");
-const checkRole = require("../../middlewares/checkRole");
-
-router.post(
-  "/matricula",
-  verifyToken,
-  checkRole(["admin"]),
-  matriculaController.criarMatricula
-);
-
-module.exports = router;
+// Ponte para o arquivo compilado pelo TypeScript
+module.exports = require("../../dist/modules/matricula/matriculaRoutes.js").default;
