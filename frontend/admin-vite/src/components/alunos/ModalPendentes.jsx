@@ -23,6 +23,8 @@ export default function ModalPendentes({
 
   const { turmas, carregando: carregandoTurmas } = useTurmas();
 
+
+
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();
   };
