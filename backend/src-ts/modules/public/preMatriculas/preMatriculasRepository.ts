@@ -1,5 +1,5 @@
 import { db } from "../../../database/connection";
-import  logger  from "../../../utils/logger";
+import logger from "../../../utils/logger";
 
 export interface PreMatriculaRow {
   id: number;
@@ -26,7 +26,6 @@ export interface PreMatriculaRow {
   criado_em: string;
 
   organizacao_id: number;
-
 }
 
 class PreMatriculasRepository {
@@ -41,7 +40,10 @@ class PreMatriculasRepository {
 
       return rows.length > 0;
     } catch (err: any) {
-      logger.error("[preMatriculasRepository] Erro ao verificar CPF existente:", err.message);
+      logger.error(
+        "[preMatriculasRepository] Erro ao verificar CPF existente:",
+        err.message
+      );
       throw err;
     }
   }
@@ -57,7 +59,10 @@ class PreMatriculasRepository {
 
       return rows.length > 0;
     } catch (err: any) {
-      logger.error("[preMatriculasRepository] Erro ao verificar CPF em alunos:", err.message);
+      logger.error(
+        "[preMatriculasRepository] Erro ao verificar CPF em alunos:",
+        err.message
+      );
       throw err;
     }
   }
@@ -116,7 +121,10 @@ class PreMatriculasRepository {
       const [result]: any = await db.execute(sql, params);
       return result.insertId;
     } catch (err: any) {
-      logger.error("[preMatriculasRepository] Erro ao criar pré-matrícula:", err.message);
+      logger.error(
+        "[preMatriculasRepository] Erro ao criar pré-matrícula:",
+        err.message
+      );
       throw err;
     }
   }
@@ -139,7 +147,12 @@ class PreMatriculasRepository {
           pm.endereco,
           pm.foto_url,
           pm.status,
+
+          pm.categoria_id,      -- ✔ ADICIONAR
+          pm.graduacao_id,      -- ✔ ADICIONAR
+
           pm.criado_em,
+
           g.nome AS graduacao_nome,
           c.nome AS categoria_nome
         FROM pre_matriculas pm
@@ -148,12 +161,16 @@ class PreMatriculasRepository {
         WHERE pm.status = 'pendente'
           AND pm.organizacao_id = ?
         ORDER BY pm.criado_em DESC
+
       `;
 
       const [rows] = await db.execute<any[]>(sql, [organizacaoId]);
       return rows;
     } catch (err: any) {
-      logger.error(`[preMatriculasRepository] Erro ao listar pendentes (org ${organizacaoId}):`, err.message);
+      logger.error(
+        `[preMatriculasRepository] Erro ao listar pendentes (org ${organizacaoId}):`,
+        err.message
+      );
       throw err;
     }
   }
@@ -175,7 +192,10 @@ class PreMatriculasRepository {
 
       return true;
     } catch (err: any) {
-      logger.error("[preMatriculasRepository] Erro ao atualizar status:", err.message);
+      logger.error(
+        "[preMatriculasRepository] Erro ao atualizar status:",
+        err.message
+      );
       throw err;
     }
   }
@@ -201,7 +221,10 @@ class PreMatriculasRepository {
 
       return rows.length ? rows[0] : null;
     } catch (err: any) {
-      logger.error(`[preMatriculasRepository] Erro ao buscar pré-matrícula (id ${id}, org ${organizacao_id}):`, err.message);
+      logger.error(
+        `[preMatriculasRepository] Erro ao buscar pré-matrícula (id ${id}, org ${organizacao_id}):`,
+        err.message
+      );
       throw err;
     }
   }
@@ -215,7 +238,10 @@ class PreMatriculasRepository {
 
       return result.affectedRows > 0;
     } catch (err: any) {
-      logger.error(`[preMatriculasRepository] Erro ao deletar pré-matrícula ${id}:`, err.message);
+      logger.error(
+        `[preMatriculasRepository] Erro ao deletar pré-matrícula ${id}:`,
+        err.message
+      );
       throw err;
     }
   }
@@ -229,7 +255,10 @@ class PreMatriculasRepository {
 
       return rows.length ? rows[0] : null;
     } catch (err: any) {
-      logger.error(`[preMatriculasRepository] Erro ao buscar dados da organização (id ${organizacaoId}):`, err.message);
+      logger.error(
+        `[preMatriculasRepository] Erro ao buscar dados da organização (id ${organizacaoId}):`,
+        err.message
+      );
       throw err;
     }
   }
@@ -262,7 +291,10 @@ class PreMatriculasRepository {
 
       return rows.length ? rows[0] : null;
     } catch (err: any) {
-      logger.error(`[preMatriculasRepository] Erro ao buscar turma por idade (org ${organizacaoId}):`, err.message);
+      logger.error(
+        `[preMatriculasRepository] Erro ao buscar turma por idade (org ${organizacaoId}):`,
+        err.message
+      );
       throw err;
     }
   }
