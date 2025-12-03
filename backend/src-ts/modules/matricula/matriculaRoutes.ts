@@ -19,4 +19,12 @@ router.get(
   (req: Request, res: Response) => matriculaController.buscarPorCpf(req, res)
 );
 
+router.patch(
+  "/matricula/aprovar-pre",
+  verifyToken,
+  checkRole(["admin"]),
+  (req: Request, res: Response) => matriculaController.aprovarPreMatricula(req, res)
+);
+
+
 export default router;

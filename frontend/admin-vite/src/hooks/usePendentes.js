@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import api from "../services/api";
 import {
   listarPendentes,
   atualizarStatusPreMatricula,
@@ -9,7 +10,9 @@ export function usePendentes(organizacaoId = 1) {
   const [pendentes, setPendentes] = useState([]);
   const [carregando, setCarregando] = useState(false);
 
-  // 🔹 Carrega lista de pré-matrículas pendentes
+  /* -------------------------------------------------------------------------- */
+  /* 🔹 Carrega lista de pré-matrículas pendentes                                */
+  /* -------------------------------------------------------------------------- */
   async function carregarPendentes() {
     try {
       setCarregando(true);
@@ -22,39 +25,58 @@ export function usePendentes(organizacaoId = 1) {
     }
   }
 
-  // 🔹 Atualiza status genérico (aprovado ou rejeitado)
-  async function atualizarStatus(id, status) {
+  /* -------------------------------------------------------------------------- */
+  /* 🔹 Aprovar pré-matrícula (fluxo NOVO administrativo)                       */
+  /* -------------------------------------------------------------------------- */
+  async function aprovarAluno(id, turmaId) {
     try {
-      const res = await atualizarStatusPreMatricula(id, status);
+      const { data } = await api.patch("admin/matricula/aprovar-pre", {
+        pre_matricula_id: id,
+        turma_id: turmaId,
+      });
+
+      toast.success("Pré-matrícula aprovada e aluno criado!");
+
+      // Remove imediatamente da lista
+      setPendentes((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      const msg =
+        err.response?.data?.erro ||
+        err.message ||
+        "Erro ao aprovar pré-matrícula.";
+
+      toast.error(msg);
+      console.error("❌ Erro ao aprovar pré-matrícula:", err);
+    }
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* 🔹 Rejeitar pré-matrícula (fluxo antigo – permanece igual)                 */
+  /* -------------------------------------------------------------------------- */
+  async function rejeitarAluno(id) {
+    try {
+      const res = await atualizarStatusPreMatricula(id, "rejeitado");
 
       if (res?.sucesso) {
-        // Remove instantaneamente da lista
+        toast.info(res.mensagem || "Pré-matrícula rejeitada.");
         setPendentes((prev) => prev.filter((a) => a.id !== id));
-
-        if (status === "aprovado") {
-          toast.success(res.mensagem || "Pré-matrícula aprovada!");
-        } else if (status === "rejeitado") {
-          toast.info(res.mensagem || "Pré-matrícula rejeitada.");
-        }
       } else {
-        // Backend respondeu sem sucesso explícito
-        throw new Error(res?.erro || "Falha ao atualizar status.");
+        throw new Error(res?.erro || "Falha ao rejeitar pré-matrícula.");
       }
     } catch (err) {
       const msg =
         err.response?.data?.erro ||
         err.message ||
-        "Erro ao atualizar status da pré-matrícula.";
+        "Erro ao rejeitar pré-matrícula.";
+
       toast.error(msg);
-      console.error("❌ Erro ao atualizar status:", err);
+      console.error("❌ Erro ao rejeitar pré-matrícula:", err);
     }
   }
 
-  // 🔹 Funções específicas que usam o genérico
-  const aprovarAluno = (id) => atualizarStatus(id, "aprovado");
-  const rejeitarAluno = (id) => atualizarStatus(id, "rejeitado");
-
-  // 🔹 Carregar automaticamente ao montar o hook
+  /* -------------------------------------------------------------------------- */
+  /* 🔹 Carregar automaticamente ao montar                                       */
+  /* -------------------------------------------------------------------------- */
   useEffect(() => {
     carregarPendentes();
   }, [organizacaoId]);
