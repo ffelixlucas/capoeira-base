@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as service from "./notificacaoDestinosService";
-import  logger  from "../../utils/logger";
+import logger from "../../utils/logger";
 
 /**
  * Lista notificações por tipo (multi-organização)
@@ -9,16 +9,15 @@ export async function getPorTipo(req: Request, res: Response) {
   try {
     const usuario: any = (req as any).usuario || (req as any).user;
     const organizacaoId = usuario?.organizacao_id;
-    const grupoId = parseInt(req.params.grupoId, 10);
     const { tipo } = req.params;
 
-    if (!organizacaoId || !grupoId || !tipo) {
+    if (!organizacaoId || !tipo) {
       return res
         .status(400)
-        .json({ error: "Organização, grupo ou tipo não informado." });
+        .json({ error: "Organização ou tipo não informado." });
     }
 
-    const lista = await service.listar(organizacaoId, grupoId, tipo);
+    const lista = await service.listar(organizacaoId, tipo);
 
     logger.debug(
       `[notificacaoDestinosController] org ${organizacaoId} - retornando ${lista.length} registros (${tipo})`
@@ -38,14 +37,13 @@ export async function post(req: Request, res: Response) {
   try {
     const usuario: any = (req as any).usuario || (req as any).user;
     const organizacaoId = usuario?.organizacao_id;
-    const grupoId = req.body.grupoId ?? usuario?.grupo_id;
     const { tipo, email } = req.body;
 
-    if (!organizacaoId || !grupoId || !tipo || !email) {
+    if (!organizacaoId || !tipo || !email) {
       return res.status(400).json({ error: "Campos obrigatórios ausentes" });
     }
 
-    const novo = await service.adicionar(organizacaoId, grupoId, tipo, email);
+    const novo = await service.adicionar(organizacaoId, tipo, email);
 
     logger.info(
       `[notificacaoDestinosController] org ${organizacaoId} - notificação criada (${email})`

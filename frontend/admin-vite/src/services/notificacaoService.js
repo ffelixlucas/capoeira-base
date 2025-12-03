@@ -3,14 +3,20 @@ import api from "./api";
 import { logger } from "../utils/logger";
 
 /**
- * Lista todos os e-mails de notificação por grupo e tipo (multi-org)
+ * Lista todos os e-mails de notificação por tipo (multi-org)
  */
-export async function listarNotificacoes(grupoId, tipo) {
+export async function listarNotificacoes(tipo) {
   try {
-    const url = `${import.meta.env.VITE_API_URL}/notificacoes/${grupoId}/${tipo}`;
+    // nova rota: /api/notificacoes/:tipo
+    const url = `/notificacoes/${tipo}`;
     const res = await api.get(url);
+
     const data = res.data?.data ?? res.data; // compatibilidade
-    logger.debug(`[notificacaoService] GET ${url} → ${data.length} registros`);
+
+    logger.debug(
+      `[notificacaoService] GET ${url} → ${data.length} registros`
+    );
+
     return data;
   } catch (err) {
     logger.error("[notificacaoService] Erro ao listar:", err);
@@ -23,11 +29,15 @@ export async function listarNotificacoes(grupoId, tipo) {
  */
 export async function adicionarNotificacao(payload) {
   try {
-    const url = `${import.meta.env.VITE_API_URL}/notificacoes`;
+    // nova rota: /api/notificacoes
+    const url = `/notificacoes`;
+
     const res = await api.post(url, payload);
+
     logger.info(
       `[notificacaoService] POST ${url} → criado ${payload.email} (${payload.tipo})`
     );
+
     return res.data?.data ?? res.data;
   } catch (err) {
     logger.error("[notificacaoService] Erro ao adicionar:", err);
@@ -40,9 +50,11 @@ export async function adicionarNotificacao(payload) {
  */
 export async function removerNotificacao(id) {
   try {
-    const url = `${import.meta.env.VITE_API_URL}/notificacoes/${id}`;
+    const url = `/notificacoes/${id}`;
     await api.delete(url);
+
     logger.warn(`[notificacaoService] DELETE ${url} → id ${id}`);
+
     return true;
   } catch (err) {
     logger.error("[notificacaoService] Erro ao remover:", err);

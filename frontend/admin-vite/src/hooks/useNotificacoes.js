@@ -10,7 +10,7 @@ import { useAuth } from "../contexts/AuthContext";
 /**
  * Hook para gerenciar notificações de e-mail (multi-organização)
  */
-export function useNotificacoes(grupoId, tipoInicial = "matricula") {
+export function useNotificacoes(tipoInicial = "matricula") {
   const { usuario } = useAuth();
   const organizacaoId = usuario?.organizacao_id;
 
@@ -20,14 +20,17 @@ export function useNotificacoes(grupoId, tipoInicial = "matricula") {
   const [erro, setErro] = useState(null);
 
   const carregar = useCallback(async () => {
-    if (!grupoId || !organizacaoId) return;
+    if (!organizacaoId) return;
+
     setLoading(true);
     setErro(null);
 
     try {
-      const res = await listarNotificacoes(grupoId, tipo);
-      const data = res?.data ?? res; // compatibilidade
+      const res = await listarNotificacoes(tipo);
+      const data = res?.data ?? res;
+
       setLista(data);
+
       logger.debug(
         `[useNotificacoes] org ${organizacaoId} - ${data.length} registros (${tipo})`
       );
@@ -37,15 +40,15 @@ export function useNotificacoes(grupoId, tipoInicial = "matricula") {
     } finally {
       setLoading(false);
     }
-  }, [grupoId, organizacaoId, tipo]);
+  }, [organizacaoId, tipo]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
 
-  const adicionar = async (email) => {
+  const adicionar = async ({ organizacaoId, tipo, email }) => {
     try {
-      await adicionarNotificacao({ organizacaoId, grupoId, tipo, email });
+      await adicionarNotificacao({ organizacaoId, tipo, email });
       await carregar();
     } catch (err) {
       logger.error("[useNotificacoes] Erro ao adicionar:", err);

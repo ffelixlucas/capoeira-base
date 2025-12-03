@@ -1,5 +1,5 @@
 import db from "../../database/connection";
-import logger  from "../../utils/logger";
+import logger from "../../utils/logger";
 
 /**
  * Tipagem do registro de notificação
@@ -7,7 +7,6 @@ import logger  from "../../utils/logger";
 export interface NotificacaoDestino {
   id: number;
   organizacao_id: number;
-  grupo_id: number;
   tipo: string;
   email: string;
 }
@@ -17,7 +16,6 @@ export interface NotificacaoDestino {
  */
 export async function listarPorTipo(
   organizacaoId: number,
-  grupoId: number,
   tipo: string
 ): Promise<Pick<NotificacaoDestino, "id" | "email">[]> {
   logger.debug(
@@ -30,10 +28,10 @@ export async function listarPorTipo(
     `
     SELECT id, email 
     FROM notificacao_destinos 
-    WHERE organizacao_id = ? AND grupo_id = ? AND tipo = ?
+    WHERE organizacao_id = ? AND tipo = ?
     ORDER BY id
     `,
-    [organizacaoId, grupoId, tipo]
+    [organizacaoId, tipo]
   );
 
   return rows;
@@ -44,16 +42,15 @@ export async function listarPorTipo(
  */
 export async function criar(
   organizacaoId: number,
-  grupoId: number,
   tipo: string,
   email: string
 ): Promise<NotificacaoDestino> {
   const [result]: any = await db.execute(
     `
-    INSERT INTO notificacao_destinos (organizacao_id, grupo_id, tipo, email)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO notificacao_destinos (organizacao_id, tipo, email)
+    VALUES (?, ?, ?)
     `,
-    [organizacaoId, grupoId, tipo, email]
+    [organizacaoId, tipo, email]
   );
 
   logger.info(
@@ -63,7 +60,6 @@ export async function criar(
   return {
     id: result.insertId,
     organizacao_id: organizacaoId,
-    grupo_id: grupoId,
     tipo,
     email,
   };

@@ -4,21 +4,20 @@ import {
   remover,
   NotificacaoDestino,
 } from "./notificacaoDestinosRepository";
-import logger  from "../../utils/logger";
+import logger from "../../utils/logger";
 
 /**
  * Lista e-mails de notificação por tipo (multi-organização)
  */
 export async function listar(
   organizacaoId: number,
-  grupoId: number,
   tipo: string
 ): Promise<Pick<NotificacaoDestino, "id" | "email">[]> {
   logger.debug(
     `[notificacaoDestinosService] org ${organizacaoId} - listando notificações tipo ${tipo}`
   );
 
-  return listarPorTipo(organizacaoId, grupoId, tipo);
+  return listarPorTipo(organizacaoId, tipo);
 }
 
 /**
@@ -26,10 +25,10 @@ export async function listar(
  */
 export async function adicionar(
   organizacaoId: number,
-  grupoId: number,
   tipo: string,
   email: string | { email: string }
 ): Promise<NotificacaoDestino> {
+
   const emailFinal =
     typeof email === "object" && email.email ? email.email : String(email);
 
@@ -37,7 +36,7 @@ export async function adicionar(
     `[notificacaoDestinosService] org ${organizacaoId} - adicionando e-mail ${emailFinal} (${tipo})`
   );
 
-  return criar(organizacaoId, grupoId, tipo, emailFinal);
+  return criar(organizacaoId, tipo, emailFinal);
 }
 
 /**
@@ -55,18 +54,18 @@ export async function deletar(
 }
 
 /**
- * Retorna apenas lista de e-mails (uso interno: matrícula, eventos, pagamentos…)
+ * Retorna apenas lista de e-mails (uso interno)
  */
 export async function getEmails(
   organizacaoId: number,
   tipo: string = "matricula"
 ): Promise<string[]> {
+
   logger.debug(
     `[notificacaoDestinosService] org ${organizacaoId} - buscando e-mails tipo ${tipo}`
   );
 
-  // ⚠️ grupo_id = 1 → comportamento do sistema original
-  const rows = await listarPorTipo(organizacaoId, 1, tipo);
+  const rows = await listarPorTipo(organizacaoId, tipo);
 
   return rows.map((r) => r.email);
 }

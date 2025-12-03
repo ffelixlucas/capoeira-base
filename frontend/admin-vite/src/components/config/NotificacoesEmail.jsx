@@ -3,29 +3,34 @@ import { useNotificacoes } from "../../hooks/useNotificacoes";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import logger from "../../utils/logger";
+
 export default function NotificacoesEmail() {
   const { usuario } = useAuth();
 
-  const { lista, tipo, setTipo, loading, adicionar, remover } = useNotificacoes(
-    usuario?.grupo_id
-  );
+  // ❌ Antes: useNotificacoes(usuario?.grupo_id)
+  // ✔️ Agora: hook não recebe mais grupoId
+  const { lista, tipo, setTipo, loading, adicionar, remover } = useNotificacoes();
+
   const [novoEmail, setNovoEmail] = useState("");
+
   async function handleAdicionar() {
     if (!novoEmail) return;
 
     logger.info("[NotificacoesEmail] Tentando adicionar notificação", {
-      grupoId: usuario?.grupo_id,
       tipo,
       email: novoEmail,
+      organizacaoId: usuario?.organizacao_id,
     });
 
     try {
+      // ❌ Antes mandava grupoId
+      // ✔️ Agora só precisa tipo + email
       await adicionar({
         organizacaoId: usuario?.organizacao_id,
-        grupoId: usuario?.grupo_id,
         tipo,
         email: novoEmail,
       });
+
       setNovoEmail("");
     } catch (err) {
       logger.error("[NotificacoesEmail] Erro ao adicionar:", err);
