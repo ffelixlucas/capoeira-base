@@ -98,13 +98,15 @@ export default function AlunoList({
         </div>
       )}
 
-      <ModalAluno
-        aberto={!!alunoSelecionado}
-        aluno={alunoSelecionado}
-        onClose={fecharModal}
-        onEditar={onEditar}
-        onExcluido={onExcluido}
-      />
+      {alunoSelecionado && (
+        <ModalAluno
+          aberto={true}
+          aluno={alunoSelecionado}
+          onClose={fecharModal}
+          onEditar={onEditar}
+          onExcluido={onExcluido}
+        />
+      )}
     </div>
   );
 }

@@ -9,8 +9,8 @@ async function listarAlunosComTurmaAtual(organizacaoId) {
   const [rows] = await connection.execute(
     `
     SELECT 
-      a.id, a.nome, a.apelido,
-      t.nome AS turma, t.id AS turma_id
+  a.id, a.nome, a.apelido, a.foto_url,
+  t.nome AS turma, t.id AS turma_id
     FROM alunos a
     LEFT JOIN matriculas m 
       ON m.aluno_id = a.id AND m.data_fim IS NULL
@@ -33,9 +33,10 @@ async function listarAlunosPorTurmas(turmaIds, organizacaoId) {
 
   const [rows] = await connection.execute(
     `
-    SELECT 
-      a.id, a.nome, a.apelido,
-      t.nome AS turma, t.id AS turma_id
+SELECT 
+  a.id, a.nome, a.apelido, a.foto_url,
+  t.nome AS turma, t.id AS turma_id
+
     FROM alunos a
     JOIN matriculas m ON m.aluno_id = a.id AND m.data_fim IS NULL
     JOIN turmas t ON t.id = m.turma_id
@@ -73,6 +74,9 @@ WHERE a.id = ? AND a.organizacao_id = ?
     `,
     [id, organizacaoId]
   );
+
+  logger.debug("[buscarPorId] 🔍 Resultado carregado:", rows[0]); // <---- ADICIONAR AQUI
+
 
   return rows[0];
 }
