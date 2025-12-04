@@ -28,11 +28,20 @@ async function criarMatricula(req: Request, res: Response) {
 async function buscarPorCpf(req: Request, res: Response) {
   try {
     const { cpf } = req.params;
+    const usuario = (req as any).usuario || (req as any).user;
 
-    logger.info("[matriculaController] Buscando matrícula por CPF", { cpf });
+    logger.info("[matriculaController] Buscando matrícula por CPF", { 
+      cpf,
+      organizacao_id: usuario?.organizacao_id
+    });
 
-    const resultado = await matriculaService.buscarPorCpf(cpf);
+    const resultado = await matriculaService.buscarPorCpf(
+      cpf,
+      usuario.organizacao_id
+    );
+
     return res.json(resultado);
+
   } catch (err: any) {
     logger.error("[matriculaController] Erro ao buscar CPF:", err.message);
 
@@ -42,6 +51,7 @@ async function buscarPorCpf(req: Request, res: Response) {
     });
   }
 }
+
 
 /* 🔥 ÚNICO ENDPOINT CORRETO PARA APROVAR PRÉ-MATRÍCULA */
 async function aprovarPreMatricula(req: Request, res: Response) {

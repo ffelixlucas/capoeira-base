@@ -33,14 +33,17 @@ export interface DadosCriarMatricula {
 /* -------------------------------------------------------------------------- */
 /* 🔹 Buscar aluno por CPF                                                     */
 /* -------------------------------------------------------------------------- */
-async function buscarPorCpf(cpf: string) {
+async function buscarPorCpf(cpf: string, organizacao_id: number) {
   const normalizado = cpf.replace(/\D/g, "");
+
   const [rows]: any = await db.execute(
-    "SELECT * FROM alunos WHERE cpf = ? LIMIT 1",
-    [normalizado]
+    "SELECT * FROM alunos WHERE cpf = ? AND organizacao_id = ? LIMIT 1",
+    [normalizado, organizacao_id]
   );
+
   return rows.length ? rows[0] : null;
 }
+
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Criar aluno + matrícula inicial                                          */

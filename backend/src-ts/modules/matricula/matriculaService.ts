@@ -45,11 +45,13 @@ async function criarMatriculaDireta(pre: any) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 BUSCAR POR CPF                                                          */
+/* 🔹 BUSCAR POR CPF (AGORA MULTI-ORG)                                        */
 /* -------------------------------------------------------------------------- */
-async function buscarPorCpf(cpf: string) {
-  return matriculaRepository.buscarPorCpf(cpf);
+async function buscarPorCpf(cpf: string, organizacao_id: number) {
+  return matriculaRepository.buscarPorCpf(cpf, organizacao_id);
 }
+
+
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 E-MAIL DE RECUSA                                                        */
@@ -87,7 +89,7 @@ async function aprovarPreMatricula(payload: {
   normalizarDadosPessoa(pre);
 
   // 🔎 Verifica se já existe aluno com este CPF *na mesma organização*
-  const existente = await matriculaRepository.buscarPorCpf(pre.cpf);
+  const existente = await matriculaRepository.buscarPorCpf(pre.cpf, organizacao_id);
 
   if (existente && existente.organizacao_id === organizacao_id) {
     throw new Error("Já existe um aluno com este CPF nesta organização.");
