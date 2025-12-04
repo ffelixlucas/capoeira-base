@@ -30,25 +30,28 @@ export function usePendentes(organizacaoId = 1) {
   /* -------------------------------------------------------------------------- */
   async function aprovarAluno(id, turmaId) {
     try {
-      const { data } = await api.patch("/matricula/aprovar-pre", {
+      const { data } = await api.patch("/admin/matricula/aprovar-pre", {
         pre_matricula_id: id,
         turma_id: turmaId,
+        organizacao_id: organizacaoId, // 🔥 obrigatório
       });
-
+  
       toast.success("Pré-matrícula aprovada e aluno criado!");
-
+  
       // Remove imediatamente da lista
       setPendentes((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
       const msg =
+        err.response?.data?.detalhes ||
         err.response?.data?.erro ||
         err.message ||
         "Erro ao aprovar pré-matrícula.";
-
+  
       toast.error(msg);
       console.error("❌ Erro ao aprovar pré-matrícula:", err);
     }
   }
+  
 
   /* -------------------------------------------------------------------------- */
   /* 🔹 Rejeitar pré-matrícula (fluxo antigo – permanece igual)                 */
