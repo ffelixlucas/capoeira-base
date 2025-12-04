@@ -30,7 +30,7 @@ export function usePendentes(organizacaoId = 1) {
   /* -------------------------------------------------------------------------- */
   async function aprovarAluno(id, turmaId) {
     try {
-      const { data } = await api.patch("admin/matricula/aprovar-pre", {
+      const { data } = await api.patch("/matricula/aprovar-pre", {
         pre_matricula_id: id,
         turma_id: turmaId,
       });
