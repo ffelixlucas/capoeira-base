@@ -86,8 +86,10 @@ async function aprovarPreMatricula(payload: {
 
   normalizarDadosPessoa(pre);
 
+  // 🔎 Verifica se já existe aluno com este CPF *na mesma organização*
   const existente = await matriculaRepository.buscarPorCpf(pre.cpf);
-  if (existente) {
+
+  if (existente && existente.organizacao_id === organizacao_id) {
     throw new Error("Já existe um aluno com este CPF nesta organização.");
   }
 
