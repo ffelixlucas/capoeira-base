@@ -1,17 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const horariosController = require('./horariosController');
-const verifyToken = require('../../middlewares/verifyToken');
-const checkRole = require('../../middlewares/checkRole');
+// Ponte para o arquivo compilado pelo TypeScript
+const logger = require("../../utils/logger.js");
 
-// ✅ Rota pública (listar todos)
-router.get('/', horariosController.listarHorarios);
-router.get('/:id', horariosController.obterHorario);
+try {
+  logger.debug("[horariosRoutes] Carregando módulo compilado (dist)...");
+  const modulo = require("../../dist/modules/horarios/horariosRoutes.js").default;
 
-// ✅ Rotas protegidas – apenas admin ou instrutor
-router.post('/', verifyToken, checkRole(['admin', 'instrutor']), horariosController.criarHorario);
-router.put('/atualizar-ordem', verifyToken, checkRole(['admin', 'instrutor']), horariosController.atualizarOrdem);
-router.put('/:id', verifyToken, checkRole(['admin', 'instrutor']), horariosController.atualizarHorario);
-router.delete('/:id', verifyToken, checkRole(['admin', 'instrutor']), horariosController.excluirHorario);
+  logger.info("[horariosRoutes] Ponte carregada com sucesso! 🚀");
+  module.exports = modulo;
 
-module.exports = router;
+} catch (err) {
+  logger.error("[horariosRoutes] Erro ao carregar módulo compilado:", err);
+  throw err;
+}

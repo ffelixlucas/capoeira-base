@@ -22,7 +22,7 @@
     "firebase": "^12.4.0",
     "flowbite": "^3.1.2",
     "flowbite-react": "^0.12.10",
-    "framer-motion": "^12.23.24",
+    "framer-motion": "^12.23.25",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.552.0",

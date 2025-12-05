@@ -6,71 +6,94 @@ import { useEquipe } from "../../hooks/useEquipe";
 import InputBase from "../ui/InputBase";
 import { logger } from "../../utils/logger";
 
-/**
- * 🧱 Formulário de criação/edição de turma
- * Padrão Capoeira Base v2 (mobile-first + clean + reuso de componentes)
- */
 export default function TurmaForm({ onCriado, turmaEditando = null }) {
   const { membros, loading: carregandoEquipe, carregarEquipe } = useEquipe();
-
-  const [form, setForm] = useState({
-    nome: "",
-    faixa_etaria: "",
-    equipe_id: "",
-  });
 
   const [salvando, setSalvando] = useState(false);
   const [categorias, setCategorias] = useState([]);
 
+  const [form, setForm] = useState({
+    nome: "",
+    idade_min: "",
+    idade_max: "",
+    equipe_id: "",
+    categoria_id: "",
+    dias: [],
+    horario_inicio: "",
+    horario_fim: "",
+  });
+
   /* -------------------------------------------------------------------------- */
-  /* 🔄 Carregar equipe (instrutores)                                          */
+  /* 🔄 Carregar equipe + categorias                                           */
   /* -------------------------------------------------------------------------- */
   useEffect(() => {
     carregarEquipe();
-
-    async function carregarCats() {
-      const lista = await buscarCategorias();
-      setCategorias(lista);
-    }
-    carregarCats();
+    buscarCategorias().then(setCategorias);
   }, []);
 
   /* -------------------------------------------------------------------------- */
-  /* 🧩 Preenche campos ao editar                                              */
+  /* 🧩 Preencher campos ao editar                                             */
   /* -------------------------------------------------------------------------- */
   useEffect(() => {
     if (turmaEditando) {
+      const { horario } = turmaEditando;
+
+      let horario_inicio = "";
+      let horario_fim = "";
+
+      // Compatível com turmas antigas: "19:00 - 20:00"
+      if (horario?.includes(" - ")) {
+        const [ini, fim] = horario.split(" - ");
+        horario_inicio = ini;
+        horario_fim = fim;
+      }
+
       setForm({
         nome: turmaEditando.nome || "",
-        faixa_etaria: turmaEditando.faixa_etaria || "",
-        equipe_id: turmaEditando.equipe_id?.toString() || "",
-        categoria_id: turmaEditando.categoria_id?.toString() || "",
         idade_min: turmaEditando.idade_min || "",
         idade_max: turmaEditando.idade_max || "",
+        equipe_id: turmaEditando.equipe_id?.toString() || "",
+        categoria_id: turmaEditando.categoria_id?.toString() || "",
+        dias: turmaEditando.dias || [],
+        horario_inicio,
+        horario_fim,
       });
     }
   }, [turmaEditando]);
 
   /* -------------------------------------------------------------------------- */
-  /* ⚙️ Handlers                                                              */
+  /* ⚙️ Atualiza campos                                                       */
   /* -------------------------------------------------------------------------- */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  /* -------------------------------------------------------------------------- */
+  /* ✔ Validação interna antes de enviar                                      */
+  /* -------------------------------------------------------------------------- */
+  const validar = () => {
+    if (!form.nome.trim()) return "O nome é obrigatório.";
+    if (!form.categoria_id) return "Selecione uma categoria.";
+    if (!form.equipe_id) return "Selecione um responsável.";
+    if (!form.dias.length) return "Selecione pelo menos um dia da semana.";
+    if (!form.horario_inicio || !form.horario_fim)
+      return "Informe o horário completo.";
+
+    return null;
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* 📤 Enviar formulário                                                      */
+  /* -------------------------------------------------------------------------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.nome.trim()) {
-      toast.warn("O nome da turma é obrigatório.");
-      return;
-    }
-    if (!form.categoria_id) {
-      toast.warn("Selecione uma categoria para continuar.");
+    const erro = validar();
+    if (erro) {
+      toast.warn(erro);
       return;
     }
 
-    // 🧩 Gera faixa_etaria automaticamente com base nos selects
     const faixa_etaria =
       form.idade_min && form.idade_max
         ? `${form.idade_min} a ${form.idade_max}`
@@ -81,12 +104,14 @@ export default function TurmaForm({ onCriado, turmaEditando = null }) {
         : null;
 
     const payload = {
-      nome: form.nome,
-      faixa_etaria,
+      nome: form.nome.trim(),
       idade_min: form.idade_min ? Number(form.idade_min) : null,
       idade_max: form.idade_max ? Number(form.idade_max) : null,
       equipe_id: form.equipe_id || null,
-      categoria_id: form.categoria_id ? Number(form.categoria_id) : null,
+      categoria_id: Number(form.categoria_id),
+      faixa_etaria,
+      dias: form.dias,
+      horario: `${form.horario_inicio} - ${form.horario_fim}`,
     };
 
     try {
@@ -95,172 +120,199 @@ export default function TurmaForm({ onCriado, turmaEditando = null }) {
       if (turmaEditando) {
         await atualizarTurma(turmaEditando.id, payload);
         toast.success("Turma atualizada com sucesso!");
-        logger.debug("[TurmaForm] Turma atualizada", payload);
       } else {
         await criarTurma(payload);
         toast.success("Turma criada com sucesso!");
-        logger.debug("[TurmaForm] Nova turma criada", payload);
       }
+
+      logger.debug("[TurmaForm] Payload enviado", payload);
 
       onCriado?.();
       setForm({
         nome: "",
-        faixa_etaria: "",
-        equipe_id: "",
         idade_min: "",
         idade_max: "",
+        equipe_id: "",
         categoria_id: "",
+        dias: [],
+        horario_inicio: "",
+        horario_fim: "",
       });
     } catch (error) {
-      logger.error("[TurmaForm] Erro ao salvar turma", { erro: error.message });
       toast.error("Erro ao salvar turma.");
+      logger.error("[TurmaForm] Erro ao salvar", error);
     } finally {
       setSalvando(false);
     }
   };
 
   /* -------------------------------------------------------------------------- */
-  /* 🧱 Renderização                                                           */
+  /* 🧱 UI                                                                    */
   /* -------------------------------------------------------------------------- */
   return (
     <form
-      onSubmit={handleSubmit}
-      className="space-y-4 bg-white rounded-xl shadow p-4 border border-gray-200"
-    >
-      {/* Nome */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Nome da turma *
-        </label>
-        <InputBase
-          name="nome"
-          value={form.nome}
-          onChange={handleChange}
-          placeholder="Ex: Turma Infantil"
-          required
-        />
-      </div>
+  onSubmit={handleSubmit}
+  className="space-y-4 bg-white rounded-xl shadow p-4 border border-gray-200 text-black"
+>
 
-      {/* Faixa etária (numérica) */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Faixa etária
-        </label>
+  {/* Nome */}
+  <div>
+    <label className="block text-sm font-medium text-black mb-1">
+      Nome *
+    </label>
+    <InputBase
+      name="nome"
+      value={form.nome}
+      onChange={handleChange}
+      placeholder="Ex: Infantil"
+      className="text-black"
+    />
+  </div>
 
-        <div className="flex items-center space-x-2">
-          {/* idade mínima */}
-          <select
-            name="idade_min"
-            value={form.idade_min || ""}
-            onChange={handleChange}
-            className="border rounded-lg px-3 py-2 text-gray-700 text-sm"
-          >
-            <option value="">mín</option>
-            {Array.from({ length: 100 }, (_, i) => (
-              <option key={i} value={i}>
-                {i}
-              </option>
-            ))}
-          </select>
+  {/* Faixa etária */}
+  <div>
+    <label className="block text-sm font-medium text-black mb-1">
+      Faixa etária
+    </label>
 
-          <span className="text-gray-600 text-sm">a</span>
-
-          {/* idade máxima */}
-          <select
-            name="idade_max"
-            value={form.idade_max || ""}
-            onChange={handleChange}
-            className="border rounded-lg px-3 py-2 text-gray-700 text-sm"
-          >
-            <option value="">máx</option>
-            {Array.from({ length: 100 }, (_, i) => (
-              <option key={i} value={i}>
-                {i}
-              </option>
-            ))}
-          </select>
-
-          <span className="ml-2 text-sm text-gray-500">anos</span>
-        </div>
-      </div>
-
-      {/* Instrutor responsável */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Responsável (instrutor) *
-        </label>
-
-        {carregandoEquipe ? (
-          <p className="text-sm text-gray-500">Carregando equipe...</p>
-        ) : (
-          <select
-            name="equipe_id"
-            value={form.equipe_id}
-            onChange={handleChange}
-            className="w-full border rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:ring-2 focus:ring-cor-primaria"
-          >
-            <option value="">Selecione...</option>
-            {membros.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.nome} ({m.roles.map((r) => r.nome).join(", ")})
-              </option>
-            ))}
-          </select>
-        )}
-
-        <p className="text-xs text-cor-primaria underline mt-1">
-          <a href="/equipe">+ Criar novo membro</a>
-        </p>
-      </div>
-
-     {/* Categoria da turma */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Categoria *
-  </label>
-
-  {categorias.length === 0 ? (
-    <p className="text-sm text-gray-500">Carregando categorias...</p>
-  ) : (
-    <>
+    <div className="flex items-center gap-2">
       <select
-        name="categoria_id"
-        value={form.categoria_id || ""}
+        name="idade_min"
+        value={form.idade_min || ""}
         onChange={handleChange}
-        className="w-full border rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:ring-2 focus:ring-cor-primaria"
-        required
+        className="border rounded-lg px-3 py-2 text-black bg-white"
       >
-        <option value="">Selecione...</option>
-        {categorias.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.nome}
+        <option value="">mín</option>
+        {Array.from({ length: 100 }, (_, i) => (
+          <option key={i} value={i}>
+            {i}
           </option>
         ))}
       </select>
 
-      {/* 🔗 Atalho para criar nova categoria */}
-      <p className="text-xs text-cor-primaria underline mt-1">
-        <a href="/config#categorias">+ Criar nova categoria</a>
-      </p>
-    </>
-  )}
-</div>
+      <span className="text-black font-semibold">a</span>
 
-
-      {/* Botão salvar */}
-      <button
-        type="submit"
-        disabled={salvando}
-        className="w-full bg-cor-primaria text-white py-2 rounded-md font-medium hover:opacity-90 transition"
+      <select
+        name="idade_max"
+        value={form.idade_max || ""}
+        onChange={handleChange}
+        className="border rounded-lg px-3 py-2 text-black bg-white"
       >
-        {salvando
-          ? turmaEditando
-            ? "Salvando alterações..."
-            : "Salvando..."
-          : turmaEditando
-          ? "Salvar alterações"
-          : "Salvar turma"}
-      </button>
-    </form>
+        <option value="">máx</option>
+        {Array.from({ length: 100 }, (_, i) => (
+          <option key={i} value={i}>
+            {i}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  {/* Responsável */}
+  <div>
+    <label className="block text-sm font-medium text-black mb-1">
+      Responsável *
+    </label>
+
+    <select
+      name="equipe_id"
+      value={form.equipe_id}
+      onChange={handleChange}
+      className="w-full border rounded-lg px-3 py-2 bg-white text-black"
+    >
+      <option value="">Selecione...</option>
+      {membros.map((m) => (
+        <option key={m.id} value={m.id}>
+          {m.nome}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Categoria */}
+  <div>
+    <label className="block text-sm font-medium text-black mb-1">
+      Categoria *
+    </label>
+
+    <select
+      name="categoria_id"
+      value={form.categoria_id}
+      onChange={handleChange}
+      className="w-full border rounded-lg px-3 py-2 bg-white text-black"
+    >
+      <option value="">Selecione...</option>
+      {categorias.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.nome}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Dias */}
+  <div>
+    <label className="block text-sm font-medium text-black mb-1">
+      Dias da semana *
+    </label>
+
+    <div className="grid grid-cols-3 gap-2 text-sm text-black">
+      {["Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((dia) => (
+        <label key={dia} className="flex items-center gap-2 text-black">
+          <input
+            type="checkbox"
+            checked={form.dias.includes(dia)}
+            onChange={(e) => {
+              const marcado = e.target.checked;
+              setForm((prev) => ({
+                ...prev,
+                dias: marcado
+                  ? [...prev.dias, dia]
+                  : prev.dias.filter((d) => d !== dia),
+              }));
+            }}
+          />
+          {dia}
+        </label>
+      ))}
+    </div>
+  </div>
+
+  {/* Horário */}
+  <div>
+    <label className="block text-sm font-medium text-black mb-1">
+      Horário *
+    </label>
+
+    <div className="flex items-center gap-2 text-black">
+      <InputBase
+        name="horario_inicio"
+        value={form.horario_inicio}
+        onChange={handleChange}
+        placeholder="19:00"
+        className="text-black"
+      />
+
+      <span className="font-semibold text-black">às</span>
+
+      <InputBase
+        name="horario_fim"
+        value={form.horario_fim}
+        onChange={handleChange}
+        placeholder="20:00"
+        className="text-black"
+      />
+    </div>
+  </div>
+
+  {/* Botão */}
+  <button
+    type="submit"
+    className="w-full bg-cor-primaria text-white py-2 rounded-md font-medium"
+  >
+    Salvar turma
+  </button>
+</form>
+
   );
 }

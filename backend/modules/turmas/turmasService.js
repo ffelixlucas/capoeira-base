@@ -1,6 +1,9 @@
 const turmasRepository = require("./turmasRepository");
 const logger = require("../../utils/logger.js");
 
+// Ponte para horários em TS (compilado)
+const horariosService = require("../../dist/modules/horarios/horariosService.js").default;
+
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar todas as turmas da organização                                   */
 /* -------------------------------------------------------------------------- */
@@ -11,15 +14,27 @@ async function listarTurmasAtivas(organizacaoId) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* ➕ Criar nova turma (com normalização da faixa etária)                     */
+/* ➕ Criar nova turma (com normalização da faixa etária + horários)          */
 /* -------------------------------------------------------------------------- */
 async function criarTurma(data, organizacaoId) {
+
+  // 🔥 Captura os dias enviados pelo front (checkboxes)
+  const dias = Array.isArray(data.dias) ? data.dias : [];
+
+  // 🔥 Compatibilidade: front pode enviar `horario` (string) ou início/fim separado
+  const horario =
+    data.horario ||
+    (data.horario_inicio && data.horario_fim
+      ? `${data.horario_inicio} - ${data.horario_fim}`
+      : null);
+
   let { idade_min, idade_max, faixa_etaria } = data;
 
-  const texto = faixa_etaria?.toLowerCase().trim();
-  const matchRange = texto?.match(/(\d+)\s*a\s*(\d+)/);
-  const matchMais = texto?.match(/(\d+)\s*\+/);
-  const matchAte = texto?.match(/até\s*(\d+)/);
+  // 🔧 EVITA CRASH — garante que faixa_etaria pode ser manipulada
+  const texto = (faixa_etaria || "").toLowerCase().trim();
+  const matchRange = texto.match(/(\d+)\s*a\s*(\d+)/);
+  const matchMais = texto.match(/(\d+)\s*\+/);
+  const matchAte = texto.match(/até\s*(\d+)/);
 
   if (matchRange) {
     idade_min = parseInt(matchRange[1]);
@@ -37,8 +52,8 @@ async function criarTurma(data, organizacaoId) {
       idade_min && idade_max
         ? `${idade_min} a ${idade_max}`
         : idade_min
-          ? `${idade_min}+`
-          : `até ${idade_max}`;
+        ? `${idade_min}+`
+        : `até ${idade_max}`;
   }
 
   const payload = {
@@ -51,7 +66,30 @@ async function criarTurma(data, organizacaoId) {
     organizacao_id: organizacaoId,
   };
 
-  return turmasRepository.inserirTurma(payload);
+  // 1️⃣ Criar turma
+  const resultado = await turmasRepository.inserirTurma(payload);
+  const turma_id = resultado.id;
+
+  // 2️⃣ Criar horários automáticos
+  if (dias.length > 0 && horario) {
+    logger.info("[turmasService] Criando horários automáticos da turma...");
+
+    for (const dia of dias) {
+      await horariosService.criarHorario({
+        organizacao_id: organizacaoId,
+        turma_id,
+        dias: dia,
+        horario,
+        responsavel_id: data.equipe_id || null
+      });
+    }
+
+    logger.info("[turmasService] Horários criados com sucesso.");
+  } else {
+    logger.warn("[turmasService] Turma criada SEM horários — dias ou horário não enviados.");
+  }
+
+  return { id: turma_id };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -62,9 +100,20 @@ async function atualizarTurma(id, data, organizacaoId) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* ❌ Excluir turma                                                          */
+/* ❌ Excluir turma (remover horários junto)                                   */
 /* -------------------------------------------------------------------------- */
 async function excluirTurma(id, organizacaoId) {
+  const db = require("../../database/connection");
+
+  // 1️⃣ Apaga horários antes
+  await db.execute(
+    "DELETE FROM horarios_aula WHERE turma_id = ? AND organizacao_id = ?",
+    [id, organizacaoId]
+  );
+
+  logger.warn("[turmasService] Horários da turma removidos:", { turma_id: id });
+
+  // 2️⃣ Apaga turma
   return turmasRepository.deletarTurma(id, organizacaoId);
 }
 
@@ -76,7 +125,7 @@ async function listarTurmasPorEquipe(equipeId, organizacaoId) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 🎯 Buscar turma por idade (uso interno — ModalPendentes)                  */
+/* 🎯 Buscar turma por idade                                                 */
 /* -------------------------------------------------------------------------- */
 async function buscarTurmaPorIdade(idade, organizacaoId) {
   const turmas = await turmasRepository.buscarTodasComInstrutor(organizacaoId);
@@ -104,7 +153,6 @@ async function encerrarTurmaComMigracao(origemId, destinoId, organizacaoId) {
       origemId,
       destinoId,
     });
-    // 🚧 Implementar migração no futuro
   }
 
   await turmasRepository.deletarTurma(origemId, organizacaoId);
@@ -117,6 +165,6 @@ module.exports = {
   atualizarTurma,
   excluirTurma,
   listarTurmasPorEquipe,
-  buscarTurmaPorIdade, // 🔥 adicionado
+  buscarTurmaPorIdade,
   encerrarTurmaComMigracao,
 };
