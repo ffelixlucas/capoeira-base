@@ -4,6 +4,7 @@ import { useTurmas } from "../hooks/useTurmas";
 import TurmaList from "../components/turmas/TurmaList";
 import TurmaForm from "../components/turmas/TurmaForm";
 import ModalEncerrarTurma from "../components/turmas/ModalEncerrarTurma";
+import ModalTurmaForm from "../components/turmas/ModalTurmaForm";
 
 export default function Turmas() {
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -30,24 +31,21 @@ export default function Turmas() {
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         placeholder="Buscar por nome, faixa etária ou categoria..."
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4 focus:ring-2 focus:ring-cor-primaria focus:outline-none"
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4 
+                   focus:ring-2 focus:ring-cor-primaria focus:outline-none"
       />
 
       {/* Botão principal */}
       <button
         onClick={() => {
-          setMostrarForm(!mostrarForm);
+          setMostrarForm(true);
           setTurmaSelecionada(null);
         }}
-        className={`flex items-center gap-2 px-4 py-2 rounded-md shadow w-full justify-center mb-4 transition
-          ${
-            mostrarForm
-              ? "bg-red-500 text-white hover:bg-red-600"
-              : "bg-cor-primaria text-white hover:bg-cor-primaria/90"
-          }`}
+        className="flex items-center gap-2 px-4 py-2 rounded-md shadow w-full justify-center mb-4 
+                   transition bg-cor-primaria text-white hover:bg-cor-primaria/90"
       >
         <IoMdAdd size={20} />
-        {mostrarForm ? "Cancelar" : "Criar nova turma"}
+        Criar nova turma
       </button>
 
       {/* Conteúdo principal */}
@@ -67,21 +65,27 @@ export default function Turmas() {
         />
       )}
 
-      {/* Formulário de criação/edição */}
-      {mostrarForm && (
-        <div className="mt-4">
-          <TurmaForm
-            turmaEditando={turmaSelecionada}
-            onCriado={() => {
-              carregarTurmas();
-              setMostrarForm(false);
-              setTurmaSelecionada(null);
-            }}
-          />
-        </div>
-      )}
+      {/* ========================================== */}
+      {/* 🔥 FORMULÁRIO EM MODAL (CRIAÇÃO / EDIÇÃO) */}
+      {/* ========================================== */}
+      <ModalTurmaForm
+        aberto={mostrarForm}
+        onClose={() => setMostrarForm(false)}
+        titulo={turmaSelecionada ? "Editar turma" : "Nova turma"}
+      >
+        <TurmaForm
+          turmaEditando={turmaSelecionada}
+          onCriado={() => {
+            carregarTurmas();
+            setMostrarForm(false);
+            setTurmaSelecionada(null);
+          }}
+        />
+      </ModalTurmaForm>
 
-      {/* Modal de encerramento */}
+      {/* ===================================================== */}
+      {/* 🔥 Modal de encerramento (já funcionava, mantido igual) */}
+      {/* ===================================================== */}
       {modalEncerrarAberto && turmaSelecionada && (
         <ModalEncerrarTurma
           turma={turmaSelecionada}
