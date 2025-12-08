@@ -64,13 +64,20 @@ function LayoutAdmin() {
   const [menuAberto, setMenuAberto] = useState(false);
   const { temPapel } = usePermissao();
 
-  // 🔹 Solicita permissão de notificações ao entrar no admin
-  React.useEffect(() => {
-    solicitarPermissaoNotificacoes();
-    registrarPushSubscription().then((sub) => {
-      console.log("Subscription:", sub);
-    });
-  }, []);
+// 🔹 Solicita permissão de notificações ao entrar no admin
+React.useEffect(() => {
+  solicitarPermissaoNotificacoes();
+}, []);
+
+// 🔹 Registra push SOMENTE depois que o usuário carregar
+React.useEffect(() => {
+  if (!usuario?.id || !usuario?.organizacao_id) return;
+
+  registrarPushSubscription(usuario).then((sub) => {
+    console.log("Subscription:", sub);
+  });
+}, [usuario]);
+
   
 
   // 🔹 registra cada navegação dentro do admin
