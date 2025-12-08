@@ -28,6 +28,8 @@ const lembretesRoutes = require("../modules/lembretes/lembretesRoutes");
 const matriculaRoutes = require("../modules/matricula/matriculaRoutes");
 const notificacaoDestinosRoutes = require("../modules/notificacaoDestinos/notificacaoDestinosRoutes");
 const uploadRoutes = require("../modules/uploads/uploadRoutes");
+const notificacoesPushRoutes = require("../modules/notificacoesPush/notificacoesPushRoutes"); 
+
 
 // PÚBLICAS
 const preMatriculasRoutes = require("../modules/public/preMatriculas/preMatriculasRoutes");
@@ -84,6 +86,8 @@ app.use("/api/turmas", turmasRoutes);
 app.use("/api/categorias", categoriasRoutes);
 app.use("/api/graduacoes", graduacoesRoutes);
 app.use("/api/whatsapp-destinos", whatsappRoutes);
+app.use("/api/notificacoes-push", notificacoesPushRoutes);
+
 
 // -----------------------------------------------------------
 // 🔄 MISTAS

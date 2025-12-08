@@ -4,19 +4,23 @@ import matriculaService from "../../matricula/matriculaService";
 import emailService from "../../../services/emailService";
 import * as notificacaoService from "../../notificacaoDestinos/notificacaoDestinosService";
 import { db } from "../../../database/connection";
-import  logger  from "../../../utils/logger";
+import logger from "../../../utils/logger";
 import bucket from "../../../config/firebase";
 import * as organizacaoService from "../../shared/organizacoes/organizacaoService";
 import { gerarEmailPreMatriculaAdmin } from "../../../services/templates/preMatriculaAdmin";
 import { gerarEmailPreMatriculaAluno } from "../../../services/templates/preMatriculaAluno";
-
+import notificacoesPushService from "../../notificacoesPush/notificacoesPushService";
+import notificacoesPushRepository from "../../notificacoesPush/notificacoesPushRepository";
+import webpush from "web-push";
 
 logger.debug(`[preMatriculasService] Bucket em uso: ${bucket.name}`);
 
 class PreMatriculasService {
   async criarPreMatricula(dados: any) {
     try {
-      logger.info("[preMatriculasService] Recebendo solicitação de pré-matrícula");
+      logger.info(
+        "[preMatriculasService] Recebendo solicitação de pré-matrícula"
+      );
 
       if (dados.slug && !dados.organizacao_id) {
         const orgId = await organizacaoService.resolverIdPorSlug(dados.slug);
@@ -34,7 +38,8 @@ class PreMatriculasService {
       dados.cpf = dados.cpf.replace(/\D/g, "");
       dados.email = dados.email.toLowerCase().trim();
       dados.telefone_aluno = dados.telefone_aluno?.replace(/\D/g, "") || null;
-      dados.telefone_responsavel = dados.telefone_responsavel?.replace(/\D/g, "") || null;
+      dados.telefone_responsavel =
+        dados.telefone_responsavel?.replace(/\D/g, "") || null;
       dados.responsavel_documento =
         dados.responsavel_documento?.replace(/\D/g, "") || null;
       dados.autorizacao_imagem = dados.autorizacao_imagem ? 1 : 0;
@@ -77,7 +82,11 @@ class PreMatriculasService {
 
           let caminhoResizedEncontrado: string | null = null;
 
-          for (let tentativa = 0; tentativa < 20 && !caminhoResizedEncontrado; tentativa++) {
+          for (
+            let tentativa = 0;
+            tentativa < 20 && !caminhoResizedEncontrado;
+            tentativa++
+          ) {
             for (const path of candidatos) {
               const [exists] = await bucket.file(path).exists();
               if (exists) caminhoResizedEncontrado = path;
@@ -88,10 +97,12 @@ class PreMatriculasService {
           }
 
           if (caminhoResizedEncontrado) {
-            const [url] = await bucket.file(caminhoResizedEncontrado).getSignedUrl({
-              action: "read",
-              expires: "03-01-2030",
-            });
+            const [url] = await bucket
+              .file(caminhoResizedEncontrado)
+              .getSignedUrl({
+                action: "read",
+                expires: "03-01-2030",
+              });
             fotoUrl = url;
             dados.foto_url = url;
             await fileOriginal.delete().catch(() => {});
@@ -104,7 +115,10 @@ class PreMatriculasService {
             dados.foto_url = urlOriginal;
           }
         } catch (err: any) {
-          logger.error("[preMatriculasService] Falha ao enviar imagem:", err.message);
+          logger.error(
+            "[preMatriculasService] Falha ao enviar imagem:",
+            err.message
+          );
         }
       }
 
@@ -114,7 +128,9 @@ class PreMatriculasService {
       );
 
       if (cpfDuplicado) {
-        throw new Error("Já existe uma pré-matrícula com este CPF nesta organização.");
+        throw new Error(
+          "Já existe uma pré-matrícula com este CPF nesta organização."
+        );
       }
 
       const cpfEmAluno = await preMatriculasRepository.verificarCpfEmAlunos(
@@ -123,7 +139,9 @@ class PreMatriculasService {
       );
 
       if (cpfEmAluno) {
-        throw new Error("Este CPF já está matriculado. Não é possível criar nova pré-matrícula.");
+        throw new Error(
+          "Este CPF já está matriculado. Não é possível criar nova pré-matrícula."
+        );
       }
 
       const id = await preMatriculasRepository.criarPreMatricula({
@@ -132,16 +150,18 @@ class PreMatriculasService {
       });
 
       const resposta = {
-        message: "Pré-matrícula enviada com sucesso! Aguarde confirmação por e-mail.",
+        message:
+          "Pré-matrícula enviada com sucesso! Aguarde confirmação por e-mail.",
         id,
         foto_url: fotoUrl,
       };
 
       (async () => {
         try {
-          const orgInfo = await preMatriculasRepository.buscarGrupoPorOrganizacaoId(
-            dados.organizacao_id
-          );
+          const orgInfo =
+            await preMatriculasRepository.buscarGrupoPorOrganizacaoId(
+              dados.organizacao_id
+            );
 
           const nomeInstituicao =
             orgInfo?.nome_fantasia || orgInfo?.nome || "Capoeira Base";
@@ -166,6 +186,13 @@ class PreMatriculasService {
             dados.organizacao_id
           );
 
+          if (!preCompleta) {
+            logger.error(
+              "[preMatriculasService] Erro: preCompleta não encontrado"
+            );
+            return;
+          }
+
           for (const email of emailsAdmin) {
             await emailService.enviarEmailCustom({
               to: email,
@@ -174,26 +201,99 @@ class PreMatriculasService {
             });
           }
         } catch (err: any) {
-          logger.error("[preMatriculasService] Erro no envio assíncrono de e-mails:", err.message);
+          logger.error(
+            "[preMatriculasService] Erro no envio assíncrono de e-mails:",
+            err.message
+          );
+        }
+        // -----------------------------------------------------
+        // 🔔 PUSH NOTIFICATION PARA OS ADMINISTRADORES
+        // -----------------------------------------------------
+        try {
+          logger.debug("[preMatriculasService] Enviando push para admins...");
+
+          // 👉 ADICIONE ESTA LINHA (IDÊNTICA À DE CIMA)
+          const preCompleta = await preMatriculasRepository.buscarPorId(
+            id,
+            dados.organizacao_id
+          );
+
+          if (!preCompleta) {
+            logger.error(
+              "[preMatriculasService] Erro: preCompleta não encontrado (push)"
+            );
+            return;
+          }
+
+          const subscriptions =
+            await notificacoesPushRepository.listarPorOrganizacao(
+              dados.organizacao_id
+            );
+
+          if (subscriptions.length === 0) {
+            logger.warn(
+              "[preMatriculasService] Nenhuma subscription encontrada para enviar push"
+            );
+          } else {
+            const payload = JSON.stringify({
+              title: "Nova pré-matrícula pendente",
+              body: `Aluno: ${preCompleta.nome}`,
+            });
+
+            let enviados = 0;
+
+            for (const sub of subscriptions) {
+              try {
+                await webpush.sendNotification(
+                  {
+                    endpoint: sub.endpoint,
+                    keys: {
+                      p256dh: sub.p256dh,
+                      auth: sub.auth,
+                    },
+                  },
+                  payload
+                );
+
+                enviados++;
+              } catch (err: any) {
+                logger.error(
+                  "[preMatriculasService] Erro ao enviar push:",
+                  err.message
+                );
+              }
+            }
+
+            logger.info(
+              `[preMatriculasService] Push finalizado: ${enviados}/${subscriptions.length} enviados`
+            );
+          }
+        } catch (err: any) {
+          logger.error(
+            "[preMatriculasService] Erro geral no envio de push:",
+            err.message
+          );
         }
       })();
 
       return resposta;
-
     } catch (err: any) {
-      logger.error("[preMatriculasService] Erro ao criar pré-matrícula:", err.message);
+      logger.error(
+        "[preMatriculasService] Erro ao criar pré-matrícula:",
+        err.message
+      );
       throw err;
     }
   }
 
   async validarCpf(cpf: string, organizacao_id: number) {
     const cpfLimpo = cpf.replace(/\D/g, "");
-  
+
     const cpfDuplicado = await preMatriculasRepository.verificarCpfExistente(
       cpfLimpo,
       organizacao_id
     );
-  
+
     if (cpfDuplicado) {
       return {
         existe: true,
@@ -201,12 +301,12 @@ class PreMatriculasService {
         mensagem: "Já existe uma pré-matrícula com este CPF.",
       };
     }
-  
+
     const cpfEmAluno = await preMatriculasRepository.verificarCpfEmAlunos(
       cpfLimpo,
       organizacao_id
     );
-  
+
     if (cpfEmAluno) {
       return {
         existe: true,
@@ -214,10 +314,9 @@ class PreMatriculasService {
         mensagem: "CPF já cadastrado para um aluno desta organização.",
       };
     }
-  
+
     return { existe: false };
   }
-  
 
   async listarPendentes(organizacaoId: number) {
     return preMatriculasRepository.listarPendentes(organizacaoId);
@@ -236,14 +335,14 @@ class PreMatriculasService {
       throw err;
     }
   }
-  
 
   async atualizarStatus(id: number, status: string, organizacaoId: number) {
     await preMatriculasRepository.atualizarStatus(id, status, organizacaoId);
 
     if (status === "aprovado") {
       const pre = await preMatriculasRepository.buscarPorId(id, organizacaoId);
-      if (!pre) return { sucesso: false, erro: "Pré-matrícula não encontrada." };
+      if (!pre)
+        return { sucesso: false, erro: "Pré-matrícula não encontrada." };
 
       await matriculaService.criarMatriculaDireta(pre);
       await preMatriculasRepository.deletar(id, organizacaoId);
@@ -251,13 +350,19 @@ class PreMatriculasService {
 
     if (status === "rejeitado") {
       const pre = await preMatriculasRepository.buscarPorId(id, organizacaoId);
-      if (!pre) return { sucesso: false, erro: "Pré-matrícula não encontrada." };
+      if (!pre)
+        return { sucesso: false, erro: "Pré-matrícula não encontrada." };
 
       if (pre.foto_url) {
-        const match = pre.foto_url.match(/fotos-perfil\/pre-matriculas\/([^?]+)/);
+        const match = pre.foto_url.match(
+          /fotos-perfil\/pre-matriculas\/([^?]+)/
+        );
         if (match && match[1]) {
           const caminho = `fotos-perfil/pre-matriculas/${match[1]}`;
-          await bucket.file(caminho).delete().catch(() => {});
+          await bucket
+            .file(caminho)
+            .delete()
+            .catch(() => {});
         }
       }
 
@@ -283,7 +388,8 @@ class PreMatriculasService {
     const { slug, idade } = payload;
 
     const organizacaoId = await organizacaoService.resolverIdPorSlug(slug);
-    if (!organizacaoId) throw new Error("Organização não encontrada pelo slug.");
+    if (!organizacaoId)
+      throw new Error("Organização não encontrada pelo slug.");
 
     return preMatriculasRepository.buscarTurmaPorIdade(organizacaoId, idade);
   }
@@ -295,7 +401,8 @@ class PreMatriculasService {
     const { slug, categoriaId } = payload;
 
     const organizacaoId = await organizacaoService.resolverIdPorSlug(slug);
-    if (!organizacaoId) throw new Error("Organização não encontrada pelo slug.");
+    if (!organizacaoId)
+      throw new Error("Organização não encontrada pelo slug.");
 
     return preMatriculasGraduacoesRepository.listarGraduacoesPublic({
       categoriaId,

@@ -1,6 +1,12 @@
 // LayoutAdmin.jsx
 import React, { useState } from "react";
-import { Link, Outlet, useNavigate, useLocation, matchPath } from "react-router-dom";
+import {
+  Link,
+  Outlet,
+  useNavigate,
+  useLocation,
+  matchPath,
+} from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { usePermissao } from "../../hooks/usePermissao";
 import {
@@ -21,6 +27,10 @@ import logo from "../../assets/images/logo.png";
 import BackButton from "./BackButton";
 import { routeMeta } from "../../routes/routeMeta";
 import { useRouteHistory } from "../../hooks/useRouteHistory";
+
+import { solicitarPermissaoNotificacoes } from "../../utils/notifications";
+import { registrarPushSubscription } from "../../utils/pushManager";
+
 
 function NavItem({ to, label, Icon, onClick, isActive }) {
   return (
@@ -54,8 +64,17 @@ function LayoutAdmin() {
   const [menuAberto, setMenuAberto] = useState(false);
   const { temPapel } = usePermissao();
 
-    // 🔹 registra cada navegação dentro do admin
-    useRouteHistory(location.pathname);
+  // 🔹 Solicita permissão de notificações ao entrar no admin
+  React.useEffect(() => {
+    solicitarPermissaoNotificacoes();
+    registrarPushSubscription().then((sub) => {
+      console.log("Subscription:", sub);
+    });
+  }, []);
+  
+
+  // 🔹 registra cada navegação dentro do admin
+  useRouteHistory(location.pathname);
 
   const handleLogout = () => {
     logout();
