@@ -11,27 +11,29 @@ const notificacoesPushController = {
       const usuario = req.usuario; // vem do verifyToken
       const organizacao_id = usuario.organizacao_id;
 
-      const { endpoint, keys } = req.body;
+      
+      const { subscription } = req.body;
 
       logger.debug("[notificacoesPushController] Recebendo subscription", {
         usuario_id: usuario.id,
         organizacao_id,
-        endpoint,
+        endpoint: subscription?.endpoint,
       });
-
-      if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      
+      if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
         return res.status(400).json({
           error: "Subscription inválida: faltando endpoint ou chaves.",
         });
       }
-
+      
       await notificacoesPushService.salvarSubscription({
         usuario_id: usuario.id,
         organizacao_id,
-        endpoint,
-        p256dh: keys.p256dh,
-        auth: keys.auth,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
       });
+      
 
       return res.json({ success: true });
 
