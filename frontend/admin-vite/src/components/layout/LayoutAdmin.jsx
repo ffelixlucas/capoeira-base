@@ -58,24 +58,24 @@ function NavItem({ to, label, Icon, onClick, isActive }) {
 }
 
 function LayoutAdmin() {
-  const { logout } = useAuth();
+  const { usuario, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuAberto, setMenuAberto] = useState(false);
   const { temPapel } = usePermissao();
 
-// 🔹 Solicita permissão de notificações ao entrar no admin
+// 🔹 Pede permissão apenas uma vez
 React.useEffect(() => {
   solicitarPermissaoNotificacoes();
 }, []);
 
-// 🔹 Registra push SOMENTE depois que o usuário carregar
+// 🔹 Registra push SOMENTE quando o usuário existir
 React.useEffect(() => {
   if (!usuario?.id || !usuario?.organizacao_id) return;
 
-  registrarPushSubscription(usuario).then((sub) => {
-    console.log("Subscription:", sub);
-  });
+  registrarPushSubscription(usuario)
+    .then((sub) => console.log("Subscription registrada:", sub))
+    .catch((err) => console.error("Erro ao registrar push:", err));
 }, [usuario]);
 
   
