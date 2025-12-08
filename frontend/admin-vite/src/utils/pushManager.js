@@ -18,7 +18,7 @@ function urlBase64ToUint8Array(base64String) {
 /**
  * 🔥 REGISTRA PUSH SUBSCRIPTION PARA O USUÁRIO LOGADO
  * - Garante subscription única
- * - Salva no backend com usuario_id + organizacao_id
+ * - Salva no backend com usuario_id + organizacao_id (via token)
  */
 export async function registrarPushSubscription(usuario) {
   try {
@@ -38,13 +38,15 @@ export async function registrarPushSubscription(usuario) {
 
       const json = existing.toJSON();
 
-      // 🔥 Reenvia ao backend com usuario_id e organizacao_id
+      // 🔥 Envia ao backend no formato correto
       await api.post("/notificacoes-push/salvar", {
-        usuario_id: usuario.id,
-        organizacao_id: usuario.organizacao_id,
-        endpoint: json.endpoint,
-        p256dh: json.keys?.p256dh,
-        auth: json.keys?.auth,
+        subscription: {
+          endpoint: json.endpoint,
+          keys: {
+            p256dh: json.keys?.p256dh,
+            auth: json.keys?.auth,
+          },
+        },
       });
 
       return existing;
@@ -62,11 +64,13 @@ export async function registrarPushSubscription(usuario) {
 
     // 🔥 Envia ao backend no formato correto
     await api.post("/notificacoes-push/salvar", {
-      usuario_id: usuario.id,
-      organizacao_id: usuario.organizacao_id,
-      endpoint: json.endpoint,
-      p256dh: json.keys?.p256dh,
-      auth: json.keys?.auth,
+      subscription: {
+        endpoint: json.endpoint,
+        keys: {
+          p256dh: json.keys?.p256dh,
+          auth: json.keys?.auth,
+        },
+      },
     });
 
     console.log("✅ Subscription enviada ao backend com sucesso!");
