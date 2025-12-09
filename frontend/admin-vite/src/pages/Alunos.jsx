@@ -13,6 +13,18 @@ import { useMinhasTurmas } from "../hooks/useMinhasTurmas";
 import api from "../services/api";
 import { RefreshCcw, UserPlus, Bell } from "lucide-react";
 
+import ExportarPDFModal from "../components/shared/ExportarPDFModal";
+import {
+  exportarListaExcelAlunos,
+  exportarRelatorioExcelAlunos,
+} from "../utils/relatorioAlunosExcel";
+
+// (PDF ficará pronto ainda — deixamos placeholders aqui)
+import {
+  exportarListaPDFAlunos,
+  exportarRelatorioPDFAlunos,
+} from "../utils/relatorioAlunosPDF";
+
 function Alunos() {
   const { token, usuario, carregando: carregandoAuth } = useAuth(); // 👈 pega estado global do Auth
 
@@ -209,14 +221,28 @@ function Alunos() {
         onBuscar={setBusca}
       />
 
+      {/* Botão Exportar */}
+      <div className="w-full flex justify-start mt-3">
+        <ExportarPDFModal
+          onExportListaPDF={() => exportarListaPDFAlunos(alunosFiltrados)}
+          onExportRelatorioPDF={() =>
+            exportarRelatorioPDFAlunos(alunosFiltrados)
+          }
+          onExportListaExcel={() => exportarListaExcelAlunos(alunosFiltrados)}
+          onExportRelatorioExcel={() =>
+            exportarRelatorioExcelAlunos(alunosFiltrados)
+          }
+        />
+      </div>
+
       <AlunoList
         alunos={alunosFiltrados}
         carregando={carregando}
         onVerMais={abrirFichaCompleta}
         onEditar={async (aluno) => {
           try {
-            const alunoCompleto = await buscarAluno(aluno.id); 
-            console.log(alunoCompleto)
+            const alunoCompleto = await buscarAluno(aluno.id);
+            console.log(alunoCompleto);
             setModoEdicao(alunoCompleto);
             setMostrarForm(true);
           } catch {
