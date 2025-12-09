@@ -9,7 +9,16 @@ import api from "../../services/api";
 import { useTurmas } from "../../hooks/useTurmas";
 import { toast } from "react-toastify";
 import InputBase from "../ui/InputBase";
-import { User, Phone, Home, Calendar, Award, Users, Heart, GraduationCap } from "lucide-react";
+import {
+  User,
+  Phone,
+  Home,
+  Calendar,
+  Award,
+  Users,
+  Heart,
+  GraduationCap,
+} from "lucide-react";
 
 export default function AlunoForm({ alunoParaEdicao, onCriado }) {
   const { turmas } = useTurmas();
@@ -156,19 +165,7 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
   ------------------------------------------------------------- */
   return (
     <div className="max-h-[80vh] flex flex-col">
-      {/* CABEÇALHO FIXO */}
-      <div className="flex-shrink-0 bg-white border-b p-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <User className="h-5 w-5 text-indigo-600" />
-          </div>
-          <div>
-            <h3 className="font-bold text-gray-900">
-              {alunoParaEdicao ? "Editar Aluno" : "Novo Aluno"}
-            </h3>
-          </div>
-        </div>
-      </div>
+      
 
       {/* ÁREA ROLÁVEL DO FORMULÁRIO */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -177,7 +174,9 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-gray-500" />
-              <h4 className="font-semibold text-gray-800 text-sm">Informações Pessoais</h4>
+              <h4 className="font-semibold text-gray-800 text-sm">
+                Informações Pessoais
+              </h4>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -186,9 +185,9 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Nome completo *
                 </label>
-                <InputBase 
-                  name="nome" 
-                  value={form.nome} 
+                <InputBase
+                  name="nome"
+                  value={form.nome}
                   onChange={handleChange}
                   className="w-full text-sm"
                   placeholder="Digite o nome completo"
@@ -200,9 +199,9 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Apelido
                 </label>
-                <InputBase 
-                  name="apelido" 
-                  value={form.apelido} 
+                <InputBase
+                  name="apelido"
+                  value={form.apelido}
                   onChange={handleChange}
                   className="text-sm"
                   placeholder="Nome de roda ou apelido"
@@ -268,7 +267,9 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
             <div className="space-y-3 bg-amber-50 p-3 rounded-lg border border-amber-100">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-amber-700" />
-                <h4 className="font-semibold text-amber-800 text-sm">Responsável Legal</h4>
+                <h4 className="font-semibold text-amber-800 text-sm">
+                  Responsável Legal
+                </h4>
                 <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
                   Menor de idade
                 </span>
@@ -376,7 +377,9 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Heart className="h-4 w-4 text-gray-500" />
-              <h4 className="font-semibold text-gray-800 text-sm">Observações Médicas</h4>
+              <h4 className="font-semibold text-gray-800 text-sm">
+                Observações Médicas
+              </h4>
             </div>
 
             <div>
