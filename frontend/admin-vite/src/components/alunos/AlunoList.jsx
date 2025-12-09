@@ -133,7 +133,7 @@ export default function AlunoList({
 
       const nomeCompleto = aluno.apelido ? formatarNome(aluno.nome) : null;
 
-      const turma = aluno.turma || "Sem turma";
+      const turma = aluno.turma ?? aluno.turma_nome ?? "Sem turma";
 
       return (
         <div

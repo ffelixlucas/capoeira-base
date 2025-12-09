@@ -213,9 +213,15 @@ function Alunos() {
         alunos={alunosFiltrados}
         carregando={carregando}
         onVerMais={abrirFichaCompleta}
-        onEditar={(aluno) => {
-          setModoEdicao(aluno);
-          setMostrarForm(true);
+        onEditar={async (aluno) => {
+          try {
+            const alunoCompleto = await buscarAluno(aluno.id); 
+            console.log(alunoCompleto)
+            setModoEdicao(alunoCompleto);
+            setMostrarForm(true);
+          } catch {
+            toast.error("Erro ao carregar dados completos do aluno.");
+          }
         }}
         alunoSelecionado={alunoSelecionado}
         fecharModal={() => setAlunoSelecionado(null)}

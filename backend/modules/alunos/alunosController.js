@@ -1,6 +1,7 @@
 // alunosController.js
 const logger = require("../../utils/logger.js");
 const alunoService = require("./alunosService");
+const matriculaService = require("../matricula/matriculaService");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Listar todos os alunos                                                  */
@@ -9,15 +10,15 @@ async function listar(req, res) {
   logger.debug("🔍 req.usuario recebido em /alunos:", req.usuario);
 
   try {
-    const usuario = req.usuario; // vem do verifyToken
+    const usuario = req.usuario;
     const turmaId = req.query.turma_id ? Number(req.query.turma_id) : null;
 
-    // 🔒 injeta organizacao_id do token (multi-org)
     const organizacaoId = usuario.organizacao_id;
-    if (!organizacaoId)
-      return res
-        .status(403)
-        .json({ erro: "Organização não identificada no token." });
+    if (!organizacaoId) {
+      return res.status(403).json({
+        erro: "Organização não identificada no token.",
+      });
+    }
 
     const alunos = await alunoService.listarTodos(
       usuario,
@@ -25,10 +26,10 @@ async function listar(req, res) {
       organizacaoId
     );
 
-    res.json(alunos);
+    return res.json(alunos);
   } catch (err) {
-    logger.error("Erro ao listar alunos:", err);
-    res.status(500).json({ erro: "Erro ao buscar alunos." });
+    logger.error("[alunosController] Erro ao listar alunos:", err);
+    return res.status(500).json({ erro: "Erro ao buscar alunos." });
   }
 }
 
@@ -57,24 +58,6 @@ async function buscar(req, res) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 Cadastrar novo aluno                                                    */
-/* -------------------------------------------------------------------------- */
-async function cadastrar(req, res) {
-  try {
-    const usuario = req.usuario;
-    const organizacaoId = usuario.organizacao_id;
-
-    const dados = { ...req.body, organizacao_id: organizacaoId };
-
-    const alunoId = await alunoService.cadastrarAluno(dados);
-    res.status(201).json({ id: alunoId });
-  } catch (err) {
-    logger.error("Erro ao cadastrar aluno:", err);
-    res.status(400).json({ erro: err.message });
-  }
-}
-
-/* -------------------------------------------------------------------------- */
 /* 🔹 Editar aluno                                                            */
 /* -------------------------------------------------------------------------- */
 async function editar(req, res) {
@@ -83,10 +66,11 @@ async function editar(req, res) {
     const organizacaoId = usuario.organizacao_id;
 
     await alunoService.editarAluno(req.params.id, req.body, organizacaoId);
-    res.json({ sucesso: true });
+
+    return res.json({ sucesso: true });
   } catch (err) {
-    logger.error("Erro ao editar aluno:", err);
-    res.status(400).json({ erro: err.message });
+    logger.error("[alunosController] Erro ao editar aluno:", err);
+    return res.status(400).json({ erro: err.message });
   }
 }
 
@@ -99,15 +83,16 @@ async function excluir(req, res) {
     const organizacaoId = usuario.organizacao_id;
 
     await alunoService.deletarAluno(req.params.id, organizacaoId);
-    res.json({ sucesso: true });
+
+    return res.json({ sucesso: true });
   } catch (err) {
-    logger.error("Erro ao excluir aluno:", err);
-    res.status(400).json({ erro: err.message });
+    logger.error("[alunosController] Erro ao excluir aluno:", err);
+    return res.status(400).json({ erro: err.message });
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 Trocar turma do aluno                                                   */
+/* 🔹 Trocar turma                                                            */
 /* -------------------------------------------------------------------------- */
 async function trocarTurma(req, res) {
   try {
@@ -115,13 +100,20 @@ async function trocarTurma(req, res) {
     const organizacaoId = usuario.organizacao_id;
 
     const { nova_turma_id } = req.body;
-    if (!nova_turma_id) throw new Error("Nova turma obrigatória.");
+    if (!nova_turma_id) {
+      return res.status(400).json({ erro: "Nova turma obrigatória." });
+    }
 
-    await alunoService.trocarTurma(req.params.id, nova_turma_id, organizacaoId);
-    res.json({ sucesso: true });
+    await alunoService.trocarTurma(
+      req.params.id,
+      nova_turma_id,
+      organizacaoId
+    );
+
+    return res.json({ sucesso: true });
   } catch (err) {
-    logger.error("Erro ao trocar turma:", err);
-    res.status(400).json({ erro: err.message });
+    logger.error("[alunosController] Erro ao trocar turma:", err);
+    return res.status(400).json({ erro: err.message });
   }
 }
 
@@ -147,37 +139,40 @@ async function metricasAluno(req, res) {
       organizacaoId
     );
 
-    res.json(metricas);
+    return res.json(metricas);
   } catch (err) {
-    logger.error("Erro ao buscar métricas do aluno:", err);
-    res.status(400).json({ erro: err.message });
+    logger.error("[alunosController] Erro ao buscar métricas:", err);
+    return res.status(400).json({ erro: err.message });
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 Contar pendentes / listar pendentes / atualizar status                  */
+/* 🔹 Pendentes: contar / listar / atualizar status                           */
 /* -------------------------------------------------------------------------- */
 async function contarPendentes(req, res) {
   try {
     const usuario = req.usuario;
     const total = await alunoService.contarPendentes(usuario.organizacao_id);
-    res.json({ count: total });
+
+    return res.json({ count: total });
   } catch (err) {
-    logger.error("Erro ao contar alunos pendentes:", err);
-    res.status(500).json({ erro: "Erro ao contar alunos pendentes." });
+    logger.error("Erro ao contar pendentes:", err);
+    return res.status(500).json({ erro: "Erro ao contar pendentes." });
   }
 }
 
 async function listarPendentes(req, res) {
   try {
     const usuario = req.usuario;
+
     const pendentes = await alunoService.listarPendentes(
       usuario.organizacao_id
     );
-    res.json(pendentes);
+
+    return res.json(pendentes);
   } catch (err) {
-    logger.error("Erro ao listar alunos pendentes:", err);
-    res.status(500).json({ erro: "Erro ao listar pendentes." });
+    logger.error("Erro ao listar pendentes:", err);
+    return res.status(500).json({ erro: "Erro ao listar pendentes." });
   }
 }
 
@@ -195,17 +190,19 @@ async function atualizarStatus(req, res) {
       status,
       usuario.organizacao_id
     );
-    res.json({ sucesso: true });
+
+    return res.json({ sucesso: true });
   } catch (err) {
-    logger.error("Erro ao atualizar status do aluno:", err);
-    res.status(400).json({ erro: err.message });
+    logger.error("Erro ao atualizar status:", err);
+    return res.status(400).json({ erro: err.message });
   }
 }
+
+/* -------------------------------------------------------------------------- */
 
 module.exports = {
   listar,
   buscar,
-  cadastrar,
   editar,
   excluir,
   trocarTurma,
