@@ -9,18 +9,32 @@ async function listarAlunosComTurmaAtual(organizacaoId) {
   const [rows] = await connection.execute(
     `
     SELECT 
-  a.id, a.nome, a.apelido, a.foto_url,
-  t.nome AS turma, t.id AS turma_id
+      a.id, 
+      a.nome, 
+      a.apelido, 
+      a.foto_url,
+      a.observacoes_medicas,  
+
+
+      t.nome AS turma, 
+      t.id AS turma_id,
+
+      e.nome AS responsavel_turma   
+
     FROM alunos a
     LEFT JOIN matriculas m 
       ON m.aluno_id = a.id AND m.data_fim IS NULL
     LEFT JOIN turmas t 
       ON t.id = m.turma_id
+    LEFT JOIN equipe e              
+      ON e.id = t.equipe_id
+
     WHERE a.status = 'ativo' AND a.organizacao_id = ?
     ORDER BY a.nome
     `,
     [organizacaoId]
   );
+
   return rows;
 }
 
@@ -31,21 +45,32 @@ async function listarAlunosPorTurmas(turmaIds, organizacaoId) {
   if (!turmaIds || turmaIds.length === 0) return [];
   const placeholders = turmaIds.map(() => "?").join(",");
 
-  const [rows] = await connection.execute(
-    `
-SELECT 
-  a.id, a.nome, a.apelido, a.foto_url,
-  t.nome AS turma, t.id AS turma_id
+ const [rows] = await connection.execute(
+  `
+  SELECT 
+    a.id, 
+    a.nome, 
+    a.apelido, 
+    a.foto_url,
 
-    FROM alunos a
-    JOIN matriculas m ON m.aluno_id = a.id AND m.data_fim IS NULL
-    JOIN turmas t ON t.id = m.turma_id
-    WHERE t.id IN (${placeholders})
-      AND a.organizacao_id = ?
-    ORDER BY a.nome
-    `,
-    [...turmaIds, organizacaoId]
-  );
+    t.nome AS turma,
+    t.id AS turma_id,
+    e.nome AS responsavel_turma   -- 🔥 AQUI TAMBÉM!
+
+  FROM alunos a
+  JOIN matriculas m 
+    ON m.aluno_id = a.id AND m.data_fim IS NULL
+  JOIN turmas t 
+    ON t.id = m.turma_id
+  LEFT JOIN equipe e 
+    ON e.id = t.equipe_id
+
+  WHERE t.id IN (${placeholders})
+    AND a.organizacao_id = ?
+  ORDER BY a.nome
+  `,
+  [...turmaIds, organizacaoId]
+);
 
   return rows;
 }

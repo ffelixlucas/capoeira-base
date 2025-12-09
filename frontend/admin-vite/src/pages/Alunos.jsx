@@ -128,7 +128,7 @@ function Alunos() {
     });
 
   return (
-    <div className="p-6 text-center">
+    <div className="p-0 m-0 w-full">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-3">
         <div className="w-full sm:w-auto text-left">
           <label className="block text-sm font-medium text-gray-700 mb-1">

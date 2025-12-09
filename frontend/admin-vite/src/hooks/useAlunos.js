@@ -13,18 +13,24 @@ import { toast } from "react-toastify";
 export function useAlunos() {
   const [alunos, setAlunos] = useState([]);
   const [carregando, setCarregando] = useState(false);
+async function carregarAlunos() {
+  setCarregando(true);
+  try {
+    const data = await listarAlunos();
+    setAlunos(data);
 
-  async function carregarAlunos() {
-    setCarregando(true);
-    try {
-      const data = await listarAlunos();
-      setAlunos(data);
-    } catch (error) {
-      toast.error("Erro ao carregar alunos");
-    } finally {
-      setCarregando(false);
+    // 👉 ADICIONE ISSO
+    if (data && data.length > 0) {
+      console.log("🔍 DEBUG ALUNO:", data[0]);
     }
+
+  } catch (error) {
+    toast.error("Erro ao carregar alunos");
+  } finally {
+    setCarregando(false);
   }
+}
+
 
   async function cadastrar(dados) {
     try {
