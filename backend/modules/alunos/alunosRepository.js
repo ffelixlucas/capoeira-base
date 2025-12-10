@@ -57,7 +57,7 @@ async function listarAlunosComTurmaAtual(organizacaoId) {
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Lista alunos de turmas específicas                                      */
-/* -------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------- */
 async function listarAlunosPorTurmas(turmaIds, organizacaoId) {
   if (!turmaIds || turmaIds.length === 0) return [];
   const placeholders = turmaIds.map(() => "?").join(",");
@@ -89,7 +89,7 @@ async function listarAlunosPorTurmas(turmaIds, organizacaoId) {
   return rows;
 }
 
--------------------------------------------------------------------------- */
+/*-------------------------------------------------------------------------- */
 /* 🔹 Buscar aluno por ID                                                     */
 /* -------------------------------------------------------------------------- */
 async function buscarPorId(id, organizacaoId) {
@@ -355,7 +355,7 @@ async function atualizarStatus(id, status, organizacaoId) {
 
 module.exports = {
   listarAlunosComTurmaAtual,
-  //listarAlunosPorTurmas,
+  listarAlunosPorTurmas,
   buscarPorId,
   editarAluno,
   excluirAluno,
