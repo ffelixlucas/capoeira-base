@@ -1,13 +1,19 @@
 // utils/relatorioAlunosPDF.js
 import { criarDocumento, salvarPDF } from "./pdfUtils";
 import autoTable from "jspdf-autotable";
+import { logger } from "./logger";
 
 /** Une nome e apelido em formato compacto */
 function formatarNomeCompleto(aluno) {
   const nome = aluno.nome || "";
   const apelido = aluno.apelido || "";
 
-  if (apelido && apelido !== "-" && apelido !== "null" && apelido !== "undefined") {
+  if (
+    apelido &&
+    apelido !== "-" &&
+    apelido !== "null" &&
+    apelido !== "undefined"
+  ) {
     return `${apelido} - ${nome}`;
   }
   return nome;
@@ -37,7 +43,9 @@ export function exportarListaPDFAlunos(alunos) {
   // Título centralizado
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("Lista de Alunos", doc.internal.pageSize.getWidth() / 2, y, { align: "center" });
+  doc.text("Lista de Alunos", doc.internal.pageSize.getWidth() / 2, y, {
+    align: "center",
+  });
 
   y += 10;
 
@@ -46,53 +54,71 @@ export function exportarListaPDFAlunos(alunos) {
     (a.nome || "").localeCompare(b.nome || "", "pt-BR", { sensitivity: "base" })
   );
 
-  // COLUNAS REAIS:
-  // categoria pode vir null → normalizamos para "-"
-  const corpo = ordenados.map((a, idx) => [
+// COLUNAS REAIS:
+// categoria pode vir null → normalizamos para "-"
+const corpo = ordenados.map((a, idx) => {
+
+  return [
     idx + 1,
     a.nome || "",
     a.apelido || "",
     a.turma || "-",
-    a.categoria || "-",   // <<<<<<<<<<<<<<<<<<<<<<<<<<<< ADICIONADO
-  ]);
+    a.categoria_nome || "-",  // ← AQUI É ONDE VEM A CATEGORIA REAL
+  ];
+});
 
-  autoTable(doc, {
-    startY: y + 10,
 
-    head: [["Nº", "Nome", "Apelido", "Turma", "Categoria"]],
-    body: corpo,
+ autoTable(doc, {
+  startY: y + 10,
 
-    styles: {
-      fontSize: 9,
-      cellPadding: 3,
-      halign: "left",      // Alinhado à esquerda, como você pediu
-      valign: "middle",
-      overflow: "linebreak",
-    },
+  head: [["Nº", "Nome", "Apelido", "Turma", "Categoria"]],
+  body: corpo,
 
-    headStyles: {
-      fillColor: [50, 100, 200],
-      textColor: 255,
-      fontStyle: "bold",
-      halign: "left",
-    },
+  styles: {
+    fontSize: 8,
+    cellPadding: 2,
+    halign: "left",
+    valign: "middle",
+    lineColor: [180, 180, 180],
+    lineWidth: 0.2,
+    overflow: "linebreak",
+  },
 
-    alternateRowStyles: {
-      fillColor: [245, 245, 245],
-    },
+  headStyles: {
+    fillColor: [50, 100, 200],
+    textColor: 255,
+    fontStyle: "bold",
+    halign: "left",
+    fontSize: 8,
+    lineColor: [180, 180, 180],  // 🔹 borda
+    lineWidth: 0.3,
+  },
 
-    // COLUNAS AJUSTADAS PARA CABER NO PORTRAIT
-    columnStyles: {
-      0: { cellWidth: 12, halign: "center" }, // Nº
-      1: { cellWidth: 70 },                  // Nome
-      2: { cellWidth: 45 },                  // Apelido
-      3: { cellWidth: 30 },                  // Turma
-      4: { cellWidth: 35 },                  // Categoria  <<<<<<<<<<<<<<<<<
-    },
+  didDrawCell: (data) => {
+    if (data.section === "head") {
+      data.cell.styles.lineColor = [180, 180, 180];
+      data.cell.styles.lineWidth = 0.3;
+    }
+  },
 
-    margin: { left: 20, right: 20 },
-    tableWidth: "auto",
-  });
+  tableWidth: "wrap",
+
+  margin: {
+    left: (doc.internal.pageSize.getWidth() - 190) / 2,
+    right: 10,
+    top: 10,
+  },
+
+  columnStyles: {
+    0: { cellWidth: 12, halign: "center" },
+    1: { cellWidth: 70 },
+    2: { cellWidth: 40 },
+    3: { cellWidth: 30 },
+    4: { cellWidth: 35 },
+  },
+});
+
+
 
   // Rodapé
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -106,7 +132,6 @@ export function exportarListaPDFAlunos(alunos) {
   salvarPDF(doc, "lista_alunos.pdf");
 }
 
-
 /* ===================================================================================
    RELATÓRIO COMPLETO — LANDSCAPE — COM TELEFONE (ÚNICO DADO EXTRA QUE EXISTE)
 =================================================================================== */
@@ -114,10 +139,11 @@ export function exportarRelatorioPDFAlunos(alunos) {
   const doc = criarDocumento("landscape");
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Título
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("RELATÓRIO DE ALUNOS", pageWidth / 2, 20, { align: "center" });
+// título alinhado à esquerda
+doc.setFont("helvetica", "bold");
+doc.setFontSize(16);
+doc.text("Lista de Alunos", 20, y, { align: "left" });
+
 
   // Subtítulo
   const dataAtual = new Date().toLocaleDateString("pt-BR");

@@ -18,12 +18,14 @@ import {
   exportarListaExcelAlunos,
   exportarRelatorioExcelAlunos,
 } from "../utils/relatorioAlunosExcel";
-
 // (PDF ficará pronto ainda — deixamos placeholders aqui)
 import {
   exportarListaPDFAlunos,
   exportarRelatorioPDFAlunos,
 } from "../utils/relatorioAlunosPDF";
+
+import ModalSelecionarRelatorio from "../components/relatorios/ModalSelecionarRelatorio";
+import ModalRelatorioGeralAlunos from "../components/relatorios/ModalRelatorioGeralAlunos";
 
 function Alunos() {
   const { token, usuario, carregando: carregandoAuth } = useAuth(); // 👈 pega estado global do Auth
@@ -50,6 +52,9 @@ function Alunos() {
   const [contadorPendentes, setContadorPendentes] = useState(0);
   const [mostrarPendentes, setMostrarPendentes] = useState(false);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
+
+  const [mostrarModalRelatorios, setMostrarModalRelatorios] = useState(false);
+  const [mostrarRelatorioGeral, setMostrarRelatorioGeral] = useState(false);
 
   useEffect(() => {
     if (usuario?.roles?.includes("admin")) {
@@ -172,7 +177,7 @@ function Alunos() {
               {/* Cadastrar aluno */}
               <button
                 onClick={() => setMostrarForm(!mostrarForm)}
-                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+                className="flex items-center justify-center gap-2 bg-cor-primaria hover:bg-cor-destaque text-black px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
               >
                 <UserPlus size={16} /> {mostrarForm ? "Fechar" : "Cadastrar"}
               </button>
@@ -181,7 +186,7 @@ function Alunos() {
               {usuario?.roles?.includes("admin") && (
                 <button
                   onClick={() => setMostrarPendentes(true)}
-                  className="relative flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+                  className="relative flex items-center justify-center gap-2 bg-cor-primaria hover:bg-cor-destaque text-black px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
                 >
                   <Bell size={16} /> Pré-Matrículas
                   {contadorPendentes > 0 && (
@@ -191,6 +196,13 @@ function Alunos() {
                   )}
                 </button>
               )}
+
+              <button
+                onClick={() => setMostrarModalRelatorios(true)}
+                className="flex items-center justify-center gap-2 bg-cor-primaria hover:bg-cor-destaque text-black px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+              >
+                📄 Relatórios
+              </button>
             </div>
 
             {/* Linha secundária — Atualizar + hora */}
@@ -220,20 +232,6 @@ function Alunos() {
         placeholder="Buscar por nome, apelido ou turma"
         onBuscar={setBusca}
       />
-
-      {/* Botão Exportar */}
-      <div className="w-full flex justify-start mt-3">
-        <ExportarPDFModal
-          onExportListaPDF={() => exportarListaPDFAlunos(alunosFiltrados)}
-          onExportRelatorioPDF={() =>
-            exportarRelatorioPDFAlunos(alunosFiltrados)
-          }
-          onExportListaExcel={() => exportarListaExcelAlunos(alunosFiltrados)}
-          onExportRelatorioExcel={() =>
-            exportarRelatorioExcelAlunos(alunosFiltrados)
-          }
-        />
-      </div>
 
       <AlunoList
         alunos={alunosFiltrados}
@@ -279,6 +277,28 @@ function Alunos() {
           organizacaoId={usuario.organizacao_id}
         />
       )}
+
+      <ModalSelecionarRelatorio
+        aberto={mostrarModalRelatorios}
+        onClose={() => setMostrarModalRelatorios(false)}
+        onSelecionar={(tipo) => {
+          setMostrarModalRelatorios(false); // fecha o modal de seleção
+
+          if (tipo === "geral") {
+            setMostrarRelatorioGeral(true);
+          }
+        }}
+      />
+
+      <ModalRelatorioGeralAlunos
+  aberto={mostrarRelatorioGeral}
+  onClose={() => setMostrarRelatorioGeral(false)}
+  alunos={alunosFiltrados}
+  turmas={turmas}
+  turmaSelecionada={turmaSelecionada}
+  onTrocarTurma={setTurmaSelecionada}
+/>
+
     </div>
   );
 }
