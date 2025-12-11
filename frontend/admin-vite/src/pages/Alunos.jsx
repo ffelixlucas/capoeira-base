@@ -26,6 +26,7 @@ import {
 
 import ModalSelecionarRelatorio from "../components/relatorios/ModalSelecionarRelatorio";
 import ModalRelatorioGeralAlunos from "../components/relatorios/ModalRelatorioGeralAlunos";
+import ModalRelatorioPresencasTurma from "../components/relatorios/ModalRelatorioPresencasTurma";
 
 function Alunos() {
   const { token, usuario, carregando: carregandoAuth } = useAuth(); // 👈 pega estado global do Auth
@@ -55,6 +56,8 @@ function Alunos() {
 
   const [mostrarModalRelatorios, setMostrarModalRelatorios] = useState(false);
   const [mostrarRelatorioGeral, setMostrarRelatorioGeral] = useState(false);
+  const [mostrarRelatorioPresencas, setMostrarRelatorioPresencas] =
+    useState(false);
 
   useEffect(() => {
     if (usuario?.roles?.includes("admin")) {
@@ -282,23 +285,36 @@ function Alunos() {
         aberto={mostrarModalRelatorios}
         onClose={() => setMostrarModalRelatorios(false)}
         onSelecionar={(tipo) => {
-          setMostrarModalRelatorios(false); // fecha o modal de seleção
+          setMostrarModalRelatorios(false);
 
           if (tipo === "geral") {
             setMostrarRelatorioGeral(true);
+          }
+
+          if (tipo === "presencas") {
+            setTurmaSelecionada("todos"); // 👈 força "todas" ao abrir
+            setMostrarRelatorioPresencas(true);
           }
         }}
       />
 
       <ModalRelatorioGeralAlunos
-  aberto={mostrarRelatorioGeral}
-  onClose={() => setMostrarRelatorioGeral(false)}
-  alunos={alunosFiltrados}
-  turmas={turmas}
-  turmaSelecionada={turmaSelecionada}
-  onTrocarTurma={setTurmaSelecionada}
-/>
+        aberto={mostrarRelatorioGeral}
+        onClose={() => setMostrarRelatorioGeral(false)}
+        alunos={alunosFiltrados}
+        turmas={turmas}
+        turmaSelecionada={turmaSelecionada}
+        onTrocarTurma={setTurmaSelecionada}
+      />
 
+      <ModalRelatorioPresencasTurma
+        aberto={mostrarRelatorioPresencas}
+        onClose={() => setMostrarRelatorioPresencas(false)}
+        alunos={alunosFiltrados}
+        turmas={turmas}
+        turmaSelecionada={turmaSelecionada}
+        onTrocarTurma={(id) => setTurmaSelecionada(id)}
+      />
     </div>
   );
 }

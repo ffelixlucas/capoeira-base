@@ -22,7 +22,7 @@ export default function ModalSelecionarRelatorio({ aberto, onClose, onSelecionar
           </button>
 
           <button
-            onClick={() => onSelecionar("turma")}
+            onClick={() => onSelecionar("presencas")}
             className="w-full bg-cor-primaria hover:bg-cor-destaque text-black py-2 rounded-md font-medium"
           >
             Presença por Turma
