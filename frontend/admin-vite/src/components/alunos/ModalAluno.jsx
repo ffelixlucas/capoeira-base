@@ -1,13 +1,29 @@
-// src/components/alunos/ModalAluno.jsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ModalFicha from "../ui/ModalFicha";
 import NotasAluno from "./NotasAluno";
 import { excluirAluno } from "../../services/alunoService";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { logger } from "../../utils/logger";
+
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  User,
+  Trophy,
+  Clock,
+  AlertCircle,
+  Edit,
+  Trash2,
+  CheckCircle,
+  IdCard,
+  Shield,
+  Camera,
+} from "lucide-react";
 
 export default function ModalAluno({
   aberto,
@@ -18,230 +34,368 @@ export default function ModalAluno({
 }) {
   if (!aluno) return null;
 
-  const [foto, setFoto] = useState(aluno?.foto_url || null);
+  const [foto, setFoto] = useState(aluno.foto_url || null);
   const [metricas, setMetricas] = useState(null);
   const [zoomFoto, setZoomFoto] = useState(false);
 
   const isPreMatricula = aluno.status === "pendente";
   const isAtivo = aluno.status === "ativo";
 
-  /* ========================================================== */
-  /* 🔥 MÉTRICAS APENAS PARA ATIVOS                             */
-  /* ========================================================== */
+  const nomeFormatado = useMemo(
+    () => aluno.nome?.replace(/\b\w/g, (l) => l.toUpperCase()) || "",
+    [aluno.nome]
+  );
+
+  const idade = useMemo(() => {
+    if (!aluno.nascimento) return "-";
+    const diff = Date.now() - new Date(aluno.nascimento).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  }, [aluno.nascimento]);
+
+  const taxaPresenca = metricas ? Math.round(metricas.taxa_presenca * 100) : 0;
+
   useEffect(() => {
-    if (!isAtivo || !aberto) return;
+    if (!isAtivo || !aberto) {
+      setMetricas(null);
+      return;
+    }
 
     const ano = new Date().getFullYear();
     const hoje = new Date().toISOString().split("T")[0];
 
-    async function carregar() {
+    async function load() {
       try {
         const { data } = await api.get(`/alunos/${aluno.id}/metricas`, {
           params: { inicio: `${ano}-01-01`, fim: hoje },
         });
         setMetricas(data);
       } catch {
-        toast.error("Erro ao carregar métricas");
+        toast.error("Erro ao carregar frequência");
       }
     }
-
-    carregar();
+    load();
   }, [aluno.id, aberto, isAtivo]);
 
-  /* ========================================================== */
-  /* 🔥 EXCLUIR                                                 */
-  /* ========================================================== */
-  async function handleExcluir() {
-    if (!window.confirm("Excluir o aluno permanentemente?")) return;
-
+  const handleExcluir = async () => {
+    if (!window.confirm("Excluir permanentemente este aluno?")) return;
     try {
       await excluirAluno(aluno.id);
-      toast.success("Aluno excluído!");
+      toast.success("Aluno excluído");
       onExcluido?.();
       onClose();
     } catch (err) {
       logger.error(err);
       toast.error("Erro ao excluir");
     }
-  }
+  };
 
-  /* ========================================================== */
-  /* 🔥 FORMATOS                                                */
-  /* ========================================================== */
-  const idade = aluno.nascimento
-    ? Math.floor(
-        (Date.now() - new Date(aluno.nascimento)) /
-          (1000 * 60 * 60 * 24 * 365.25)
-      )
-    : "-";
+  const handleEditar = async () => {
+    try {
+      const { data } = await api.get(`/alunos/${aluno.id}`);
+      onEditar?.(data);
+    } catch {
+      toast.error("Erro ao carregar dados para edição");
+    }
+  };
 
-  const nomeFormatado =
-    aluno.nome?.replace(/\b\w/g, (l) => l.toUpperCase()) || aluno.nome;
+const corFrequencia = (p) => {
+  if (p >= 80) return "#10b981"; // verde
+  if (p >= 60) return "#f59e0b"; // amarelo
+  return "#ef4444"; // vermelho
+};
 
-  const telefones = [];
-  if (aluno.telefone_aluno)
-    telefones.push({ label: "Telefone do aluno", valor: aluno.telefone_aluno });
-  if (aluno.telefone_responsavel)
-    telefones.push({
-      label: aluno.nome_responsavel || "Responsável",
-      valor: aluno.telefone_responsavel,
-    });
-
-  /* ========================================================== */
-  /* 🔥 FICHA PRE-MATRÍCULA                                     */
-  /* ========================================================== */
-  const fichaPre = [
-    { label: "Nome completo", valor: nomeFormatado },
-    { label: "Apelido", valor: aluno.apelido || "-" },
-    {
-      label: "Nascimento",
-      valor: aluno.nascimento
-        ? new Date(aluno.nascimento).toLocaleDateString("pt-BR")
-        : "-",
-    },
-    { label: "Idade", valor: idade },
-    { label: "CPF", valor: aluno.cpf || "-" },
-    { label: "E-mail", valor: aluno.email || "-" },
-    ...telefones,
-    { label: "Endereço", valor: aluno.endereco || "-" },
-    { label: "Categoria escolhida", valor: aluno.categoria_nome || "-" },
-    { label: "Graduação sugerida", valor: aluno.graduacao_nome || "-" },
-    {
-      label: "Obs Médicas",
-      valor: aluno.observacoes_medicas || "Nenhuma",
-    },
-    {
-      label: "Criado em",
-      valor: new Date(aluno.criado_em).toLocaleString("pt-BR"),
-    },
-    {
-      label: "Autorização de imagem",
-      valor: aluno.autorizacao_imagem ? "Sim" : "Não",
-    },
-    { label: "LGPD", valor: aluno.aceite_lgpd ? "Sim" : "Não" },
-  ];
-
-  /* ========================================================== */
-  /* 🔥 FICHA ATIVO                                             */
-  /* ========================================================== */
-  const fichaAtivo = [
-    { label: "Nome completo", valor: nomeFormatado },
-    { label: "Apelido", valor: aluno.apelido || "-" },
-    {
-      label: "Nascimento",
-      valor: aluno.nascimento
-        ? new Date(aluno.nascimento).toLocaleDateString("pt-BR")
-        : "-",
-    },
-    { label: "Idade", valor: idade },
-    { label: "CPF", valor: aluno.cpf || "-" },
-    ...telefones,
-    { label: "Categoria", valor: aluno.categoria_nome || "-" },
-    { label: "Graduação", valor: aluno.graduacao_nome || "Branca" },
-    { label: "Turma", valor: aluno.turma_nome || "-" },
-    {
-      label: "Obs Médicas",
-      valor: aluno.observacoes_medicas || "Nenhuma",
-    },
-    {
-      label: "Matriculado em",
-      valor: new Date(aluno.criado_em).toLocaleString("pt-BR"),
-    },
-    { label: "Status", valor: aluno.status },
-  ];
-
-  if (metricas) {
-    fichaAtivo.push(
-      {
-        label: "Frequência",
-        valor: `${metricas.presentes}/${metricas.total}`,
-      },
-      {
-        label: "Taxa de presença",
-        valor: `${Math.round(metricas.taxa_presenca * 100)}%`,
-      }
-    );
-  }
-
-  const dadosFicha = isPreMatricula ? fichaPre : fichaAtivo;
-
-  /* ========================================================== */
-  /* 🔥 FOTO (sem camerinha porque backend ainda não tem rota)  */
-  /* ========================================================== */
-  const Foto = () => (
-    <div
-      className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center border-2 overflow-hidden cursor-pointer"
-      onClick={() => foto && setZoomFoto(true)}
-    >
-      {foto ? (
-        <img src={foto} className="h-full w-full object-cover" />
-      ) : (
-        <span className="text-gray-500 text-xl">
-          {nomeFormatado?.charAt(0)}
-        </span>
-      )}
-    </div>
-  );
-
-  /* ========================================================== */
-  /* 🔥 ZOOM                                                    */
-  /* ========================================================== */
-  const ConteudoZoom = () => (
-    <img
-      src={foto}
-      className="max-w-[90vw] max-h-[90vh] rounded shadow-2xl object-contain"
-    />
-  );
-
-  /* ========================================================== */
-  /* 🔥 RENDER                                                  */
-  /* ========================================================== */
   return (
     <>
       <ModalFicha
         aberto={aberto}
         onClose={onClose}
-        titulo={isPreMatricula ? "Pré-matrícula" : "Aluno"}
-        subtitulo={
-          <div className="flex items-center gap-4">
-            <Foto />
-            <div>
-              <h3 className="font-bold text-lg">{nomeFormatado}</h3>
-              {aluno.apelido && (
-                <div className="text-gray-600 italic">"{aluno.apelido}"</div>
+        titulo={isPreMatricula ? "Pré-matrícula" : "Perfil do Aluno"}
+        className="max-w-lg bg-white"
+        zoomAtivo={zoomFoto}
+        onCloseZoom={() => setZoomFoto(false)}
+        conteudoZoom={
+          foto && (
+            <img
+              src={foto}
+              alt={nomeFormatado}
+              className="max-w-[90vw] max-h-[90vh] rounded-3xl object-contain"
+            />
+          )
+        }
+      >
+        {/* Header estilo WhatsApp/Instagram */}
+        <div className="bg-gray-100 -m-6 pb-8 rounded-t-3xl">
+          <div className="pt-8 px-6 flex flex-col items-center">
+            <div
+              className="relative cursor-pointer"
+              onClick={() => foto && setZoomFoto(true)}
+            >
+              <div className="w-40 h-40 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gray-200">
+                {foto ? (
+                  <img
+                    src={foto}
+                    alt={nomeFormatado}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-gray-500">
+                    {nomeFormatado.charAt(0)}
+                  </div>
+                )}
+              </div>
+              {isAtivo && (
+                <div className="absolute bottom-2 right-2 w-12 h-12 bg-green-500 rounded-full border-4 border-white flex items-center justify-center shadow-md">
+                  <CheckCircle className="w-8 h-8 text-white" />
+                </div>
+              )}
+            </div>
+
+            <h2 className="mt-6 text-2xl font-bold text-black">
+              {nomeFormatado}
+            </h2>
+            {aluno.apelido && (
+              <p className="text-lg text-gray-600 italic">"{aluno.apelido}"</p>
+            )}
+            {/* Obs médicas */}
+            {aluno.observacoes_medicas && (
+              <>
+                <hr className="border-gray-200" />
+                <div className="bg-red-50 rounded-2xl p-4 flex gap-3">
+                  <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-red-900">
+                      Observações Médicas
+                    </p>
+                    <p className="text-black">{aluno.observacoes_medicas}</p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Botões principais */}
+            <div className="mt-6 flex gap-4 w-full">
+              {(aluno.telefone_aluno || aluno.telefone_responsavel) && (
+                <a
+                  href={`https://wa.me/55${(
+                    aluno.telefone_aluno || aluno.telefone_responsavel
+                  ).replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-2xl flex items-center justify-center gap-3 shadow-md transition"
+                >
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+                    alt=""
+                    className="w-6 h-6"
+                  />
+                  WhatsApp
+                </a>
+              )}
+              {isAtivo && (
+                <button
+                  onClick={handleEditar}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-md transition"
+                >
+                  <Edit className="w-5 h-5" />
+                  Editar
+                </button>
               )}
             </div>
           </div>
-        }
-        dados={dadosFicha}
-        onEditar={
-          isAtivo
-            ? async () => {
-                try {
-                  const { data } = await api.get(`/alunos/${aluno.id}`);
-                  onEditar?.(data);
-                } catch {
-                  toast.error("Erro ao carregar aluno.");
-                }
-              }
-            : undefined
-        }
-        zoomAtivo={zoomFoto}
-        onCloseZoom={() => setZoomFoto(false)}
-        conteudoZoom={<ConteudoZoom />}
-      >
-        {isAtivo && <NotasAluno alunoId={aluno.id} />}
+        </div>
 
-        {isAtivo && (
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={handleExcluir}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-            >
-              Excluir aluno
-            </button>
+        {/* Conteúdo principal */}
+        <div className="mt-8 space-y-6 px-6 pb-6">
+          {/* Frequência como círculo (se ativo) */}
+          {isAtivo && metricas && (
+            <div className="flex justify-center">
+              <div className="relative w-40 h-40">
+                <svg className="w-40 h-40 transform -rotate-90">
+                  {/* Fundo */}
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="#e5e7eb"
+                    strokeWidth="12"
+                    fill="none"
+                  />
+
+                  {/* Dinâmico */}
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke={corFrequencia(taxaPresenca)}
+                    strokeWidth="12"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 70}`}
+                    strokeDashoffset={`${
+                      2 * Math.PI * 70 * (1 - taxaPresenca / 100)
+                    }`}
+                    className="transition-all duration-1000"
+                  />
+                </svg>
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-bold text-black">
+                    {taxaPresenca}%
+                  </span>
+                  <span className="text-sm text-gray-600">Frequência</span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    {metricas.presentes}/{metricas.total} aulas
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Seção Informações Pessoais */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-black text-lg">
+              Informações Pessoais
+            </h3>
+            <div className="space-y-3 text-black">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-gray-500" />
+                <span>
+                  Nascimento:{" "}
+                  {aluno.nascimento
+                    ? new Date(aluno.nascimento).toLocaleDateString("pt-BR")
+                    : "-"}{" "}
+                  ({idade} anos)
+                </span>
+              </div>
+              {aluno.cpf && (
+                <div className="flex items-center gap-3">
+                  <IdCard className="w-5 h-5 text-gray-500" />
+                  <span>CPF: {aluno.cpf}</span>
+                </div>
+              )}
+              {aluno.email && (
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-gray-500" />
+                  <span>E-mail: {aluno.email}</span>
+                </div>
+              )}
+              {aluno.telefone_aluno && (
+                <div className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 text-gray-500" />
+                  <span>Telefone: {aluno.telefone_aluno}</span>
+                </div>
+              )}
+              {aluno.telefone_responsavel && (
+                <div className="flex items-center gap-3">
+                  <User className="w-5 h-5 text-gray-500" />
+                  <span>
+                    Responsável: {aluno.telefone_responsavel}{" "}
+                    {aluno.nome_responsavel && `(${aluno.nome_responsavel})`}
+                  </span>
+                </div>
+              )}
+              {aluno.endereco && (
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-5 h-5 text-gray-500" />
+                  <span>Endereço: {aluno.endereco}</span>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+
+          <hr className="border-gray-200" />
+
+          {/* Seção Academia */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-black text-lg">Na Academia</h3>
+            <div className="grid grid-cols-2 gap-4 text-black">
+              <div className="flex items-center gap-3">
+                <Trophy className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Graduação</p>
+                  <p className="font-medium">
+                    {aluno.graduacao_nome || "Branca"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <User className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Categoria</p>
+                  <p className="font-medium">{aluno.categoria_nome || "-"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Turma</p>
+                  <p className="font-medium">{aluno.turma_nome || "-"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 col-span-2">
+                <Calendar className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-600">
+                    {isPreMatricula ? "Criado em" : "Matriculado em"}
+                  </p>
+                  <p className="font-medium">
+                    {new Date(aluno.criado_em).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Autorizações pré-matrícula */}
+          {isPreMatricula && (
+            <>
+              <hr className="border-gray-200" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-2xl">
+                  <Camera className="w-10 h-10 mx-auto text-gray-600 mb-2" />
+                  <p className="font-medium text-black">Imagem</p>
+                  <p
+                    className={`text-xl font-bold ${
+                      aluno.autorizacao_imagem
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {aluno.autorizacao_imagem ? "Sim" : "Não"}
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-2xl">
+                  <Shield className="w-10 h-10 mx-auto text-gray-600 mb-2" />
+                  <p className="font-medium text-black">LGPD</p>
+                  <p
+                    className={`text-xl font-bold ${
+                      aluno.aceite_lgpd ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {aluno.aceite_lgpd ? "Aceito" : "Não"}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Notas e Excluir */}
+          {isAtivo && (
+            <>
+              <hr className="border-gray-200 my-6" />
+              <NotasAluno alunoId={aluno.id} />
+
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={handleExcluir}
+                  className="text-red-600 hover:text-red-700 font-medium flex items-center gap-2 px-6 py-3 rounded-2xl border border-red-200 hover:bg-red-50 transition"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Excluir aluno
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </ModalFicha>
     </>
   );
