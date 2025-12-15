@@ -253,9 +253,10 @@ export default function Dashboard() {
 
             {/* Badge sobre o ícone */}
             {usuario?.roles?.includes("admin") && qtdPreMatriculas > 0 && (
-              <span className="absolute top-[1px] left-[37px] sm:top-[8px] sm:left-[48px]  bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
-                {qtdPreMatriculas}
-              </span>
+              <span className="absolute top-[0px] left-[32px] border border-red-500 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center z-[999]">
+  {qtdPreMatriculas}
+</span>
+
             )}
           </div>
 
