@@ -45,6 +45,13 @@ async function buscarPorId(id, organizacaoId) {
 /* 🔹 Editar aluno                                                            */
 /* -------------------------------------------------------------------------- */
 async function editarAluno(id, dados, organizacaoId) {
+  logger.debug("[alunosService] editarAluno chamado", {
+    alunoId: id,
+    organizacaoId,
+    chavesRecebidas: Object.keys(dados),
+    temImagemBase64: !!dados.imagemBase64,
+  });
+
   const aluno = await alunoRepo.buscarPorId(id, organizacaoId);
   if (!aluno) throw new Error("Aluno não encontrado.");
 

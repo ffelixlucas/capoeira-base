@@ -15,6 +15,8 @@ import {
 
 import { MdMedicalServices } from "react-icons/md";
 
+
+
 // 🔹 Status Pill compacto e alinhado
 const StatusPill = ({ status }) => {
   const config = {

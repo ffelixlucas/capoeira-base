@@ -16,7 +16,10 @@ export default function ModalFotoPerfil({ aberto, onClose, onConfirm }) {
         <FotoPerfil
           value={null}
           onChange={(e) => {
-            if (e?.target?.name === "imagemBase64") {
+            if (
+              e?.target?.name === "imagemBase64" &&
+              e.target.value 
+            ) {
               onConfirm(e.target.value);
             }
           }}

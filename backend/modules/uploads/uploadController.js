@@ -3,6 +3,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const logger = require("../../utils/logger.js");
+const { processarFotoAluno } = require("./fotoService");
+
 
 const upload = multer({ dest: "tmp/" });
 const bucket = admin.storage().bucket(); // já configurado no server.js
@@ -80,6 +82,67 @@ exports.uploadFotoPreMatricula = [
     } catch (error) {
       logger.error("[uploadController] Erro no upload pré-matrícula:", error);
       res.status(500).json({ error: "Falha ao enviar imagem" });
+    }
+  },
+];
+
+
+exports.uploadFotoAluno = [
+  upload.single("foto"),
+  async (req, res) => {
+    try {
+      const { alunoId } = req.body;
+      const usuario = req.user;
+
+      if (!req.file) {
+        return res.status(400).json({ error: "Arquivo não enviado" });
+      }
+
+      if (!alunoId) {
+        return res.status(400).json({ error: "ID do aluno ausente" });
+      }
+
+      if (!usuario?.organizacao_id) {
+        return res.status(403).json({ error: "Organização não identificada" });
+      }
+
+      const db = require("../../database/connection");
+
+      const [[aluno]] = await db.execute(
+        `
+        SELECT a.id, a.nome, a.foto_url, o.slug AS org_slug
+        FROM alunos a
+        JOIN organizacoes o ON o.id = a.organizacao_id
+        WHERE a.id = ? AND a.organizacao_id = ?
+        `,
+        [alunoId, usuario.organizacao_id]
+      );
+
+      if (!aluno) {
+        return res.status(404).json({ error: "Aluno não encontrado" });
+      }
+
+      // 🔥 TODA a inteligência vai para o service
+      const url = await processarFotoAluno({
+        file: req.file,
+        aluno,
+        bucket,
+      });
+
+      // 🔹 Atualiza banco
+      await db.execute(
+        "UPDATE alunos SET foto_url = ?, atualizado_em = NOW() WHERE id = ?",
+        [url, aluno.id]
+      );
+
+      logger.info("[uploadController] Foto do aluno atualizada via service", {
+        alunoId: aluno.id,
+      });
+
+      return res.json({ success: true, url });
+    } catch (error) {
+      logger.error("[uploadController] Erro uploadFotoAluno:", error);
+      return res.status(500).json({ error: "Falha ao enviar imagem" });
     }
   },
 ];

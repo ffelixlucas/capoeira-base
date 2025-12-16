@@ -1,5 +1,5 @@
 // src/components/ui/FotoPerfil.jsx
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Camera, RefreshCcw, Trash2 } from "lucide-react";
 import Cropper from "react-easy-crop";
@@ -12,6 +12,7 @@ export default function FotoPerfil({ value, onChange }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const fileInputRef = useRef(null);
 
   const onCropComplete = useCallback((_, croppedPixels) => {
     setCroppedAreaPixels(croppedPixels);
@@ -196,13 +197,18 @@ export default function FotoPerfil({ value, onChange }) {
         </motion.div>
 
         {/* 📸 Botão da câmera */}
-        <label
-          htmlFor="foto-file"
-          className="absolute bottom-0 right-0 translate-x-2 translate-y-2 z-[9999] bg-blue-600 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 active:scale-95 transition-all"
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="absolute bottom-0 right-0 translate-x-2 translate-y-2 z-[9999]
+             bg-blue-600 text-white p-2 rounded-full shadow-lg
+             hover:bg-blue-700 active:scale-95 transition-all"
         >
           <Camera size={16} />
-        </label>
+        </button>
+
         <input
+          ref={fileInputRef}
           id="foto-file"
           type="file"
           accept="image/*"

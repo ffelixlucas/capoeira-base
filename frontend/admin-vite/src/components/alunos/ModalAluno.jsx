@@ -7,6 +7,7 @@ import { excluirAluno } from "../../services/alunoService";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { logger } from "../../utils/logger";
+import ModalFotoPerfil from "./ModalFotoPerfil";
 
 import {
   Phone,
@@ -35,8 +36,15 @@ export default function ModalAluno({
   if (!aluno) return null;
 
   const [foto, setFoto] = useState(aluno.foto_url || null);
+  const [mostrarEditarFoto, setMostrarEditarFoto] = useState(false);
+
   const [metricas, setMetricas] = useState(null);
   const [zoomFoto, setZoomFoto] = useState(false);
+
+  // 🔹 Sempre que trocar de aluno, atualiza a foto mostrada
+  useEffect(() => {
+    setFoto(aluno.foto_url || null);
+  }, [aluno.id, aluno.foto_url]);
 
   const isPreMatricula = aluno.status === "pendente";
   const isAtivo = aluno.status === "ativo";
@@ -98,11 +106,31 @@ export default function ModalAluno({
     }
   };
 
-const corFrequencia = (p) => {
-  if (p >= 80) return "#10b981"; // verde
-  if (p >= 60) return "#f59e0b"; // amarelo
-  return "#ef4444"; // vermelho
-};
+  const corFrequencia = (p) => {
+    if (p >= 80) return "#10b981"; // verde
+    if (p >= 60) return "#f59e0b"; // amarelo
+    return "#ef4444"; // vermelho
+  };
+
+  async function salvarFotoAluno(base64) {
+    try {
+      const blob = await (await fetch(base64)).blob();
+
+      const formData = new FormData();
+      formData.append("foto", blob, "foto.jpg");
+      formData.append("alunoId", aluno.id);
+
+      const { data } = await api.post("/upload/foto/aluno", formData, {
+        timeout: 60000, // 60s
+      });
+
+      setFoto(data.url); // atualiza visual
+      toast.success("Foto atualizada com sucesso");
+    } catch (err) {
+      logger.error(err);
+      toast.error("Erro ao salvar foto");
+    }
+  }
 
   return (
     <>
@@ -142,12 +170,24 @@ const corFrequencia = (p) => {
                     {nomeFormatado.charAt(0)}
                   </div>
                 )}
+
+                {/* Ícone da câmera sobre a foto */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // impede abrir zoom
+                    setMostrarEditarFoto(true);
+                  }}
+                  className="
+                    absolute bottom-2 right-2
+                    bg-blue-600 hover:bg-blue-700
+                    text-white p-3 rounded-full shadow-lg
+                    flex items-center justify-center
+                    active:scale-95 transition
+                  "
+                >
+                  <Camera size={18} />
+                </button>
               </div>
-              {isAtivo && (
-                <div className="absolute bottom-2 right-2 w-12 h-12 bg-green-500 rounded-full border-4 border-white flex items-center justify-center shadow-md">
-                  <CheckCircle className="w-8 h-8 text-white" />
-                </div>
-              )}
             </div>
 
             <h2 className="mt-6 text-2xl font-bold text-black">
@@ -397,6 +437,17 @@ const corFrequencia = (p) => {
           )}
         </div>
       </ModalFicha>
+
+      {mostrarEditarFoto && (
+        <ModalFotoPerfil
+          aberto={mostrarEditarFoto}
+          onClose={() => setMostrarEditarFoto(false)}
+          onConfirm={async (base64) => {
+            await salvarFotoAluno(base64); // 🔥 backend
+            setMostrarEditarFoto(false);
+          }}
+        />
+      )}
     </>
   );
 }

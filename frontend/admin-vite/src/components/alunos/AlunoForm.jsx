@@ -25,7 +25,6 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
 
   const [categorias, setCategorias] = useState([]);
   const [graduacoes, setGraduacoes] = useState([]);
-
   const [form, setForm] = useState({
     nome: "",
     apelido: "",
@@ -38,6 +37,7 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
     graduacao_id: "",
     observacoes_medicas: "",
     turma_id: "",
+    fotoBase64: "",
   });
 
   const [salvando, setSalvando] = useState(false);
@@ -165,8 +165,6 @@ export default function AlunoForm({ alunoParaEdicao, onCriado }) {
   ------------------------------------------------------------- */
   return (
     <div className="max-h-[80vh] flex flex-col">
-      
-
       {/* ÁREA ROLÁVEL DO FORMULÁRIO */}
       <div className="flex-1 overflow-y-auto p-4">
         <form onSubmit={handleSubmit} className="space-y-5">
