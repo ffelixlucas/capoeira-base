@@ -10,11 +10,23 @@ async function processarFotoAluno({ file, aluno, bucket }) {
   const pastaBase = `fotos-perfil/alunos/${aluno.org_slug}`;
   const originalPath = `${pastaBase}/${nomeBase}${ext}`;
 
-  // 1️⃣ upload original
-  await bucket.upload(file.path, {
-    destination: originalPath,
-    metadata: { contentType: file.mimetype },
-  });
+const fs = require("fs");
+
+// 1️⃣ upload original
+await bucket.upload(file.path, {
+  destination: originalPath,
+  metadata: { contentType: file.mimetype },
+});
+
+// 🧹 limpeza do arquivo temporário (não bloqueante)
+fs.unlink(file.path, (err) => {
+  if (err) {
+    logger.warn("[fotoService] Falha ao remover arquivo temporário", err);
+  } else {
+    logger.debug("[fotoService] Arquivo temporário removido");
+  }
+});
+
 
   logger.debug("[fotoService] Upload original feito", originalPath);
 
