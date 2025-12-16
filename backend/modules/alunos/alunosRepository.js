@@ -186,89 +186,63 @@ async function trocarTurma(alunoId, novaTurmaId, organizacaoId) {
 async function editarAluno(id, dados, organizacaoId) {
   logger.info("[editarAluno] Atualizando aluno...", {
     id,
-    dados,
     organizacaoId,
   });
 
-  const {
-    nome,
-    apelido,
-    nascimento,
-    telefone_aluno,
-    telefone_responsavel,
-    nome_responsavel,
-    responsavel_documento,
-    responsavel_parentesco,
-    endereco,
-    observacoes_medicas,
-    autorizacao_imagem,
-    aceite_lgpd,
-    foto_url,
-    categoria_id,
-    graduacao_id,
-    turma_id,
-  } = dados;
+  const campos = [];
+  const valores = [];
 
-  /* ---------------------------------------------------------------------- */
-  /* 🔹 Atualiza todos os campos do aluno                                   */
-  /* ---------------------------------------------------------------------- */
-  await connection.execute(
-    `
-    UPDATE alunos SET
-      nome = ?,
-      apelido = ?,
-      nascimento = ?,
-      telefone_aluno = ?,
-      telefone_responsavel = ?,
-      nome_responsavel = ?,
-      responsavel_documento = ?,
-      responsavel_parentesco = ?,
-      endereco = ?,
-      observacoes_medicas = ?,
-      autorizacao_imagem = ?,
-      aceite_lgpd = ?,
-      foto_url = ?,
-      categoria_id = ?,
-      graduacao_id = ?
+  function add(campo, valor) {
+    campos.push(`${campo} = ?`);
+    valores.push(valor);
+  }
+
+  add("nome", dados.nome || null);
+  add("apelido", dados.apelido || null);
+  add("nascimento", dados.nascimento || null);
+  add("telefone_aluno", dados.telefone_aluno || null);
+  add("telefone_responsavel", dados.telefone_responsavel || null);
+  add("nome_responsavel", dados.nome_responsavel || null);
+  add("responsavel_documento", dados.responsavel_documento || null);
+  add("responsavel_parentesco", dados.responsavel_parentesco || null);
+  add("endereco", dados.endereco || null);
+  add("observacoes_medicas", dados.observacoes_medicas || null);
+
+  if (dados.autorizacao_imagem !== undefined) {
+    add("autorizacao_imagem", Number(dados.autorizacao_imagem));
+  }
+
+  if (dados.aceite_lgpd !== undefined) {
+    add("aceite_lgpd", Number(dados.aceite_lgpd));
+  }
+
+  // 🔥 AQUI ESTÁ O FIX
+  if (dados.foto_url !== undefined) {
+    add("foto_url", dados.foto_url);
+  }
+
+  add("categoria_id", dados.categoria_id || null);
+  add("graduacao_id", dados.graduacao_id || null);
+
+  const sql = `
+    UPDATE alunos
+    SET ${campos.join(", ")}
     WHERE id = ?
       AND organizacao_id = ?
-    `,
-    [
-      nome || null,
-      apelido || null,
-      nascimento || null,
-      telefone_aluno || null,
-      telefone_responsavel || null,
-      nome_responsavel || null,
-      responsavel_documento || null,
-      responsavel_parentesco || null,
-      endereco || null,
-      observacoes_medicas || null,
+  `;
 
-      // 🔥 segurança: só altera se campo veio no payload
-      autorizacao_imagem != null ? Number(autorizacao_imagem) : 0,
-      aceite_lgpd != null ? Number(aceite_lgpd) : 0,
+  valores.push(id, organizacaoId);
 
-      foto_url || null,
-      categoria_id || null,
-      graduacao_id || null,
+  logger.debug("[editarAluno] SQL:", sql);
+  logger.debug("[editarAluno] Params:", valores);
 
-      id,
-      organizacaoId,
-    ]
-  );
+  await connection.execute(sql, valores);
 
-  /* ---------------------------------------------------------------------- */
-  /* 🔹 Atualizar matrícula se turma mudou                                   */
-  /* ---------------------------------------------------------------------- */
-  if (turma_id) {
+  // turma continua igual
+  if (dados.turma_id) {
     const atual = await buscarMatriculaAtual(id, organizacaoId);
-
-    const turmaAtual = atual?.turma_id;
-
-    if (!turmaAtual || Number(turmaAtual) !== Number(turma_id)) {
-      await trocarTurma(id, turma_id, organizacaoId);
-      logger.info("[editarAluno] Turma atualizada via matrícula");
+    if (!atual || Number(atual.turma_id) !== Number(dados.turma_id)) {
+      await trocarTurma(id, dados.turma_id, organizacaoId);
     }
   }
 
