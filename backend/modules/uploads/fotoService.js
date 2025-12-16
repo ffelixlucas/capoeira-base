@@ -1,79 +1,112 @@
-const path = require("path");
+const fs = require("fs");
 const logger = require("../../utils/logger");
 
-async function processarFotoAluno({ file, aluno, bucket }) {
-  // 🔹 nome base
-  const primeiroNome = aluno.nome.split(" ")[0].toLowerCase();
-  const ext = path.extname(file.originalname) || ".jpg";
-  const nomeBase = `${Date.now()}_${primeiroNome}_${aluno.id}`;
+function normalizarNome(nome = "") {
+  return nome
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+}
 
-  const pastaBase = `fotos-perfil/alunos/${aluno.org_slug}`;
-  const originalPath = `${pastaBase}/${nomeBase}${ext}`;
+async function limparFotosAntigas(bucket, pastaResized, alunoId) {
+  const [files] = await bucket.getFiles({ prefix: pastaResized });
 
-const fs = require("fs");
+  if (!files.length) return;
 
-// 1️⃣ upload original
-await bucket.upload(file.path, {
-  destination: originalPath,
-  metadata: { contentType: file.mimetype },
-});
-
-// 🧹 limpeza do arquivo temporário (não bloqueante)
-fs.unlink(file.path, (err) => {
-  if (err) {
-    logger.warn("[fotoService] Falha ao remover arquivo temporário", err);
-  } else {
-    logger.debug("[fotoService] Arquivo temporário removido");
-  }
-});
-
-
-  logger.debug("[fotoService] Upload original feito", originalPath);
-
-  // 2️⃣ aguardar resized
-  const LABEL = process.env.RESIZED_LABEL || "400x400";
-  const resizedPath = `${pastaBase}/fotos-perfil-resized/${nomeBase}_${LABEL}${ext}`;
-
-  let fotoFinalPath = originalPath;
-
-  // Não aguardar pelo resized aqui, só fazer o upload original
-  logger.warn("[fotoService] Redimensionamento não encontrado, usando original");
-
-  // 3️⃣ apagar foto antiga
-  if (aluno.foto_url) {
-    try {
-      const decoded = decodeURIComponent(aluno.foto_url);
-      const match = decoded.match(/fotos-perfil\/[^?]+/);
-      if (match) {
-        await bucket.file(match[0]).delete();
-        logger.info("[fotoService] Foto antiga removida", match[0]);
-      }
-    } catch (err) {
-      logger.warn("[fotoService] Falha ao remover foto antiga");
-    }
-  }
-
-  // 4️⃣ Limpeza assíncrona da foto original, após tempo
-  setTimeout(async () => {
-    try {
-      const [exists] = await bucket.file(resizedPath).exists();
-      if (exists) {
-        // Apagar original, após verificar se resized existe
-        await bucket.file(originalPath).delete();
-        logger.info("[fotoService] Original removido após resize");
-      }
-    } catch (err) {
-      logger.warn("[fotoService] Falha ao remover foto original após resize");
-    }
-  }, 10000); // Espera 10 segundos para limpar (não bloqueante)
-
-  // 5️⃣ gerar URL
-  const [url] = await bucket.file(fotoFinalPath).getSignedUrl({
-    action: "read",
-    expires: "03-01-2030",
+  logger.info("[fotoService] Limpando fotos antigas", {
+    alunoId,
+    total: files.length,
   });
 
-  return url;
+  await Promise.all(
+    files.map((file) =>
+      file.delete().catch((err) =>
+        logger.warn("[fotoService] Falha ao apagar arquivo antigo", {
+          file: file.name,
+          err,
+        })
+      )
+    )
+  );
+}
+
+async function processarFotoAluno({ file, aluno, bucket }) {
+  const pastaBase = `fotos-perfil/alunos/${aluno.org_slug}/${aluno.id}`;
+  const pastaResized = `${pastaBase}/fotos-perfil-resized/`;
+
+  /* ------------------------------------------------------------------ */
+  /* 🧹 1) REMOVE TODAS AS FOTOS ANTIGAS                                 */
+  /* ------------------------------------------------------------------ */
+  await limparFotosAntigas(bucket, pastaResized, aluno.id);
+
+  /* ------------------------------------------------------------------ */
+  /* 🏷️ nome humano + timestamp                                         */
+  /* ------------------------------------------------------------------ */
+  const nomeBase = normalizarNome(aluno.nome || "aluno");
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[:T]/g, "-")
+    .split(".")[0];
+
+  const baseArquivo = `${nomeBase}_${timestamp}`;
+
+  const originalPath = `${pastaBase}/${baseArquivo}.jpg`;
+  const resizedPath = `${pastaResized}${baseArquivo}_400x400.jpg`;
+
+  /* ------------------------------------------------------------------ */
+  /* 🔼 2) Upload da ORIGINAL                                           */
+  /* ------------------------------------------------------------------ */
+  await bucket.upload(file.path, {
+    destination: originalPath,
+    metadata: {
+      contentType: "image/jpeg",
+      cacheControl: "no-store",
+    },
+  });
+
+  fs.unlink(file.path, () => {});
+
+  logger.info("[fotoService] Foto original enviada", {
+    alunoId: aluno.id,
+    path: originalPath,
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* ⏳ 3) Aguarda resize (Cloud Function)                               */
+  /* ------------------------------------------------------------------ */
+  const MAX_TENTATIVAS = 12;
+  const INTERVALO = 600;
+
+  let existeResize = false;
+
+  for (let i = 0; i < MAX_TENTATIVAS; i++) {
+    const [exists] = await bucket.file(resizedPath).exists();
+    if (exists) {
+      existeResize = true;
+      break;
+    }
+    await new Promise((r) => setTimeout(r, INTERVALO));
+  }
+
+  if (!existeResize) {
+    logger.warn("[fotoService] Resize não encontrado, usando original");
+    return `https://storage.googleapis.com/${bucket.name}/${originalPath}`;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 🧹 4) Remove ORIGINAL                                              */
+  /* ------------------------------------------------------------------ */
+  try {
+    await bucket.file(originalPath).delete();
+  } catch {}
+
+  /* ------------------------------------------------------------------ */
+  /* 🔗 5) URL FINAL                                                    */
+  /* ------------------------------------------------------------------ */
+  return `https://storage.googleapis.com/${bucket.name}/${resizedPath}`;
 }
 
 module.exports = {
