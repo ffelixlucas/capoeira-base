@@ -13,10 +13,18 @@ export default function FotoPerfil({ value, onChange }) {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const fileInputRef = useRef(null);
+  const [processando, setProcessando] = useState(false);
 
   const onCropComplete = useCallback((_, croppedPixels) => {
     setCroppedAreaPixels(croppedPixels);
   }, []);
+
+  useEffect(() => {
+    if (value && processando) {
+      setProcessando(false);
+      logger.info("[FotoPerfil] Processamento finalizado");
+    }
+  }, [value, processando]);
 
   // 🟢 Quando o usuário escolhe um arquivo
   const handleFile = (e) => {
@@ -129,9 +137,13 @@ export default function FotoPerfil({ value, onChange }) {
       return;
     }
 
+    setProcessando(true);
+
     onChange && onChange({ target: { name: "imagemBase64", value: base64 } });
+
     setPreview(base64);
     setFile(null);
+
     logger.info("[FotoPerfil] Foto confirmada e enviada ao formulário");
 
     toast.success("Foto adicionada ao formulário!");
@@ -217,6 +229,62 @@ export default function FotoPerfil({ value, onChange }) {
         />
       </div>
 
+      <AnimatePresence>
+        {processando && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[99999] flex items-center justify-center
+                 bg-black/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 120 }}
+              className="bg-white rounded-xl shadow-2xl
+                   px-6 py-5 flex flex-col items-center gap-3"
+            >
+              {/* Spinner */}
+              <div className="relative">
+                <span className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />
+                <svg
+                  className="relative animate-spin h-10 w-10 text-blue-600"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+              </div>
+
+              {/* Texto */}
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-800">
+                  Processando imagem
+                </p>
+                <p className="text-xs text-gray-500">
+                  Isso pode levar alguns segundos…
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ⚙️ Controles */}
       <AnimatePresence>
         {(file || preview) && (
@@ -242,9 +310,12 @@ export default function FotoPerfil({ value, onChange }) {
                 <div className="flex gap-2 flex-wrap justify-center">
                   <motion.button
                     type="button"
+                    disabled={processando}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleConfirm}
-                    className="bg-green-600 text-white px-4 py-1 rounded-md text-sm hover:bg-green-700 transition"
+                    className="bg-green-600 text-white px-4 py-1 rounded-md text-sm
+             hover:bg-green-700 transition
+             disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Confirmar
                   </motion.button>
