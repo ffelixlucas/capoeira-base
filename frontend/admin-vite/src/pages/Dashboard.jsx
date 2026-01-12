@@ -77,10 +77,10 @@ export default function Dashboard() {
       label: "Equipe",
       roles: ["admin"],
     },
-    { to: "/turmas", label: "Turmas", roles: ["admin", "instrutor"] },
+    { to: "/turmas", label: "Turmas", roles: ["admin", ""] },
     { to: "/uniformes", label: "Loja", roles: ["loja", "admin"] },
-    { to: "/horarios", label: "Horários", roles: ["admin", "instrutor"] },
-    { to: "/video-aulas", label: "Aulas", roles: ["admin", "instrutor"] },
+    { to: "/horarios", label: "Horários", roles: ["admin"] },
+    { to: "/video-aulas", label: "Aulas", roles: ["admin"] },
     { to: "/contatos", label: "Contatos", roles: ["admin"] },
     { to: "/config", label: "Configurações", roles: ["admin"] },
   ];
@@ -240,7 +240,7 @@ export default function Dashboard() {
 
         {/* Estatísticas Rápidas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative">
-          {/* Card Alunos com badge */}
+          {/* Card Alunos */}
           <div className="relative">
             <CardEstat
               valor={qtdAlunos}
@@ -251,7 +251,7 @@ export default function Dashboard() {
               cursor="pointer"
             />
 
-            {/* Badge sobre o ícone */}
+            {/* Badge apenas para admin */}
             {usuario?.roles?.includes("admin") && qtdPreMatriculas > 0 && (
               <span className="absolute top-[0px] left-[32px] border border-red-500 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center z-[999]">
                 {qtdPreMatriculas}
@@ -259,7 +259,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Outros cards */}
+          {/* Lembretes — admin e instrutor */}
           <CardEstat
             valor={lembretes.length}
             label="Lembretes"
@@ -269,52 +269,59 @@ export default function Dashboard() {
             cursor="pointer"
           />
 
-          <CardEstat
-            valor={qtdEventos}
-            label="Eventos"
-            Icon={CalendarIcon}
-            cor="blue"
-            onClick={() => navigate("/agenda")}
-            cursor="pointer"
-          />
+          {/* 👇 SOMENTE ADMIN 👇 */}
+          {temPapel(["admin"]) && (
+            <>
+              <CardEstat
+                valor={qtdEventos}
+                label="Eventos"
+                Icon={CalendarIcon}
+                cor="blue"
+                onClick={() => navigate("/agenda")}
+                cursor="pointer"
+              />
 
-          <CardEstat
-            valor={qtdFotos}
-            label="Fotos"
-            Icon={PhotoIcon}
-            cor="amber"
-            onClick={() => navigate("/galeria")}
-            cursor="pointer"
-          />
+              <CardEstat
+                valor={qtdFotos}
+                label="Fotos"
+                Icon={PhotoIcon}
+                cor="amber"
+                onClick={() => navigate("/galeria")}
+                cursor="pointer"
+              />
+            </>
+          )}
         </div>
 
-        {/* Agenda */}
-        <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
-          <h3 className="text-lg font-semibold text-cor-titulo mb-4">
-            📅 Agenda
-          </h3>
-          <ul className="space-y-2 text-sm text-cor-texto/80">
-            {eventosOrdenados.length > 0 ? (
-              eventosOrdenados.slice(0, 5).map((evento) => (
-                <li key={evento.id}>
-                  <Link
-                    to="/agenda"
-                    className="block hover:text-cor-primaria transition"
-                  >
-                    <span className="text-sm text-cor-texto/80">
-                      • <strong>{evento.titulo}</strong> <br />
-                      <span className="text-xs text-cor-texto/60">
-                        {evento.data_formatada} às {evento.horario_formatado}
+        {/* Agenda — somente admin */}
+        {temPapel(["admin"]) && (
+          <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
+            <h3 className="text-lg font-semibold text-cor-titulo mb-4">
+              📅 Agenda
+            </h3>
+            <ul className="space-y-2 text-sm text-cor-texto/80">
+              {eventosOrdenados.length > 0 ? (
+                eventosOrdenados.slice(0, 5).map((evento) => (
+                  <li key={evento.id}>
+                    <Link
+                      to="/agenda"
+                      className="block hover:text-cor-primaria transition"
+                    >
+                      <span className="text-sm text-cor-texto/80">
+                        • <strong>{evento.titulo}</strong> <br />
+                        <span className="text-xs text-cor-texto/60">
+                          {evento.data_formatada} às {evento.horario_formatado}
+                        </span>
                       </span>
-                    </span>
-                  </Link>
-                </li>
-              ))
-            ) : (
-              <li>Sem eventos cadastrados.</li>
-            )}
-          </ul>
-        </div>
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <li>Sem eventos cadastrados.</li>
+              )}
+            </ul>
+          </div>
+        )}
 
         {/* Acesso Rápido */}
         <div

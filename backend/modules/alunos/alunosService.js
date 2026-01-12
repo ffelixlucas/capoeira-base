@@ -14,8 +14,8 @@ async function listarTodos(usuario, turmaId = null, organizacaoId) {
     }
     return await alunoRepo.listarAlunosComTurmaAtual(organizacaoId);
   }
+const turmas = await turmaRepo.listarPorEquipe(usuario.id, organizacaoId);
 
-  const turmas = await turmaRepo.listarTurmasPorEquipe(usuario.id);
   if (!turmas || turmas.length === 0) return [];
 
   const turmaIds = turmas.map((t) => t.id);
@@ -89,7 +89,12 @@ async function metricasAluno(id, inicio, fim, organizacaoId) {
   if (!inicio) inicio = `${new Date().getFullYear()}-01-01`;
   if (!fim) fim = hoje;
 
-  const metricas = await alunoRepo.metricasAluno(id, inicio, fim, organizacaoId);
+  const metricas = await alunoRepo.metricasAluno(
+    id,
+    inicio,
+    fim,
+    organizacaoId
+  );
   const taxa_presenca =
     metricas.total > 0 ? metricas.presentes / metricas.total : 0;
 

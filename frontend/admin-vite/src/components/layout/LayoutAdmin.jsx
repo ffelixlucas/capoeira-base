@@ -99,7 +99,7 @@ React.useEffect(() => {
       to: "/agenda",
       label: "Eventos",
       Icon: CalendarIcon,
-      roles: ["admin", "instrutor"],
+      roles: ["admin"],
     },
     {
       to: "/galeria",
@@ -118,13 +118,13 @@ React.useEffect(() => {
       to: "/horarios",
       label: "Horários de aulas",
       Icon: ClockIcon,
-      roles: ["admin", "instrutor"],
+      roles: ["admin"],
     },
     {
       to: "/video-aulas",
       label: "Aulas",
       Icon: VideoCameraIcon,
-      roles: ["admin", "instrutor", "midia"],
+      roles: ["admin", "midia"],
     },
   ];
 

@@ -177,6 +177,18 @@ export default function Presencas() {
       ? "Sem permissão para esta turma"
       : "Selecione a turma";
 
+const alunosOrdenados = useMemo(() => {
+  return [...alunosTurma].sort((a, b) => {
+    const aKey = a.apelido?.trim() || a.nome || "";
+    const bKey = b.apelido?.trim() || b.nome || "";
+
+    return aKey.localeCompare(bKey, "pt-BR", {
+      sensitivity: "base",
+    });
+  });
+}, [alunosTurma]);
+
+
   return (
     <div className="space-y-4 pb-28">
       {/* Topbar */}
@@ -315,57 +327,64 @@ export default function Presencas() {
           )}
 
         <ul className="divide-y divide-cor-secundaria/10">
-          {alunosTurma.map((aluno) => {
-            const status = mapaStatus.get(aluno.id) || "falta";
-            const presente = status === "presente";
-            return (
-              <li
-                key={aluno.id}
-                className="flex items-center justify-between px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-cor-titulo truncate">
-                    {aluno.nome}
-                  </div>
-                  {aluno.apelido && (
-                    <div className="text-[11px] text-cor-texto/60">
-                      ({aluno.apelido})
-                    </div>
-                  )}
-                </div>
+  {alunosOrdenados.map((aluno, index) => {
+    const status = mapaStatus.get(aluno.id) || "falta";
+    const presente = status === "presente";
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setStatusAluno(aluno.id, "falta")}
-                    className={`px-3 py-2 rounded-lg border text-xs ${
-                      !presente
-                        ? "bg-red-500 text-white border-red-500"
-                        : "border-cor-secundaria/30 text-cor-texto/80"
-                    }`}
-                    aria-pressed={!presente}
-                    aria-label={`Marcar ${aluno.nome} como falta`}
-                  >
-                    Falta
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatusAluno(aluno.id, "presente")}
-                    className={`px-3 py-2 rounded-lg border text-xs ${
-                      presente
-                        ? "bg-green-600 text-white border-green-600"
-                        : "border-cor-secundaria/30 text-cor-texto/80"
-                    }`}
-                    aria-pressed={presente}
-                    aria-label={`Marcar ${aluno.nome} como presente`}
-                  >
-                    Presente
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+    return (
+      <li
+        key={aluno.id}
+        className="flex items-center justify-between px-4 py-3"
+      >
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="text-xs font-semibold text-cor-texto/50 w-5 text-right">
+            {index + 1}.
+          </span>
+
+          <div className="min-w-0">
+  <div className="text-sm font-medium text-cor-titulo truncate">
+    {aluno.apelido || aluno.nome}
+  </div>
+
+  {aluno.apelido && (
+    <div className="text-[11px] text-cor-texto/60 truncate">
+      {aluno.nome}
+    </div>
+  )}
+</div>
+
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setStatusAluno(aluno.id, "falta")}
+            className={`px-3 py-2 rounded-lg border text-xs ${
+              !presente
+                ? "bg-red-500 text-white border-red-500"
+                : "border-cor-secundaria/30 text-cor-texto/80"
+            }`}
+          >
+            Falta
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusAluno(aluno.id, "presente")}
+            className={`px-3 py-2 rounded-lg border text-xs ${
+              presente
+                ? "bg-green-600 text-white border-green-600"
+                : "border-cor-secundaria/30 text-cor-texto/80"
+            }`}
+          >
+            Presente
+          </button>
+        </div>
+      </li>
+    );
+  })}
+</ul>
+
       </div>
 
       {/* Botão fixo de salvar */}

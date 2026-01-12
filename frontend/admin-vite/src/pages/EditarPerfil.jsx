@@ -11,12 +11,9 @@ function EditarPerfil() {
 
   const [form, setForm] = useState({
     nome: "",
-    telefone: "",
     whatsapp: "",
     email: "",
   });
-
-  const [mesmoNumero, setMesmoNumero] = useState(false);
 
   const [senhaForm, setSenhaForm] = useState({
     senhaAtual: "",
@@ -25,23 +22,21 @@ function EditarPerfil() {
   });
 
   const [loadingSenha, setLoadingSenha] = useState(false);
+  const [confirmarEdicao, setConfirmarEdicao] = useState(false);
+
 
   useEffect(() => {
     if (!usuario) return;
-    const tel = usuario.telefone?.toString() || "";
+
     const whats = usuario.whatsapp?.toString() || "";
 
     logger.log("📌 Dados do usuário:", usuario);
-    logger.log("📌 Telefone setado:", tel);
-    logger.log("📌 WhatsApp setado:", whats);
-    
+
     setForm({
       nome: usuario.nome || "",
-      telefone: tel,
       whatsapp: whats,
       email: usuario.email || "",
     });
-    setMesmoNumero(!!tel && !!whats && tel === whats);
   }, [usuario]);
 
   const salvarCampo = async (payload) => {
@@ -53,8 +48,10 @@ function EditarPerfil() {
           throw new Error("email inválido");
         }
       }
+
       const resp = await atualizarPerfil(payload);
       toast.success(resp.message || "Atualizado com sucesso!");
+
       setForm((prev) => ({ ...prev, ...payload }));
     } catch (err) {
       const msg = err?.response?.data?.message || "Erro ao atualizar.";
@@ -65,10 +62,12 @@ function EditarPerfil() {
 
   const handleSubmitSenha = async (e) => {
     e.preventDefault();
+
     if (!senhaForm.senhaAtual || !senhaForm.novaSenha) {
       toast.error("Preencha senha atual e nova senha.");
       return;
     }
+
     if (senhaForm.novaSenha !== senhaForm.confirmarSenha) {
       toast.error("As senhas não coincidem.");
       return;
@@ -80,6 +79,7 @@ function EditarPerfil() {
         senhaAtual: senhaForm.senhaAtual,
         novaSenha: senhaForm.novaSenha,
       });
+
       toast.success(resp.message || "Senha alterada com sucesso!");
       setSenhaForm({ senhaAtual: "", novaSenha: "", confirmarSenha: "" });
     } catch (err) {
@@ -125,38 +125,13 @@ function EditarPerfil() {
           />
 
           <EditableField
-            label="Telefone"
-            name="telefone"
-            value={form.telefone}
+            label="WhatsApp"
+            name="whatsapp"
+            value={form.whatsapp}
             onSave={salvarCampo}
             placeholder="(00) 00000-0000"
             type="tel"
           />
-
-          <EditableField
-            label="WhatsApp"
-            name="whatsapp"
-            value={mesmoNumero ? form.telefone : form.whatsapp}
-            onSave={async (payload) => {
-              const valor = mesmoNumero
-                ? (form.telefone || "").trim()
-                : (payload.whatsapp || "").trim();
-              await salvarCampo({ whatsapp: valor });
-            }}
-            type="tel"
-            placeholder="(00) 00000-0000"
-          />
-
-          <div className="mt-2 mb-2">
-            <label className="flex items-center gap-2 text-sm text-black">
-              <input
-                type="checkbox"
-                checked={mesmoNumero}
-                onChange={(e) => setMesmoNumero(e.target.checked)}
-              />
-              WhatsApp é o mesmo número do telefone
-            </label>
-          </div>
 
           <EditableField
             label="E-mail"
@@ -184,6 +159,7 @@ function EditarPerfil() {
             className="text-black"
             autoComplete="current-password"
           />
+
           <InputBase
             type="password"
             name="novaSenha"
@@ -195,6 +171,7 @@ function EditarPerfil() {
             className="text-black"
             autoComplete="new-password"
           />
+
           <InputBase
             type="password"
             name="confirmarSenha"

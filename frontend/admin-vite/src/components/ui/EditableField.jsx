@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { FiEdit2, FiCheck } from "react-icons/fi";
 
-/**
- * Campo editável:
- * - Leitura com caneta preta
- * - Clique troca para input
- * - Botão de check salva
- * - type="tel": mostra formatado (BR) e envia só dígitos
- */
 export default function EditableField({
   label,
   name,
   value,
-  onSave,           // async ({ [name]: newValue }) => void
+  onSave,
   type = "text",
   inputMode,
   placeholder,
@@ -24,23 +17,25 @@ export default function EditableField({
   const [saving, setSaving] = useState(false);
 
   const onlyDigits = (str = "") => (str || "").replace(/\D/g, "");
+
   const formatPhoneBR = (v = "") => {
     const d = onlyDigits(v).slice(0, 11);
     if (d.length <= 2) return d;
-    if (d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`;
-    if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
-    return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10)
+      return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   };
 
-  // sincroniza quando value muda
   useEffect(() => {
-    setLocal(type === "tel" ? formatPhoneBR(value || "") : (value || ""));
+    setLocal(type === "tel" ? formatPhoneBR(value || "") : value || "");
+    setEditing(false);
   }, [value, type]);
 
-  const handleToggle = () => {
+  const handleEdit = () => {
     if (disabled) return;
-    setLocal(type === "tel" ? formatPhoneBR(value || "") : (value || ""));
-    setEditing((e) => !e);
+    setLocal(type === "tel" ? formatPhoneBR(value || "") : value || "");
+    setEditing(true);
   };
 
   const handleChange = (e) => {
@@ -69,7 +64,7 @@ export default function EditableField({
 
           {editing ? (
             <input
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black outline-none focus:ring-2 focus:ring-cor-primaria"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-black outline-none focus:ring-2 focus:ring-cor-primaria"
               name={name}
               value={local}
               onChange={handleChange}
@@ -81,31 +76,42 @@ export default function EditableField({
           ) : (
             <span className="text-black text-sm break-all">
               {type === "tel"
-                ? (formatPhoneBR(value || "") || <span className="text-gray-400">—</span>)
-                : (value || <span className="text-gray-400">—</span>)}
+                ? formatPhoneBR(value || "") || (
+                    <span className="text-gray-400">—</span>
+                  )
+                : value || <span className="text-gray-400">—</span>}
             </span>
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={editing ? handleSave : handleToggle}
-          disabled={saving || disabled}
-          className={`ml-3 shrink-0 p-2 rounded-full border ${
-            saving || disabled
-              ? "border-gray-200 bg-gray-100 text-gray-300"
-              : "border-gray-300 bg-gray-100 hover:bg-gray-200"
-          }`}
-          aria-label={editing ? `Salvar ${label}` : `Editar ${label}`}
-          title={editing ? "Salvar" : "Editar"}
-        >
-          {editing ? (
-            <FiCheck className="w-4 h-4 text-black" />
-          ) : (
+        {!editing && (
+          <button
+            type="button"
+            onClick={handleEdit}
+            disabled={disabled}
+            className="ml-3 p-2 rounded-full border border-gray-300 bg-gray-100 hover:bg-gray-200"
+            aria-label={`Editar ${label}`}
+            title="Editar"
+          >
             <FiEdit2 className="w-4 h-4 text-black" />
-          )}
-        </button>
+          </button>
+        )}
       </div>
+
+      {/* 👇 Botão salvar em evidência */}
+      {editing && (
+        <div className="mt-2 flex justify-end">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
+          >
+            <FiCheck className="w-3 h-3" />
+            {saving ? "Salvando…" : "Salvar"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
