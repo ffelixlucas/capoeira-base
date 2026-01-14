@@ -15,8 +15,6 @@ import {
 
 import { MdMedicalServices } from "react-icons/md";
 
-
-
 // 🔹 Status Pill compacto e alinhado
 const StatusPill = ({ status }) => {
   const config = {
@@ -126,6 +124,12 @@ export default function AlunoList({
   // 🔹 ITEM DE ALUNO OTIMIZADO E ALINHADO
   const renderAlunoItem = useCallback(
     (aluno) => {
+      console.log(
+        "LISTAGEM → obs_medicas:",
+        aluno.id,
+        aluno.observacoes_medicas,
+        typeof aluno.observacoes_medicas
+      );
       const dados = metricas[aluno.id];
       const frequencia = dados ? Math.round(dados.taxa_presenca * 100) : 0;
 

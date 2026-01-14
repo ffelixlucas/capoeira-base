@@ -69,9 +69,11 @@ async function listarAlunosPorTurmas(turmaIds, organizacaoId) {
       a.nome, 
       a.apelido, 
       a.foto_url,
+      a.observacoes_medicas,
       t.nome AS turma,
       t.id AS turma_id,
       e.nome AS responsavel_turma
+
     FROM alunos a
     JOIN matriculas m 
       ON m.aluno_id = a.id AND m.data_fim IS NULL
