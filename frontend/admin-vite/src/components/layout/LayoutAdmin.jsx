@@ -83,10 +83,12 @@ React.useEffect(() => {
   // 🔹 registra cada navegação dentro do admin
   useRouteHistory(location.pathname);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
-  };
+const handleLogout = () => {
+  logout();
+
+  // força desmontar toda a aplicação (zera estado + effects)
+  window.location.href = "/login";
+};
 
   const toggleMenu = () => setMenuAberto(!menuAberto);
 

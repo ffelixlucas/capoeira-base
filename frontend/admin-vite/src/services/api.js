@@ -22,7 +22,9 @@ const redirectToLogin = () => {
 
   try {
     sessionStorage.setItem("auth.message", "expired");
-    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    const next = encodeURIComponent(
+      window.location.pathname + window.location.search
+    );
     logger.info(`[api] Redirecionando para /login?next=${next}`);
     window.location.href = `/login?next=${next}`;
   } catch (err) {
@@ -76,23 +78,33 @@ api.interceptors.response.use(
     const isAuthRoute = url.includes("/auth/");
     const message = error?.response?.data?.message || error.message;
 
-    logger.warn(`[api] ⚠️ Erro em ${method} ${url} → ${status || "sem status"} | ${message}`);
+    logger.warn(
+      `[api] ⚠️ Erro em ${method} ${url} → ${
+        status || "sem status"
+      } | ${message}`
+    );
 
     // Ignora erro de perfil durante boot inicial
-    const isPerfilRequest = url.includes("/equipe/perfil") || url.includes("/perfil");
+    const isPerfilRequest =
+      url.includes("/equipe/perfil") || url.includes("/perfil");
     if (isPerfilRequest && (status === 401 || status === 403)) {
-      logger.warn("[api] Ignorando 401/403 de buscarPerfil durante inicialização");
+      logger.warn(
+        "[api] Ignorando 401/403 de buscarPerfil durante inicialização"
+      );
       return Promise.reject(error);
     }
 
-    // 🔐 Sessão expirada
-    if ((status === 401 || status === 403) && isProtected && !isAuthRoute) {
-      logger.error("[api] Sessão expirada ou inválida. Limpando storage e redirecionando...");
-      localStorage.removeItem("token");
-      localStorage.removeItem("usuario");
-      redirectToLogin();
-      // retorna uma promise pendente pra evitar exceção não capturada
-      return new Promise(() => {});
+    // 🔐 Sessão expirada (evita derrubar logo após login)
+    if (
+      (status === 401 || status === 403) &&
+      isProtected &&
+      !isAuthRoute &&
+      !isOnLogin()
+    ) {
+      if (!localStorage.getItem("token")) {
+        redirectToLogin();
+      }
+      return Promise.reject(error);
     }
 
     // ⚠️ Outros erros genéricos
