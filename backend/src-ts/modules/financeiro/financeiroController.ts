@@ -44,7 +44,65 @@ async function buscarPorId(req: Request, res: Response) {
   });
 }
 
+async function criar(req: Request, res: Response) {
+  const organizacaoId = req.usuario.organizacao_id;
+
+  const {
+    cpf,
+    nome_pagador,
+    origem,
+    referencia_id,
+    descricao,
+    valor_original,
+    valor_final,
+    data_vencimento,
+    observacoes,
+  } = req.body;
+
+  const result = await financeiroService.criarCobranca({
+    organizacaoId,
+    cpf,
+    nome_pagador,
+    origem,
+    referencia_id,
+    descricao,
+    valor_original,
+    valor_final,
+    data_vencimento,
+    observacoes,
+    criado_por: "admin",
+  });
+
+  return res.json({
+    success: true,
+    data: result,
+  });
+}
+
+async function atualizarStatus(req: Request, res: Response) {
+  const organizacaoId = req.usuario.organizacao_id;
+  const cobrancaId = Number(req.params.id);
+
+  const { status, metodo_pagamento, data_pagamento } = req.body;
+
+  await financeiroService.atualizarStatusCobranca({
+    organizacaoId,
+    cobrancaId,
+    status,
+    metodo_pagamento,
+    data_pagamento,
+  });
+
+  return res.json({
+    success: true,
+  });
+}
+
+
+
 export default {
   listar,
   buscarPorId,
+  criar,
+  atualizarStatus,
 };

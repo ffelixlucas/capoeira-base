@@ -8,10 +8,10 @@ Este documento registra **de forma permanente** o estado atual do **Módulo Fina
 
 Centralizar **todas as cobranças do sistema**, independentemente da origem:
 
-- Mensalidades
-- Eventos
-- Produtos / Loja
-- Outros serviços
+* Mensalidades
+* Eventos
+* Produtos / Loja
+* Outros serviços
 
 > ⚠️ O módulo **Financeiro NÃO executa pagamentos**. Ele apenas **registra, controla e audita cobranças**.
 
@@ -23,9 +23,9 @@ Pagamentos são responsabilidade de um **módulo separado**.
 
 Tudo gira em torno do conceito de **COBRANÇA**.
 
-- Produto, evento ou mensalidade **apenas geram cobranças**
-- Pagamentos **apenas alteram o status da cobrança**
-- Nenhuma regra de negócio financeira fica fora do módulo Financeiro
+* Produto, evento ou mensalidade **apenas geram cobranças**
+* Pagamentos **apenas alteram o status da cobrança**
+* Nenhuma regra de negócio financeira fica fora do módulo Financeiro
 
 ---
 
@@ -35,23 +35,23 @@ Tudo gira em torno do conceito de **COBRANÇA**.
 
 Campos principais:
 
-- `id`
-- `organizacao_id`
-- `cpf`
-- `nome_pagador`
-- `origem` (mensalidade | evento | produto | outro)
-- `referencia_id`
-- `descricao`
-- `valor_original`
-- `valor_final`
-- `data_emissao`
-- `data_vencimento`
-- `data_pagamento` (opcional)
-- `status` (pendente | pago | atrasado | cancelado)
-- `metodo_pagamento` (opcional)
-- `pago_manual` (boolean)
-- `criado_por` (sistema | admin)
-- `observacoes` (opcional)
+* `id`
+* `organizacao_id`
+* `cpf`
+* `nome_pagador`
+* `origem` (mensalidade | evento | produto | outro)
+* `referencia_id`
+* `descricao`
+* `valor_original`
+* `valor_final`
+* `data_emissao`
+* `data_vencimento`
+* `data_pagamento` (opcional)
+* `status` (pendente | pago | atrasado | cancelado)
+* `metodo_pagamento` (opcional)
+* `pago_manual` (boolean)
+* `criado_por` (sistema | admin)
+* `observacoes` (opcional)
 
 Essa tabela é o **núcleo financeiro definitivo do sistema**.
 
@@ -83,17 +83,20 @@ modules/financeiro/financeiroRoutes.js
 
 ### 1️⃣ Routes
 
-- Rota administrativa protegida
-- Caminho base:
+* Rota administrativa protegida
+* Caminho base:
+
   ```
   /api/financeiro
   ```
-- Middleware:
-  - `verifyToken`
+* Middleware:
+
+  * `verifyToken`
 
 Endpoints ativos:
-- `GET /api/financeiro`
-- `GET /api/financeiro/:id`
+
+* `GET /api/financeiro`
+* `GET /api/financeiro/:id`
 
 ---
 
@@ -101,10 +104,10 @@ Endpoints ativos:
 
 Responsável por:
 
-- Ler `req.usuario.organizacao_id`
-- Validar parâmetros de rota
-- Orquestrar chamadas ao service
-- Retornar JSON padronizado
+* Ler `req.usuario.organizacao_id`
+* Validar parâmetros de rota
+* Orquestrar chamadas ao service
+* Retornar JSON padronizado
 
 Formato de resposta:
 
@@ -121,10 +124,10 @@ Formato de resposta:
 
 Responsável por:
 
-- Receber `organizacaoId` obrigatoriamente
-- Aplicar regras mínimas de domínio
-- Validar existência da cobrança
-- Encaminhar operações ao repository
+* Receber `organizacaoId` obrigatoriamente
+* Aplicar regras mínimas de domínio
+* Validar existência da cobrança
+* Encaminhar operações ao repository
 
 > Ainda **sem regras complexas** (juros, geração automática, parcelamento).
 
@@ -136,47 +139,61 @@ Responsável exclusivamente pelo banco de dados.
 
 Regras obrigatórias:
 
-- Nenhuma query sem `organizacao_id`
-- Nenhum SQL fora do repository
-- Logs com contexto de organização
+* Nenhuma query sem `organizacao_id`
+* Nenhum SQL fora do repository
+* Logs com contexto de organização
 
 Funções existentes:
 
-- `listarCobrancas`
-- `buscarCobrancaPorId`
+* `listarCobrancas`
+* `buscarCobrancaPorId`
 
 ---
 
 ## 🔐 Segurança e Padrões
 
-- ✔️ JWT obrigatório
-- ✔️ Multi-organização aplicada
-- ✔️ TypeScript validado
-- ✔️ Ponte JS funcionando
-- ✔️ Logs no padrão do projeto
-- ✔️ Nenhum acesso direto ao banco fora do repository
+* ✔️ JWT obrigatório
+* ✔️ Multi-organização aplicada
+* ✔️ TypeScript validado
+* ✔️ Ponte JS funcionando
+* ✔️ Logs no padrão do projeto
+* ✔️ Nenhum acesso direto ao banco fora do repository
 
 ---
 
 ## ✅ Status Atual
 
-- [x] Módulo Financeiro ativo
-- [x] Arquitetura validada
-- [x] Listagem de cobranças
-- [x] Consulta por ID
-- [ ] Criação de cobrança
-- [ ] Atualização de status
-- [ ] Marcação de pagamento manual
-- [ ] Relatórios
+* [x] Módulo Financeiro ativo
+* [x] Arquitetura validada
+* [x] Listagem de cobranças
+* [x] Consulta por ID
+* [x] Criação de cobrança
+* [x] Atualização de status
+* [x] Pagamento manual (admin)
+* [ ] Relatórios
 
 ---
 
 ## 🚀 Próximos Passos Planejados
 
-1. Criar **criação de cobrança** (`POST /api/financeiro`)
-2. Criar **alteração de status**
-3. Criar **pagamento manual**
-4. Integrar com módulo de Pagamento (apenas atualização de status)
+> ⚠️ O módulo Financeiro está **encerrado funcionalmente**.
+
+Próximos passos pertencem a **outros módulos**:
+
+1. **Módulo Pagamento (Checkout Público)**
+
+   * Escolha Pix / Cartão pelo usuário
+   * Integração com gateway
+   * Webhook
+   * Atualização de status da cobrança
+
+2. **Módulo Produtos / Estoque**
+
+   * Cadastro de produtos
+   * Controle de estoque e variações
+   * Baixa de estoque após pagamento
+
+Nenhuma dessas responsabilidades deve ser adicionada ao Financeiro.
 
 ---
 
@@ -185,4 +202,3 @@ Funções existentes:
 Este documento representa o **estado oficial e permanente** do módulo Financeiro até este ponto.
 
 Qualquer novo desenvolvimento **deve respeitar integralmente** este material para evitar retrabalho ou acoplamento indevido.
-
