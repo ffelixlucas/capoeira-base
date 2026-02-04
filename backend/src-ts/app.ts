@@ -25,6 +25,7 @@ const graduacoesRoutes = require("../modules/graduacoes/graduacoesRoutes");
 const inscricoesRoutes = require("../modules/inscricoes/inscricoesRoutes");
 const horariosRoutes = require("../modules/horarios/horariosRoutes");
 const financeiroRoutes = require("../modules/financeiro/financeiroRoutes");
+const pedidosRoutes = require("../modules/pedidos/pedidosRoutes");
 const lembretesRoutes = require("../modules/lembretes/lembretesRoutes");
 const matriculaRoutes = require("../modules/matricula/matriculaRoutes");
 const notificacaoDestinosRoutes = require("../modules/notificacaoDestinos/notificacaoDestinosRoutes");
@@ -37,6 +38,7 @@ const preMatriculasRoutes = require("../modules/public/preMatriculas/preMatricul
 const publicAgendaRoutes = require("../modules/public/agenda/publicAgendaRoutes");
 const publicInscricoesRoutes = require("../modules/public/inscricoes/inscricoesRoutes");
 const organizacaoPublicRoutes = require("../modules/shared/organizacoes/organizacaoPublicRoutes");
+const carrinhoPublicRoutes = require("../modules/public/carrinho/carrinhoPublicRoutes");
 
 // Mistas
 const notasAlunoRoutes = require("../modules/notasAluno/notasAlunoRoutes");
@@ -61,6 +63,8 @@ app.use("/api/teste", (_, res) => res.json({ mensagem: "API no ar!" }));
 
 app.use("/api/public/agenda", publicAgendaRoutes);
 app.use("/api/public/inscricoes", publicInscricoesRoutes);
+app.use("/api/pedidos", pedidosRoutes);
+app.use("/api/public/carrinho", carrinhoPublicRoutes);
 
 // -----------------------------------------------------------
 // 🔒 AUTENTICAÇÃO
