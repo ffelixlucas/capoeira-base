@@ -5,31 +5,23 @@ import {
   pagarComCartao,
   pagarComBoleto,
 } from "./pagamentosController";
+import { webhookPagamentos } from "./webhook";
 
 const router = Router();
 
-/* ======================================================
-   Criar cobrança (intenção)
-   POST /api/pagamentos/:slug
-====================================================== */
+/* webhook de pagamento (público) */
+router.post("/webhook", webhookPagamentos);
+
+/* Criar cobrança (intenção) */
 router.post("/:slug", criarCobranca);
 
-/* ======================================================
-   Gerar pagamento PIX
-   POST /api/pagamentos/:slug/:cobrancaId/pix
-====================================================== */
+/* Gerar pagamento PIX */
 router.post("/:slug/:cobrancaId/pix", pagarComPix);
 
-/* ======================================================
-   Gerar pagamento Cartão
-   POST /api/pagamentos/:slug/:cobrancaId/cartao
-====================================================== */
+/* Gerar pagamento Cartão */
 router.post("/:slug/:cobrancaId/cartao", pagarComCartao);
 
-/* ======================================================
-   Gerar pagamento Boleto
-   POST /api/pagamentos/:slug/:cobrancaId/boleto
-====================================================== */
+/* Gerar pagamento Boleto */
 router.post("/:slug/:cobrancaId/boleto", pagarComBoleto);
 
 export default router;

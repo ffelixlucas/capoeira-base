@@ -209,4 +209,33 @@ export async function buscarCobrancaPorId(cobrancaId: number) {
   return rows[0] || null;
 }
 
+export async function buscarCobrancaPorIdRepository(cobrancaId: number) {
+  const [rows]: any = await connection.query(
+    `
+    SELECT
+      id,
+      origem,
+      entidade_id,
+      status,
+      consequencia_executada
+    FROM pagamentos_cobrancas
+    WHERE id = ?
+    LIMIT 1
+    `,
+    [cobrancaId]
+  );
+
+  return rows[0] || null;
+}
+
+export async function marcarConsequenciaExecutadaRepository(cobrancaId: number) {
+  await connection.query(
+    `
+    UPDATE pagamentos_cobrancas
+    SET consequencia_executada = true
+    WHERE id = ?
+    `,
+    [cobrancaId]
+  );
+}
 

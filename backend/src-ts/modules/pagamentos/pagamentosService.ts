@@ -250,3 +250,15 @@ export async function gerarPagamentoBoletoService(cobranca: CobrancaBase) {
     date_of_expiration: result.date_of_expiration,
   };
 }
+export async function buscarPagamentoMP(paymentId: string) {
+  const response = await axios.get(
+    `https://api.mercadopago.com/v1/payments/${paymentId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
+    }
+  );
+
+  return response.data;
+}
