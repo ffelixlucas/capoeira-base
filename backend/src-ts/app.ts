@@ -25,6 +25,7 @@ const graduacoesRoutes = require("../modules/graduacoes/graduacoesRoutes");
 const inscricoesRoutes = require("../modules/inscricoes/inscricoesRoutes");
 const horariosRoutes = require("../modules/horarios/horariosRoutes");
 const financeiroRoutes = require("../modules/financeiro/financeiroRoutes");
+const pagamentosRoutes = require("../modules/pagamentos/pagamentosRoutes");
 const pedidosRoutes = require("../modules/pedidos/pedidosRoutes");
 const lembretesRoutes = require("../modules/lembretes/lembretesRoutes");
 const matriculaRoutes = require("../modules/matricula/matriculaRoutes");
@@ -84,6 +85,7 @@ app.use("/api/equipe", equipeRoutes);
 app.use("/api/equipe", equipeRolesRoutes);
 app.use("/api/galeria", galeriaRoutes);
 app.use("/api/financeiro", financeiroRoutes);
+app.use("/api/pagamentos", pagamentosRoutes);
 app.use("/api/horarios", horariosRoutes);
 app.use("/api/inscricoes", inscricoesRoutes);
 app.use("/api/lembretes", lembretesRoutes);
@@ -96,6 +98,7 @@ app.use("/api/categorias", categoriasRoutes);
 app.use("/api/graduacoes", graduacoesRoutes);
 app.use("/api/whatsapp-destinos", whatsappRoutes);
 app.use("/api/notificacoes-push", notificacoesPushRoutes);
+
 
 
 // -----------------------------------------------------------
