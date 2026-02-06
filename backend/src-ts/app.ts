@@ -39,7 +39,7 @@ const preMatriculasRoutes = require("../modules/public/preMatriculas/preMatricul
 const publicAgendaRoutes = require("../modules/public/agenda/publicAgendaRoutes");
 const publicInscricoesRoutes = require("../modules/public/inscricoes/inscricoesRoutes");
 const organizacaoPublicRoutes = require("../modules/shared/organizacoes/organizacaoPublicRoutes");
-const carrinhoPublicRoutes = require("../modules/public/carrinho/carrinhoPublicRoutes");
+const pedidosPublicRoutes = require("../modules/public/pedidos/pedidosPublicRoutes");
 const lojaPublicRoutes = require("../modules/public/loja/lojaPublicRoutes");
 
 // Mistas
@@ -66,7 +66,7 @@ app.use("/api/teste", (_, res) => res.json({ mensagem: "API no ar!" }));
 app.use("/api/public/agenda", publicAgendaRoutes);
 app.use("/api/public/inscricoes", publicInscricoesRoutes);
 app.use("/api/pedidos", pedidosRoutes);
-app.use("/api/public/carrinho", carrinhoPublicRoutes);
+app.use("/api/public/pedidos", pedidosPublicRoutes);
 app.use("/api/public/loja", lojaPublicRoutes);
 
 

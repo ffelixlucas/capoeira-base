@@ -8,10 +8,10 @@ Projeto **Capoeira Base**
 
 Este documento descreve **de forma oficial, definitiva e reutilizável** o fluxo de relacionamento entre os módulos do Capoeira Base envolvidos em **qualquer tipo de pagamento**, garantindo:
 
-- Arquitetura desacoplada
-- Suporte total a **multi-organização (multi-org)**
-- Reutilização para **loja, mensalidades, matrículas e eventos**
-- Evolução futura sem refatoração estrutural
+* Arquitetura desacoplada
+* Suporte total a **multi-organização (multi-org)**
+* Reutilização para **loja, mensalidades, matrículas e eventos**
+* Evolução futura sem refatoração estrutural
 
 Este material deve servir como **referência técnica permanente**.
 
@@ -22,23 +22,25 @@ Este material deve servir como **referência técnica permanente**.
 > **Todo pagamento no sistema nasce como uma COBRANÇA.**
 
 Não importa a origem:
-- Venda de produto
-- Mensalidade
-- Matrícula
-- Inscrição em evento
 
-👉 A origem **apenas gera uma cobrança**.
-👉 O pagamento **apenas altera o status da cobrança**.
+* Venda de produto
+* Mensalidade
+* Matrícula
+* Inscrição em evento
+
+👉 A origem **apenas gera um PEDIDO (quando aplicável)**
+👉 O módulo Pagamentos **gera a cobrança**
+👉 O pagamento **apenas altera o status da cobrança**
 
 ---
 
-## 🌍 Multi‑Organização (Fundamental)
+## 🌍 Multi-Organização (Fundamental)
 
 ### Regras obrigatórias
 
-- Todas as tabelas possuem `organizacao_id`
-- O **frontend nunca envia `organizacao_id`**
-- A organização é resolvida via **slug público**
+* Todas as tabelas possuem `organizacao_id`
+* O **frontend nunca envia `organizacao_id`**
+* A organização é resolvida via **slug público**
 
 Fluxo:
 
@@ -47,9 +49,10 @@ slug → organizacoes.id → organizacao_id
 ```
 
 Isso garante:
-- Isolamento total de dados
-- Segurança
-- Prevenção de fraude
+
+* Isolamento total de dados
+* Segurança
+* Prevenção de fraude
 
 ---
 
@@ -58,7 +61,7 @@ Isso garante:
 ```
 [ Origem Pública ]
         ↓
-[ Carrinho (opcional) ]
+[ Pedido (pendente) ]
         ↓
 [ Pagamentos ]
         ↓
@@ -72,36 +75,45 @@ Isso garante:
 ## 1️⃣ Origem Pública (Loja, Evento, Matrícula)
 
 ### Exemplos
-- Loja pública
-- Página de evento
-- Página de matrícula
+
+* Loja pública
+* Página de evento
+* Página de matrícula
 
 ### Responsabilidades
-- Expor informações ao usuário
-- Capturar intenção de compra
-- **Nunca cria cobrança**
-- **Nunca integra gateway**
 
-### Multi‑org
-- Identificada apenas pelo `slug`
+* Expor informações ao usuário
+* Capturar intenção de compra
+* **Nunca cria cobrança**
+* **Nunca integra gateway**
+
+### Multi-org
+
+* Identificada apenas pelo `slug`
 
 ---
 
-## 2️⃣ Carrinho Público (Quando aplicável)
+## 2️⃣ Pedido Público (Quando aplicável)
 
 ### Quando existe
-- Loja com múltiplos itens
+
+* Loja com múltiplos itens
 
 ### Responsabilidades
-- Registrar SKUs selecionados
-- Quantidade
-- Calcular valor total
-- Preparar dados para pagamento
+
+* Registrar SKUs selecionados
+* Quantidade
+* Calcular valor total
+* Criar **pedido pendente**
+* Preparar dados para pagamento
 
 ### O que NÃO faz
-- ❌ Não cria cobrança
-- ❌ Não integra pagamento
-- ❌ Não controla status financeiro
+
+* ❌ Não cria cobrança
+* ❌ Não integra pagamento
+* ❌ Não controla status financeiro
+
+📌 O pedido nasce com status **pendente** e só é confirmado após pagamento.
 
 ---
 
@@ -112,9 +124,10 @@ Isso garante:
 O módulo **Pagamentos** é o **núcleo financeiro público** do sistema.
 
 Ele é responsável por:
-- Criar cobranças
-- Integrar gateway
-- Controlar status de pagamento
+
+* Criar cobranças
+* Integrar gateway
+* Controlar status de pagamento
 
 ---
 
@@ -138,11 +151,19 @@ POST /api/pagamentos/:slug
 }
 ```
 
+📌 `entidade_id` referencia:
+
+* **pedido_id** (loja)
+* evento, matrícula ou mensalidade (demais casos)
+
+---
+
 ### Validações
-- Campos obrigatórios
-- Valor válido
-- Resolução do `slug`
-- Criação da cobrança
+
+* Campos obrigatórios
+* Valor válido
+* Resolução do `slug`
+* Criação da cobrança
 
 ---
 
@@ -150,11 +171,11 @@ POST /api/pagamentos/:slug
 
 Ao receber o payload:
 
-- Resolve `organizacao_id`
-- Cria registro de cobrança
-- Status inicial: `pendente`
+* Resolve `organizacao_id`
+* Cria registro de cobrança
+* Status inicial: `pendente`
 
-A cobrança é a **fonte de verdade**.
+A cobrança é a **fonte de verdade financeira**.
 
 ---
 
@@ -162,11 +183,12 @@ A cobrança é a **fonte de verdade**.
 
 O módulo Pagamentos:
 
-- Gera pagamento via API do Mercado Pago
-- Suporta:
-  - PIX (QR Code)
-  - Cartão de crédito
-  - Boleto
+* Gera pagamento via API do Mercado Pago
+* Suporta:
+
+  * PIX (QR Code)
+  * Cartão de crédito
+  * Boleto
 
 ### Referência externa
 
@@ -180,29 +202,32 @@ external_reference = cobranca_id
 
 ### Função
 
-- Receber confirmação do gateway
-- Identificar cobrança via `external_reference`
-- Atualizar status
+* Receber confirmação do gateway
+* Identificar cobrança via `external_reference`
+* Atualizar status
 
 ### Status possíveis
-- `pendente`
-- `pago`
-- `cancelado`
-- `rejeitado`
+
+* `pendente`
+* `pago`
+* `cancelado`
+* `rejeitado`
 
 ---
 
-## 7️⃣ Consequências Pós‑Pagamento (Futuro)
+## 7️⃣ Consequências Pós-Pagamento (Futuro)
 
 ⚠️ **Nunca ficam no Pagamentos**
 
 Exemplos:
-- Baixa de estoque
-- Liberação de matrícula
-- Confirmação de inscrição
-- Envio de e-mail
 
-Essas ações ficam nos **módulos de origem**.
+* Baixa de estoque
+* Confirmação de pedido
+* Liberação de matrícula
+* Confirmação de inscrição
+* Envio de e-mail
+
+Essas ações ficam nos **módulos de origem** e são disparadas após a cobrança ser marcada como `pago`.
 
 ---
 
@@ -210,21 +235,21 @@ Essas ações ficam nos **módulos de origem**.
 
 O mesmo fluxo serve para:
 
-| Origem | Carrinho | Pagamentos | Webhook |
-|------|----------|------------|---------|
-| Loja | ✅ | ✅ | ✅ |
-| Evento | ❌ | ✅ | ✅ |
-| Matrícula | ❌ | ✅ | ✅ |
-| Mensalidade | ❌ | ✅ | ✅ |
+| Origem      | Pedido | Pagamentos | Webhook |
+| ----------- | ------ | ---------- | ------- |
+| Loja        | ✅      | ✅          | ✅       |
+| Evento      | ❌      | ✅          | ✅       |
+| Matrícula   | ❌      | ✅          | ✅       |
+| Mensalidade | ❌      | ✅          | ✅       |
 
 ---
 
 ## ✅ Conclusão Oficial
 
-- Arquitetura correta
-- Fluxo profissional
-- Multi‑org seguro
-- Pronto para escalar
+* Arquitetura correta
+* Fluxo profissional
+* Separação clara entre **pedido** e **pagamento**
+* Multi-org seguro
+* Pronto para escalar
 
 📌 **Este fluxo é definitivo no Capoeira Base.**
-

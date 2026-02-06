@@ -13,7 +13,7 @@ export async function buscarPedidoComItens(
   const [pedidoRows]: any = await connection.query(
     `
     SELECT *
-    FROM carrinhos
+    FROM pedidos
     WHERE id = ?
       AND organizacao_id = ?
     `,
@@ -29,13 +29,13 @@ export async function buscarPedidoComItens(
   const [itens]: any = await connection.query(
     `
     SELECT
-      ci.id,
-      ci.sku_id,
-      ci.quantidade,
-      ci.preco_unitario
-    FROM carrinho_itens ci
-    WHERE ci.carrinho_id = ?
-      AND ci.organizacao_id = ?
+      pi.id,
+      pi.sku_id,
+      pi.quantidade,
+      pi.preco_unitario
+    FROM pedido_itens pi
+    WHERE pi.pedido_id = ?
+      AND pi.organizacao_id = ?
     `,
     [pedidoId, organizacaoId]
   );

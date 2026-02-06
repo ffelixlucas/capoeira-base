@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { processarCheckoutPublic } from "./carrinhoPublicService";
+import { processarCheckoutPublic } from "./pedidosPublicService";
 
 export async function checkoutPublic(req: Request, res: Response) {
   try {

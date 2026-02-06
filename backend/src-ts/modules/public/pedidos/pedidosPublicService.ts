@@ -1,4 +1,4 @@
-import { buscarSkusPorIds } from "./carrinhoPublicRepository";
+import { buscarSkusPorIds } from "./pedidosPublicRepository";
 
 type ItemCheckout = {
   skuId: number;

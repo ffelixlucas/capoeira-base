@@ -7,10 +7,25 @@ export async function buscarPedido(req: Request, res: Response) {
     const organizacaoId = req.usuario.organizacao_id;
     const { pedidoId } = req.params;
 
+    const pedidoIdNum = Number(pedidoId);
+    if (isNaN(pedidoIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: "pedidoId inválido",
+      });
+    }
+
     const pedido = await buscarPedidoPorId(
       organizacaoId,
-      Number(pedidoId)
+      pedidoIdNum
     );
+
+    if (!pedido) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido não encontrado",
+      });
+    }
 
     return res.json({
       success: true,
