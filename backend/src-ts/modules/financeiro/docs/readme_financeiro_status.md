@@ -1,31 +1,70 @@
-# 📦 Módulo Financeiro — Estado Atual (Backend)
+# 📦 Módulo Financeiro — Estado Oficial (Backend)
 
-Este documento registra **de forma permanente** o estado atual do **Módulo Financeiro** do projeto **Capoeira Base**, servindo como referência obrigatória para futuros desenvolvimentos, manutenções ou novos chats.
+Este documento registra **de forma permanente** o estado atual do **Módulo Financeiro** do projeto **Capoeira Base**, servindo como **referência obrigatória** para futuros desenvolvimentos, manutenções ou novos chats.
+
+Este material **substitui versões anteriores** e reflete a **arquitetura final validada**.
 
 ---
 
 ## 🎯 Objetivo do Módulo
 
-Centralizar **todas as cobranças do sistema**, independentemente da origem:
+Centralizar **todas as cobranças administrativas e contábeis do sistema**, independentemente da origem:
 
 * Mensalidades
 * Eventos
 * Produtos / Loja
+* Matrículas
 * Outros serviços
 
-> ⚠️ O módulo **Financeiro NÃO executa pagamentos**. Ele apenas **registra, controla e audita cobranças**.
+> ⚠️ **O módulo Financeiro NÃO executa pagamentos.**
+> Ele atua exclusivamente como **camada administrativa, contábil e de auditoria**.
 
-Pagamentos são responsabilidade de um **módulo separado**.
+A execução do pagamento é responsabilidade de um **módulo separado (Pagamentos)**.
 
 ---
 
 ## 🧠 Conceito Central
 
-Tudo gira em torno do conceito de **COBRANÇA**.
+O sistema trabalha com **duas camadas bem definidas**:
 
-* Produto, evento ou mensalidade **apenas geram cobranças**
-* Pagamentos **apenas alteram o status da cobrança**
-* Nenhuma regra de negócio financeira fica fora do módulo Financeiro
+### 🔹 Camada Operacional
+
+* Executa pagamento
+* Recebe webhook
+* Garante idempotência
+* Dispara consequências
+
+➡️ **Módulo Pagamentos**
+
+### 🔹 Camada Administrativa / Contábil
+
+* Registra cobranças
+* Controla status administrativo
+* Permite pagamento manual
+* Gera relatórios
+* Audita histórico financeiro
+
+➡️ **Módulo Financeiro**
+
+---
+
+## 🧾 Papel do Financeiro no Sistema
+
+O Financeiro:
+
+* ✔ Registra cobranças
+* ✔ Organiza valores, vencimentos e status
+* ✔ Permite ações administrativas
+* ✔ Serve como **espelho contábil auditável**
+* ✔ Alimenta relatórios e controles internos
+
+O Financeiro **NÃO**:
+
+* ❌ Integra gateway
+* ❌ Executa Pix, cartão ou boleto
+* ❌ Processa webhook
+* ❌ Baixa estoque
+* ❌ Dispara e-mails operacionais
 
 ---
 
@@ -33,7 +72,9 @@ Tudo gira em torno do conceito de **COBRANÇA**.
 
 ### `financeiro_cobrancas`
 
-Campos principais:
+Esta tabela representa a **visão financeira administrativa** do sistema.
+
+### Campos principais:
 
 * `id`
 * `organizacao_id`
@@ -53,7 +94,22 @@ Campos principais:
 * `criado_por` (sistema | admin)
 * `observacoes` (opcional)
 
-Essa tabela é o **núcleo financeiro definitivo do sistema**.
+---
+
+## ⚠️ Fonte da Verdade
+
+> **A fonte da verdade operacional do pagamento NÃO é o Financeiro.**
+
+* ✔ Pagamento real → **`pagamentos_cobrancas`**
+* ✔ Financeiro → **espelho administrativo**
+
+O Financeiro pode:
+
+* refletir um pagamento
+* registrar pagamento manual
+* ajustar status por decisão administrativa
+
+Mas **nunca executa o fluxo crítico de pagamento**.
 
 ---
 
@@ -71,11 +127,14 @@ src-ts/modules/financeiro/
 ├── financeiroRoutes.ts
 ```
 
-Com ponte JS em:
+### Ponte JS:
 
 ```
 modules/financeiro/financeiroRoutes.js
 ```
+
+> A ponte existe apenas para compatibilidade com o app atual.
+> Toda lógica vive em TypeScript.
 
 ---
 
@@ -83,15 +142,17 @@ modules/financeiro/financeiroRoutes.js
 
 ### 1️⃣ Routes
 
-* Rota administrativa protegida
+* Rota **administrativa**
+* Protegida por JWT
 * Caminho base:
 
-  ```
-  /api/financeiro
-  ```
-* Middleware:
+```
+/api/financeiro
+```
 
-  * `verifyToken`
+Middleware obrigatório:
+
+* `verifyToken`
 
 Endpoints ativos:
 
@@ -102,14 +163,14 @@ Endpoints ativos:
 
 ### 2️⃣ Controller
 
-Responsável por:
+Responsabilidades:
 
 * Ler `req.usuario.organizacao_id`
-* Validar parâmetros de rota
-* Orquestrar chamadas ao service
+* Validar parâmetros
+* Orquestrar chamadas
 * Retornar JSON padronizado
 
-Formato de resposta:
+Formato padrão:
 
 ```json
 {
@@ -122,42 +183,46 @@ Formato de resposta:
 
 ### 3️⃣ Service
 
-Responsável por:
+Responsabilidades:
 
 * Receber `organizacaoId` obrigatoriamente
-* Aplicar regras mínimas de domínio
+* Validar domínio mínimo
 * Validar existência da cobrança
 * Encaminhar operações ao repository
 
-> Ainda **sem regras complexas** (juros, geração automática, parcelamento).
+> Não contém regras complexas neste momento
+> (juros, recorrência, parcelamento ficam para evolução futura).
 
 ---
 
 ### 4️⃣ Repository
 
-Responsável exclusivamente pelo banco de dados.
+Responsável **exclusivamente** pelo banco de dados.
 
 Regras obrigatórias:
 
 * Nenhuma query sem `organizacao_id`
 * Nenhum SQL fora do repository
-* Logs com contexto de organização
+* Logs com contexto da organização
 
 Funções existentes:
 
 * `listarCobrancas`
 * `buscarCobrancaPorId`
+* `criarCobranca`
+* `atualizarStatus`
+* `marcarPagamentoManual`
 
 ---
 
 ## 🔐 Segurança e Padrões
 
-* ✔️ JWT obrigatório
-* ✔️ Multi-organização aplicada
-* ✔️ TypeScript validado
-* ✔️ Ponte JS funcionando
-* ✔️ Logs no padrão do projeto
-* ✔️ Nenhum acesso direto ao banco fora do repository
+* ✔ JWT obrigatório
+* ✔ Multi-organização aplicada
+* ✔ TypeScript validado
+* ✔ Ponte JS funcionando
+* ✔ Logs no padrão do projeto
+* ✔ Nenhum acesso direto ao banco fora do repository
 
 ---
 
@@ -171,34 +236,44 @@ Funções existentes:
 * [x] Atualização de status
 * [x] Pagamento manual (admin)
 * [ ] Relatórios
+* [ ] Exportações
+* [ ] Reconciliação automática (futuro)
 
 ---
 
-## 🚀 Próximos Passos Planejados
+## 🚀 Próximos Passos (Fora do Financeiro)
 
-> ⚠️ O módulo Financeiro está **encerrado funcionalmente**.
+O módulo Financeiro está **funcionalmente encerrado**.
 
-Próximos passos pertencem a **outros módulos**:
+Os próximos passos pertencem a **outros módulos**:
 
-1. **Módulo Pagamento (Checkout Público)**
+### 1️⃣ Módulo Pagamentos (Checkout Público)
 
-   * Escolha Pix / Cartão pelo usuário
-   * Integração com gateway
-   * Webhook
-   * Atualização de status da cobrança
+* Pix / Cartão / Boleto
+* Integração com gateway
+* Webhook
+* Idempotência
+* Execução de consequências
 
-2. **Módulo Produtos / Estoque**
+### 2️⃣ Módulo Produtos / Estoque
 
-   * Cadastro de produtos
-   * Controle de estoque e variações
-   * Baixa de estoque após pagamento
+* Cadastro de produtos
+* SKUs
+* Controle de estoque
+* Baixa após pagamento
 
-Nenhuma dessas responsabilidades deve ser adicionada ao Financeiro.
+> Nenhuma dessas responsabilidades deve ser adicionada ao Financeiro.
 
 ---
 
 ## 📌 Observação Final
 
-Este documento representa o **estado oficial e permanente** do módulo Financeiro até este ponto.
+Este documento representa o **estado oficial, validado e permanente** do **Módulo Financeiro** do Capoeira Base.
 
-Qualquer novo desenvolvimento **deve respeitar integralmente** este material para evitar retrabalho ou acoplamento indevido.
+Qualquer nova funcionalidade **deve respeitar integralmente** este material para evitar:
+
+* acoplamento indevido
+* duplicação de lógica
+* retrabalho futuro
+
+📎 **Este módulo está fechado.**

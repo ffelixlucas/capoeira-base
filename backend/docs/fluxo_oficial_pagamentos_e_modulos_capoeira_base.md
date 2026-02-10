@@ -1,3 +1,8 @@
+Perfeito.
+Segue o **documento completo, revisado e alinhado com a arquitetura final** — pronto para ser considerado **oficial e definitivo**.
+
+---
+
 # 📄 Fluxo Oficial de Pagamentos e Relacionamento entre Módulos
 
 Projeto **Capoeira Base**
@@ -11,7 +16,7 @@ Este documento descreve **de forma oficial, definitiva e reutilizável** o fluxo
 * Arquitetura desacoplada
 * Suporte total a **multi-organização (multi-org)**
 * Reutilização para **loja, mensalidades, matrículas e eventos**
-* Evolução futura sem refatoração estrutural
+* Evolução futura **sem refatoração estrutural**
 
 Este material deve servir como **referência técnica permanente**.
 
@@ -28,9 +33,11 @@ Não importa a origem:
 * Matrícula
 * Inscrição em evento
 
-👉 A origem **apenas gera um PEDIDO (quando aplicável)**
-👉 O módulo Pagamentos **gera a cobrança**
-👉 O pagamento **apenas altera o status da cobrança**
+Regras:
+
+* 👉 A origem **gera um pedido ou entidade de negócio** (quando aplicável)
+* 👉 O módulo **Pagamentos cria e controla a cobrança operacional**
+* 👉 O pagamento **altera o status da cobrança e dispara consequências**
 
 ---
 
@@ -107,13 +114,13 @@ Isso garante:
 * Criar **pedido pendente**
 * Preparar dados para pagamento
 
+📌 O pedido nasce com status **pendente** e **só é confirmado após o pagamento**.
+
 ### O que NÃO faz
 
 * ❌ Não cria cobrança
 * ❌ Não integra pagamento
 * ❌ Não controla status financeiro
-
-📌 O pedido nasce com status **pendente** e só é confirmado após pagamento.
 
 ---
 
@@ -121,11 +128,11 @@ Isso garante:
 
 ### Papel
 
-O módulo **Pagamentos** é o **núcleo financeiro público** do sistema.
+O módulo **Pagamentos** é o **núcleo financeiro público do sistema**.
 
 Ele é responsável por:
 
-* Criar cobranças
+* Criar cobranças operacionais
 * Integrar gateway
 * Controlar status de pagamento
 
@@ -175,7 +182,10 @@ Ao receber o payload:
 * Cria registro de cobrança
 * Status inicial: `pendente`
 
-A cobrança é a **fonte de verdade financeira**.
+### Fonte da Verdade
+
+* A cobrança criada no **módulo Pagamentos** é a **fonte de verdade operacional do pagamento**
+* O **módulo Financeiro** mantém uma **visão administrativa e contábil** dessa cobrança
 
 ---
 
@@ -204,7 +214,7 @@ external_reference = cobranca_id
 
 * Receber confirmação do gateway
 * Identificar cobrança via `external_reference`
-* Atualizar status
+* Atualizar status da cobrança operacional
 
 ### Status possíveis
 
@@ -213,11 +223,13 @@ external_reference = cobranca_id
 * `cancelado`
 * `rejeitado`
 
+O webhook **não contém regras de negócio**.
+
 ---
 
-## 7️⃣ Consequências Pós-Pagamento (Futuro)
+## 7️⃣ Consequências Pós-Pagamento
 
-⚠️ **Nunca ficam no Pagamentos**
+⚠️ **Nunca ficam no módulo Pagamentos**
 
 Exemplos:
 
@@ -227,7 +239,50 @@ Exemplos:
 * Confirmação de inscrição
 * Envio de e-mail
 
-Essas ações ficam nos **módulos de origem** e são disparadas após a cobrança ser marcada como `pago`.
+Essas ações ficam nos **módulos de origem** e são executadas **após a cobrança ser marcada como `pago`**.
+
+---
+
+## 8️⃣ Processamento Pós-Pagamento (Função Oficial)
+
+Após a cobrança ser marcada como `pago`, o sistema executa **uma única função genérica e oficial**:
+
+```
+processarCobrancaPaga(cobranca_id)
+```
+
+### Responsabilidades
+
+* Garantir idempotência
+* Verificar status da cobrança
+* Verificar se a consequência já foi executada
+* Disparar ações conforme a origem
+
+---
+
+### 🔒 Idempotência
+
+A cobrança possui o campo:
+
+```
+consequencia_executada = false
+```
+
+Fluxo:
+
+* A função executa apenas se:
+
+  * `status === pago`
+  * `consequencia_executada === false`
+* Após executar:
+
+  * `consequencia_executada = true`
+
+Isso garante:
+
+* Estoque não baixa duas vezes
+* E-mails não duplicam
+* Webhook seguro contra repetição
 
 ---
 
@@ -248,8 +303,8 @@ O mesmo fluxo serve para:
 
 * Arquitetura correta
 * Fluxo profissional
-* Separação clara entre **pedido** e **pagamento**
+* Separação clara entre **pedido**, **pagamento** e **consequência**
 * Multi-org seguro
 * Pronto para escalar
 
-📌 **Este fluxo é definitivo no Capoeira Base.**
+📌 **Este fluxo é definitivo no Capoeira Base e deve ser seguido em todos os módulos futuros.**

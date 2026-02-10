@@ -6,7 +6,7 @@ import emailService from "../../services/emailService";
 
 type EventoEmailParams = {
   organizacaoId: number;
-  tipo: "loja" | "matricula" | "evento" | "pagamento";
+  tipo: "loja" | "loja_cliente" | "matricula" | "evento" | "pagamento";
   subject: string;
   html: string;
 };

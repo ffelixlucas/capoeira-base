@@ -6,6 +6,9 @@ import {
 import { converterPedidoPorId } from "../pedidos/pedidosService";
 import { atualizarDadosPedidoAposPagamento } from "../pedidos/pedidosRepository";
 import { dispararEventoEmail } from "../notificacoes/notificacoesEventosService";
+import estoqueRepository from "../estoque/estoqueRepository";
+import emailService from "../../services/emailService";
+
 
 
 
@@ -48,6 +51,11 @@ if (cobranca.origem === "loja") {
     cobranca.organizacao_id,
     cobranca.entidade_id
   );
+  await estoqueRepository.baixarEstoquePorPedido({
+  pedidoId: cobranca.entidade_id,
+  organizacaoId: cobranca.organizacao_id,
+});
+
   await atualizarDadosPedidoAposPagamento({
   organizacaoId: cobranca.organizacao_id,
   pedidoId: cobranca.entidade_id,
@@ -68,6 +76,14 @@ await dispararEventoEmail({
     </div>
   `,
 });
+
+await emailService.enviarEmailPedidoCliente({
+  email: cobranca.email,
+  nome: cobranca.nome_pagador,
+  pedidoId: cobranca.entidade_id,
+});
+
+
 
 
 }

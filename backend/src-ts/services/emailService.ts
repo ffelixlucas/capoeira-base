@@ -228,6 +228,51 @@ async function enviarEmailCustom({
   }
 }
 
+async function enviarEmailPedidoCliente({
+  email,
+  nome,
+  pedidoId,
+}: {
+  email: string;
+  nome: string;
+  pedidoId: number;
+}) {
+  const resend = getResend();
+  if (!resend) return;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+      <h2>Pedido confirmado ✅</h2>
+
+      <p>Olá <strong>${nome}</strong>,</p>
+
+      <p>Recebemos seu pedido com sucesso.</p>
+
+      <p><strong>Número do pedido:</strong> #${pedidoId}</p>
+      <p><strong>Status:</strong> em separação</p>
+
+      <p>Em breve você receberá novas atualizações.</p>
+
+      <p>Obrigado pela preferência!</p>
+    </div>
+  `;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "Capoeira Nota10 – Loja <contato@capoeiranota10.com.br>",
+      to: email,
+      subject: "Pedido confirmado – Capoeira Nota10",
+      html,
+    });
+
+    if (error) logger.error("❌ Falha no envio pedido cliente:", error);
+    else logger.log("✅ Pedido cliente enviado:", data);
+  } catch (err: any) {
+    logger.error("❌ Erro inesperado pedido cliente:", err.message);
+  }
+}
+
+
 async function enviarEmailPendente(inscricao: Inscricao) {
   const resend = getResend();
   if (!resend) return;
@@ -286,5 +331,6 @@ export default {
   enviarEmailExtorno,
   enviarEmailReset,
   enviarEmailCustom,
+  enviarEmailPedidoCliente,
   enviarEmailPendente,
 };
