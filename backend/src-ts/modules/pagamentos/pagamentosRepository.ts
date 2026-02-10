@@ -214,10 +214,14 @@ export async function buscarCobrancaPorIdRepository(cobrancaId: number) {
     `
     SELECT
       id,
+      organizacao_id,
       origem,
       entidade_id,
       status,
-      consequencia_executada
+      consequencia_executada,
+      nome_pagador,
+      telefone,
+      email
     FROM pagamentos_cobrancas
     WHERE id = ?
     LIMIT 1
@@ -227,6 +231,7 @@ export async function buscarCobrancaPorIdRepository(cobrancaId: number) {
 
   return rows[0] || null;
 }
+
 
 export async function marcarConsequenciaExecutadaRepository(cobrancaId: number) {
   await connection.query(

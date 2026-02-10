@@ -45,3 +45,61 @@ export async function buscarPedidoComItens(
     itens,
   };
 }
+
+export async function converterPedido(
+  organizacaoId: number,
+  pedidoId: number
+) {
+  const [result]: any = await connection.query(
+    `
+    UPDATE pedidos
+    SET status = 'convertido',
+        convertido_em = NOW()
+    WHERE id = ?
+      AND organizacao_id = ?
+      AND status = 'aberto'
+    `,
+    [pedidoId, organizacaoId]
+  );
+
+  return result.affectedRows;
+}
+export async function atualizarDadosPedidoAposPagamento(data: {
+  organizacaoId: number;
+  pedidoId: number;
+  nome: string;
+  telefone: string;
+  email: string;
+}) {
+  const { organizacaoId, pedidoId, nome, telefone, email } = data;
+
+  await connection.query(
+    `
+    UPDATE pedidos
+    SET
+      nome_cliente = ?,
+      telefone = ?,
+      email = ?,
+      status_operacional = 'em_separacao'
+    WHERE id = ?
+      AND organizacao_id = ?
+    `,
+    [nome, telefone, email, pedidoId, organizacaoId]
+  );
+}
+
+export async function marcarPedidoProntoRetirada(
+  organizacaoId: number,
+  pedidoId: number
+) {
+  await connection.query(
+    `
+    UPDATE pedidos
+    SET status_operacional = 'pronto_retirada'
+    WHERE id = ?
+      AND organizacao_id = ?
+      AND status_operacional = 'em_separacao'
+    `,
+    [pedidoId, organizacaoId]
+  );
+}

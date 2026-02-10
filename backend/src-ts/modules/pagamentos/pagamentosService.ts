@@ -5,6 +5,7 @@ import {
   criarCobrancaRepository,
   atualizarCobrancaPagamentoRepository,
 } from "./pagamentosRepository";
+import { buscarPedidoPorId } from "../pedidos/pedidosService";
 
 /* ======================================================
    Tipos
@@ -53,17 +54,38 @@ export async function criarCobrancaService(dados: CriarCobrancaInput) {
   if (!cpf) throw new Error("cpf é obrigatório");
   if (!telefone) throw new Error("telefone é obrigatório");
   if (!email) throw new Error("email é obrigatório");
-  if (!valor_total || valor_total <= 0)
-    throw new Error("valor_total inválido");
 
   logger.debug("[pagamentosService] Criando cobrança", {
     organizacao_id,
     origem,
     entidade_id,
-    valor_total,
   });
 
-  const cobrancaId = await criarCobrancaRepository(dados);
+  let valorFinal = valor_total;
+
+  // 🔒 Regra da Loja: backend calcula o valor real
+  if (origem === "loja") {
+    const pedido = await buscarPedidoPorId(organizacao_id, entidade_id);
+
+    if (!pedido) {
+      throw new Error("Pedido não encontrado para cobrança");
+    }
+
+    valorFinal = pedido.itens.reduce(
+      (total: number, item: any) =>
+        total + item.quantidade * item.preco_unitario,
+      0
+    );
+
+    if (valorFinal <= 0) {
+      throw new Error("Pedido sem valor para cobrança");
+    }
+  }
+
+  const cobrancaId = await criarCobrancaRepository({
+    ...dados,
+    valor_total: valorFinal,
+  });
 
   return {
     cobranca_id: cobrancaId,
@@ -250,6 +272,7 @@ export async function gerarPagamentoBoletoService(cobranca: CobrancaBase) {
     date_of_expiration: result.date_of_expiration,
   };
 }
+
 export async function buscarPagamentoMP(paymentId: string) {
   const response = await axios.get(
     `https://api.mercadopago.com/v1/payments/${paymentId}`,
