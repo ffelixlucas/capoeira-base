@@ -4,3 +4,4 @@ dist/
 backend/config/*.json
 frontend/public/backup.txt
 backend/src-ts/config/*.json
+backend/testar-pagamento.ts

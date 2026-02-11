@@ -46,6 +46,32 @@ class LojaPublicRepository {
 
     return rows as LojaSkuRow[];
   }
+  async buscarSkuPorId(slug: string, skuId: number) {
+  const query = `
+    SELECT 
+      ps.id,
+      ps.produto_id,
+      p.nome AS produto_nome,
+      p.descricao AS produto_descricao,
+      p.categoria AS produto_categoria,
+      ps.sku_codigo,
+      ps.preco,
+      ps.atributos,
+      ps.pronta_entrega,
+      ps.encomenda
+    FROM produtos_skus ps
+    JOIN produtos p ON p.id = ps.produto_id
+    JOIN organizacoes o ON o.id = p.organizacao_id
+    WHERE o.slug = ?
+      AND ps.id = ?
+      AND p.ativo = 1
+  `;
+
+  const [rows]: any = await db.execute(query, [slug, skuId]);
+
+  return rows[0] || null;
+}
+
 }
 
 export default new LojaPublicRepository();

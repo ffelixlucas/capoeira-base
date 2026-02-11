@@ -26,6 +26,34 @@ class LojaPublicController {
       });
     }
   }
+
+  async buscarSkuPorId(req: Request, res: Response) {
+    try {
+      const { slug, id } = req.params;
+
+      if (!slug || !id) {
+        return res.status(400).json({
+          success: false,
+          message: "Slug ou ID não informado",
+        });
+      }
+
+      const sku = await lojaPublicService.buscarSkuPorId(
+        slug,
+        Number(id)
+      );
+
+      return res.json({
+        success: true,
+        data: sku,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao buscar SKU",
+      });
+    }
+  }
 }
 
 export default new LojaPublicController();

@@ -8,6 +8,13 @@ class LojaPublicService {
 
     return lojaPublicRepository.listarSkusDisponiveisPorSlug(slug);
   }
+  async buscarSkuPorId(slug: string, skuId: number) {
+  return await lojaPublicRepository.buscarSkuPorId(
+    slug,
+    skuId
+  );
+}
+
 }
 
 export default new LojaPublicService();

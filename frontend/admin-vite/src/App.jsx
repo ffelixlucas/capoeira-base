@@ -42,6 +42,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import CartaoPagamento from "./components/public/pagamento/CartaoPagamento.jsx";
 import PreMatriculaPublic from "./pages/public/PreMatriculaPublic.jsx";
+import LojaPublic from "./pages/public/LojaPublic.jsx";
+import ProdutoPublic from "./pages/public/ProdutoPublic.jsx";
 function App() {
   return (
     <AuthProvider>
@@ -55,6 +57,10 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/nao-autorizado" element={<NaoAutorizado />} />
+          <Route path="/loja/:slug" element={<LojaPublic />} />
+          <Route path="/loja/:slug/produto/:id" element={<ProdutoPublic />} />
+
+
 
           {/* Rotas protegidas com layout administrativo */}
           <Route

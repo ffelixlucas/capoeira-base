@@ -11,5 +11,10 @@ router.get(
   "/:slug/skus",
   lojaPublicController.listarSkus
 );
+router.get(
+  "/:slug/sku/:id",
+  lojaPublicController.buscarSkuPorId
+);
+
 
 export default router;
