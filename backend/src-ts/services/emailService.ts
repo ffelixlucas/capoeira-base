@@ -8,6 +8,7 @@ import logger from "../utils/logger";
  */
 function getResend() {
   const apiKey = process.env.RESEND_API_KEY;
+  
 
   if (!apiKey) {
     logger.warn("[emailService] RESEND_API_KEY ausente — modo desenvolvimento.");
