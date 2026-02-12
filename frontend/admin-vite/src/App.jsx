@@ -42,8 +42,11 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import CartaoPagamento from "./components/public/pagamento/CartaoPagamento.jsx";
 import PreMatriculaPublic from "./pages/public/PreMatriculaPublic.jsx";
-import LojaPublic from "./pages/public/LojaPublic.jsx";
-import ProdutoPublic from "./pages/public/ProdutoPublic.jsx";
+import LojaPublic from "./pages/public/loja/LojaPublic.jsx";
+import { CarrinhoProvider } from "./contexts/public/loja/CarrinhoContext";
+import LojaWrapper from "./pages/public/loja/LojaWrapper.jsx";
+import CheckoutPublic from "./pages/public/loja/CheckoutPublic.jsx";
+
 function App() {
   return (
     <AuthProvider>
@@ -57,8 +60,12 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/nao-autorizado" element={<NaoAutorizado />} />
-          <Route path="/loja/:slug" element={<LojaPublic />} />
-          <Route path="/loja/:slug/produto/:id" element={<ProdutoPublic />} />
+          <Route path="/loja/:slug" element={<LojaWrapper />}>
+          <Route index element={<LojaPublic />} />
+          <Route path="checkout" element={<CheckoutPublic />} />
+          </Route>
+
+
 
 
 

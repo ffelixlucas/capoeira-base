@@ -15,13 +15,14 @@ type FinalizarPedidoInput = {
   cpf: string;
   nome: string;
   telefone: string;
+  email: string;
   itens: ItemCheckout[];
 };
 
 export async function finalizarPedidoPublicService(
   data: FinalizarPedidoInput
 ) {
-  const { slug, cpf, nome, telefone, itens } = data;
+const { slug, cpf, nome, telefone, email, itens } = data;
 
   const organizacao = await buscarOrganizacaoPorSlug(slug);
 
@@ -56,11 +57,13 @@ export async function finalizarPedidoPublicService(
       preco_unitario: sku.preco,
     };
   });
-
 const pedido = await criarPedido({
   organizacaoId,
-  
+  nome,
+  telefone,
+  email,
 });
+
 
 
   await criarPedidoItens({

@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 function formatarPreco(valor) {
   return Number(valor).toLocaleString("pt-BR", {
     style: "currency",
@@ -7,11 +5,11 @@ function formatarPreco(valor) {
   });
 }
 
-export default function ProdutoCard({ sku, slug }) {
+export default function ProdutoCard({ produto, onSelecionar }) {
   return (
-    <Link
-      to={`/loja/${slug}/produto/${sku.id}`}
-      className="block border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+    <button
+      onClick={() => onSelecionar(produto)}
+      className="text-left block w-full border rounded-lg shadow-sm hover:shadow-md transition bg-white"
     >
       {/* Imagem Placeholder */}
       <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-t-lg">
@@ -20,29 +18,25 @@ export default function ProdutoCard({ sku, slug }) {
         </span>
       </div>
 
-      <div className="p-3 space-y-1">
-        {/* Nome */}
+      <div className="p-3 space-y-2">
         <h2 className="text-sm font-medium text-gray-800 line-clamp-2">
-          {sku.produto_nome}
+          {produto.nome}
         </h2>
 
-        {/* Badge */}
-        {sku.pronta_entrega === 1 && (
-          <span className="inline-block text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-            Pronta entrega
+        {produto.categoria && (
+          <span className="inline-block text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+            {produto.categoria}
           </span>
         )}
 
-        {/* Preço */}
         <p className="text-lg font-bold text-black">
-          {formatarPreco(sku.preco)}
+          {formatarPreco(produto.preco_minimo)}
         </p>
 
-        {/* SKU código */}
         <p className="text-xs text-gray-500">
-          {sku.sku_codigo}
+          Ver opções
         </p>
       </div>
-    </Link>
+    </button>
   );
 }

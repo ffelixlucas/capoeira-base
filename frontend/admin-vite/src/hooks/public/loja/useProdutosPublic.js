@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { listarSkus } from "../../services/public/lojaPublicService";
-
-export function useLojaSkus(slug) {
-  const [skus, setSkus] = useState([]);
+import { listarProdutos } from "../../../services/public/loja/lojaPublicService"
+export function useProdutosPublic(slug) {
+  const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
 
@@ -13,16 +12,16 @@ export function useLojaSkus(slug) {
       try {
         setCarregando(true);
 
-        const response = await listarSkus(slug);
+        const response = await listarProdutos(slug);
 
         if (response?.success) {
-          setSkus(response.data || []);
+          setProdutos(response.data);
         } else {
-          setSkus([]);
+          setProdutos([]);
         }
       } catch (err) {
         setErro("Erro ao carregar produtos.");
-        setSkus([]);
+        setProdutos([]);
       } finally {
         setCarregando(false);
       }
@@ -31,5 +30,5 @@ export function useLojaSkus(slug) {
     buscar();
   }, [slug]);
 
-  return { skus, carregando, erro };
+  return { produtos, carregando, erro };
 }

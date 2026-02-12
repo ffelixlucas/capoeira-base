@@ -54,6 +54,56 @@ class LojaPublicController {
       });
     }
   }
+
+  async listarProdutos(req: any, res: any) {
+    try {
+      const { slug } = req.params;
+
+      const produtos =
+        await lojaPublicService.listarProdutosDisponiveis(slug);
+
+      return res.json({
+        success: true,
+        data: produtos,
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async buscarProduto(req: any, res: any) {
+    try {
+      const { slug, produtoId } = req.params;
+  
+      const produto =
+        await lojaPublicService.buscarProdutoComSkus(
+          slug,
+          Number(produtoId)
+        );
+  
+      if (!produto) {
+        return res.status(404).json({
+          success: false,
+          message: "Produto não encontrado",
+        });
+      }
+  
+      return res.json({
+        success: true,
+        data: produto,
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+  
 }
+
 
 export default new LojaPublicController();

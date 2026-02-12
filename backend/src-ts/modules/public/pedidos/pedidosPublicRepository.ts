@@ -50,20 +50,35 @@ export async function buscarSkusPorIds(
   return rows as SkuRow[];
 }
 
-export async function criarPedido(data: { organizacaoId: number }) {
-  const { organizacaoId } = data;
+export async function criarPedido(data: {
+  organizacaoId: number;
+  nome: string;
+  telefone: string;
+  email: string;
+}) {
+  const { organizacaoId, nome, telefone, email } = data;
 
   const [result]: any = await db.query(
     `
     INSERT INTO pedidos
-      (organizacao_id, status, criado_em)
-    VALUES (?, 'aberto', NOW())
+      (
+        organizacao_id,
+        status,
+        status_operacional,
+        nome_cliente,
+        telefone,
+        email,
+        criado_em
+      )
+    VALUES
+      (?, 'aberto', 'pendente_pagamento', ?, ?, ?, NOW())
     `,
-    [organizacaoId]
+    [organizacaoId, nome, telefone, email]
   );
 
   return { id: result.insertId };
 }
+
 
 export async function criarPedidoItens(data: {
   organizacaoId: number;

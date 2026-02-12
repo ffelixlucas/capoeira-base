@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { buscarSkuPorId } from "../../services/public/lojaPublicService";
+import { buscarSkuPorId } from "../../../services/public/lojaPublicService";
 
 export function useProdutoPublic(slug, id) {
   const [produto, setProduto] = useState(null);

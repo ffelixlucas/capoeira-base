@@ -10,7 +10,7 @@ export async function finalizarPedidoPublic(req: Request | any, res: Response) {
       path: req.path,
     });
 
-    const { cpf, nome, telefone, itens, slug } = req.body;
+    const { cpf, nome, telefone, email, itens, slug } = req.body;
 
     if (!slug) {
       logger.warn("[pedidosPublic] slug nao informado");
@@ -20,7 +20,7 @@ export async function finalizarPedidoPublic(req: Request | any, res: Response) {
       });
     }
 
-    if (!cpf || !nome || !telefone || !Array.isArray(itens)) {
+if (!cpf || !nome || !telefone || !email || !Array.isArray(itens)) {
       return res.status(400).json({
         success: false,
         message: "Payload inválido",
@@ -33,6 +33,8 @@ export async function finalizarPedidoPublic(req: Request | any, res: Response) {
       nome,
       telefone,
       itens,
+      email,
+      
     });
 
     return res.json({
