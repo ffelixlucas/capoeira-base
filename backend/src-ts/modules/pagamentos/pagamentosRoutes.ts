@@ -4,6 +4,7 @@ import {
   pagarComPix,
   pagarComCartao,
   pagarComBoleto,
+  buscarStatusCobranca
 } from "./pagamentosController";
 import { webhookPagamentos } from "./webhook";
 
@@ -23,5 +24,9 @@ router.post("/:slug/:cobrancaId/cartao", pagarComCartao);
 
 /* Gerar pagamento Boleto */
 router.post("/:slug/:cobrancaId/boleto", pagarComBoleto);
+
+/* Buscar status da cobrança */
+router.get("/:slug/:cobrancaId", buscarStatusCobranca);
+
 
 export default router;

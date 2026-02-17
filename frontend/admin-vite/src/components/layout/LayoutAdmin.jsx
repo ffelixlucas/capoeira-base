@@ -111,7 +111,7 @@ const handleLogout = () => {
     },
     { to: "/equipe", label: "Equipe", Icon: UserGroupIcon, roles: ["admin"] },
     {
-      to: "/uniformes",
+      to: "/loja",
       label: "Loja",
       Icon: TagIcon,
       roles: ["admin", "loja"],

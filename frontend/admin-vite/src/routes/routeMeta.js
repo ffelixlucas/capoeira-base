@@ -13,7 +13,7 @@ export const routeMeta = [
     { pattern: "/galeria", title: "Galeria", parent: "/dashboard" },
     { pattern: "/alunos", title: "Alunos", parent: "/dashboard" },
     { pattern: "/mensalidades", title: "Mensalidades", parent: "/dashboard" },
-    { pattern: "/uniformes", title: "Loja", parent: "/dashboard" },
+    { pattern: "/Loja", title: "Loja", parent: "/dashboard" },
     { pattern: "/video-aulas", title: "Aulas", parent: "/dashboard" },
     { pattern: "/contatos", title: "Contatos", parent: "/dashboard" },
     { pattern: "/inscricoes", title: "Inscrições", parent: "/dashboard" },

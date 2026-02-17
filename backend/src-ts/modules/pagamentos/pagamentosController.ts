@@ -9,6 +9,7 @@ import {
 import {
   buscarOrganizacaoPorSlug,
   buscarCobrancaPorId,
+  buscarCobrancaPorIdRepository
 } from "./pagamentosRepository";
 
 /* ======================================================
@@ -132,6 +133,41 @@ export async function pagarComBoleto(req: Request, res: Response) {
     return res.status(400).json({
       success: false,
       message: error.message || "Erro ao gerar pagamento Boleto",
+    });
+  }
+}
+/* ======================================================
+   Buscar status da cobrança
+====================================================== */
+
+export async function buscarStatusCobranca(req: Request, res: Response) {
+  try {
+    const { cobrancaId } = req.params;
+
+    const cobranca = await buscarCobrancaPorIdRepository(Number(cobrancaId));
+
+    if (!cobranca) {
+      return res.status(404).json({
+        success: false,
+        message: "Cobrança não encontrada",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        id: cobranca.id,
+        status: cobranca.status,
+        origem: cobranca.origem,
+        entidade_id: cobranca.entidade_id,
+      },
+    });
+  } catch (error: any) {
+    logger.error("[pagamentosController] Erro buscarStatusCobranca", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao buscar status da cobrança",
     });
   }
 }

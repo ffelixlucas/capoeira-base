@@ -9,10 +9,15 @@ module.exports = {
         "cor-primaria": "#f3c849",
         "cor-secundaria": "#1f4032",
         "cor-destaque": "#a28012",
-        "cor-clara": "#d9d9d6", 
+        "cor-clara": "#d9d9d6",
         "cor-escura": "#000",
+    
+        // 🔥 NOVO PADRÃO ESCALÁVEL
+        surface: "#ffffff",
+        "on-surface": "#111827",
       },
     },
+    
   },
   plugins: [],
 };

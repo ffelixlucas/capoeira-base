@@ -70,8 +70,9 @@ export async function criarPedido(data: {
         email,
         criado_em
       )
-    VALUES
+      VALUES
       (?, 'aberto', 'pendente_pagamento', ?, ?, ?, NOW())
+    
     `,
     [organizacaoId, nome, telefone, email]
   );

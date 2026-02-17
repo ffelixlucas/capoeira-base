@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 import logger from "../../utils/logger";
-import { buscarPedidoPorId } from "./pedidosService";
+import {
+  buscarPedidoPorId,
+  listarPedidosPorOrg,
+  cancelarPedidoPorId,
+  obterEstatisticasPedidos,
+  marcarPedidoEntregue as marcarPedidoEntregueService
+} from "./pedidosService";
 import { marcarPedidoProntoRetirada } from "./pedidosRepository";
 import { dispararEventoEmail } from "../notificacoes/notificacoesEventosService";
 
@@ -60,6 +66,33 @@ export async function marcarPedidoPronto(req: Request, res: Response) {
       });
     }
 
+    const pedido = await buscarPedidoPorId(
+      organizacaoId,
+      pedidoIdNum
+    );
+    
+    if (!pedido) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido não encontrado",
+      });
+    }
+    
+    if (pedido.status !== "convertido") {
+      return res.status(400).json({
+        success: false,
+        message: "Pedido ainda não foi pago",
+      });
+    }
+    if (pedido.status_operacional === "pronto_retirada") {
+      return res.status(400).json({
+        success: false,
+        message: "Pedido já está marcado como pronto",
+      });
+    }
+    
+    
+
     await marcarPedidoProntoRetirada(organizacaoId, pedidoIdNum);
 
     await dispararEventoEmail({
@@ -80,6 +113,168 @@ export async function marcarPedidoPronto(req: Request, res: Response) {
     return res.json({ success: true });
   } catch (error: any) {
     logger.warn("[pedidosController] erro ao marcar pedido pronto", {
+      error: error.message,
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+export async function listarPedidos(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+
+    const { status, status_operacional, data_inicio, data_fim } = req.query;
+
+    const pedidos = await listarPedidosPorOrg(organizacaoId, {
+      status: status as string | undefined,
+      status_operacional: status_operacional as string | undefined,
+      data_inicio: data_inicio as string | undefined,
+      data_fim: data_fim as string | undefined,
+    });
+    
+
+    return res.json({
+      success: true,
+      data: pedidos,
+    });
+  } catch (error: any) {
+    logger.warn("[pedidosController] erro ao listar pedidos", {
+      error: error.message,
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+export async function cancelarPedido(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const { pedidoId } = req.params;
+
+    const pedidoIdNum = Number(pedidoId);
+    if (isNaN(pedidoIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: "pedidoId inválido",
+      });
+    }
+
+    const pedido = await buscarPedidoPorId(
+      organizacaoId,
+      pedidoIdNum
+    );
+    
+    if (!pedido) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido não encontrado",
+      });
+    }
+
+    if (pedido.status === "cancelado") {
+      return res.status(400).json({
+        success: false,
+        message: "Pedido já está cancelado",
+      });
+    }
+    
+    if (pedido.status_operacional === "pronto_retirada") {
+      return res.status(400).json({
+        success: false,
+        message: "Pedido já está pronto para retirada e não pode ser cancelado",
+      });
+    }
+    
+    
+    const affectedRows = await cancelarPedidoPorId(
+      organizacaoId,
+      pedidoIdNum
+    );
+    
+    if (affectedRows === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Não foi possível cancelar o pedido",
+      });
+    }
+    
+    return res.json({
+      success: true,
+      message: "Pedido cancelado com sucesso",
+    });
+    
+      } catch (error: any) {
+    logger.warn("[pedidosController] erro ao cancelar pedido", {
+      error: error.message,
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+
+    
+  }
+}
+export async function estatisticasPedidos(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+
+    const dados = await obterEstatisticasPedidos(organizacaoId);
+
+    return res.json({
+      success: true,
+      data: {
+        total_pedidos: Number(dados.total_pedidos) || 0,
+        total_faturado: Number(dados.total_faturado) || 0,
+        pendentes: Number(dados.pendentes) || 0,
+        em_separacao: Number(dados.em_separacao) || 0,
+        pronto_retirada: Number(dados.pronto_retirada) || 0,
+        entregues: Number(dados.entregues) || 0, 
+      },
+    });
+  } catch (error: any) {
+    logger.warn("[pedidosController] erro ao buscar estatísticas", {
+      error: error.message,
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+export async function marcarPedidoEntregue(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const { pedidoId } = req.params;
+
+    const pedidoIdNum = Number(pedidoId);
+    if (isNaN(pedidoIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: "pedidoId inválido",
+      });
+    }
+
+    await marcarPedidoEntregueService(
+      pedidoIdNum,
+      organizacaoId
+    );
+
+    return res.json({
+      success: true,
+      message: "Pedido marcado como entregue",
+    });
+  } catch (error: any) {
+    logger.warn("[pedidosController] erro ao marcar entregue", {
       error: error.message,
     });
 

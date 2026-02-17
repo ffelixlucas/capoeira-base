@@ -33,6 +33,8 @@ import InscritosEvento from "./pages/InscritosEvento.jsx";
 import Presencas from "./pages/Presencas.jsx";
 import EditarPerfil from "./pages/EditarPerfil.jsx";
 import ConfigSistema from "./pages/ConfigSistema.jsx";
+import Loja from "./pages/Loja.jsx";
+import PedidoDetalhe from "./pages/PedidoDetalhe.jsx";
 
 // Imports de páginas públicas
 import LayoutPublic from "./components/layout/LayoutPublic";
@@ -61,8 +63,8 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/nao-autorizado" element={<NaoAutorizado />} />
           <Route path="/loja/:slug" element={<LojaWrapper />}>
-          <Route index element={<LojaPublic />} />
-          <Route path="checkout" element={<CheckoutPublic />} />
+            <Route index element={<LojaPublic />} />
+            <Route path="checkout" element={<CheckoutPublic />} />
           </Route>
 
 
@@ -92,7 +94,12 @@ function App() {
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/alunos" element={<Alunos />} />
             <Route path="/mensalidades" element={<Mensalidades />} />
-            <Route path="/uniformes" element={<div>Uniformes</div>} />
+            <Route path="/loja" element={<RoleRoute permitido={["admin", "loja"]}><Loja /></RoleRoute>}/>
+            <Route path="/loja/pedido/:id" element={<RoleRoute permitido={["admin", "loja"]}><PedidoDetalhe /></RoleRoute>}/>
+
+
+
+
             <Route path="/video-aulas" element={<div>Vídeo-aulas</div>} />
             <Route path="/contatos" element={<Contatos />} />
             <Route path="/inscricoes" element={<Inscricoes />} />

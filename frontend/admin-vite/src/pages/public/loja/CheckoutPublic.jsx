@@ -252,14 +252,14 @@ export default function CheckoutPublic() {
       {/* MODAL PIX */}
       {modalAberto && (
         <ModalPagamentoPixPublic
-          isOpen={modalAberto}
-          onClose={() => setModalAberto(false)}
-          pagamento={pagamentoPix}
-          onSucesso={() => {
-            setModalAberto(false);
-            navigate(`/loja/${slug}`);
-          }}
-        />
+        isOpen={modalAberto}
+        onClose={() => setModalAberto(false)}
+        pagamento={pagamentoPix}
+        slug={slug}
+        onSucesso={() => {
+        }}
+      />
+      
       )}
     </div>
   );

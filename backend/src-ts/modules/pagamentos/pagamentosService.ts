@@ -162,6 +162,7 @@ export async function gerarPagamentoPixService(cobranca: CobrancaBase) {
   });
 
   return {
+    cobranca_id: cobranca.id,
     status: "pendente",
     pagamento_id: result.id,
     qr_code: tx.qr_code,
