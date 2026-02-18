@@ -11,40 +11,47 @@ export interface LojaSkuRow {
   atributos: any;
   pronta_entrega: number;
   encomenda: number;
+  quantidade_disponivel: number;
 }
 
 class LojaPublicRepository {
   async listarSkusDisponiveisPorSlug(
-    slug: string
-  ): Promise<LojaSkuRow[]> {
-    const [rows] = await db.query(
-      `
-      SELECT
-        ps.id,
-        ps.produto_id,
-        p.nome        AS produto_nome,
-        p.descricao   AS produto_descricao,
-        p.categoria   AS produto_categoria,
-        ps.sku_codigo,
-        ps.preco,
-        ps.atributos,
-        ps.pronta_entrega,
-        ps.encomenda
-      FROM produtos_skus ps
-      INNER JOIN produtos p
-        ON p.id = ps.produto_id
-      INNER JOIN organizacoes o
-        ON o.id = ps.organizacao_id
-      WHERE o.slug = ?
-        AND ps.ativo = 1
-        AND (ps.pronta_entrega = 1 OR ps.encomenda = 1)
-        AND p.ativo = 1
-      ORDER BY p.nome ASC, ps.id DESC
-      `,
-      [slug]
-    );
+  slug: string
+): Promise<LojaSkuRow[]> {
+  const [rows] = await db.query(
+    `
+    SELECT
+      ps.id,
+      ps.produto_id,
+      p.nome        AS produto_nome,
+      p.descricao   AS produto_descricao,
+      p.categoria   AS produto_categoria,
+      ps.sku_codigo,
+      ps.preco,
+      ps.atributos,
+      ps.pronta_entrega,
+      ps.encomenda,
+      COALESCE(e.quantidade, 0) AS quantidade_disponivel
+    FROM produtos_skus ps
+    INNER JOIN produtos p
+      ON p.id = ps.produto_id
+    INNER JOIN organizacoes o
+      ON o.id = ps.organizacao_id
+    LEFT JOIN estoque e
+      ON e.sku_id = ps.id
+      AND e.organizacao_id = ps.organizacao_id
+    WHERE o.slug = ?
+      AND ps.ativo = 1
+      AND (ps.pronta_entrega = 1 OR ps.encomenda = 1)
+      AND p.ativo = 1
+    ORDER BY p.nome ASC, ps.id DESC
+    `,
+    [slug]
+  );
 
-    return rows as LojaSkuRow[];
+  return rows as LojaSkuRow[];
+
+
   }
   async buscarSkuPorId(slug: string, skuId: number) {
   const query = `
@@ -80,12 +87,21 @@ async listarProdutosDisponiveisPorSlug(slug: string) {
       p.nome,
       p.descricao,
       p.categoria,
-      MIN(ps.preco) AS preco_minimo
+      MIN(ps.preco) AS preco_minimo,
+      SUM(
+        CASE 
+          WHEN ps.encomenda = 1 THEN 9999
+          ELSE COALESCE(e.quantidade, 0)
+        END
+      ) AS quantidade_total
     FROM produtos p
     INNER JOIN produtos_skus ps
       ON ps.produto_id = p.id
     INNER JOIN organizacoes o
       ON o.id = p.organizacao_id
+    LEFT JOIN estoque e
+      ON e.sku_id = ps.id
+      AND e.organizacao_id = ps.organizacao_id
     WHERE o.slug = ?
       AND p.ativo = 1
       AND ps.ativo = 1
@@ -98,6 +114,7 @@ async listarProdutosDisponiveisPorSlug(slug: string) {
 
   return rows;
 }
+
 
 async buscarProdutoComSkus(slug: string, produtoId: number) {
   const [produtoRows]: any = await db.query(

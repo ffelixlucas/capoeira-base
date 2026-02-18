@@ -50,6 +50,7 @@ export async function buscarSkusPorIds(
   return rows as SkuRow[];
 }
 
+
 export async function criarPedido(data: {
   organizacaoId: number;
   nome: string;
@@ -72,13 +73,13 @@ export async function criarPedido(data: {
       )
       VALUES
       (?, 'aberto', 'pendente_pagamento', ?, ?, ?, NOW())
-    
     `,
     [organizacaoId, nome, telefone, email]
   );
 
   return { id: result.insertId };
 }
+
 
 
 export async function criarPedidoItens(data: {
@@ -110,3 +111,60 @@ export async function criarPedidoItens(data: {
   );
 }
 
+export async function buscarPedidoComItensPublic(
+  organizacaoId: number,
+  pedidoId: number
+) {
+  // 🔎 Buscar pedido principal
+  const [pedidoRows]: any = await db.query(
+    `
+    SELECT 
+      id,
+      status,
+      status_operacional,
+      nome_cliente,
+      telefone,
+      email,
+      criado_em,
+      convertido_em
+    FROM pedidos
+    WHERE organizacao_id = ?
+      AND id = ?
+    LIMIT 1
+    `,
+    [organizacaoId, pedidoId]
+  );
+
+  if (!pedidoRows.length) {
+    return null;
+  }
+
+  const pedido = pedidoRows[0];
+
+  // 🔎 Buscar itens do pedido
+  const [itensRows]: any = await db.query(
+    `
+    SELECT 
+      pi.id,
+      pi.sku_id,
+      pi.quantidade,
+      pi.preco_unitario,
+      (pi.quantidade * pi.preco_unitario) as subtotal,
+      ps.sku_codigo,
+      p.nome as produto_nome
+    FROM pedido_itens pi
+    INNER JOIN produtos_skus ps 
+      ON ps.id = pi.sku_id
+    INNER JOIN produtos p 
+      ON p.id = ps.produto_id
+    WHERE pi.organizacao_id = ?
+      AND pi.pedido_id = ?
+    `,
+    [organizacaoId, pedidoId]
+  );
+
+  return {
+    ...pedido,
+    itens: itensRows,
+  };
+}

@@ -66,7 +66,7 @@ const MetodoPagamentoCard = ({
 export default function CheckoutPublic() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { itens } = useCarrinho();
+  const { itens, limparCarrinho } = useCarrinho();
   const { pagarComPix, loading } = usePagamentoLoja();
 
   const [metodoPagamento, setMetodoPagamento] = useState("");
@@ -251,14 +251,17 @@ export default function CheckoutPublic() {
 
       {/* MODAL PIX */}
       {modalAberto && (
-        <ModalPagamentoPixPublic
-        isOpen={modalAberto}
-        onClose={() => setModalAberto(false)}
-        pagamento={pagamentoPix}
-        slug={slug}
-        onSucesso={() => {
+       <ModalPagamentoPixPublic
+       isOpen={modalAberto}
+       onClose={() => setModalAberto(false)}
+       pagamento={pagamentoPix}
+       slug={slug}
+       onSucesso={(data) => {
+         limparCarrinho();
+         navigate(`/loja/${slug}/pedido/${data.pedido.id}/confirmado`);
         }}
-      />
+     />
+     
       
       )}
     </div>

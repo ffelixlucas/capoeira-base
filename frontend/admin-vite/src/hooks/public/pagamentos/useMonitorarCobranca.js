@@ -21,11 +21,24 @@ export function useMonitorarCobranca(
         console.log("COBRANÇA COMPLETA:", cobranca);
 
 
-
         if (cobranca.status === "pago") {
           clearInterval(interval);
-          onSucesso && onSucesso(cobranca);
+        
+          // 🔎 Buscar pedido completo
+          const { data: pedidoResponse } = await api.get(
+            `/pedidos/${cobranca.entidade_id}`
+          );
+        
+          const pedidoCompleto = pedidoResponse.data;
+        
+          onSucesso && onSucesso({
+            cobranca,
+            pedido: pedidoCompleto,
+          });
+        
+          return; // importante para não continuar executando
         }
+        
 
         if (["rejeitado", "cancelado"].includes(cobranca.status)) {
           clearInterval(interval);

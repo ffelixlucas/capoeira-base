@@ -3,10 +3,7 @@ import useLojaDashboard from "../hooks/loja/useLojaDashboard";
 import { listarPedidosLoja } from "../services/lojaService";
 import CardEstat from "../components/ui/CardEstat";
 import PedidoCard from "../components/loja/PedidoCard";
-import {
-  formatarStatusOperacional,
-  obterCorStatusOperacional,
-} from "../utils/lojaStatus";
+import { formatarStatusOperacional, obterStatusOperacionalConfig } from "../utils/lojaStatus";
 import {
   ShoppingBagIcon,
   CurrencyDollarIcon,
@@ -149,7 +146,7 @@ export default function Loja() {
             <div className="hidden sm:flex bg-cor-secundaria/20 rounded-full p-1 max-w-full">
               {statusDisponiveis.map((status) => {
                 const isActive = abaAtiva === status.id;
-                const cor = obterCorStatusOperacional(status.id);
+                const config = obterStatusOperacionalConfig(status.id);
 
                 return (
                   <button
@@ -163,7 +160,7 @@ export default function Loja() {
                       ${isActive ? "bg-cor-primaria text-on-surface shadow-sm" : "text-on-surface/70 hover:bg-cor-secundaria/30"}
                     `}
                   >
-                    <span className={`w-3 h-3 rounded-full ${cor.split(" ")[0]}`} />
+                  <span className={`w-3 h-3 rounded-full ${config.dot}`} />
                     <span>{status.label}</span>
                     <span
                       className={`

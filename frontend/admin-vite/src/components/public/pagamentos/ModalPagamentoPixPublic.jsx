@@ -22,10 +22,13 @@ export default function ModalPagamentoPixPublic({
     slug,
     pagamento?.cobranca_id,
     (data) => {
+      console.log("PEDIDO COMPLETO:", data.pedido);
+
       setDadosCobranca(data);
       setMostrarConfirmado(true);
       if (onSucesso) onSucesso(data);
     },
+
 
     (data) => {
       if (onErro) onErro(data);
@@ -46,14 +49,51 @@ export default function ModalPagamentoPixPublic({
             {mostrarConfirmado ? (
               <div className="text-center space-y-4">
                 <CheckCircleIcon className="h-16 w-16 text-green-600 mx-auto" />
+
                 <h2 className="text-xl font-bold text-green-700">
                   Pagamento confirmado!
                 </h2>
-                {dadosCobranca?.entidade_id && (
-                  <div className="bg-gray-50 border rounded-lg p-3 text-sm text-gray-700">
-                    Pedido #{dadosCobranca.entidade_id}
+
+                {/* 🔥 RESUMO DA COMPRA */}
+                {dadosCobranca?.pedido && (
+                  <div className="bg-gray-50 border rounded-lg p-4 text-sm text-gray-700 space-y-3 text-left">
+
+                    <p className="font-semibold">
+                      Resumo do seu pedido:
+                    </p>
+
+                    {dadosCobranca.pedido.itens.map((item) => {
+                      const subtotal = Number(item.preco_unitario) * item.quantidade;
+
+                      return (
+                        <div key={item.id} className="flex justify-between">
+                          <div>
+                            {item.quantidade}x {item.nome_produto}
+                          </div>
+                          <div>
+                            R$ {subtotal.toFixed(2)}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* 🔥 calcular total manualmente */}
+                    <div className="border-t pt-2 font-semibold flex justify-between">
+                      <span>Total</span>
+                      <span>
+                        R$ {dadosCobranca.pedido.itens
+                          .reduce(
+                            (acc, item) =>
+                              acc + Number(item.preco_unitario) * item.quantidade,
+                            0
+                          )
+                          .toFixed(2)}
+                      </span>
+                    </div>
+
                   </div>
                 )}
+
 
                 <p className="text-sm text-gray-600">
                   Seu pagamento foi aprovado com sucesso.
@@ -66,6 +106,7 @@ export default function ModalPagamentoPixPublic({
                   Fechar
                 </button>
               </div>
+
             ) : (
               <>
                 <Dialog.Title className="text-xl font-bold mb-4 text-center">

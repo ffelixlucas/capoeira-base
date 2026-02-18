@@ -3,7 +3,9 @@ import {
   criarPedido,
   criarPedidoItens,
   buscarOrganizacaoPorSlug,
+  buscarPedidoComItensPublic
 } from "./pedidosPublicRepository";
+import logger from "../../../utils/logger";
 
 type ItemCheckout = {
   skuId: number;
@@ -76,4 +78,46 @@ const pedido = await criarPedido({
     id: pedido.id,
     valor_total: valorTotal,
   };
+}
+
+
+type BuscarPedidoPublicInput = {
+  slug: string;
+  pedidoId: number;
+};
+
+export async function buscarPedidoPublicService(
+  data: BuscarPedidoPublicInput
+) {
+  const { slug, pedidoId } = data;
+
+  logger.debug("[pedidosPublicService] buscarPedidoPublicService", {
+    slug,
+    pedidoId,
+  });
+
+  if (!slug) {
+    throw new Error("slug é obrigatório");
+  }
+
+  if (!pedidoId) {
+    throw new Error("pedidoId é obrigatório");
+  }
+
+  const organizacao = await buscarOrganizacaoPorSlug(slug);
+
+  if (!organizacao) {
+    throw new Error("Organização não encontrada");
+  }
+
+  const pedido = await buscarPedidoComItensPublic(
+    organizacao.id,
+    pedidoId
+  );
+
+  if (!pedido) {
+    throw new Error("Pedido não encontrado");
+  }
+
+  return pedido;
 }

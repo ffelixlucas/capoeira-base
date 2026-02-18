@@ -6,12 +6,18 @@ function formatarPreco(valor) {
 }
 
 export default function ProdutoCard({ produto, onSelecionar }) {
+  const indisponivel = Number(produto.quantidade_total) <= 0;
+
   return (
     <button
-      onClick={() => onSelecionar(produto)}
-      className="text-left block w-full border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+      onClick={() => {
+        if (!indisponivel) onSelecionar(produto);
+      }}
+      disabled={indisponivel}
+      className={`text-left block w-full border rounded-lg shadow-sm transition
+        ${indisponivel ? "opacity-60 cursor-not-allowed" : "hover:shadow-md"}
+        bg-white`}
     >
-      {/* Imagem Placeholder */}
       <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-t-lg">
         <span className="text-gray-400 text-sm">
           Imagem em breve
@@ -33,9 +39,15 @@ export default function ProdutoCard({ produto, onSelecionar }) {
           {formatarPreco(produto.preco_minimo)}
         </p>
 
-        <p className="text-xs text-gray-500">
-          Ver opções
-        </p>
+        {indisponivel ? (
+          <p className="text-xs font-semibold text-red-500">
+            Indisponível no momento
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500">
+            {produto.quantidade_total} disponíveis
+          </p>
+        )}
       </div>
     </button>
   );

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import logger from "../../../utils/logger";
-import { finalizarPedidoPublicService } from "./pedidosPublicService";
+import { finalizarPedidoPublicService, buscarPedidoPublicService } from "./pedidosPublicService";
 
 export async function finalizarPedidoPublic(req: Request | any, res: Response) {
   try {
@@ -54,3 +54,41 @@ if (!cpf || !nome || !telefone || !email || !Array.isArray(itens)) {
     });
   }
 }
+export async function buscarPedidoPublic(req: Request, res: Response) {
+  try {
+    const { slug, pedidoId } = req.params;
+
+    logger.debug("[pedidosPublic] buscarPedidoPublic", {
+      slug,
+      pedidoId,
+    });
+
+    if (!slug || !pedidoId) {
+      return res.status(400).json({
+        success: false,
+        message: "slug e pedidoId são obrigatórios",
+      });
+    }
+
+    const pedido = await buscarPedidoPublicService({
+      slug,
+      pedidoId: Number(pedidoId),
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: pedido,
+    });
+  } catch (error: any) {
+    logger.error("[pedidosPublic] erro buscarPedidoPublic", {
+      error: error.message,
+      stack: error.stack,
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao buscar pedido.",
+    });
+  }
+}
+

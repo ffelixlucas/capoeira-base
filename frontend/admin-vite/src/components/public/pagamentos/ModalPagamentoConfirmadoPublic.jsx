@@ -7,6 +7,8 @@ export default function ModalPagamentoConfirmadoPublic({
   dados,
 }) {
   if (!dados) return null;
+  console.log("DADOS PAGAMENTO CONFIRMADO:", dados);
+
 
   return (
     <Transition appear show={isOpen} as={Fragment}>

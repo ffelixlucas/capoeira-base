@@ -48,6 +48,7 @@ import LojaPublic from "./pages/public/loja/LojaPublic.jsx";
 import { CarrinhoProvider } from "./contexts/public/loja/CarrinhoContext";
 import LojaWrapper from "./pages/public/loja/LojaWrapper.jsx";
 import CheckoutPublic from "./pages/public/loja/CheckoutPublic.jsx";
+import PedidoConfirmado from "./pages/public/loja/PedidoConfirmado.jsx"
 
 function App() {
   return (
@@ -65,7 +66,9 @@ function App() {
           <Route path="/loja/:slug" element={<LojaWrapper />}>
             <Route index element={<LojaPublic />} />
             <Route path="checkout" element={<CheckoutPublic />} />
+            <Route path="pedido/:id/confirmado" element={<PedidoConfirmado />} />
           </Route>
+
 
 
 
@@ -94,8 +97,8 @@ function App() {
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/alunos" element={<Alunos />} />
             <Route path="/mensalidades" element={<Mensalidades />} />
-            <Route path="/loja" element={<RoleRoute permitido={["admin", "loja"]}><Loja /></RoleRoute>}/>
-            <Route path="/loja/pedido/:id" element={<RoleRoute permitido={["admin", "loja"]}><PedidoDetalhe /></RoleRoute>}/>
+            <Route path="/loja" element={<RoleRoute permitido={["admin", "loja"]}><Loja /></RoleRoute>} />
+            <Route path="/loja/pedido/:id" element={<RoleRoute permitido={["admin", "loja"]}><PedidoDetalhe /></RoleRoute>} />
 
 
 
