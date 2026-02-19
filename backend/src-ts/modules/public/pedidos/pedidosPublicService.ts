@@ -49,6 +49,16 @@ const { slug, cpf, nome, telefone, email, itens } = data;
     if (!sku || !sku.ativo) {
       throw new Error(`SKU ${item.skuId} indisponível`);
     }
+    
+    // 🔒 Validação de estoque antes de criar pedido
+    if (!sku.encomenda) {
+      if (sku.quantidade < item.quantidade) {
+        throw new Error(
+          `Estoque insuficiente para SKU ${item.skuId}`
+        );
+      }
+    }
+    
 
     const subtotal = sku.preco * item.quantidade;
     valorTotal += subtotal;

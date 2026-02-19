@@ -1,24 +1,28 @@
 import db from "../../database/connection";
 import logger from "../../utils/logger";
+import { PoolConnection } from "mysql2/promise";
 
 interface BaixarEstoqueParams {
   pedidoId: number;
   organizacaoId: number;
 }
 
-async function baixarEstoquePorPedido({
-  pedidoId,
-  organizacaoId,
-}: BaixarEstoqueParams) {
+async function baixarEstoquePorPedido(
+  {
+    pedidoId,
+    organizacaoId,
+  }: BaixarEstoqueParams,
+  trx?: PoolConnection
+) {
+  const executor = trx ?? db.pool;
+
   try {
     logger.debug("[estoqueRepository] Iniciando baixa de estoque", {
       pedidoId,
       organizacaoId,
     });
 
-    await db.query("START TRANSACTION");
-
-    const [itens]: any = await db.query(
+    const [itens]: any = await executor.query(
       `
       SELECT 
         pi.sku_id,
@@ -40,7 +44,36 @@ async function baixarEstoquePorPedido({
         continue;
       }
 
-      await db.query(
+      // 🔒 UPDATE CONDICIONAL (bloqueio de estoque negativo)
+      const [updateResult]: any = await executor.query(
+        `
+        UPDATE estoque
+        SET quantidade = quantidade - ?
+        WHERE sku_id = ?
+          AND organizacao_id = ?
+          AND quantidade >= ?
+        `,
+        [
+          item.quantidade,
+          item.sku_id,
+          organizacaoId,
+          item.quantidade,
+        ]
+      );
+
+      if (updateResult.affectedRows === 0) {
+        logger.error("[estoqueRepository] Estoque insuficiente", {
+          skuId: item.sku_id,
+          quantidadeSolicitada: item.quantidade,
+        });
+
+        throw new Error(
+          `Estoque insuficiente para SKU ${item.sku_id}`
+        );
+      }
+
+      // 📦 Registrar movimentação somente após sucesso
+      await executor.query(
         `
         INSERT INTO estoque_movimentacoes
           (organizacao_id, sku_id, pedido_id, tipo, quantidade, origem)
@@ -48,27 +81,14 @@ async function baixarEstoquePorPedido({
         `,
         [organizacaoId, item.sku_id, pedidoId, item.quantidade]
       );
-
-      await db.query(
-        `
-        UPDATE estoque
-        SET quantidade = quantidade - ?
-        WHERE sku_id = ?
-          AND organizacao_id = ?
-        `,
-        [item.quantidade, item.sku_id, organizacaoId]
-      );
     }
-
-    await db.query("COMMIT");
 
     logger.info("[estoqueRepository] Baixa de estoque concluída", {
       pedidoId,
       organizacaoId,
     });
-  } catch (error) {
-    await db.query("ROLLBACK");
 
+  } catch (error) {
     logger.error("[estoqueRepository] Erro ao baixar estoque", {
       pedidoId,
       organizacaoId,

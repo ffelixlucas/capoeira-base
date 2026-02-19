@@ -52,13 +52,38 @@ export function usePagamentoLoja() {
 
       return pixResponse.data;
 
-    } catch (error) {
-      const mensagem =
-        error?.response?.data?.message || error.message || "Erro no pagamento";
-
-      setErro(mensagem);
-      throw error;
-    } finally {
+    } catch (err) {
+      const mensagemBackend =
+        err?.response?.data?.message ||
+        err?.message;
+    
+        let mensagemAmigavel =
+        "Não foi possível iniciar o pagamento. Verifique se seu CPF e e-mail estão corretos.";
+      
+    
+      if (mensagemBackend?.includes("Estoque")) {
+        mensagemAmigavel =
+          "Ops! Esse produto não possui quantidade disponível no momento.";
+      }
+    
+      if (mensagemBackend?.includes("CPF")) {
+        mensagemAmigavel =
+          "CPF inválido. Verifique se digitou corretamente.";
+      }
+    
+      if (mensagemBackend?.includes("E-mail")) {
+        mensagemAmigavel =
+          "E-mail inválido. Confira o endereço digitado.";
+      }
+    
+      setErro(mensagemAmigavel);
+    
+      // 🔥 Importante: relançar erro limpo
+      throw new Error(mensagemAmigavel);
+    }
+    
+    
+     finally {
       setLoading(false);
     }
   }

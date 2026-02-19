@@ -1,5 +1,7 @@
 import connection from "../../database/connection";
 import logger from "../../utils/logger";
+import { PoolConnection } from "mysql2/promise";
+import { ExecutorQuery } from "../../database/types";
 
 /* ======================================================
    Interfaces
@@ -189,6 +191,10 @@ export async function atualizarCobrancaPagamentoRepository(
   });
 }
 
+/* ======================================================
+   Buscar Cobrança
+====================================================== */
+
 export async function buscarCobrancaPorId(cobrancaId: number) {
   const [rows]: any = await connection.query(
     `
@@ -232,15 +238,22 @@ export async function buscarCobrancaPorIdRepository(cobrancaId: number) {
   return rows[0] || null;
 }
 
+/* ======================================================
+   Marcar Consequência Executada (Suporte a Transação)
+====================================================== */
 
-export async function marcarConsequenciaExecutadaRepository(cobrancaId: number) {
-  await connection.query(
+export async function marcarConsequenciaExecutadaRepository(
+  cobrancaId: number,
+  trx?: PoolConnection
+) {
+  const executor: ExecutorQuery = trx ?? connection;
+
+  await executor.query(
     `
-    UPDATE pagamentos_cobrancas
-    SET consequencia_executada = true
-    WHERE id = ?
+      UPDATE pagamentos_cobrancas
+      SET consequencia_executada = true
+      WHERE id = ?
     `,
     [cobrancaId]
   );
 }
-

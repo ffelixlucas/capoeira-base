@@ -3,6 +3,8 @@ import {
   converterPedido, listarPedidosPorOrganizacao, atualizarStatusPedidoCancelado , buscarEstatisticasPedidos, atualizarStatusPedidoEntregue
 } from "./pedidosRepository";
 import { logger } from "../../utils/logger";
+import { PoolConnection } from "mysql2/promise";
+
 
 export async function buscarPedidoPorId(
   organizacaoId: number,
@@ -13,9 +15,14 @@ export async function buscarPedidoPorId(
 
 export async function converterPedidoPorId(
   organizacaoId: number,
-  pedidoId: number
+  pedidoId: number,
+  trx?: PoolConnection
 ) {
-  const affectedRows = await converterPedido(organizacaoId, pedidoId);
+  const affectedRows = await converterPedido(
+    organizacaoId,
+    pedidoId,
+    trx
+  );
 
   if (affectedRows === 1) {
     logger.info("[pedidosService] Pedido convertido", {
@@ -31,6 +38,7 @@ export async function converterPedidoPorId(
 
   return affectedRows;
 }
+
 export async function listarPedidosPorOrg(
   organizacaoId: number,
   filtros: {

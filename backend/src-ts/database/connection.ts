@@ -79,4 +79,26 @@ export const db = {
   query: <T = any>(...args: any[]) => safeExecute<T>("query", ...args),
 };
 
+export async function withTransaction<T>(
+  callback: (connection: PoolConnection) => Promise<T>
+): Promise<T> {
+  const connection = await getConnectionWithRetry();
+
+  try {
+    await connection.beginTransaction();
+
+    const result = await callback(connection);
+
+    await connection.commit();
+
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+
 export default db;

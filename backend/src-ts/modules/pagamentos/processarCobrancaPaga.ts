@@ -5,16 +5,11 @@ import {
 } from "./pagamentosRepository";
 import { converterPedidoPorId } from "../pedidos/pedidosService";
 import { atualizarDadosPedidoAposPagamento } from "../pedidos/pedidosRepository";
-import { dispararEventoEmail } from "../notificacoes/notificacoesEventosService";
 import estoqueRepository from "../estoque/estoqueRepository";
 import emailService from "../../services/emailService";
 import { buscarPedidoPorId } from "../pedidos/pedidosService";
 import { getEmails } from "../notificacaoDestinos/notificacaoDestinosService";
-
-
-
-
-
+import { withTransaction } from "../../database/connection";
 
 export async function processarCobrancaPaga(cobrancaId: number) {
   const cobranca = await buscarCobrancaPorIdRepository(cobrancaId);
@@ -27,13 +22,12 @@ export async function processarCobrancaPaga(cobrancaId: number) {
   }
 
   if (cobranca.status !== "pago") {
-  logger.warn("[processarCobrancaPaga] Cobrança não está paga", {
-    cobrancaId,
-    status: cobranca.status,
-  });
-  return;
-}
-
+    logger.warn("[processarCobrancaPaga] Cobrança não está paga", {
+      cobrancaId,
+      status: cobranca.status,
+    });
+    return;
+  }
 
   if (cobranca.consequencia_executada) {
     logger.info("[processarCobrancaPaga] Já processada, ignorando", {
@@ -42,80 +36,86 @@ export async function processarCobrancaPaga(cobrancaId: number) {
     return;
   }
 
-  // 🔒 Marca como executada antes de processar
-await marcarConsequenciaExecutadaRepository(cobrancaId);
+  logger.info("[processarCobrancaPaga] Processando pela primeira vez", {
+    cobrancaId,
+    origem: cobranca.origem,
+    entidade_id: cobranca.entidade_id,
+  });
 
+  if (cobranca.origem === "loja") {
 
-logger.info("[processarCobrancaPaga] Processando pela primeira vez", {
-  cobrancaId,
-  origem: cobranca.origem,
-  entidade_id: cobranca.entidade_id,
-});
+    // 🔒 BLOCO CRÍTICO PROTEGIDO POR TRANSAÇÃO
+    await withTransaction(async (connection) => {
 
-if (cobranca.origem === "loja") {
-  await converterPedidoPorId(
-    cobranca.organizacao_id,
-    cobranca.entidade_id
-  );
-  await estoqueRepository.baixarEstoquePorPedido({
-  pedidoId: cobranca.entidade_id,
-  organizacaoId: cobranca.organizacao_id,
-});
+      await converterPedidoPorId(
+        cobranca.organizacao_id,
+        cobranca.entidade_id,
+        connection
+      );
+      await estoqueRepository.baixarEstoquePorPedido(
+        {
+          pedidoId: cobranca.entidade_id,
+          organizacaoId: cobranca.organizacao_id,
+        },
+        connection 
+      );
+      
 
-  await atualizarDadosPedidoAposPagamento({
-  organizacaoId: cobranca.organizacao_id,
-  pedidoId: cobranca.entidade_id,
-  nome: cobranca.nome_pagador,
-  telefone: cobranca.telefone,
-  email: cobranca.email,
-});
+      await atualizarDadosPedidoAposPagamento(
+        {
+          organizacaoId: cobranca.organizacao_id,
+          pedidoId: cobranca.entidade_id,
+          nome: cobranca.nome_pagador,
+          telefone: cobranca.telefone,
+          email: cobranca.email,
+        },
+        connection
+      );
+      
 
-const pedidoCompleto = await buscarPedidoPorId(
-  cobranca.organizacao_id,
-  cobranca.entidade_id
-);
+      // 🔐 Marca consequência SOMENTE após tudo ter dado certo
+      await marcarConsequenciaExecutadaRepository(
+        cobrancaId,
+        connection
+      );
 
-// 🔔 Buscar e-mails configurados para notificações da loja
-const emailsAdmin = await getEmails(
-  cobranca.organizacao_id,
-  "loja"
-);
+    });
 
-logger.debug("[processarCobrancaPaga] Emails admin loja", {
-  organizacaoId: cobranca.organizacao_id,
-  emailsAdmin,
-});
+    // 🔽 Fora da transação (não pode travar commit por causa de e-mail)
 
+    const pedidoCompleto = await buscarPedidoPorId(
+      cobranca.organizacao_id,
+      cobranca.entidade_id
+    );
 
-// 📧 Email para ADMIN (dinâmico por organização)
-if (emailsAdmin.length > 0) {
-  for (const email of emailsAdmin) {
-    await emailService.enviarEmailPedidoAdmin({
+    const emailsAdmin = await getEmails(
+      cobranca.organizacao_id,
+      "loja"
+    );
+
+    logger.debug("[processarCobrancaPaga] Emails admin loja", {
+      organizacaoId: cobranca.organizacao_id,
+      emailsAdmin,
+    });
+
+    if (emailsAdmin.length > 0) {
+      for (const email of emailsAdmin) {
+        await emailService.enviarEmailPedidoAdmin({
+          pedido: pedidoCompleto,
+          emailDestino: email,
+        });
+      }
+    } else {
+      logger.warn(
+        "[processarCobrancaPaga] Nenhum email admin configurado para loja",
+        { organizacaoId: cobranca.organizacao_id }
+      );
+    }
+
+    await emailService.enviarEmailPedidoCliente({
       pedido: pedidoCompleto,
-      emailDestino: email,
     });
   }
-} else {
-  logger.warn("[processarCobrancaPaga] Nenhum email admin configurado para loja", {
-    organizacaoId: cobranca.organizacao_id,
-  });
-}
-
-
-// 📧 Email para CLIENTE com dados completos do pedido
-await emailService.enviarEmailPedidoCliente({
-  pedido: pedidoCompleto
-});
-
-}
-
-
-  // 🔒 AQUI entram as consequências NO FUTURO:
-  // - loja    → baixar estoque / e-mail
-  // - evento  → confirmar inscrição
-  // - mensal  → marcar como quitada
-  // - matrícula → liberar acesso
-
 
   logger.info("[processarCobrancaPaga] Finalizado com sucesso", {
     cobrancaId,

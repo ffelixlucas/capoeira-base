@@ -116,9 +116,10 @@ export default function CheckoutPublic() {
         setModalAberto(true);
       }
     } catch (err) {
-      console.error(err);
-      alert("Erro ao iniciar pagamento.");
+      alert(err.message);
     }
+    
+    
   }
 
   return (

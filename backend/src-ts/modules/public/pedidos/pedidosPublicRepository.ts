@@ -34,21 +34,31 @@ export async function buscarOrganizacaoPorSlug(slug: string) {
 export async function buscarSkusPorIds(
   organizacaoId: number,
   skuIds: number[]
-): Promise<SkuRow[]> {
+) {
   const placeholders = skuIds.map(() => "?").join(",");
 
   const [rows] = await db.query(
     `
-    SELECT id, preco, ativo
-    FROM produtos_skus
-    WHERE organizacao_id = ?
-      AND id IN (${placeholders})
+    SELECT 
+      ps.id,
+      ps.preco,
+      ps.ativo,
+      ps.encomenda,
+      ps.pronta_entrega,
+      IFNULL(e.quantidade, 0) as quantidade
+    FROM produtos_skus ps
+    LEFT JOIN estoque e
+      ON e.sku_id = ps.id
+      AND e.organizacao_id = ps.organizacao_id
+    WHERE ps.organizacao_id = ?
+      AND ps.id IN (${placeholders})
     `,
     [organizacaoId, ...skuIds]
   );
 
-  return rows as SkuRow[];
+  return rows as any[];
 }
+
 
 
 export async function criarPedido(data: {

@@ -1,29 +1,36 @@
 import { Request, Response } from "express";
 import logger from "../../../utils/logger";
-import { finalizarPedidoPublicService, buscarPedidoPublicService } from "./pedidosPublicService";
+import {
+  finalizarPedidoPublicService,
+  buscarPedidoPublicService,
+} from "./pedidosPublicService";
 
-export async function finalizarPedidoPublic(req: Request | any, res: Response) {
+export async function finalizarPedidoPublic(
+  req: Request,
+  res: Response
+) {
   try {
     logger.debug("[pedidosPublic] inicio finalizarPedidoPublic", {
       body: req.body,
-      params: req.params,
       path: req.path,
     });
 
     const { cpf, nome, telefone, email, itens, slug } = req.body;
 
+    // 🔎 Validações básicas de payload
     if (!slug) {
       logger.warn("[pedidosPublic] slug nao informado");
       return res.status(400).json({
         success: false,
-        message: "Slug não informado",
+        message: "Slug não informado.",
       });
     }
 
-if (!cpf || !nome || !telefone || !email || !Array.isArray(itens)) {
+    if (!cpf || !nome || !telefone || !email || !Array.isArray(itens)) {
+      logger.warn("[pedidosPublic] payload invalido");
       return res.status(400).json({
         success: false,
-        message: "Payload inválido",
+        message: "Payload inválido.",
       });
     }
 
@@ -32,29 +39,42 @@ if (!cpf || !nome || !telefone || !email || !Array.isArray(itens)) {
       cpf,
       nome,
       telefone,
-      itens,
       email,
-      
+      itens,
     });
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       pedido_id: pedido.id,
       valor_total: pedido.valor_total,
     });
+
   } catch (error: any) {
     logger.error("[pedidosPublic] erro finalizarPedidoPublic", {
-      error: error.message,
+      message: error.message,
       stack: error.stack,
     });
 
+    // 🔒 Erros de regra de negócio (validação, estoque, etc.)
+    if (error instanceof Error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    // 🧨 Erro inesperado
     return res.status(500).json({
       success: false,
-      message: "Erro interno",
+      message: "Erro interno ao finalizar pedido.",
     });
   }
 }
-export async function buscarPedidoPublic(req: Request, res: Response) {
+
+export async function buscarPedidoPublic(
+  req: Request,
+  res: Response
+) {
   try {
     const { slug, pedidoId } = req.params;
 
@@ -66,7 +86,7 @@ export async function buscarPedidoPublic(req: Request, res: Response) {
     if (!slug || !pedidoId) {
       return res.status(400).json({
         success: false,
-        message: "slug e pedidoId são obrigatórios",
+        message: "slug e pedidoId são obrigatórios.",
       });
     }
 
@@ -79,11 +99,19 @@ export async function buscarPedidoPublic(req: Request, res: Response) {
       success: true,
       data: pedido,
     });
+
   } catch (error: any) {
     logger.error("[pedidosPublic] erro buscarPedidoPublic", {
-      error: error.message,
+      message: error.message,
       stack: error.stack,
     });
+
+    if (error instanceof Error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
 
     return res.status(500).json({
       success: false,
@@ -91,4 +119,3 @@ export async function buscarPedidoPublic(req: Request, res: Response) {
     });
   }
 }
-
