@@ -257,9 +257,12 @@ export default function CheckoutPublic() {
        pagamento={pagamentoPix}
        slug={slug}
        onSucesso={(data) => {
-         limparCarrinho();
-         navigate(`/loja/${slug}/pedido/${data.pedido.id}/confirmado`);
-        }}
+        limparCarrinho();
+        console.log("SLUG:", slug);
+        console.log("ID:", data.pedido.id);
+        navigate(`/loja/${slug}/pedido/${data.pedido.id}/confirmado`);
+      }}
+      
      />
      
       

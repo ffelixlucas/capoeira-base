@@ -9,6 +9,10 @@ import {
 } from "./pedidosService";
 import { marcarPedidoProntoRetirada } from "./pedidosRepository";
 import { dispararEventoEmail } from "../notificacoes/notificacoesEventosService";
+import emailService from "../../services/emailService";
+import { buscarConfiguracao } from "../shared/organizacoes/organizacaoRepository";
+
+
 
 export async function buscarPedido(req: Request, res: Response) {
   try {
@@ -70,44 +74,91 @@ export async function marcarPedidoPronto(req: Request, res: Response) {
       organizacaoId,
       pedidoIdNum
     );
-    
+
     if (!pedido) {
       return res.status(404).json({
         success: false,
         message: "Pedido não encontrado",
       });
     }
-    
+
     if (pedido.status !== "convertido") {
       return res.status(400).json({
         success: false,
         message: "Pedido ainda não foi pago",
       });
     }
+
     if (pedido.status_operacional === "pronto_retirada") {
       return res.status(400).json({
         success: false,
         message: "Pedido já está marcado como pronto",
       });
     }
-    
-    
 
     await marcarPedidoProntoRetirada(organizacaoId, pedidoIdNum);
 
-    await dispararEventoEmail({
+    const agendaRetirada = await buscarConfiguracao(
       organizacaoId,
-      tipo: "loja",
-      subject: "Pedido pronto para retirada",
-      html: `
-        <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-          <p><strong>Seu pedido está pronto para retirada</strong> ✅</p>
-          <p>Você já pode buscar seu pedido na academia.</p>
-          <p><strong>Horários:</strong> X até Y</p>
-          <p><strong>Dias:</strong> X e Y</p>
-          <p>Em caso de dúvidas, fale com a equipe.</p>
-        </div>
-      `,
+      "retirada_agenda"
+    );
+
+    const enderecoRetirada = await buscarConfiguracao(
+      organizacaoId,
+      "retirada_endereco"
+    );
+    
+    const whatsappContato = await buscarConfiguracao(
+      organizacaoId,
+      "whatsapp_contato"
+    );
+    
+    console.log("Endereço retirada:", enderecoRetirada);
+    console.log("WhatsApp contato:", whatsappContato);
+    
+    let agendaTexto: string | undefined;
+
+    if (agendaRetirada) {
+      const agenda = agendaRetirada;
+
+      const nomesDias: Record<string, string> = {
+        segunda: "Segunda-feira",
+        terca: "Terça-feira",
+        quarta: "Quarta-feira",
+        quinta: "Quinta-feira",
+        sexta: "Sexta-feira",
+        sabado: "Sábado",
+        domingo: "Domingo",
+      };
+      
+      agendaTexto = Object.entries(agenda)
+        .map(([dia, horario]: any) => {
+          const nomeDia = nomesDias[dia] || dia;
+          return `
+            <div style="margin-bottom:8px;">
+              <strong>${nomeDia}</strong> — ${horario.inicio} às ${horario.fim}
+            </div>
+          `;
+        })
+        .join("");
+      
+    }
+
+
+
+    console.log("Agenda objeto:", agendaRetirada?.valor);
+    console.log("Agenda texto final:", agendaTexto);
+
+    const pedidoAtualizado = await buscarPedidoPorId(
+      organizacaoId,
+      pedidoIdNum
+    );
+
+    await emailService.enviarEmailPedidoProntoRetirada({
+      pedido: pedidoAtualizado,
+      agendaTexto,
+      enderecoRetirada,
+      whatsappContato
     });
 
     return res.json({ success: true });
@@ -135,7 +186,7 @@ export async function listarPedidos(req: Request, res: Response) {
       data_inicio: data_inicio as string | undefined,
       data_fim: data_fim as string | undefined,
     });
-    
+
 
     return res.json({
       success: true,
@@ -169,7 +220,7 @@ export async function cancelarPedido(req: Request, res: Response) {
       organizacaoId,
       pedidoIdNum
     );
-    
+
     if (!pedido) {
       return res.status(404).json({
         success: false,
@@ -183,33 +234,33 @@ export async function cancelarPedido(req: Request, res: Response) {
         message: "Pedido já está cancelado",
       });
     }
-    
+
     if (pedido.status_operacional === "pronto_retirada") {
       return res.status(400).json({
         success: false,
         message: "Pedido já está pronto para retirada e não pode ser cancelado",
       });
     }
-    
-    
+
+
     const affectedRows = await cancelarPedidoPorId(
       organizacaoId,
       pedidoIdNum
     );
-    
+
     if (affectedRows === 0) {
       return res.status(400).json({
         success: false,
         message: "Não foi possível cancelar o pedido",
       });
     }
-    
+
     return res.json({
       success: true,
       message: "Pedido cancelado com sucesso",
     });
-    
-      } catch (error: any) {
+
+  } catch (error: any) {
     logger.warn("[pedidosController] erro ao cancelar pedido", {
       error: error.message,
     });
@@ -219,7 +270,7 @@ export async function cancelarPedido(req: Request, res: Response) {
       message: error.message,
     });
 
-    
+
   }
 }
 export async function estatisticasPedidos(req: Request, res: Response) {
@@ -236,7 +287,7 @@ export async function estatisticasPedidos(req: Request, res: Response) {
         pendentes: Number(dados.pendentes) || 0,
         em_separacao: Number(dados.em_separacao) || 0,
         pronto_retirada: Number(dados.pronto_retirada) || 0,
-        entregues: Number(dados.entregues) || 0, 
+        entregues: Number(dados.entregues) || 0,
       },
     });
   } catch (error: any) {

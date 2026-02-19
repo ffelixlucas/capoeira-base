@@ -8,6 +8,8 @@ import { atualizarDadosPedidoAposPagamento } from "../pedidos/pedidosRepository"
 import { dispararEventoEmail } from "../notificacoes/notificacoesEventosService";
 import estoqueRepository from "../estoque/estoqueRepository";
 import emailService from "../../services/emailService";
+import { buscarPedidoPorId } from "../pedidos/pedidosService";
+import { getEmails } from "../notificacaoDestinos/notificacaoDestinosService";
 
 
 
@@ -40,6 +42,10 @@ export async function processarCobrancaPaga(cobrancaId: number) {
     return;
   }
 
+  // 🔒 Marca como executada antes de processar
+await marcarConsequenciaExecutadaRepository(cobrancaId);
+
+
 logger.info("[processarCobrancaPaga] Processando pela primeira vez", {
   cobrancaId,
   origem: cobranca.origem,
@@ -63,28 +69,43 @@ if (cobranca.origem === "loja") {
   telefone: cobranca.telefone,
   email: cobranca.email,
 });
-await dispararEventoEmail({
+
+const pedidoCompleto = await buscarPedidoPorId(
+  cobranca.organizacao_id,
+  cobranca.entidade_id
+);
+
+// 🔔 Buscar e-mails configurados para notificações da loja
+const emailsAdmin = await getEmails(
+  cobranca.organizacao_id,
+  "loja"
+);
+
+logger.debug("[processarCobrancaPaga] Emails admin loja", {
   organizacaoId: cobranca.organizacao_id,
-  tipo: "loja",
-  subject: "Novo pedido recebido – loja",
-  html: `
-    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-      <p><strong>Novo pedido recebido</strong></p>
-      <p>Cliente: ${cobranca.nome_pagador}</p>
-      <p>Pedido ID: ${cobranca.entidade_id}</p>
-      <p>Status: em separação</p>
-    </div>
-  `,
+  emailsAdmin,
 });
 
+
+// 📧 Email para ADMIN (dinâmico por organização)
+if (emailsAdmin.length > 0) {
+  for (const email of emailsAdmin) {
+    await emailService.enviarEmailPedidoAdmin({
+      pedido: pedidoCompleto,
+      emailDestino: email,
+    });
+  }
+} else {
+  logger.warn("[processarCobrancaPaga] Nenhum email admin configurado para loja", {
+    organizacaoId: cobranca.organizacao_id,
+  });
+}
+
+
+// 📧 Email para CLIENTE com dados completos do pedido
 await emailService.enviarEmailPedidoCliente({
-  email: cobranca.email,
-  nome: cobranca.nome_pagador,
-  pedidoId: cobranca.entidade_id,
+  pedido: pedidoCompleto
 });
-
-
-
 
 }
 
@@ -95,7 +116,6 @@ await emailService.enviarEmailPedidoCliente({
   // - mensal  → marcar como quitada
   // - matrícula → liberar acesso
 
-  await marcarConsequenciaExecutadaRepository(cobrancaId);
 
   logger.info("[processarCobrancaPaga] Finalizado com sucesso", {
     cobrancaId,

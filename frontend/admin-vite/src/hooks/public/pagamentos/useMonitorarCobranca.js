@@ -26,8 +26,9 @@ export function useMonitorarCobranca(
         
           // 🔎 Buscar pedido completo
           const { data: pedidoResponse } = await api.get(
-            `/pedidos/${cobranca.entidade_id}`
+            `/public/pedidos/${slug}/${cobranca.entidade_id}`
           );
+          
         
           const pedidoCompleto = pedidoResponse.data;
         

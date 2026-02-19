@@ -106,3 +106,42 @@ export async function buscarPorId(id: number): Promise<Organizacao | null> {
     throw err;
   }
 }
+/* -------------------------------------------------------------------------- */
+/* 🔹 Buscar configuração da organização                                      */
+/* -------------------------------------------------------------------------- */
+export async function buscarConfiguracao(
+  organizacaoId: number,
+  chave: string
+): Promise<any | null> {
+  try {
+    const [rows] = await db.execute<any[]>(
+      `
+      SELECT valor
+      FROM organizacoes_configuracoes
+      WHERE organizacao_id = ?
+      AND chave = ?
+      LIMIT 1
+      `,
+      [organizacaoId, chave]
+    );
+
+    if (!rows.length) {
+      logger.debug(
+        `[organizacaoRepository] Configuração "${chave}" não encontrada para org ${organizacaoId}`
+      );
+      return null;
+    }
+
+    try {
+      return JSON.parse(rows[0].valor);
+    } catch {
+      return rows[0].valor;
+    }
+  } catch (err: any) {
+    logger.error(
+      "[organizacaoRepository] Erro ao buscar configuração:",
+      err.message
+    );
+    throw err;
+  }
+}
