@@ -69,12 +69,20 @@ const { slug, cpf, nome, telefone, email, itens } = data;
       preco_unitario: sku.preco,
     };
   });
-const pedido = await criarPedido({
-  organizacaoId,
-  nome,
-  telefone,
-  email,
-});
+
+  logger.debug("[checkout] valores calculados", {
+    valorTotal,
+    totalItens: itensCalculados.length,
+  });
+  
+  const pedido = await criarPedido({
+    organizacaoId,
+    nome,
+    telefone,
+    email,
+    valor_total: valorTotal,
+    total_itens: itensCalculados.length,
+  });
 
 
 

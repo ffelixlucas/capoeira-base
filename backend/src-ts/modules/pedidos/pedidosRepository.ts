@@ -74,17 +74,19 @@ export async function converterPedido(
   const [result]: any = await executor.query(
     `
     UPDATE pedidos
-    SET status = 'convertido',
-        convertido_em = NOW()
+    SET 
+      status_financeiro = 'pago',
+      convertido_em = NOW()
     WHERE id = ?
       AND organizacao_id = ?
-      AND status = 'aberto'
+      AND status_financeiro = 'pendente'
     `,
     [pedidoId, organizacaoId]
   );
 
   return result.affectedRows;
 }
+
 
 /* ======================================================
    Atualizar Dados Após Pagamento (com suporte a transação)
@@ -140,71 +142,87 @@ export async function marcarPedidoProntoRetirada(
 }
 
 /* ======================================================
-   Listar Pedidos
+   Listar Pedidos (Cursor Pagination)
 ====================================================== */
 
 export async function listarPedidosPorOrganizacao(
   organizacaoId: number,
   filtros: {
-    status?: string;
+    status_financeiro?: string;
     status_operacional?: string;
     data_inicio?: string;
     data_fim?: string;
-  }
+  },
+  cursor?: {
+    criado_em: string;
+    id: number;
+  },
+  limite: number = 20
 ) {
   let sql = `
   SELECT 
     p.id,
-    p.status,
+    p.status_financeiro,
     p.status_operacional,
     p.nome_cliente,
     p.telefone,
     p.email,
     p.criado_em,
     p.convertido_em,
-    IFNULL(SUM(pi.quantidade * pi.preco_unitario), 0) AS valor_total,
-    IFNULL(SUM(pi.quantidade), 0) AS total_itens,
-    (
-      SELECT pc.status
-      FROM pagamentos_cobrancas pc
-      WHERE pc.entidade_id = p.id
-        AND pc.organizacao_id = p.organizacao_id
-        AND pc.origem = 'loja'
-      ORDER BY pc.id DESC
-      LIMIT 1
-    ) AS status_financeiro
+    p.valor_total,
+    p.total_itens
   FROM pedidos p
-  LEFT JOIN pedido_itens pi 
-    ON pi.pedido_id = p.id
-    AND pi.organizacao_id = p.organizacao_id
   WHERE p.organizacao_id = ?
 `;
 
   const params: any[] = [organizacaoId];
 
-  if (filtros.status) {
-    sql += " AND status = ?";
-    params.push(filtros.status);
+  if (cursor) {
+    sql += `
+      AND (
+        p.criado_em < ?
+        OR (p.criado_em = ? AND p.id < ?)
+      )
+    `;
+  
+    const criadoEmDate = new Date(cursor.criado_em);
+  
+    const criadoEmMysql = criadoEmDate
+      .toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" })
+      .replace("T", " ");
+  
+    params.push(criadoEmMysql, criadoEmMysql, cursor.id);
+  }
+
+  if (filtros.status_financeiro) {
+    sql += " AND p.status_financeiro = ?";
+    params.push(filtros.status_financeiro);
   }
 
   if (filtros.status_operacional) {
-    sql += " AND status_operacional = ?";
+    sql += " AND p.status_operacional = ?";
     params.push(filtros.status_operacional);
   }
 
   if (filtros.data_inicio) {
-    sql += " AND DATE(criado_em) >= ?";
+    sql += " AND DATE(p.criado_em) >= ?";
     params.push(filtros.data_inicio);
   }
 
   if (filtros.data_fim) {
-    sql += " AND DATE(criado_em) <= ?";
+    sql += " AND DATE(p.criado_em) <= ?";
     params.push(filtros.data_fim);
   }
 
-  sql += " GROUP BY p.id";
-  sql += " ORDER BY criado_em DESC";
+  sql += `
+    GROUP BY p.id
+    ORDER BY p.criado_em DESC, p.id DESC
+    LIMIT ?
+  `;
 
+  params.push(limite);
+
+  logger.debug("[pedidosRepository] SQL", { sql, params });
   const [rows]: any = await connection.pool.query(sql, params);
 
   return rows;
@@ -222,14 +240,14 @@ export async function atualizarStatusPedidoCancelado(
     `
     UPDATE pedidos
     SET 
-      status = 'cancelado',
-      status_operacional = 'cancelado'
+      status_financeiro = 'cancelado'
     WHERE id = ?
       AND organizacao_id = ?
-      AND status != 'cancelado'
+      AND status_financeiro != 'cancelado'
     `,
     [pedidoId, organizacaoId]
   );
+  
 
   return result.affectedRows;
 }
@@ -244,16 +262,17 @@ export async function buscarEstatisticasPedidos(
   const [rows]: any = await connection.pool.query(
     `
     SELECT
-      SUM(CASE WHEN p.status = 'convertido' THEN 1 ELSE 0 END) AS total_pedidos,
+      SUM(CASE WHEN p.status_financeiro = 'pago' THEN 1 ELSE 0 END) AS total_pedidos,
       SUM(CASE WHEN p.status_operacional = 'em_separacao' THEN 1 ELSE 0 END) AS em_separacao,
       SUM(CASE WHEN p.status_operacional = 'pronto_retirada' THEN 1 ELSE 0 END) AS pronto_retirada,
-      SUM(CASE WHEN p.status_operacional = 'entregue' THEN 1 ELSE 0 END) AS entregues,
-      SUM(CASE WHEN p.status = 'aberto' THEN 1 ELSE 0 END) AS pendentes
+      SUM(CASE WHEN p.status_operacional = 'finalizado' THEN 1 ELSE 0 END) AS finalizados,
+      SUM(CASE WHEN p.status_financeiro = 'pendente' THEN 1 ELSE 0 END) AS pendentes
     FROM pedidos p
     WHERE p.organizacao_id = ?
     `,
     [organizacaoId]
   );
+  
 
   return rows[0];
 }

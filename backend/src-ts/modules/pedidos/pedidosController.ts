@@ -178,19 +178,42 @@ export async function listarPedidos(req: Request, res: Response) {
   try {
     const organizacaoId = req.usuario.organizacao_id;
 
-    const { status, status_operacional, data_inicio, data_fim } = req.query;
+    const {
+      status_financeiro,
+      status_operacional,
+      data_inicio,
+      data_fim,
+      cursor_criado_em,
+      cursor_id,
+      limit,
+    } = req.query;
 
-    const pedidos = await listarPedidosPorOrg(organizacaoId, {
-      status: status as string | undefined,
-      status_operacional: status_operacional as string | undefined,
-      data_inicio: data_inicio as string | undefined,
-      data_fim: data_fim as string | undefined,
-    });
+    const cursor =
+      cursor_criado_em && cursor_id
+        ? {
+            criado_em: cursor_criado_em as string,
+            id: Number(cursor_id),
+          }
+        : undefined;
 
+    const limite = limit ? Number(limit) : 20;
+
+    const resultado = await listarPedidosPorOrg(
+      organizacaoId,
+      {
+        status_financeiro: status_financeiro as string | undefined,
+        status_operacional: status_operacional as string | undefined,
+        data_inicio: data_inicio as string | undefined,
+        data_fim: data_fim as string | undefined,
+      },
+      cursor,
+      limite
+    );
 
     return res.json({
       success: true,
-      data: pedidos,
+      data: resultado.dados,
+      next_cursor: resultado.next_cursor,
     });
   } catch (error: any) {
     logger.warn("[pedidosController] erro ao listar pedidos", {

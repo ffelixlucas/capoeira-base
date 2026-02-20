@@ -42,18 +42,45 @@ export async function converterPedidoPorId(
 export async function listarPedidosPorOrg(
   organizacaoId: number,
   filtros: {
-    status?: string;
+    status_financeiro?: string;
     status_operacional?: string;
     data_inicio?: string;
     data_fim?: string;
-  }
+  },
+  cursor?: {
+    criado_em: string;
+    id: number;
+  },
+  limite: number = 20
 ) {
   logger.debug("[pedidosService] listando pedidos", {
     organizacaoId,
     filtros,
+    cursor,
+    limite,
   });
 
-  return listarPedidosPorOrganizacao(organizacaoId, filtros);
+  const pedidos = await listarPedidosPorOrganizacao(
+    organizacaoId,
+    filtros,
+    cursor,
+    limite
+  );
+
+  let next_cursor = null;
+
+  if (pedidos.length === limite) {
+    const ultimo = pedidos[pedidos.length - 1];
+    next_cursor = {
+      criado_em: ultimo.criado_em,
+      id: ultimo.id,
+    };
+  }
+
+  return {
+    dados: pedidos,
+    next_cursor,
+  };
 }
 
 export async function cancelarPedidoPorId(

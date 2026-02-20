@@ -66,30 +66,48 @@ export async function criarPedido(data: {
   nome: string;
   telefone: string;
   email: string;
+  valor_total: number;
+  total_itens: number;
 }) {
-  const { organizacaoId, nome, telefone, email } = data;
+  const {
+    organizacaoId,
+    nome,
+    telefone,
+    email,
+    valor_total,
+    total_itens,
+  } = data;
 
   const [result]: any = await db.query(
     `
     INSERT INTO pedidos
-      (
-        organizacao_id,
-        status,
-        status_operacional,
-        nome_cliente,
-        telefone,
-        email,
-        criado_em
-      )
-      VALUES
-      (?, 'aberto', 'pendente_pagamento', ?, ?, ?, NOW())
+    (
+      organizacao_id,
+      status,
+      status_operacional,
+      nome_cliente,
+      telefone,
+      email,
+      valor_total,
+      total_itens,
+      criado_em
+    )
+    VALUES
+    (?, 'aberto', ?, ?, ?, ?, ?, ?, NOW())
     `,
-    [organizacaoId, nome, telefone, email]
+    [
+      organizacaoId,
+      null,
+      nome,
+      telefone,
+      email,
+      valor_total,
+      total_itens,
+    ]
   );
 
   return { id: result.insertId };
 }
-
 
 
 export async function criarPedidoItens(data: {
