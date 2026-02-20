@@ -99,6 +99,48 @@ async function baixarEstoquePorPedido(
   }
 }
 
+async function reverterEstoque(
+  organizacaoId: number,
+  skuId: number,
+  quantidade: number,
+  pedidoId: number,
+  trx?: PoolConnection
+) {
+  const executor = trx ?? db.pool;
+
+  // 🔄 Devolve quantidade ao estoque
+  await executor.query(
+    `
+    UPDATE estoque
+    SET quantidade = quantidade + ?
+    WHERE sku_id = ?
+      AND organizacao_id = ?
+    `,
+    [quantidade, skuId, organizacaoId]
+  );
+
+  // 📦 Registrar movimentação de entrada
+  await executor.query(
+    `
+    INSERT INTO estoque_movimentacoes
+      (organizacao_id, sku_id, pedido_id, tipo, quantidade, origem)
+    VALUES (?, ?, ?, 'entrada', ?, 'estorno')
+    `,
+    [organizacaoId, skuId, pedidoId, quantidade]
+  );
+
+  logger.info("[estoqueRepository] Estoque revertido", {
+    organizacaoId,
+    skuId,
+    quantidade,
+    pedidoId,
+  });
+}
+
+export {
+  reverterEstoque,
+};
+
 export default {
   baixarEstoquePorPedido,
 };

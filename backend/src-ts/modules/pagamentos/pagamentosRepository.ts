@@ -121,7 +121,8 @@ export async function criarCobrancaRepository(
 ====================================================== */
 
 export async function atualizarCobrancaPagamentoRepository(
-  dados: AtualizarCobrancaPagamentoInput
+  dados: AtualizarCobrancaPagamentoInput,
+  trx?: PoolConnection
 ) {
   const {
     cobranca_id,
@@ -147,8 +148,10 @@ export async function atualizarCobrancaPagamentoRepository(
     status,
   });
 
-  await connection.query(
-    `
+  const executor: ExecutorQuery = trx ?? connection;
+
+  await executor.query(
+        `
     UPDATE pagamentos_cobrancas
     SET
       pagamento_id      = COALESCE(?, pagamento_id),
@@ -256,4 +259,27 @@ export async function marcarConsequenciaExecutadaRepository(
     `,
     [cobrancaId]
   );
+}
+export async function buscarPagamentoPorPedido(
+  organizacaoId: number,
+  pedidoId: number,
+  trx?: PoolConnection
+) {
+  const executor: ExecutorQuery = trx ?? connection;
+
+  const [rows]: any = await executor.query(    `
+    SELECT
+      id,
+      pagamento_id,
+      status
+    FROM pagamentos_cobrancas
+    WHERE organizacao_id = ?
+      AND origem = 'loja'
+      AND entidade_id = ?
+    LIMIT 1
+    `,
+    [organizacaoId, pedidoId]
+  );
+
+  return rows[0] || null;
 }

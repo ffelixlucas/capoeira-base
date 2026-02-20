@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { buscarPedidoLoja, marcarPedidoPronto, marcarPedidoEntregue } from "../services/lojaService";
+import { buscarPedidoLoja, marcarPedidoPronto, marcarPedidoEntregue, estornarPedido } from "../services/lojaService";
 
 export default function PedidoDetalhe() {
     const { id } = useParams();
@@ -52,6 +52,25 @@ export default function PedidoDetalhe() {
             }));
         } catch (err) {
             console.error("Erro ao marcar como entregue:", err);
+        } finally {
+            setLoadingAcao(false);
+        }
+    }
+
+    async function handleEstornar() {
+        if (!confirm("Tem certeza que deseja estornar este pedido?")) return;
+
+        try {
+            setLoadingAcao(true);
+            await estornarPedido(id);
+
+            setPedido((prev) => ({
+                ...prev,
+                status_financeiro: "estornado",
+            }));
+        } catch (err) {
+            console.error("Erro ao estornar:", err);
+            alert("Erro ao estornar pedido");
         } finally {
             setLoadingAcao(false);
         }
@@ -122,6 +141,16 @@ export default function PedidoDetalhe() {
                         Total: <strong>R$ {Number(totalCalculado).toFixed(2)}</strong>
                     </p>
                 </div>
+
+                {pedido.status_financeiro === "pago" && (
+                    <button
+                        onClick={handleEstornar}
+                        disabled={loadingAcao}
+                        className="w-full mt-4 py-3 rounded-xl bg-red-600 text-white font-semibold"
+                    >
+                        {loadingAcao ? "Estornando..." : "Estornar pedido"}
+                    </button>
+                )}
 
                 {pedido.status_operacional === "em_separacao" && (
                     <button

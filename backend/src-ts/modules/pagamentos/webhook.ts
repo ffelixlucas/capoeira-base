@@ -1,6 +1,6 @@
 import { buscarPagamentoMP } from "./pagamentosService";
 import {
-  atualizarCobrancaPagamentoRepository,
+  atualizarCobrancaPagamentoRepository, buscarCobrancaPorIdRepository
 } from "./pagamentosRepository";
 import { processarCobrancaPaga } from "./processarCobrancaPaga";
 
@@ -28,6 +28,14 @@ export async function webhookPagamentos(req, res) {
     const cobrancaId = Number(pagamento.external_reference);
     if (!cobrancaId) {
       return res.status(200).json({ ignored: true });
+    }
+
+    const cobranca = await buscarCobrancaPorIdRepository(cobrancaId);
+
+    // 🔒 PROTEÇÃO CRÍTICA
+    if (cobranca?.status === "estornado") {
+      console.log("Webhook ignorado: cobrança já estornada");
+      return res.status(200).json({ ignored: "already_refunded" });
     }
 
     const statusInterno = mapearStatusMP(pagamento.status);

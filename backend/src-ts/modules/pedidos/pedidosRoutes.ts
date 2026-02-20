@@ -1,6 +1,6 @@
 import { Router } from "express";
 import verifyToken from "../../middlewares/verifyToken";
-import { buscarPedido, marcarPedidoPronto, listarPedidos, cancelarPedido, estatisticasPedidos, marcarPedidoEntregue } from "./pedidosController";
+import { buscarPedido, marcarPedidoPronto, listarPedidos, cancelarPedido, estatisticasPedidos, marcarPedidoEntregue, estornarPedido } from "./pedidosController";
 
 const router = Router();
 // Estatísticas de pedidos
@@ -20,6 +20,8 @@ router.patch("/:pedidoId/entregue", verifyToken, marcarPedidoEntregue);
 
 // Cancelar pedido
 router.patch("/:pedidoId/cancelar", verifyToken, cancelarPedido);
+
+router.patch("/:pedidoId/estornar", verifyToken, estornarPedido);
 
 
 export default router;

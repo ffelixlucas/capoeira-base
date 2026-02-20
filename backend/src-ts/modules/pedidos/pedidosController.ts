@@ -5,8 +5,8 @@ import {
   listarPedidosPorOrg,
   cancelarPedidoPorId,
   obterEstatisticasPedidos,
-  marcarPedidoEntregue as marcarPedidoEntregueService
-} from "./pedidosService";
+  marcarPedidoEntregue as marcarPedidoEntregueService,
+  estornarPedidoService } from "./pedidosService";
 import { marcarPedidoProntoRetirada } from "./pedidosRepository";
 import { dispararEventoEmail } from "../notificacoes/notificacoesEventosService";
 import emailService from "../../services/emailService";
@@ -359,3 +359,27 @@ export async function marcarPedidoEntregue(req: Request, res: Response) {
   }
 }
 
+export async function estornarPedido(req: any, res: any) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const pedidoId = Number(req.params.pedidoId);
+
+    if (!pedidoId) {
+      return res.status(400).json({ error: "pedidoId inválido" });
+    }
+
+    await estornarPedidoService(organizacaoId, pedidoId);
+
+    return res.json({ success: true });
+  } catch (error: any) {
+
+    logger.error("[pedidosController] erro ao estornar", {
+      message: error.message,
+      stack: error.stack
+    });
+
+    return res.status(400).json({
+      error: error.message || "Erro ao estornar pedido",
+    });
+  }
+}

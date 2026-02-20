@@ -21,6 +21,13 @@ export async function processarCobrancaPaga(cobrancaId: number) {
     return;
   }
 
+  if (cobranca.status === "estornado") {
+    logger.warn("[processarCobrancaPaga] Cobrança já estornada, ignorando", {
+      cobrancaId,
+    });
+    return;
+  }
+
   if (cobranca.status !== "pago") {
     logger.warn("[processarCobrancaPaga] Cobrança não está paga", {
       cobrancaId,

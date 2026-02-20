@@ -19,3 +19,6 @@ export async function marcarPedidoPronto(pedidoId) {
 export async function marcarPedidoEntregue(pedidoId) {
   await api.patch(`/pedidos/${pedidoId}/entregue`);
 }
+export async function estornarPedido(pedidoId) {
+  await api.patch(`/pedidos/${pedidoId}/estornar`);
+}

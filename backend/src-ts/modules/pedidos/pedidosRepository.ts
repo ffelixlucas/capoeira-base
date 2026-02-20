@@ -298,3 +298,28 @@ export async function atualizarStatusPedidoEntregue(
 
   return result.affectedRows;
 }
+/* ======================================================
+   Atualizar Pedido para Estornado (com suporte a transação)
+====================================================== */
+
+export async function atualizarPedidoEstornado(
+  organizacaoId: number,
+  pedidoId: number,
+  trx?: PoolConnection
+) {
+  const executor = trx ?? connection.pool;
+
+  const [result]: any = await executor.query(
+    `
+    UPDATE pedidos
+    SET 
+      status_financeiro = 'estornado'
+    WHERE id = ?
+      AND organizacao_id = ?
+      AND status_financeiro = 'pago'
+    `,
+    [pedidoId, organizacaoId]
+  );
+
+  return result.affectedRows;
+}
