@@ -17,24 +17,47 @@ const logger = require("../../utils/logger");
 
     if (rows.length === 0) {
       console.log("✅ Nenhuma inscrição pendente expirada encontrada.");
-      return process.exit(0);
+    } else {
+
+      // Mostrar quais serão deletadas
+      logger.log(`🔎 Encontradas ${rows.length} inscrições expiradas:`);
+      rows.forEach((r) => {
+        logger.log(` - ID: ${r.id} | Nome: ${r.nome} | CPF: ${r.cpf} | Email: ${r.email}`);
+      });
+
+      // Deletar as inscrições
+      const [result] = await db.execute(
+        `DELETE FROM inscricoes_evento 
+         WHERE status = 'pendente' 
+         AND date_of_expiration < NOW()`
+      );
+
+      console.log(`🗑️ ${result.affectedRows} inscrições expiradas foram removidas.`);
     }
 
-    // Mostrar quais serão deletadas
-    logger.log(`🔎 Encontradas ${rows.length} inscrições expiradas:`);
-    rows.forEach((r) => {
-      logger.log(` - ID: ${r.id} | Nome: ${r.nome} | CPF: ${r.cpf} | Email: ${r.email}`);
-    });
+    // =====================================
+    // 🔄 Expiração automática pedidos Loja
+    // =====================================
 
-    // Deletar as inscrições
-    const [result] = await db.execute(
-      `DELETE FROM inscricoes_evento 
-       WHERE status = 'pendente' 
-       AND date_of_expiration < NOW()`
+    const [pedidosExpirados] = await db.execute(
+      `UPDATE pedidos
+       SET status = 'cancelado',
+           status_financeiro = 'expirado'
+       WHERE status = 'aberto'
+         AND status_financeiro = 'pendente'
+         AND criado_em < NOW() - INTERVAL 30 MINUTE`
     );
 
-    console.log(`🗑️ ${result.affectedRows} inscrições expiradas foram removidas.`);
+    if (pedidosExpirados.affectedRows > 0) {
+      logger.log(
+        `🛒 ${pedidosExpirados.affectedRows} pedidos da loja expirados automaticamente.`
+      );
+    } else {
+      logger.log("🛒 Nenhum pedido da loja para expirar.");
+    }
+
     process.exit(0);
+
   } catch (error) {
     console.error("❌ Erro ao limpar inscrições pendentes:", error);
     process.exit(1);
