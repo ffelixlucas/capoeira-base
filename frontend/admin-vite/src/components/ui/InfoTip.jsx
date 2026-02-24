@@ -1,13 +1,17 @@
+//src/components/ui/InfoTip.jsx
+
 export default function InfoTip({ 
+
+
     children, 
     type = "info", // info, success, warning, error
     className = "" 
   }) {
     const styles = {
       info: {
-        bg: "bg-gradient-to-r from-blue-50 to-blue-25",
-        border: "border-blue-200",
-        text: "text-blue-800",
+        bg: "bg-blue-900/40",
+        border: "border-blue-500/40",
+        text: "text-blue-100",
         icon: "bg-blue-500"
       },
       success: {
@@ -17,10 +21,10 @@ export default function InfoTip({
         icon: "bg-green-500"
       },
       warning: {
-        bg: "bg-gradient-to-r from-yellow-50 to-yellow-25",
-        border: "border-yellow-200",
-        text: "text-yellow-800",
-        icon: "bg-yellow-500"
+        bg: "bg-gradient-to-r from-amber-900/40 to-amber-800/30",
+        border: "border-amber-400/40",
+        text: "text-amber-100",
+        icon: "bg-amber-500"
       },
       error: {
         bg: "bg-gradient-to-r from-red-50 to-red-25",

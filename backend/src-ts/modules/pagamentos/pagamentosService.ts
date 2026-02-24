@@ -76,6 +76,10 @@ export async function criarCobrancaService(dados: CriarCobrancaInput) {
         total + item.quantidade * item.preco_unitario,
       0
     );
+    logger.debug("[pagamentosService] Valor final da cobrança", {
+      entidade_id,
+      valorFinal,
+    });
 
     if (valorFinal <= 0) {
       throw new Error("Pedido sem valor para cobrança");

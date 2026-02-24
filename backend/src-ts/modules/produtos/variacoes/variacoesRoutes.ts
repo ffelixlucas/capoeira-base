@@ -1,10 +1,60 @@
 import { Router } from "express";
-import  verifyToken  from "../../../middlewares/verifyToken";
+import verifyToken from "../../../middlewares/verifyToken";
+import checkRole from "../../../middlewares/checkRole";
 import variacoesController from "./variacoesController";
 
 const router = Router();
 
-router.get("/tipos", verifyToken, variacoesController.listarTipos);
-router.get("/valores/:tipoId", verifyToken, variacoesController.listarValores);
+/* ======================================================
+   LISTAGEM (já existente)
+====================================================== */
+
+router.get(
+  "/tipos",
+  verifyToken,
+  variacoesController.listarTipos
+);
+
+router.get(
+  "/valores/:tipoId",
+  verifyToken,
+  variacoesController.listarValores
+);
+
+/* ======================================================
+   CRUD TIPOS (ADMIN)
+====================================================== */
+
+router.post(
+  "/tipos",
+  verifyToken,
+  checkRole(["admin"]),
+  variacoesController.criarTipo
+);
+
+router.delete(
+  "/tipos/:tipoId",
+  verifyToken,
+  checkRole(["admin"]),
+  variacoesController.excluirTipo
+);
+
+/* ======================================================
+   CRUD VALORES (ADMIN)
+====================================================== */
+
+router.post(
+  "/valores",
+  verifyToken,
+  checkRole(["admin"]),
+  variacoesController.criarValor
+);
+
+router.delete(
+  "/valores/:valorId",
+  verifyToken,
+  checkRole(["admin"]),
+  variacoesController.excluirValor
+);
 
 export default router;

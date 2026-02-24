@@ -1,247 +1,174 @@
-import { useParams, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { produtosService } from '../../services/produtosService'
-import { toast } from 'react-toastify'
-import ModalGerarVariacoes from '../../components/admin/produtos/ModalGerarVariacoes'
-import SkuLinha from '../../components/admin/produtos/SkuLinha.jsx'
+// ProdutoGerenciarPage.jsx - Versão com classes admin
+import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { produtosService } from "../../services/produtosService";
+import { toast } from "react-toastify";
+import ModalGerarVariacoes from "../../components/admin/produtos/ModalGerarVariacoes";
+import SkuLinha from "../../components/admin/produtos/SkuLinha";
 
 export default function ProdutoGerenciarPage() {
-  const { id } = useParams()
-  const navigate = useNavigate()
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true)
-  const [produto, setProduto] = useState(null)
+  const [loading, setLoading] = useState(true);
+  const [produto, setProduto] = useState(null);
+  const [modalVariacaoOpen, setModalVariacaoOpen] = useState(false);
 
-  const [nome, setNome] = useState('')
-  const [descricao, setDescricao] = useState('')
-  const [categoria, setCategoria] = useState('')
-  const [ativo, setAtivo] = useState(1)
-
-  const [preco, setPreco] = useState(0)
-  const [quantidade, setQuantidade] = useState(0)
-  const [modalVariacaoOpen, setModalVariacaoOpen] = useState(false)
+  const [nome, setNome] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [ativo, setAtivo] = useState(1);
 
   useEffect(() => {
-    carregar()
-  }, [id])
+    carregar();
+  }, [id]);
 
   async function carregar() {
     try {
-      const data = await produtosService.buscarPorId(id)
-
-      setProduto(data)
-      setNome(data.nome)
-      setDescricao(data.descricao)
-      setCategoria(data.categoria)
-      setAtivo(data.ativo)
-
-      if (data.tipo_produto === 'simples' && data.skus?.length === 1) {
-        setPreco(Number(data.skus[0].preco))
-        setQuantidade(Number(data.skus[0].quantidade || 0))
-      }
-
+      const data = await produtosService.buscarPorId(id);
+      setProduto(data);
+      setNome(data.nome);
+      setDescricao(data.descricao);
+      setCategoria(data.categoria);
+      setAtivo(data.ativo);
     } catch {
-      toast.error('Erro ao carregar produto')
-      navigate('/admin/produtos')
+      toast.error("Erro ao carregar produto");
+      navigate("/admin/produtos");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function salvar() {
     try {
-      if (produto.tipo_produto === 'simples') {
-        await produtosService.atualizar(id, {
-          nome,
-          descricao,
-          categoria,
-          ativo,
-          preco,
-          quantidade,
-        })
-      } else {
-        await produtosService.atualizar(id, {
-          nome,
-          descricao,
-          categoria,
-          ativo,
-        })
-      }
-
-      toast.success('Produto atualizado com sucesso')
-      carregar()
-
+      await produtosService.atualizar(id, { nome, descricao, categoria, ativo });
+      toast.success("Produto atualizado");
+      carregar();
     } catch {
-      toast.error('Erro ao atualizar produto')
+      toast.error("Erro ao atualizar");
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cor-fundo flex items-center justify-center">
+      <div className="min-h-screen bg-cor-fundo text-cor-texto p-4 flex items-center justify-center">
         Carregando...
       </div>
-    )
+    );
   }
 
-  if (!produto) return null
+  if (!produto) return null;
 
   return (
-    <div className="min-h-screen bg-cor-fundo p-4">
-      <div className="max-w-3xl mx-auto bg-surface text-on-surface rounded-2xl p-6 border border-cor-secundaria/30">
-
-        <button
-          onClick={() => navigate('/admin/produtos')}
-          className="text-sm text-on-surface/60 mb-4"
-        >
-          ← Voltar
-        </button>
-
-        <h1 className="text-2xl font-bold mb-6">
-          Editar Produto
-        </h1>
-
-        {/* Nome */}
-        <div className="mb-4">
-          <label className="text-sm text-on-surface/60">Nome</label>
-          <input
-            value={nome}
-            onChange={e => setNome(e.target.value)}
-            className="input-admin"
-          />
+    <div className="min-h-screen bg-cor-fundo text-cor-texto pb-24">
+      
+      {/* Header */}
+      <header className="bg-surface border-b-2 border-cor-secundaria/30 sticky top-0 z-10">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => navigate("/admin/produtos")}
+            className="text-on-surface/60 hover:text-on-surface"
+          >
+            ← Voltar
+          </button>
+          <h1 className="text-lg font-semibold">Gerenciar Produto</h1>
+          <span className="text-xs text-on-surface/30">ID #{produto.id}</span>
         </div>
+      </header>
 
-        {/* Descrição */}
-        <div className="mb-4">
-          <label className="text-sm text-on-surface/60">Descrição</label>
-          <textarea
-            value={descricao}
-            onChange={e => setDescricao(e.target.value)}
-            className="textarea-admin"
-          />
-        </div>
-
-        {/* Categoria */}
-        <div className="mb-4">
-          <label className="text-sm text-on-surface/60">Categoria</label>
-          <input
-            value={categoria}
-            onChange={e => setCategoria(e.target.value)}
-            className="input-admin"
-          />
-        </div>
-
-        {/* PRODUTO SIMPLES */}
-        {produto.tipo_produto === 'simples' && (
-          <>
-            <div className="mb-4">
-              <label className="text-sm text-on-surface/60">Preço</label>
+      {/* Conteúdo */}
+      <div className="p-4 space-y-4">
+        
+        {/* Card do produto */}
+        <div className="bg-surface rounded-xl border-2 border-cor-secundaria/30 overflow-hidden shadow-sm">
+          
+          {/* Formulário */}
+          <div className="p-4 space-y-4">
+            <div>
+              <label className="block text-xs text-on-surface/40 mb-1">NOME</label>
               <input
-                type="number"
-                step="0.01"
-                value={preco}
-                onChange={e => setPreco(Number(e.target.value))}
-                className="input-admin"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                className="input-admin w-full" // Usando nossa classe
               />
             </div>
 
-            <div className="mb-6">
-              <label className="text-sm text-on-surface/60 mb-2 block">
-                Estoque
-              </label>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setQuantidade(prev => Math.max(0, prev - 1))}
-                  className="btn-secondary min-h-[44px] px-4"
-                >
-                  -
-                </button>
-
-                <input
-                  type="number"
-                  value={quantidade}
-                  onChange={e => setQuantidade(Number(e.target.value))}
-                  className="input-number-admin w-24"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setQuantidade(prev => prev + 1)}
-                  className="btn-secondary min-h-[44px] px-4"
-                >
-                  +
-                </button>
-              </div>
+            <div>
+              <label className="block text-xs text-on-surface/40 mb-1">DESCRIÇÃO</label>
+              <textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                rows="3"
+                className="textarea-admin w-full" // Usando nossa classe
+              />
             </div>
-          </>
-        )}
 
-        {/* PRODUTO VARIÁVEL */}
-        {produto.tipo_produto === 'variavel' && (
-          <div className="mb-6">
-            <h2 className="font-semibold mb-3">Variações</h2>
+            <div>
+              <label className="block text-xs text-on-surface/40 mb-1">CATEGORIA</label>
+              <input
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="input-admin w-full" // Usando nossa classe
+              />
+            </div>
 
-            {produto.skus?.length === 0 && (
-              <p className="text-sm text-on-surface/60">
-                Nenhuma variação criada ainda.
-              </p>
-            )}
+            <label className="flex items-center gap-2 p-2 border-2 border-cor-secundaria/30 rounded-lg cursor-pointer hover:bg-cor-secundaria/5">
+              <input
+                type="checkbox"
+                checked={ativo === 1}
+                onChange={() => setAtivo(prev => prev === 1 ? 0 : 1)}
+                className="w-5 h-5 rounded border-2 border-cor-secundaria/30 text-cor-primaria focus:ring-cor-primaria"
+              />
+              <span className="text-sm text-on-surface">Produto ativo na loja</span>
+            </label>
+          </div>
+        </div>
 
-            {produto.skus?.length > 0 && (
-              <div className="overflow-x-auto rounded-xl border border-cor-secundaria/30">
-                <table className="w-full text-sm">
-                  <thead className="bg-surface border-b border-cor-secundaria/30">
-                    <tr className="text-left">
-                      <th className="p-3">Tamanho</th>
-                      <th className="p-3">Nome na Camisa</th>
-                      <th className="p-3">Preço (R$)</th>
-                      <th className="p-3">Estoque</th>
-                      <th className="p-3 text-center">Ações</th>
-                    </tr>
-                  </thead>
+        {/* Seção de variações */}
+        {produto.tipo_produto === "variavel" && (
+          <div className="bg-surface rounded-xl border-2 border-cor-secundaria/30 overflow-hidden shadow-sm">
+            
+            {/* Header com botão */}
+            <div className="p-4 border-b-2 border-cor-secundaria/30 flex items-center justify-between">
+              <h2 className="font-semibold">Variações</h2>
+              <button
+                onClick={() => setModalVariacaoOpen(true)}
+                className="bg-cor-primaria text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-cor-primaria/90 border-2 border-transparent"
+              >
+                + Nova
+              </button>
+            </div>
 
-                  <tbody>
-  {produto.skus.map((sku) => (
-    <SkuLinha
-      key={sku.id}
-      sku={sku}
-      onAtualizado={carregar}
-    />
-  ))}
-</tbody>
-                </table>
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="btn-secondary w-full mt-4"
-              onClick={() => setModalVariacaoOpen(true)}
-            >
-              + Adicionar Nova Variação
-            </button>
-
+            {/* Lista de SKUs */}
+            <div className="p-4">
+              {!produto.skus?.length ? (
+                <p className="text-center text-on-surface/40 py-8">
+                  Nenhuma variação criada
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {produto.skus.map((sku) => (
+                    <SkuLinha
+                      key={sku.id}
+                      sku={sku}
+                      onAtualizado={carregar}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Ativo */}
-        <div className="mb-6 flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={ativo === 1}
-            onChange={() => setAtivo(prev => prev === 1 ? 0 : 1)}
-          />
-          <span className="text-sm">Produto ativo na loja</span>
+        {/* Botão salvar fixo */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface border-t-2 border-cor-secundaria/30">
+          <button
+            onClick={salvar}
+            className="w-full bg-cor-primaria text-white py-3 rounded-lg font-medium hover:bg-cor-primaria/90 border-2 border-transparent shadow-md"
+          >
+            Salvar Alterações
+          </button>
         </div>
-
-        <button
-          onClick={salvar}
-          className="btn-primary w-full min-h-[48px]"
-        >
-          Salvar Alterações
-        </button>
 
       </div>
 
@@ -252,5 +179,5 @@ export default function ProdutoGerenciarPage() {
         onSuccess={carregar}
       />
     </div>
-  )
+  );
 }

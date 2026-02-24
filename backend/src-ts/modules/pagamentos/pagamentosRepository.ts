@@ -144,8 +144,8 @@ export async function atualizarCobrancaPagamentoRepository(
 
   logger.debug("[pagamentosRepository] Atualizando cobrança", {
     cobranca_id,
-    metodo_pagamento,
-    status,
+    metodo_pagamento: metodo_pagamento ?? "(mantido)",
+    status: status ?? "(mantido)",
   });
 
   const executor: ExecutorQuery = trx ?? connection;

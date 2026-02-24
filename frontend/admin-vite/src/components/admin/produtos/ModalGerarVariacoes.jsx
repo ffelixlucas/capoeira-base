@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { variacoesService } from '../../../services/variacoesService'
 import { produtosService } from '../../../services/produtosService'
 import { toast } from 'react-toastify'
+import InfoTip from '../../ui/InfoTip'
+import ModoGerenciarVariacoes from './ModoGerenciarVariacoes'
 
 export default function ModalGerarVariacoes({
   open,
@@ -16,32 +18,38 @@ export default function ModalGerarVariacoes({
   const [preco, setPreco] = useState('')
   const [quantidade, setQuantidade] = useState('')
   const [loading, setLoading] = useState(false)
+  const [modo, setModo] = useState('criar')
 
-  // 🔹 Carregar tipos
+  /* ===============================
+     RECARREGAR ESTRUTURA
+  =============================== */
+
+  const recarregarEstrutura = useCallback(async () => {
+    try {
+      const tiposData = await variacoesService.listarTipos()
+      setTipos(tiposData)
+
+      const mapa = {}
+
+      for (const tipo of tiposData) {
+        const valores = await variacoesService.listarValores(tipo.id)
+        mapa[tipo.id] = valores
+      }
+
+      setValoresPorTipo(mapa)
+    } catch {
+      toast.error('Erro ao carregar variações')
+    }
+  }, [])
+
   useEffect(() => {
     if (!open) return
+    recarregarEstrutura()
+  }, [open, recarregarEstrutura])
 
-    async function carregar() {
-      try {
-        const tiposData = await variacoesService.listarTipos()
-        setTipos(tiposData)
-
-        const mapa = {}
-
-        for (const tipo of tiposData) {
-          const valores = await variacoesService.listarValores(tipo.id)
-          mapa[tipo.id] = valores
-        }
-
-        setValoresPorTipo(mapa)
-
-      } catch {
-        toast.error('Erro ao carregar variações')
-      }
-    }
-
-    carregar()
-  }, [open])
+  /* ===============================
+     SELEÇÃO
+  =============================== */
 
   function selecionarValor(tipoId, valorId) {
     setSelecionados(prev => ({
@@ -51,20 +59,31 @@ export default function ModalGerarVariacoes({
   }
 
   function obterResumo() {
-    return tipos.map(tipo => {
-      const valorId = selecionados[tipo.id]
-      if (!valorId) return null
-      const valor = valoresPorTipo[tipo.id]?.find(v => v.id === valorId)
-      return valor?.valor || null
-    }).filter(Boolean).join(' • ')
+    return tipos
+      .map(tipo => {
+        const valorId = selecionados[tipo.id]
+        if (!valorId) return null
+        const valor = valoresPorTipo[tipo.id]?.find(v => v.id === valorId)
+        return valor?.valor || null
+      })
+      .filter(Boolean)
+      .join(' • ')
   }
+
+  /* ===============================
+     CRIAR VARIAÇÃO
+  =============================== */
 
   async function criarVariacao() {
 
     const valoresIds = Object.values(selecionados).filter(Boolean)
 
-    if (valoresIds.length === 0) {
-      toast.warn('Selecione pelo menos um tamanho')
+    const tipoTamanho = tipos.find(
+      t => t.nome.toLowerCase() === 'tamanho'
+    )
+
+    if (tipoTamanho && !selecionados[tipoTamanho.id]) {
+      toast.warn('Selecione o tamanho da camiseta')
       return
     }
 
@@ -89,7 +108,7 @@ export default function ModalGerarVariacoes({
         encomenda: 0
       })
 
-      toast.success('Variação criada com sucesso')
+      toast.success('Versão criada com sucesso')
 
       onClose()
       onSuccess()
@@ -105,123 +124,155 @@ export default function ModalGerarVariacoes({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-3 sm:p-6 z-50">
+      <div className="bg-cor-fundo w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6 border border-cor-secundaria/30 shadow-xl">
 
-      <div className="bg-cor-fundo w-full max-w-lg rounded-2xl p-6 border border-cor-secundaria/30 shadow-xl">
+        {modo === 'criar' && (
+          <>
+            <h2 className="text-lg sm:text-xl font-bold mb-2">
+              Nova Versão do Produto
+            </h2>
 
-        <h2 className="text-xl font-bold mb-2">
-          Nova Variação do Produto
-        </h2>
+            <p className="text-sm text-on-surface/60 mb-4">
+              Escolha as opções abaixo para criar uma nova versão.
+            </p>
 
-        <p className="text-sm text-on-surface/60 mb-6">
-          Escolha o tamanho e, se desejar, personalize com nome na camisa.
-        </p>
+            <InfoTip type="info" className="mb-6">
+              Cada combinação vira uma nova versão do produto.
+              <br /><br />
+              Exemplo:
+              <br />
+              • Camiseta tamanho G
+              <br />
+              • Camiseta tamanho G com nome do instrutor
+            </InfoTip>
 
-        {/* 🔹 SEÇÃO VARIAÇÕES */}
-        <div className="space-y-5 mb-6">
+            <button
+              type="button"
+              onClick={() => setModo('gerenciar')}
+              className="text-sm text-cor-primaria underline mb-2"
+            >
+              Gerenciar tipos e valores
+            </button>
 
-          {tipos.map(tipo => {
+            <InfoTip type="warning" className="mb-6">
+              Se precisar de um tamanho, cor ou nome que ainda não exista,
+              clique em <strong>Gerenciar tipos e valores</strong>.
+            </InfoTip>
 
-            const nomeTipo = tipo.nome.toLowerCase()
-            let titulo = tipo.nome.toUpperCase()
-            let placeholder = 'Selecione'
+            {/* VARIAÇÕES */}
+            <div className="space-y-5 mb-6">
+              {tipos.map(tipo => {
 
-            if (nomeTipo === 'tamanho') {
-              titulo = 'TAMANHO DA CAMISETA'
-              placeholder = 'Selecione o tamanho'
-            }
+                const nomeTipo = tipo.nome.toLowerCase()
+                let titulo = tipo.nome.toUpperCase()
+                let placeholder = 'Selecione'
 
-            if (nomeTipo === 'nome_camisa') {
-              titulo = 'PERSONALIZAÇÃO (OPCIONAL)'
-              placeholder = 'Sem personalização'
-            }
+                if (nomeTipo === 'tamanho') {
+                  titulo = 'TAMANHO'
+                  placeholder = 'Selecione o tamanho'
+                }
 
-            return (
-              <div key={tipo.id}>
-                <label className="block text-sm font-semibold mb-2">
-                  {titulo}
-                </label>
+                if (nomeTipo === 'nome_camisa') {
+                  titulo = 'PERSONALIZAÇÃO (OPCIONAL)'
+                  placeholder = 'Sem personalização'
+                }
 
-                <select
-                  className="select-admin w-full"
-                  value={selecionados[tipo.id] || ''}
-                  onChange={(e) =>
-                    selecionarValor(tipo.id, Number(e.target.value))
-                  }
-                >
-                  <option value="">{placeholder}</option>
+                const valores = valoresPorTipo[tipo.id] || []
 
-                  {(valoresPorTipo[tipo.id] || []).map(valor => (
-                    <option key={valor.id} value={valor.id}>
-                      {valor.valor}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )
-          })}
+                return (
+                  <div key={tipo.id}>
+                    <label className="block text-sm font-semibold mb-2">
+                      {titulo}
+                    </label>
 
-        </div>
+                    <select
+                      className="select-admin w-full"
+                      value={selecionados[tipo.id] || ''}
+                      onChange={(e) =>
+                        selecionarValor(tipo.id, Number(e.target.value))
+                      }
+                    >
+                      <option value="">{placeholder}</option>
+                      {valores.map(valor => (
+                        <option key={valor.id} value={valor.id}>
+                          {valor.valor}
+                        </option>
+                      ))}
+                    </select>
 
-        {/* 🔹 RESUMO VISUAL */}
-        {obterResumo() && (
-          <div className="mb-6 p-3 rounded-lg bg-surface border border-cor-secundaria/20 text-sm">
-            <strong>Você está criando:</strong>
-            <div className="mt-1 text-cor-primaria font-medium">
-              {obterResumo()}
+                    {valores.length === 0 && (
+                      <div className="mt-2 text-xs text-red-400">
+                        Nenhum valor cadastrado.
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
-          </div>
+
+            {obterResumo() && (
+              <div className="mb-6 p-3 rounded-lg bg-surface border border-cor-secundaria/20 text-sm">
+                <strong>Você está criando:</strong>
+                <div className="mt-1 text-cor-primaria font-medium">
+                  {obterResumo()}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  PREÇO (R$)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input-number-admin w-full"
+                  value={preco}
+                  onChange={(e) => setPreco(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  ESTOQUE
+                </label>
+                <input
+                  type="number"
+                  className="input-number-admin w-full"
+                  value={quantidade}
+                  onChange={(e) => setQuantidade(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button onClick={onClose} className="btn-secondary w-full">
+                Cancelar
+              </button>
+
+              <button
+                onClick={criarVariacao}
+                disabled={loading}
+                className="btn-primary w-full"
+              >
+                {loading ? 'Salvando...' : 'Criar Versão'}
+              </button>
+            </div>
+          </>
         )}
 
-        {/* 🔹 PREÇO E ESTOQUE */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-
-          <div>
-            <label className="block text-sm font-semibold mb-2">
-              PREÇO (R$)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              className="input-number-admin w-full"
-              value={preco}
-              onChange={(e) => setPreco(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold mb-2">
-              ESTOQUE
-            </label>
-            <input
-              type="number"
-              className="input-number-admin w-full"
-              value={quantidade}
-              onChange={(e) => setQuantidade(e.target.value)}
-            />
-          </div>
-
-        </div>
-
-        {/* 🔹 BOTÕES */}
-        <div className="flex gap-3">
-
-          <button
-            onClick={onClose}
-            className="btn-secondary w-full min-h-[44px]"
-          >
-            Cancelar
-          </button>
-
-          <button
-            onClick={criarVariacao}
-            disabled={loading}
-            className="btn-primary w-full min-h-[44px]"
-          >
-            {loading ? 'Salvando...' : 'Criar Variação'}
-          </button>
-
-        </div>
+        {modo === 'gerenciar' && (
+          <ModoGerenciarVariacoes
+            setModo={(novoModo) => {
+              setModo(novoModo)
+              if (novoModo === 'criar') {
+                recarregarEstrutura()
+              }
+            }}
+          />
+        )}
 
       </div>
     </div>

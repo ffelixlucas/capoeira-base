@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import variacoesService from "./variacoesService";
 
+/* ======================================================
+   LISTAR TIPOS
+====================================================== */
+
 async function listarTipos(req: Request, res: Response) {
   try {
     const organizacaoId = req.usuario.organizacao_id;
@@ -21,6 +25,10 @@ async function listarTipos(req: Request, res: Response) {
     });
   }
 }
+
+/* ======================================================
+   LISTAR VALORES
+====================================================== */
 
 async function listarValores(req: Request, res: Response) {
   try {
@@ -45,7 +53,116 @@ async function listarValores(req: Request, res: Response) {
   }
 }
 
+/* ======================================================
+   CRIAR TIPO
+====================================================== */
+
+async function criarTipo(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const { nome } = req.body;
+
+    const tipoId =
+      await variacoesService.criarTipoVariacaoService(
+        organizacaoId,
+        nome
+      );
+
+    return res.status(201).json({
+      success: true,
+      data: { id: tipoId },
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/* ======================================================
+   EXCLUIR TIPO
+====================================================== */
+
+async function excluirTipo(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const tipoId = Number(req.params.tipoId);
+
+    await variacoesService.excluirTipoVariacaoService(
+      organizacaoId,
+      tipoId
+    );
+
+    return res.json({
+      success: true,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/* ======================================================
+   CRIAR VALOR
+====================================================== */
+
+async function criarValor(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const { tipoId, valor } = req.body;
+
+    const valorId =
+      await variacoesService.criarValorVariacaoService(
+        organizacaoId,
+        tipoId,
+        valor
+      );
+
+    return res.status(201).json({
+      success: true,
+      data: { id: valorId },
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/* ======================================================
+   EXCLUIR VALOR
+====================================================== */
+
+async function excluirValor(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const valorId = Number(req.params.valorId);
+
+    await variacoesService.excluirValorVariacaoService(
+      organizacaoId,
+      valorId
+    );
+
+    return res.json({
+      success: true,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 export default {
   listarTipos,
   listarValores,
+  criarTipo,
+  excluirTipo,
+  criarValor,
+  excluirValor,
 };
