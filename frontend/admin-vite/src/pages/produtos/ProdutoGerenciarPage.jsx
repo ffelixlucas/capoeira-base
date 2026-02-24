@@ -5,6 +5,7 @@ import { produtosService } from "../../services/produtosService";
 import { toast } from "react-toastify";
 import ModalGerarVariacoes from "../../components/admin/produtos/ModalGerarVariacoes";
 import SkuLinha from "../../components/admin/produtos/SkuLinha";
+import ProdutoGaleria from "../../components/admin/produtos/ProdutoGaleria";
 
 export default function ProdutoGerenciarPage() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export default function ProdutoGerenciarPage() {
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("");
   const [ativo, setAtivo] = useState(1);
+
 
   useEffect(() => {
     carregar();
@@ -44,7 +46,18 @@ export default function ProdutoGerenciarPage() {
       await produtosService.atualizar(id, { nome, descricao, categoria, ativo });
       toast.success("Produto atualizado");
       carregar();
-    } catch {
+    } catch { {imagemPreview && (
+      <div
+        className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50"
+        onClick={() => setImagemPreview(null)}
+      >
+        <img
+          src={imagemPreview}
+          alt="Preview"
+          className="max-h-[90vh] max-w-full object-contain rounded-lg"
+        />
+      </div>
+    )}
       toast.error("Erro ao atualizar");
     }
   }
@@ -58,10 +71,11 @@ export default function ProdutoGerenciarPage() {
   }
 
   if (!produto) return null;
+  console.log("Produto carregado:", produto);
 
   return (
     <div className="min-h-screen bg-cor-fundo text-cor-texto pb-24">
-      
+
       {/* Header */}
       <header className="bg-surface border-b-2 border-cor-secundaria/30 sticky top-0 z-10">
         <div className="px-4 py-3 flex items-center justify-between">
@@ -78,10 +92,10 @@ export default function ProdutoGerenciarPage() {
 
       {/* Conteúdo */}
       <div className="p-4 space-y-4">
-        
+
         {/* Card do produto */}
         <div className="bg-surface rounded-xl border-2 border-cor-secundaria/30 overflow-hidden shadow-sm">
-          
+
           {/* Formulário */}
           <div className="p-4 space-y-4">
             <div>
@@ -124,10 +138,15 @@ export default function ProdutoGerenciarPage() {
           </div>
         </div>
 
+        <ProdutoGaleria
+          produto={produto}
+          onAtualizado={carregar}
+        />
+
         {/* Seção de variações */}
         {produto.tipo_produto === "variavel" && (
           <div className="bg-surface rounded-xl border-2 border-cor-secundaria/30 overflow-hidden shadow-sm">
-            
+
             {/* Header com botão */}
             <div className="p-4 border-b-2 border-cor-secundaria/30 flex items-center justify-between">
               <h2 className="font-semibold">Variações</h2>
@@ -178,6 +197,9 @@ export default function ProdutoGerenciarPage() {
         produtoId={produto.id}
         onSuccess={carregar}
       />
+
+     
     </div>
   );
+
 }

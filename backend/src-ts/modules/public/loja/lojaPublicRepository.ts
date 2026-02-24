@@ -99,7 +99,14 @@ class LojaPublicRepository {
             WHEN ps.encomenda = 1 THEN 9999
             ELSE COALESCE(e.quantidade, 0)
           END
-        ) AS quantidade_total
+        ) AS quantidade_total,
+        (
+          SELECT pi.url
+          FROM produto_imagens pi
+          WHERE pi.produto_id = p.id
+          ORDER BY pi.is_capa DESC, pi.ordem ASC
+          LIMIT 1
+        ) AS imagem_capa
       FROM produtos p
       INNER JOIN produtos_skus ps
         ON ps.produto_id = p.id
@@ -117,7 +124,7 @@ class LojaPublicRepository {
       `,
       [slug]
     );
-
+  
     return rows;
   }
 
@@ -138,11 +145,22 @@ class LojaPublicRepository {
       `,
       [slug, produtoId]
     );
-
+  
     if (!produtoRows.length) {
       return null;
     }
-
+  
+    // 🔹 IMAGENS DO PRODUTO
+    const [imagensProduto]: any = await db.query(
+      `
+      SELECT id, url, ordem, is_capa
+      FROM produto_imagens
+      WHERE produto_id = ?
+      ORDER BY is_capa DESC, ordem ASC
+      `,
+      [produtoId]
+    );
+  
     const [skuRows]: any = await db.query(
       `
       SELECT
@@ -165,16 +183,18 @@ class LojaPublicRepository {
       `,
       [slug, produtoId]
     );
-
+  
     if (!skuRows.length) {
       return {
         ...produtoRows[0],
+        imagens: imagensProduto,
         skus: []
       };
     }
-
+  
     const skuIds = skuRows.map((s: any) => s.id);
-
+  
+    // 🔹 VARIAÇÕES
     const [variacoesRows]: any = await db.query(
       `
       SELECT
@@ -190,7 +210,18 @@ class LojaPublicRepository {
       `,
       [skuIds]
     );
-
+  
+    // 🔹 IMAGENS DAS SKUS
+    const [skuImagensRows]: any = await db.query(
+      `
+      SELECT id, sku_id, url, ordem, is_capa
+      FROM sku_imagens
+      WHERE sku_id IN (?)
+      ORDER BY is_capa DESC, ordem ASC
+      `,
+      [skuIds]
+    );
+  
     const skusComVariacoes = skuRows.map((sku: any) => {
       const variacoes = variacoesRows
         .filter((v: any) => v.sku_id === sku.id)
@@ -198,15 +229,26 @@ class LojaPublicRepository {
           tipo: v.tipo,
           valor: v.valor
         }));
-
+  
+      const imagens = skuImagensRows
+        .filter((img: any) => img.sku_id === sku.id)
+        .map((img: any) => ({
+          id: img.id,
+          url: img.url,
+          ordem: img.ordem,
+          is_capa: img.is_capa
+        }));
+  
       return {
         ...sku,
-        variacoes
+        variacoes,
+        imagens
       };
     });
-
+  
     return {
       ...produtoRows[0],
+      imagens: imagensProduto,
       skus: skusComVariacoes
     };
   }

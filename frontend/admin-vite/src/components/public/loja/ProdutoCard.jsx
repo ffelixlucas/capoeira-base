@@ -1,3 +1,5 @@
+import React from "react";
+
 function formatarPreco(valor) {
   return Number(valor).toLocaleString("pt-BR", {
     style: "currency",
@@ -7,6 +9,8 @@ function formatarPreco(valor) {
 
 export default function ProdutoCard({ produto, onSelecionar }) {
   const indisponivel = Number(produto.quantidade_total) <= 0;
+
+  const imagemCapa = produto.imagem_capa;
 
   return (
     <button
@@ -18,10 +22,18 @@ export default function ProdutoCard({ produto, onSelecionar }) {
         ${indisponivel ? "opacity-60 cursor-not-allowed" : "hover:shadow-md"}
         bg-white`}
     >
-      <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-t-lg">
-        <span className="text-gray-400 text-sm">
-          Imagem em breve
-        </span>
+      <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-t-lg overflow-hidden">
+        {imagemCapa ? (
+          <img
+            src={imagemCapa}
+            alt={produto.nome}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-gray-400 text-sm">
+            Sem imagem
+          </span>
+        )}
       </div>
 
       <div className="p-3 space-y-2">

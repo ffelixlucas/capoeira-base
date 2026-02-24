@@ -1,3 +1,4 @@
+//src/hooks/public/loja/useProdutoPublic.js
 import { useEffect, useState } from "react";
 import { buscarSkuPorId } from "../../../services/public/lojaPublicService";
 

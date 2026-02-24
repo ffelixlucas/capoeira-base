@@ -51,5 +51,72 @@ atualizarEstoque: async (skuId, dados) => {
   const response = await api.put(`/produtos/sku/${skuId}/estoque`, dados)
   return response.data
 },
+
+// 🔵 UPLOAD IMAGEM PRODUTO
+uploadImagemProduto: async (produtoId, file) => {
+  const formData = new FormData();
+  formData.append("imagem", file);
+
+  const response = await api.post(
+    `/produtos/${produtoId}/imagens`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data;
+},
+
+// 🔵 DEFINIR CAPA PRODUTO
+definirCapaProduto: async (produtoId, imagemId) => {
+  const response = await api.put(
+    `/produtos/${produtoId}/imagens/${imagemId}/capa`
+  );
+
+  return response.data;
+},
+
+// 🔵 REMOVER IMAGEM PRODUTO
+removerImagemProduto: async (imagemId) => {
+  const response = await api.delete(
+    `/produtos/imagens/${imagemId}`
+  );
+
+  return response.data;
+},
+
+// 🔵 UPLOAD IMAGEM SKU
+uploadImagemSku: async (skuId, file) => {
+  const formData = new FormData();
+  formData.append("imagem", file);
+
+  const response = await api.post(
+    `/produtos/sku/${skuId}/imagens`,
+    formData
+  );
+
+  return response.data;
+},
+
+// 🔵 DEFINIR CAPA SKU
+definirCapaSku: async (skuId, imagemId) => {
+  const response = await api.put(
+    `/produtos/sku/${skuId}/imagens/${imagemId}/capa`
+  );
+
+  return response.data;
+},
+
+// 🔵 REMOVER IMAGEM SKU
+removerImagemSku: async (imagemId) => {
+  const response = await api.delete(
+    `/produtos/sku/imagens/${imagemId}`
+  );
+
+  return response.data;
+},
 }
 

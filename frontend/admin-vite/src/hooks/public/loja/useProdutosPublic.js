@@ -1,3 +1,4 @@
+//src/hooks/public/loja/useProdutosPublic.js
 import { useEffect, useState } from "react";
 import { listarProdutos } from "../../../services/public/loja/lojaPublicService"
 export function useProdutosPublic(slug) {
