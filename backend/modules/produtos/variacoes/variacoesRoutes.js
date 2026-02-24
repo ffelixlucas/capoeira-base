@@ -1,0 +1,1 @@
+module.exports = require("../../../dist/modules/produtos/variacoes/variacoesRoutes.js").default;

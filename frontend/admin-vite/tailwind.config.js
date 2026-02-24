@@ -11,6 +11,8 @@ module.exports = {
         "cor-destaque": "#a28012",
         "cor-clara": "#d9d9d6", 
         "cor-escura": "#000",
+        "cor-placeholder": "#9ca3af",
+
       },
     },
   },

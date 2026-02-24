@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useCarrinho } from "../../../contexts/public/loja/CarrinhoContext";
 import { useParams } from "react-router-dom";
 import { buscarProdutoPorId } from "../../../services/public/loja/lojaPublicService";
@@ -15,8 +15,110 @@ export default function ProdutoModal({ produto, fechar }) {
   const { adicionarItem } = useCarrinho();
 
   const [dadosProduto, setDadosProduto] = useState(null);
-  const [skuSelecionado, setSkuSelecionado] = useState(null);
   const [carregando, setCarregando] = useState(false);
+  const [selecoes, setSelecoes] = useState({});
+
+  // 🔥 Detecta qual é o tipo "tamanho"
+  const tipoTamanho = useMemo(() => {
+    if (!dadosProduto?.skus?.length) return null;
+
+    const tipos = dadosProduto.skus.flatMap((sku) =>
+      sku.variacoes?.map((v) => v.tipo) || []
+    );
+
+    return tipos.find((t) =>
+      t.toLowerCase().includes("tamanho")
+    ) || null;
+  }, [dadosProduto]);
+
+  // 🔥 Agrupamento inteligente
+  const variacoesAgrupadas = useMemo(() => {
+    if (!dadosProduto?.skus) return {};
+
+    const mapa = {};
+
+    dadosProduto.skus.forEach((sku) => {
+      sku.variacoes?.forEach((v) => {
+        if (!mapa[v.tipo]) {
+          mapa[v.tipo] = new Set();
+        }
+
+        // 🔥 Se for tamanho → sempre mostrar
+        if (v.tipo === tipoTamanho) {
+          mapa[v.tipo].add(v.valor);
+        } 
+        // 🔥 Se for outro tipo → filtrar pelo tamanho selecionado
+        else {
+          if (!selecoes[tipoTamanho]) {
+            mapa[v.tipo].add(v.valor);
+          } else {
+            const skuTemTamanhoSelecionado = sku.variacoes?.some(
+              (vv) =>
+                vv.tipo === tipoTamanho &&
+                vv.valor === selecoes[tipoTamanho]
+            );
+
+            if (skuTemTamanhoSelecionado) {
+              mapa[v.tipo].add(v.valor);
+            }
+          }
+        }
+      });
+    });
+
+    Object.keys(mapa).forEach((k) => {
+      mapa[k] = Array.from(mapa[k]);
+    });
+
+    return mapa;
+  }, [dadosProduto, selecoes, tipoTamanho]);
+
+  // 🔥 SKU selecionado automático
+  const skuSelecionado = useMemo(() => {
+    if (!dadosProduto?.skus) return null;
+
+    return dadosProduto.skus.find((sku) =>
+      sku.variacoes?.every(
+        (v) => selecoes[v.tipo] === v.valor
+      )
+    );
+  }, [dadosProduto, selecoes]);
+
+  // 🔥 Limpa seleção inválida automaticamente
+  useEffect(() => {
+    if (!dadosProduto || !tipoTamanho) return;
+
+    const tamanhoSelecionado = selecoes[tipoTamanho];
+    if (!tamanhoSelecionado) return;
+
+    const nomesValidos = dadosProduto.skus
+      .filter((sku) =>
+        sku.variacoes?.some(
+          (v) =>
+            v.tipo === tipoTamanho &&
+            v.valor === tamanhoSelecionado
+        )
+      )
+      .flatMap((sku) =>
+        sku.variacoes?.filter(
+          (v) => v.tipo !== tipoTamanho
+        ) || []
+      )
+      .map((v) => v.valor);
+
+    Object.entries(selecoes).forEach(([tipo, valor]) => {
+      if (
+        tipo !== tipoTamanho &&
+        !nomesValidos.includes(valor)
+      ) {
+        setSelecoes((prev) => {
+          const novo = { ...prev };
+          delete novo[tipo];
+          return novo;
+        });
+      }
+    });
+  }, [selecoes, dadosProduto, tipoTamanho]);
 
   useEffect(() => {
     if (!produto) return;
@@ -28,6 +130,7 @@ export default function ProdutoModal({ produto, fechar }) {
 
         if (response?.success) {
           setDadosProduto(response.data);
+          setSelecoes({});
         }
       } catch (error) {
         console.error("Erro ao carregar produto:", error);
@@ -43,13 +146,11 @@ export default function ProdutoModal({ produto, fechar }) {
 
   return (
     <>
-      {/* Overlay */}
       <div
         className="fixed inset-0 bg-black/50 z-40"
         onClick={fechar}
       />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white text-black w-full max-w-md rounded-xl shadow-lg p-6 relative">
 
@@ -64,39 +165,49 @@ export default function ProdutoModal({ produto, fechar }) {
             <span className="text-gray-400">Imagem em breve</span>
           </div>
 
-          <h2 className="text-lg font-bold mb-2">
-            {produto.nome}
+          <h2 className="text-lg font-bold mb-1">
+            {dadosProduto?.nome}
           </h2>
 
           <p className="text-gray-600 mb-4">
-            {produto.descricao}
+            {dadosProduto?.descricao}
           </p>
 
           {carregando && (
-            <p className="text-gray-500 text-sm">Carregando opções...</p>
+            <p className="text-gray-500 text-sm">
+              Carregando opções...
+            </p>
           )}
 
-          {dadosProduto?.skus?.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm font-medium mb-2">Escolha o tamanho:</p>
+          {!carregando &&
+            Object.keys(variacoesAgrupadas).map((tipo) => (
+              <div key={tipo} className="mb-4">
+                <p className="text-sm font-medium mb-2 capitalize">
+                  Escolha {tipo}:
+                </p>
 
-              <div className="flex flex-wrap gap-2">
-                {dadosProduto.skus.map((sku) => (
-                  <button
-                    key={sku.id}
-                    onClick={() => setSkuSelecionado(sku)}
-                    className={`px-3 py-1 border rounded text-sm ${
-                      skuSelecionado?.id === sku.id
-                        ? "bg-black text-white"
-                        : "bg-white"
-                    }`}
-                  >
-                    {sku.atributos?.tamanho || sku.sku_codigo}
-                  </button>
-                ))}
+                <div className="flex flex-wrap gap-2">
+                  {variacoesAgrupadas[tipo].map((valor) => (
+                    <button
+                      key={valor}
+                      onClick={() =>
+                        setSelecoes((prev) => ({
+                          ...prev,
+                          [tipo]: valor,
+                        }))
+                      }
+                      className={`px-3 py-1 border rounded text-sm transition ${
+                        selecoes[tipo] === valor
+                          ? "bg-black text-white border-black"
+                          : "bg-white hover:border-black"
+                      }`}
+                    >
+                      {valor}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            ))}
 
           {skuSelecionado && (
             <p className="text-xl font-bold mb-4">
@@ -109,13 +220,13 @@ export default function ProdutoModal({ produto, fechar }) {
             onClick={() => {
               adicionarItem({
                 skuId: skuSelecionado.id,
-                nome: produto.nome,
+                nome: dadosProduto.nome,
                 preco: skuSelecionado.preco,
-                tamanho: skuSelecionado.atributos?.tamanho,
+                variacoes: selecoes,
               });
               fechar();
             }}
-            className="w-full bg-black text-white py-2 rounded disabled:opacity-50"
+            className="w-full bg-black text-white py-2 rounded disabled:opacity-50 transition"
           >
             Adicionar ao carrinho
           </button>

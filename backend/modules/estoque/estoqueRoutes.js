@@ -1,0 +1,1 @@
+module.exports = require("../../dist/modules/estoque/estoqueRoutes.js").default;

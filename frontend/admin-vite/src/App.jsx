@@ -35,6 +35,7 @@ import EditarPerfil from "./pages/EditarPerfil.jsx";
 import ConfigSistema from "./pages/ConfigSistema.jsx";
 import Loja from "./pages/Loja.jsx";
 import PedidoDetalhe from "./pages/PedidoDetalhe.jsx";
+import ProdutoGerenciarPage from './pages/produtos/ProdutoGerenciarPage'
 
 // Imports de páginas públicas
 import LayoutPublic from "./components/layout/LayoutPublic";
@@ -49,6 +50,7 @@ import { CarrinhoProvider } from "./contexts/public/loja/CarrinhoContext";
 import LojaWrapper from "./pages/public/loja/LojaWrapper.jsx";
 import CheckoutPublic from "./pages/public/loja/CheckoutPublic.jsx";
 import PedidoConfirmado from "./pages/public/loja/PedidoConfirmado.jsx"
+import { ProdutosPage } from "./pages/produtos/ProdutosPage";
 
 function App() {
   return (
@@ -99,6 +101,11 @@ function App() {
             <Route path="/mensalidades" element={<Mensalidades />} />
             <Route path="/loja" element={<RoleRoute permitido={["admin", "loja"]}><Loja /></RoleRoute>} />
             <Route path="/loja/pedido/:id" element={<RoleRoute permitido={["admin", "loja"]}><PedidoDetalhe /></RoleRoute>} />
+            <Route path="/admin/produtos" element={<ProdutosPage />} />
+            <Route
+  path="/admin/produtos/:id"
+  element={<ProdutoGerenciarPage />}
+/>
 
 
 

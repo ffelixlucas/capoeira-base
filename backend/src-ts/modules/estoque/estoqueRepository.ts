@@ -137,8 +137,58 @@ async function reverterEstoque(
   });
 }
 
+async function entradaManualEstoque(
+  organizacaoId: number,
+  skuId: number,
+  quantidade: number,
+  motivo: string,
+  trx?: PoolConnection
+) {
+  if (!trx) {
+    throw new Error("Transação obrigatória para entrada manual de estoque");
+  }
+
+  const executor = trx;
+
+  if (quantidade <= 0) {
+    throw new Error("Quantidade deve ser maior que zero");
+  }
+
+  // 🔄 Atualiza estoque (com verificação)
+  const [updateResult]: any = await executor.query(
+    `
+    UPDATE estoque
+    SET quantidade = quantidade + ?
+    WHERE sku_id = ?
+      AND organizacao_id = ?
+    `,
+    [quantidade, skuId, organizacaoId]
+  );
+
+  if (updateResult.affectedRows === 0) {
+    throw new Error("SKU não encontrado no estoque");
+  }
+
+  // 📦 Registrar movimentação
+  await executor.query(
+    `
+    INSERT INTO estoque_movimentacoes
+      (organizacao_id, sku_id, tipo, quantidade, origem)
+    VALUES (?, ?, 'entrada', ?, ?)
+    `,
+    [organizacaoId, skuId, quantidade, motivo]
+  );
+  logger.info("[estoqueRepository] Entrada manual registrada", {
+    organizacaoId,
+    skuId,
+    quantidade,
+    motivo,
+  });
+}
+
 export {
   reverterEstoque,
+  entradaManualEstoque,
 };
 
 export default {

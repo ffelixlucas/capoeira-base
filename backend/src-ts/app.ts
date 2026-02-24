@@ -24,6 +24,8 @@ const galeriaRoutes = require("../modules/galeria/galeriaRoutes");
 const graduacoesRoutes = require("../modules/graduacoes/graduacoesRoutes");
 const inscricoesRoutes = require("../modules/inscricoes/inscricoesRoutes");
 const horariosRoutes = require("../modules/horarios/horariosRoutes");
+const estoqueRoutes = require("../modules/estoque/estoqueRoutes");
+const produtosRoutes = require("../modules/produtos/produtosRoutes");
 const financeiroRoutes = require("../modules/financeiro/financeiroRoutes");
 const pagamentosRoutes = require("../modules/pagamentos/pagamentosRoutes");
 const pedidosRoutes = require("../modules/pedidos/pedidosRoutes");
@@ -32,6 +34,7 @@ const matriculaRoutes = require("../modules/matricula/matriculaRoutes");
 const notificacaoDestinosRoutes = require("../modules/notificacaoDestinos/notificacaoDestinosRoutes");
 const uploadRoutes = require("../modules/uploads/uploadRoutes");
 const notificacoesPushRoutes = require("../modules/notificacoesPush/notificacoesPushRoutes"); 
+const variacoesRoutes = require("../modules/produtos/variacoes/variacoesRoutes");
 
 
 // PÚBLICAS
@@ -85,6 +88,8 @@ app.use("/api/equipe", equipeRoutes);
 app.use("/api/equipe", equipeRolesRoutes);
 app.use("/api/galeria", galeriaRoutes);
 app.use("/api/financeiro", financeiroRoutes);
+app.use("/api/estoque", estoqueRoutes);
+app.use("/api/produtos", produtosRoutes);
 app.use("/api/pagamentos", pagamentosRoutes);
 app.use("/api/horarios", horariosRoutes);
 app.use("/api/inscricoes", inscricoesRoutes);
@@ -98,6 +103,7 @@ app.use("/api/categorias", categoriasRoutes);
 app.use("/api/graduacoes", graduacoesRoutes);
 app.use("/api/whatsapp-destinos", whatsappRoutes);
 app.use("/api/notificacoes-push", notificacoesPushRoutes);
+app.use("/api/produtos/variacoes", variacoesRoutes);
 
 
 
