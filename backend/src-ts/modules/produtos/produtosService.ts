@@ -7,10 +7,12 @@ import {
   criarSku,
   criarEstoqueInicial,
   atualizarSku,
-  atualizarProduto,        
+  atualizarProduto,
   atualizarEstoqueDireto,
-  vincularSkuVariacao   
+  vincularSkuVariacao
 } from "./produtosRepository";
+
+import { deletarArquivoFirebase } from "../../utils/firebaseStorageHelper";
 
 interface CriarProdutoInput {
   organizacaoId: number;
@@ -47,20 +49,25 @@ interface AtualizarProdutoCompletoInput {
   quantidade: number;
 }
 
-/**
- * LISTAR
- */
-async function listarProdutosService(organizacaoId: number) {
+/* =========================
+   LISTAR
+========================= */
+
+async function listarProdutosService(
+  organizacaoId: number,
+  isPublic: boolean = false
+) {
   if (!organizacaoId) {
     throw new Error("Organização inválida");
   }
 
-  return await listarProdutos(organizacaoId);
+  return await listarProdutos(organizacaoId, isPublic);
 }
 
-/**
- * BUSCAR
- */
+/* =========================
+   BUSCAR
+========================= */
+
 async function buscarProdutoPorIdService(
   organizacaoId: number,
   produtoId: number
@@ -77,12 +84,10 @@ async function buscarProdutoPorIdService(
   return produto;
 }
 
-/**
- * CRIAR PRODUTO COMPLETO
- * 🔥 REGRA:
- * - Produto simples → cria 1 SKU automática + estoque
- * - Produto variável → NÃO cria SKU automática
- */
+/* =========================
+   CRIAR PRODUTO COMPLETO
+========================= */
+
 async function criarProdutoCompletoService(
   produtoData: CriarProdutoInput,
   skuData?: Omit<CriarSkuInput, "produtoId">
@@ -92,7 +97,6 @@ async function criarProdutoCompletoService(
   try {
     await connection.beginTransaction();
 
-    // 1️⃣ Cria produto
     const produtoId = await criarProduto(
       produtoData.organizacaoId,
       produtoData.nome,
@@ -105,7 +109,6 @@ async function criarProdutoCompletoService(
 
     let skuId: number | null = null;
 
-    // 2️⃣ Se for produto simples → cria SKU automática
     if (produtoData.tipo_produto === "simples") {
 
       const precoSeguro =
@@ -153,9 +156,10 @@ async function criarProdutoCompletoService(
   }
 }
 
-/**
- * CRIAR SKU
- */
+/* =========================
+   CRIAR SKU
+========================= */
+
 async function criarSkuService({
   organizacaoId,
   produtoId,
@@ -166,9 +170,7 @@ async function criarSkuService({
 }: CriarSkuInput) {
 
   if (prontaEntrega === 1 && encomenda === 1) {
-    throw new Error(
-      "SKU não pode ser pronta_entrega e encomenda ao mesmo tempo"
-    );
+    throw new Error("SKU não pode ser pronta_entrega e encomenda ao mesmo tempo");
   }
 
   const connection = await db.pool.getConnection();
@@ -198,9 +200,7 @@ async function criarSkuService({
       );
 
       if (skuExistente.length > 0) {
-        throw new Error(
-          "Produto simples não pode ter mais de uma SKU"
-        );
+        throw new Error("Produto simples não pode ter mais de uma SKU");
       }
     }
 
@@ -238,9 +238,10 @@ async function criarSkuService({
   }
 }
 
-/**
- * ATUALIZAR SKU (somente preço)
- */
+/* =========================
+   ATUALIZAR SKU
+========================= */
+
 async function atualizarSkuService({
   organizacaoId,
   skuId,
@@ -263,9 +264,10 @@ async function atualizarSkuService({
   });
 }
 
-/**
- * ATUALIZAR PRODUTO COMPLETO (produto simples)
- */
+/* =========================
+   ATUALIZAR PRODUTO COMPLETO
+========================= */
+
 async function atualizarProdutoCompletoService({
   organizacaoId,
   produtoId,
@@ -282,7 +284,6 @@ async function atualizarProdutoCompletoService({
   try {
     await connection.beginTransaction();
 
-    // 1️⃣ Atualiza produto
     await atualizarProduto(
       organizacaoId,
       produtoId,
@@ -293,7 +294,6 @@ async function atualizarProdutoCompletoService({
       connection
     );
 
-    // 2️⃣ Busca SKU do produto simples
     const [skuRows]: any = await connection.query(
       `SELECT id 
        FROM produtos_skus 
@@ -308,7 +308,6 @@ async function atualizarProdutoCompletoService({
 
     const skuId = skuRows[0].id;
 
-    // 3️⃣ Atualiza preço
     await atualizarSku(
       organizacaoId,
       skuId,
@@ -316,7 +315,6 @@ async function atualizarProdutoCompletoService({
       connection
     );
 
-    // 4️⃣ Atualiza estoque direto
     await atualizarEstoqueDireto(
       organizacaoId,
       skuId,
@@ -340,6 +338,10 @@ async function atualizarProdutoCompletoService({
   }
 }
 
+/* =========================
+   GERAR SKUS VARIAÇÕES
+========================= */
+
 async function gerarSkusVariacoesService({
   organizacaoId,
   produtoId,
@@ -359,11 +361,9 @@ async function gerarSkusVariacoesService({
   try {
     await connection.beginTransaction();
 
-    // 🔹 Gerar código SKU baseado nas combinações
     const codigoVariacoes = valoresIds.join("-");
     const skuCodigo = `${produtoId}-${codigoVariacoes}`;
 
-    // 🔹 Criar SKU
     const skuId = await criarSku(
       organizacaoId,
       produtoId,
@@ -374,25 +374,20 @@ async function gerarSkusVariacoesService({
       connection
     );
 
-    // 🔹 Criar estoque inicial
     await criarEstoqueInicial(
       organizacaoId,
       skuId,
       connection
     );
 
-    // 🔹 Atualizar quantidade
     await connection.query(
-      `
-      UPDATE estoque
-      SET quantidade = ?
-      WHERE organizacao_id = ?
-        AND sku_id = ?
-      `,
+      `UPDATE estoque
+       SET quantidade = ?
+       WHERE organizacao_id = ?
+       AND sku_id = ?`,
       [quantidade, organizacaoId, skuId]
     );
 
-    // 🔹 Vincular TODAS as variações na mesma SKU
     for (const valorId of valoresIds) {
       await vincularSkuVariacao(
         organizacaoId,
@@ -404,12 +399,57 @@ async function gerarSkusVariacoesService({
 
     await connection.commit();
 
-    logger.info("[produtosService] SKU criada com múltiplas variações", {
-      organizacaoId,
-      produtoId,
-      skuId,
-      valoresIds,
-    });
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+/* =========================
+   DELETAR PRODUTO
+========================= */
+
+async function deletarProdutoService(
+  organizacaoId: number,
+  produtoId: number
+) {
+  const connection = await db.pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [imagensProduto]: any = await connection.query(
+      `SELECT url FROM produto_imagens
+       WHERE produto_id = ? AND organizacao_id = ?`,
+      [produtoId, organizacaoId]
+    );
+
+    const [imagensSku]: any = await connection.query(
+      `SELECT si.url
+       FROM sku_imagens si
+       JOIN produtos_skus ps ON ps.id = si.sku_id
+       WHERE ps.produto_id = ?
+       AND si.organizacao_id = ?`,
+      [produtoId, organizacaoId]
+    );
+
+    await connection.query(
+      `DELETE FROM produtos
+       WHERE id = ? AND organizacao_id = ?`,
+      [produtoId, organizacaoId]
+    );
+
+    await connection.commit();
+
+    for (const img of imagensProduto) {
+      await deletarArquivoFirebase(img.url);
+    }
+
+    for (const img of imagensSku) {
+      await deletarArquivoFirebase(img.url);
+    }
 
   } catch (error) {
     await connection.rollback();
@@ -418,6 +458,137 @@ async function gerarSkusVariacoesService({
     connection.release();
   }
 }
+
+/* =========================
+   IMAGEM PRODUTO
+========================= */
+
+async function deletarImagemProdutoService(
+  organizacaoId: number,
+  imagemId: number
+) {
+  const [rows]: any = await db.pool.query(
+    `SELECT url FROM produto_imagens
+     WHERE id = ? AND organizacao_id = ?`,
+    [imagemId, organizacaoId]
+  );
+
+  if (!rows.length) {
+    throw new Error("Imagem não encontrada");
+  }
+
+  const url = rows[0].url;
+
+  await db.pool.query(
+    `DELETE FROM produto_imagens
+     WHERE id = ? AND organizacao_id = ?`,
+    [imagemId, organizacaoId]
+  );
+
+  await deletarArquivoFirebase(url);
+}
+
+async function definirCapaProdutoService(
+  organizacaoId: number,
+  produtoId: number,
+  imagemId: number
+) {
+  const connection = await db.pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      `UPDATE produto_imagens
+       SET is_capa = 0
+       WHERE produto_id = ?
+       AND organizacao_id = ?`,
+      [produtoId, organizacaoId]
+    );
+
+    await connection.query(
+      `UPDATE produto_imagens
+       SET is_capa = 1
+       WHERE id = ?
+       AND produto_id = ?
+       AND organizacao_id = ?`,
+      [imagemId, produtoId, organizacaoId]
+    );
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+/* =========================
+   IMAGEM SKU
+========================= */
+
+async function deletarImagemSkuService(
+  organizacaoId: number,
+  imagemId: number
+) {
+  const [rows]: any = await db.pool.query(
+    `SELECT url FROM sku_imagens
+     WHERE id = ? AND organizacao_id = ?`,
+    [imagemId, organizacaoId]
+  );
+
+  if (!rows.length) {
+    throw new Error("Imagem não encontrada");
+  }
+
+  const url = rows[0].url;
+
+  await db.pool.query(
+    `DELETE FROM sku_imagens
+     WHERE id = ? AND organizacao_id = ?`,
+    [imagemId, organizacaoId]
+  );
+
+  await deletarArquivoFirebase(url);
+}
+
+async function definirCapaSkuService(
+  organizacaoId: number,
+  skuId: number,
+  imagemId: number
+) {
+  const connection = await db.pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      `UPDATE sku_imagens
+       SET is_capa = 0
+       WHERE sku_id = ?
+       AND organizacao_id = ?`,
+      [skuId, organizacaoId]
+    );
+
+    await connection.query(
+      `UPDATE sku_imagens
+       SET is_capa = 1
+       WHERE id = ?
+       AND sku_id = ?
+       AND organizacao_id = ?`,
+      [imagemId, skuId, organizacaoId]
+    );
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 export {
   listarProdutosService,
   buscarProdutoPorIdService,
@@ -426,4 +597,9 @@ export {
   atualizarSkuService,
   atualizarProdutoCompletoService,
   gerarSkusVariacoesService,
+  deletarProdutoService,
+  deletarImagemProdutoService,
+  definirCapaProdutoService,
+  deletarImagemSkuService,
+  definirCapaSkuService,
 };

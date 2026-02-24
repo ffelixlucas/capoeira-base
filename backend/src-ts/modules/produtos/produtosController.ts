@@ -8,8 +8,25 @@ import {
   atualizarSkuService,
   atualizarProdutoCompletoService,
   gerarSkusVariacoesService,
+  definirCapaProdutoService,
+  deletarImagemProdutoService,
+  definirCapaSkuService,
+  deletarImagemSkuService,
+
+
+
 } from "./produtosService";
 import { atualizarEstoqueDireto } from "./produtosRepository";
+
+import multer from "multer";
+import { uploadImagem } from "../../services/imageStorageService";
+import db from "../../database/connection";
+
+const upload = multer({ dest: "tmp/" });
+
+
+
+
 /**
  * LISTAR PRODUTOS
  */
@@ -17,7 +34,12 @@ async function listarProdutos(req: Request, res: Response) {
   try {
     const organizacaoId = req.usuario.organizacao_id;
 
-    const produtos = await listarProdutosService(organizacaoId);
+    const isPublic = req.query.public === "1";
+
+    const produtos = await listarProdutosService(
+      organizacaoId,
+      isPublic
+    );
 
     return res.json({
       success: true,
@@ -97,12 +119,12 @@ async function criarProdutoCompleto(req: Request, res: Response) {
       },
       tipo_produto === "simples"
         ? {
-            organizacaoId,
-            skuCodigo: sku_codigo,
-            preco: Number(preco),
-            prontaEntrega: Number(pronta_entrega),
-            encomenda: Number(encomenda),
-          }
+          organizacaoId,
+          skuCodigo: sku_codigo,
+          preco: Number(preco),
+          prontaEntrega: Number(pronta_entrega),
+          encomenda: Number(encomenda),
+        }
         : undefined
     );
 
@@ -299,6 +321,278 @@ async function atualizarEstoqueSku(req: Request, res: Response) {
   }
 }
 
+const uploadImagemProduto = [
+  upload.single("imagem"),
+  async (req: any, res: Response) => {
+    try {
+      const organizacaoId = req.usuario.organizacao_id;
+      const produtoId = Number(req.params.id);
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Arquivo não enviado",
+        });
+      }
+
+      // 🔹 Verifica se produto pertence à organização
+      const [[produto]]: any = await db.pool.query(
+        `
+        SELECT id
+        FROM produtos
+        WHERE id = ?
+          AND organizacao_id = ?
+        `,
+        [produtoId, organizacaoId]
+      );
+
+      if (!produto) {
+        return res.status(404).json({
+          success: false,
+          message: "Produto não encontrado",
+        });
+      }
+
+      // 🔹 Upload para Firebase via serviço central
+      const url = await uploadImagem({
+        organizacaoId,
+        tipo: "produto",
+        entidadeId: produtoId,
+        file: req.file,
+      });
+
+      // 🔹 Conta quantas imagens já existem
+      const [[{ total }]]: any = await db.pool.query(
+        `
+        SELECT COUNT(*) as total
+        FROM produto_imagens
+        WHERE produto_id = ?
+          AND organizacao_id = ?
+        `,
+        [produtoId, organizacaoId]
+      );
+
+      if (total >= 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Limite máximo de 6 imagens atingido",
+        });
+      }
+
+      // 🔹 Define ordem automática
+      const ordem = total;
+
+      // 🔹 Primeira imagem vira capa
+      const isCapa = total === 0 ? 1 : 0;
+
+      await db.pool.query(
+        `
+        INSERT INTO produto_imagens
+          (organizacao_id, produto_id, url, ordem, is_capa)
+        VALUES (?, ?, ?, ?, ?)
+        `,
+        [organizacaoId, produtoId, url, ordem, isCapa]
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Imagem enviada com sucesso",
+        data: { url },
+      });
+
+    } catch (error: any) {
+      logger.error("[produtosController] Erro upload imagem produto", { error });
+
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao enviar imagem",
+      });
+    }
+  },
+];
+
+const uploadImagemSku = [
+  upload.single("imagem"),
+  async (req: any, res: Response) => {
+    try {
+      const organizacaoId = req.usuario.organizacao_id;
+      const skuId = Number(req.params.skuId);
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Arquivo não enviado",
+        });
+      }
+
+      // 🔹 Verifica se SKU pertence à organização
+      const [[sku]]: any = await db.pool.query(
+        `
+        SELECT id
+        FROM produtos_skus
+        WHERE id = ?
+          AND organizacao_id = ?
+        `,
+        [skuId, organizacaoId]
+      );
+
+      if (!sku) {
+        return res.status(404).json({
+          success: false,
+          message: "SKU não encontrada",
+        });
+      }
+
+      // 🔹 Upload Firebase
+      const url = await uploadImagem({
+        organizacaoId,
+        tipo: "sku",
+        entidadeId: skuId,
+        file: req.file,
+      });
+
+      // 🔹 Conta imagens existentes
+      const [[{ total }]]: any = await db.pool.query(
+        `
+        SELECT COUNT(*) as total
+        FROM sku_imagens
+        WHERE sku_id = ?
+          AND organizacao_id = ?
+        `,
+        [skuId, organizacaoId]
+      );
+
+      if (total >= 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Limite máximo de 6 imagens atingido",
+        });
+      }
+
+      const ordem = total;
+      const isCapa = total === 0 ? 1 : 0;
+
+      await db.pool.query(
+        `
+        INSERT INTO sku_imagens
+          (organizacao_id, sku_id, url, ordem, is_capa)
+        VALUES (?, ?, ?, ?, ?)
+        `,
+        [organizacaoId, skuId, url, ordem, isCapa]
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Imagem da SKU enviada com sucesso",
+        data: { url },
+      });
+
+    } catch (error: any) {
+      logger.error("[produtosController] Erro upload imagem SKU", { error });
+
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao enviar imagem da SKU",
+      });
+    }
+  },
+];
+
+async function definirCapaProduto(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const produtoId = Number(req.params.produtoId);
+    const imagemId = Number(req.params.imagemId);
+
+    await definirCapaProdutoService(
+      organizacaoId,
+      produtoId,
+      imagemId
+    );
+
+    return res.json({
+      success: true,
+      message: "Imagem definida como capa",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+async function removerImagemProduto(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const imagemId = Number(req.params.imagemId);
+
+    await deletarImagemProdutoService(
+      organizacaoId,
+      imagemId
+    );
+
+    return res.json({
+      success: true,
+      message: "Imagem removida",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+
+
+async function definirCapaSku(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const skuId = Number(req.params.skuId);
+    const imagemId = Number(req.params.imagemId);
+
+    await definirCapaSkuService(
+      organizacaoId,
+      skuId,
+      imagemId
+    );
+
+    return res.json({
+      success: true,
+      message: "Imagem da SKU definida como capa",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+async function removerImagemSku(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const imagemId = Number(req.params.imagemId);
+
+    await deletarImagemSkuService(
+      organizacaoId,
+      imagemId
+    );
+
+    return res.json({
+      success: true,
+      message: "Imagem da SKU removida",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+
 export {
   listarProdutos,
   buscarProdutoPorId,
@@ -308,5 +602,12 @@ export {
   atualizarProdutoCompleto,
   gerarSkusVariacoes,
   atualizarEstoqueSku,
-
+  uploadImagemProduto,
+  definirCapaProduto,
+  removerImagemProduto,
+  definirCapaSku,
+  removerImagemSku,
+  uploadImagemSku,
 };
+
+

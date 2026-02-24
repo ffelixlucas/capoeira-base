@@ -8,53 +8,36 @@ import {
   atualizarSku,
   atualizarProdutoCompleto,
   gerarSkusVariacoes,
-  atualizarEstoqueSku
+  atualizarEstoqueSku,
+  uploadImagemProduto,
+  definirCapaProduto,
+  removerImagemProduto,
+  definirCapaSku,
+  removerImagemSku,
+  uploadImagemSku,
+
 } from "./produtosController";
 
 const router = Router();
 
-/**
- * LISTAR PRODUTOS
- * GET /api/produtos
- */
-router.get("/", verifyToken, listarProdutos);
-
-/**
- * BUSCAR PRODUTO
- * GET /api/produtos/:id
- */
-router.get("/:id", verifyToken, buscarProdutoPorId);
-
-/**
- * CRIAR PRODUTO (simples ou variável)
- * POST /api/produtos
- */
-router.post("/", verifyToken, criarProdutoCompleto);
-
-/**
- * CRIAR SKU MANUAL (produto variável)
- * POST /api/produtos/sku
- */
+// 1️⃣ SKU 
 router.post("/sku", verifyToken, criarSku);
-
-router.post(
-  "/:produtoId/gerar-skus",
-  verifyToken,
-  gerarSkusVariacoes
-);
-
-/**
- * ATUALIZAR SKU (somente preço)
- * PUT /api/produtos/sku/:id
- */
 router.put("/sku/:id", verifyToken, atualizarSku);
-
 router.put("/sku/:id/estoque", verifyToken, atualizarEstoqueSku);
+router.put("/sku/:skuId/imagens/:imagemId/capa", verifyToken, definirCapaSku);
+router.delete("/sku/imagens/:imagemId", verifyToken, removerImagemSku);
 
-/**
- * ATUALIZAR PRODUTO COMPLETO
- * PUT /api/produtos/:id
- */
+// 2️⃣ Produto 
+router.post("/:produtoId/gerar-skus", verifyToken, gerarSkusVariacoes);
+router.post("/:id/imagens", verifyToken, uploadImagemProduto);
+router.post("/sku/:skuId/imagens", verifyToken, uploadImagemSku);
+router.put("/:produtoId/imagens/:imagemId/capa", verifyToken, definirCapaProduto);
+router.delete("/imagens/:imagemId", verifyToken, removerImagemProduto);
 router.put("/:id", verifyToken, atualizarProdutoCompleto);
+
+// 3️⃣ Genéricas 
+router.get("/", verifyToken, listarProdutos);
+router.get("/:id", verifyToken, buscarProdutoPorId);
+router.post("/", verifyToken, criarProdutoCompleto);
 
 export default router;

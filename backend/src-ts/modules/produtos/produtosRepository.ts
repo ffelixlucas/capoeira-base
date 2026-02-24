@@ -5,7 +5,10 @@ import { PoolConnection } from "mysql2/promise";
 /**
  * LISTAR PRODUTOS (com SKUs)
  */
-async function listarProdutos(organizacaoId: number) {
+async function listarProdutos(
+  organizacaoId: number,
+  isPublic: boolean = false
+) {
   const [produtos]: any = await db.pool.query(
     `
     SELECT 
@@ -23,6 +26,40 @@ async function listarProdutos(organizacaoId: number) {
     [organizacaoId]
   );
 
+  // 🔹 MODO PÚBLICO (leve, apenas capa)
+  if (isPublic) {
+    const [capas]: any = await db.pool.query(
+      `
+      SELECT 
+        pi.produto_id,
+        pi.url
+      FROM produto_imagens pi
+      WHERE pi.organizacao_id = ?
+        AND pi.is_capa = 1
+      `,
+      [organizacaoId]
+    );
+
+    const produtosComCapa = produtos.map((produto: any) => {
+      const capa = capas.find(
+        (c: any) => c.produto_id === produto.id
+      );
+
+      return {
+        ...produto,
+        capa: capa ? capa.url : null,
+      };
+    });
+
+    logger.debug("[produtosRepository] Produtos listados modo público", {
+      organizacaoId,
+      total: produtosComCapa.length,
+    });
+
+    return produtosComCapa;
+  }
+
+  // 🔹 MODO ADMIN (completo)
   const [skus]: any = await db.pool.query(
     `
     SELECT 
@@ -49,7 +86,7 @@ async function listarProdutos(organizacaoId: number) {
     ),
   }));
 
-  logger.debug("[produtosRepository] Produtos listados", {
+  logger.debug("[produtosRepository] Produtos listados modo admin", {
     organizacaoId,
     total: produtosMap.length,
   });
@@ -72,6 +109,18 @@ async function buscarProdutoPorId(
     WHERE id = ?
       AND organizacao_id = ?
     `,
+    [produtoId, organizacaoId]
+  );
+
+  // 🔹 Buscar imagens do produto
+  const [imagens]: any = await db.pool.query(
+    `
+  SELECT id, url, ordem, is_capa
+  FROM produto_imagens
+  WHERE produto_id = ?
+    AND organizacao_id = ?
+  ORDER BY ordem ASC
+  `,
     [produtoId, organizacaoId]
   );
 
@@ -123,6 +172,23 @@ async function buscarProdutoPorId(
     [organizacaoId, produtoId, organizacaoId]
   );
 
+  // 🔹 Buscar imagens das SKUs
+const [skuImagens]: any = await db.pool.query(
+  `
+  SELECT id, sku_id, url, ordem, is_capa
+  FROM sku_imagens
+  WHERE organizacao_id = ?
+    AND sku_id IN (
+      SELECT id
+      FROM produtos_skus
+      WHERE produto_id = ?
+        AND organizacao_id = ?
+    )
+  ORDER BY ordem ASC
+  `,
+  [organizacaoId, produtoId, organizacaoId]
+);
+
   // 🔹 Agrupar variações por SKU
   const skusComVariacoes = skus.map((sku: any) => {
 
@@ -132,15 +198,20 @@ async function buscarProdutoPorId(
         tipo: v.tipo,
         valor: v.valor
       }));
-
+  
+    const imagensDaSku = skuImagens
+      .filter((img: any) => img.sku_id === sku.id);
+  
     return {
       ...sku,
+      imagens: imagensDaSku,
       variacoes: variacoesDaSku
     };
   });
 
   return {
     ...produtos[0],
+    imagens,
     skus: skusComVariacoes,
   };
 }
