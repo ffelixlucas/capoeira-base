@@ -103,6 +103,12 @@ export default function ProdutoModal({ produto, fechar }) {
     );
   }, [dadosProduto, selecoes]);
 
+  useEffect(() => {
+    if (skuSelecionado) {
+      console.log("SKU SELECIONADO:", skuSelecionado);
+    }
+  }, [skuSelecionado]);
+
   // 🔹 Auto preencher quando só houver 1 combinação
   useEffect(() => {
     if (!dadosProduto?.skus || !tipoTamanho) return;
@@ -234,7 +240,7 @@ export default function ProdutoModal({ produto, fechar }) {
                         </div>
                         
                         {/* Seletor quantidade */}
-                        {skuSelecionado.quantidade > 0 && (
+                        {skuSelecionado.quantidade_disponivel > 0 && (
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-cor-texto/60">Qtd:</span>
                             <select
@@ -242,7 +248,7 @@ export default function ProdutoModal({ produto, fechar }) {
                               onChange={(e) => setQuantidade(Number(e.target.value))}
                               className="border border-cor-secundaria/50 rounded-lg px-3 py-2 bg-cor-fundo text-cor-texto focus:outline-none focus:ring-2 focus:ring-cor-primaria"
                             >
-                              {[...Array(Math.min(skuSelecionado.quantidade, 10))].map((_, i) => {
+                              {[...Array(Math.min(skuSelecionado.quantidade_disponivel, 10))].map((_, i) => {
                                 const valor = i + 1;
                                 return (
                                   <option key={valor} value={valor}>
@@ -257,7 +263,7 @@ export default function ProdutoModal({ produto, fechar }) {
 
                       {/* Botão adicionar */}
                       <button
-                        disabled={!skuSelecionado || skuSelecionado.quantidade <= 0}
+                        disabled={!skuSelecionado || skuSelecionado.quantidade_disponivel <= 0}
                         onClick={() => {
                           adicionarItem({
                             skuId: skuSelecionado.id,
@@ -271,15 +277,15 @@ export default function ProdutoModal({ produto, fechar }) {
                         className="w-full bg-cor-primaria hover:bg-cor-destaque text-cor-fundo font-bold py-4 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         <span className="text-xl">🛒</span>
-                        {skuSelecionado.quantidade > 0 
+                        {skuSelecionado.quantidade_disponivel > 0 
                           ? 'Adicionar ao carrinho' 
-                          : 'Produto esgotado'}
+                          : 'produto indisponível'}
                       </button>
 
                       {/* Info estoque */}
                       <p className="text-xs text-center text-cor-texto/40 mt-3">
-                        {skuSelecionado.quantidade > 0 
-                          ? `${skuSelecionado.quantidade} unidades disponíveis` 
+                        {skuSelecionado.quantidade_disponivel > 0 
+                          ? `${skuSelecionado.quantidade_disponivel} unidades disponíveis` 
                           : 'Produto temporariamente indisponível'}
                       </p>
                     </div>

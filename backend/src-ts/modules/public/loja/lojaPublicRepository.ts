@@ -42,8 +42,16 @@ class LojaPublicRepository {
         AND e.organizacao_id = ps.organizacao_id
       WHERE o.slug = ?
         AND ps.ativo = 1
-        AND (ps.pronta_entrega = 1 OR ps.encomenda = 1)
+        AND (
+          ps.encomenda = 1
+          OR COALESCE(e.quantidade, 0) > 0
+        )
+        AND (
+          ps.encomenda = 1
+          OR COALESCE(e.quantidade, 0) > 0
+        )
         AND p.ativo = 1
+        
       ORDER BY p.nome ASC, ps.id DESC
       `,
       [slug]
@@ -118,8 +126,10 @@ class LojaPublicRepository {
       WHERE o.slug = ?
         AND p.ativo = 1
         AND ps.ativo = 1
-        AND (ps.pronta_entrega = 1 OR ps.encomenda = 1)
-      GROUP BY p.id, p.nome, p.descricao, p.categoria
+        AND (
+          ps.encomenda = 1
+          OR COALESCE(e.quantidade, 0) > 0
+        )      GROUP BY p.id, p.nome, p.descricao, p.categoria
       ORDER BY p.nome ASC
       `,
       [slug]
@@ -178,8 +188,10 @@ class LojaPublicRepository {
       WHERE o.slug = ?
         AND ps.produto_id = ?
         AND ps.ativo = 1
-        AND (ps.pronta_entrega = 1 OR ps.encomenda = 1)
-      ORDER BY ps.id DESC
+        AND (
+          ps.encomenda = 1
+          OR COALESCE(e.quantidade, 0) > 0
+        )      ORDER BY ps.id DESC
       `,
       [slug, produtoId]
     );

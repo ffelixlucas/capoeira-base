@@ -28,48 +28,21 @@ export default function LojaPublic() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-cor-titulo">
-              Minha Loja
-            </h1>
-            
-            <div className="flex items-center gap-6">
-              <button className="text-cor-texto/70 hover:text-cor-primaria text-sm font-medium transition">
-                Categorias
-              </button>
-              <button className="text-cor-texto/70 hover:text-cor-primaria text-sm font-medium transition">
-                Ofertas
-              </button>
-              <button className="text-cor-texto/70 hover:text-cor-primaria text-sm font-medium transition">
-                Ajuda
-              </button>
-            </div>
+              Loja
+            </h1>          
+        
           </div>
         </div>
       </header>
 
       {/* Conteúdo principal */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        
-        {/* Breadcrumb com cores do projeto */}
-        <div className="flex items-center gap-2 text-sm text-cor-texto/50 mb-6">
-          <span className="hover:text-cor-primaria cursor-pointer transition">Home</span>
-          <span className="text-cor-texto/30">›</span>
-          <span className="hover:text-cor-primaria cursor-pointer transition">Produtos</span>
-          <span className="text-cor-texto/30">›</span>
-          <span className="text-cor-texto font-medium">Todos</span>
-        </div>
 
         {/* Título da página */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-cor-titulo">
             Produtos disponíveis
           </h2>
-          
-          {/* Filtros com cores do projeto */}
-          <select className="border border-cor-secundaria/50 rounded-lg px-3 py-2 text-sm bg-cor-fundo text-cor-texto focus:outline-none focus:ring-2 focus:ring-cor-primaria">
-            <option className="bg-cor-fundo text-cor-texto">Mais relevantes</option>
-            <option className="bg-cor-fundo text-cor-texto">Menor preço</option>
-            <option className="bg-cor-fundo text-cor-texto">Maior preço</option>
-          </select>
         </div>
 
         {/* Estados de carregamento/erro */}
