@@ -152,8 +152,8 @@ export default function PedidoDetalhe() {
                     </button>
                 )}
 
-                {pedido.status_operacional === "em_separacao" && (
-                    <button
+{pedido.status_operacional === "em_separacao" 
+    && pedido.status_financeiro === "pago" && (                    <button
                         onClick={handleLiberar}
                         disabled={loadingAcao}
                         className="w-full mt-4 py-3 rounded-xl bg-cor-primaria text-black font-semibold"

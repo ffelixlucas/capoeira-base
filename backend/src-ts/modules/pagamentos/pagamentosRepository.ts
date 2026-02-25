@@ -248,17 +248,20 @@ export async function buscarCobrancaPorIdRepository(cobrancaId: number) {
 export async function marcarConsequenciaExecutadaRepository(
   cobrancaId: number,
   trx?: PoolConnection
-) {
+): Promise<boolean> {
   const executor: ExecutorQuery = trx ?? connection;
 
-  await executor.query(
+  const [result]: any = await executor.query(
     `
-      UPDATE pagamentos_cobrancas
-      SET consequencia_executada = true
-      WHERE id = ?
+    UPDATE pagamentos_cobrancas
+    SET consequencia_executada = true
+    WHERE id = ?
+      AND consequencia_executada = false
     `,
     [cobrancaId]
   );
+
+  return result.affectedRows === 1;
 }
 export async function buscarPagamentoPorPedido(
   organizacaoId: number,

@@ -10,6 +10,8 @@ export function formatarStatusOperacional(status) {
       return "Cancelado";
     case "pendente_pagamento":
       return "Aguardando pagamento";
+    case "estornado":
+      return "Estornado";
     default:
       return status;
   }
@@ -56,6 +58,13 @@ export function obterStatusOperacionalConfig(status) {
         text: "text-blue-400",
         dot: "bg-blue-500",
       };
+      case "estornado":
+  return {
+    label: "Estornado",
+    bg: "bg-red-500/20",
+    text: "text-red-400",
+    dot: "bg-red-500",
+  };
 
     default:
       return {

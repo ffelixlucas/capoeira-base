@@ -261,13 +261,16 @@ export async function buscarEstatisticasPedidos(
   const [rows]: any = await connection.pool.query(
     `
     SELECT
-      SUM(CASE WHEN p.status_financeiro = 'pago' THEN 1 ELSE 0 END) AS total_pedidos,
-      SUM(CASE WHEN p.status_operacional = 'em_separacao' THEN 1 ELSE 0 END) AS em_separacao,
-      SUM(CASE WHEN p.status_operacional = 'pronto_retirada' THEN 1 ELSE 0 END) AS pronto_retirada,
-      SUM(CASE WHEN p.status_operacional = 'finalizado' THEN 1 ELSE 0 END) AS finalizados,
-      SUM(CASE WHEN p.status_financeiro = 'pendente' THEN 1 ELSE 0 END) AS pendentes
-    FROM pedidos p
-    WHERE p.organizacao_id = ?
+    SUM(CASE WHEN p.status_financeiro = 'pago' THEN 1 ELSE 0 END) AS total_pedidos,
+    SUM(CASE WHEN p.status_financeiro = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
+    SUM(CASE WHEN p.status_financeiro = 'estornado' THEN 1 ELSE 0 END) AS estornados,
+    SUM(CASE WHEN p.status_financeiro = 'cancelado' THEN 1 ELSE 0 END) AS cancelados,
+    SUM(CASE WHEN p.status_operacional = 'em_separacao' THEN 1 ELSE 0 END) AS em_separacao,
+    SUM(CASE WHEN p.status_operacional = 'pronto_retirada' THEN 1 ELSE 0 END) AS pronto_retirada,
+    SUM(CASE WHEN p.status_operacional = 'entregue' THEN 1 ELSE 0 END) AS entregues,
+    SUM(CASE WHEN p.status_financeiro = 'pago' THEN p.valor_total ELSE 0 END) AS total_faturado
+  FROM pedidos p
+  WHERE p.organizacao_id = ?
     `,
     [organizacaoId]
   );
@@ -312,6 +315,8 @@ export async function atualizarPedidoEstornado(
     `
     UPDATE pedidos
     SET 
+      status = 'cancelado',
+      status_operacional = NULL,
       status_financeiro = 'estornado'
     WHERE id = ?
       AND organizacao_id = ?

@@ -5,7 +5,9 @@ export default function PedidoCard({ pedido }) {
   const navigate = useNavigate();
 
   const status = obterStatusOperacionalConfig(
-    pedido.status_operacional
+    pedido.status_financeiro === "estornado"
+      ? "estornado"
+      : pedido.status_operacional
   );
 
   return (

@@ -12,13 +12,23 @@ export function CarrinhoProvider({ children }) {
       if (existente) {
         return prev.map((i) =>
           i.skuId === item.skuId
-            ? { ...i, quantidade: i.quantidade + 1 }
+            ? { ...i, quantidade: i.quantidade + item.quantidade || 1 }
             : i
         );
       }
 
-      return [...prev, { ...item, quantidade: 1 }];
+      return [...prev, { ...item, quantidade: item.quantidade || 1 }];
     });
+  }
+
+  function atualizarQuantidade(skuId, novaQuantidade) {
+    setItens((prev) =>
+      prev.map((item) =>
+        item.skuId === skuId
+          ? { ...item, quantidade: novaQuantidade }
+          : item
+      )
+    );
   }
 
   function removerItem(skuId) {
@@ -34,6 +44,7 @@ export function CarrinhoProvider({ children }) {
       value={{
         itens,
         adicionarItem,
+        atualizarQuantidade, // <-- NOVA FUNÇÃO ADICIONADA
         removerItem,
         limparCarrinho,
       }}

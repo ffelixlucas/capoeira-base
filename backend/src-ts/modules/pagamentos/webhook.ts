@@ -18,10 +18,12 @@ function mapearStatusMP(statusMP: string): string {
 
 export async function webhookPagamentos(req, res) {
   try {
-    const paymentId = req.body?.data?.id;
-    if (!paymentId) {
-      return res.status(200).json({ ignored: true });
-    }
+    console.log("WEBHOOK RECEBIDO:", JSON.stringify(req.body, null, 2));
+    const paymentId =
+      req.body?.data?.id ||
+      req.body?.resource; if (!paymentId) {
+        return res.status(200).json({ ignored: true });
+      }
 
     const pagamento = await buscarPagamentoMP(String(paymentId));
 
@@ -32,13 +34,30 @@ export async function webhookPagamentos(req, res) {
 
     const cobranca = await buscarCobrancaPorIdRepository(cobrancaId);
 
-    // 🔒 PROTEÇÃO CRÍTICA
+    console.log("STATUS ATUAL NO BANCO:", cobranca);
+
+    // 🔒 BLOQUEIO DEFINITIVO
     if (cobranca?.status === "estornado") {
       console.log("Webhook ignorado: cobrança já estornada");
       return res.status(200).json({ ignored: "already_refunded" });
     }
 
+    if (cobranca?.consequencia_executada === 1) {
+      console.log("Webhook ignorado: consequência já executada");
+      return res.status(200).json({ ignored: "already_processed" });
+    }
+
+
     const statusInterno = mapearStatusMP(pagamento.status);
+
+    // 🔒 NÃO permitir downgrade de pago → pendente
+    if (
+      statusInterno === "pendente" &&
+      cobranca?.status === "pago"
+    ) {
+      console.log("Ignorando downgrade de pago para pendente");
+      return res.status(200).json({ ignored: "no_downgrade" });
+    }
 
     await atualizarCobrancaPagamentoRepository({
       cobranca_id: cobrancaId,

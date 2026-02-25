@@ -308,6 +308,8 @@ export async function estatisticasPedidos(req: Request, res: Response) {
         total_pedidos: Number(dados.total_pedidos) || 0,
         total_faturado: Number(dados.total_faturado) || 0,
         pendentes: Number(dados.pendentes) || 0,
+        estornados: Number(dados.estornados) || 0,
+        cancelados: Number(dados.cancelados) || 0,
         em_separacao: Number(dados.em_separacao) || 0,
         pronto_retirada: Number(dados.pronto_retirada) || 0,
         entregues: Number(dados.entregues) || 0,

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { produtosService } from "../../../services/produtosService";
 import { toast } from "react-toastify";
+import SkuGaleria from "./SkuGaleria";
 
 export default function SkuLinha({ sku, onAtualizado }) {
   const [preco, setPreco] = useState(Number(sku.preco));
@@ -150,16 +151,30 @@ export default function SkuLinha({ sku, onAtualizado }) {
         </div>
 
         {/* Estoque */}
-        <div className="flex items-start">
-          <span className="text-xs text-on-surface/40 w-16 font-medium">Estoque:</span>
-          <span className={`text-xl font-bold ${
-            estoque === 0 ? 'text-red-500' :
-            estoque < 5 ? 'text-yellow-500' :
-            'text-green-500'
-          }`}>
-            {estoque}
-          </span>
-        </div>
+<div className="flex items-center justify-between">
+  <div className="flex items-center gap-2">
+    <span className="text-xs text-on-surface/40 font-medium">
+      Estoque:
+    </span>
+
+    <span
+      className={`text-xl font-bold ${
+        estoque === 0
+          ? "text-red-500"
+          : estoque < 5
+          ? "text-yellow-500"
+          : "text-green-500"
+      }`}
+    >
+      {estoque}
+    </span>
+  </div>
+</div>
+
+{/* Imagens da variação */}
+<div className="mt-3">
+  <SkuGaleria sku={sku} onAtualizado={onAtualizado} />
+</div>
       </div>
 
       {/* MODO EDIÇÃO */}

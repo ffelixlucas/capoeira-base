@@ -13,6 +13,7 @@ import {
 
 export default function Loja() {
   const { estatisticas, loading } = useLojaDashboard();
+  console.log(estatisticas);
   const [pedidos, setPedidos] = useState([]);
   const [abaAtiva, setAbaAtiva] = useState("em_separacao");
   const [loadingPedidos, setLoadingPedidos] = useState(true);
@@ -36,14 +37,27 @@ export default function Loja() {
       labelCurto: "Entregues",
       contador: estatisticas?.entregues || 0,
     },
+    {
+      id: "estornado",
+      label: "Estornados",
+      labelCurto: "Estornados",
+      contador: estatisticas?.estornados || 0,
+    },
+
   ];
 
   async function carregarPedidos() {
     try {
       setLoadingPedidos(true);
-      const lista = await listarPedidosLoja({
-        status_operacional: abaAtiva,
-      });
+      let filtro = {};
+
+if (abaAtiva === "estornado") {
+  filtro.status_financeiro = "estornado";
+} else {
+  filtro.status_operacional = abaAtiva;
+}
+
+const lista = await listarPedidosLoja(filtro);
       setPedidos(lista);
     } catch (err) {
       console.error("Erro ao buscar pedidos:", err);

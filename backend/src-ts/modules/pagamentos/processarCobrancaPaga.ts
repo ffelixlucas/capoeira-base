@@ -36,37 +36,46 @@ export async function processarCobrancaPaga(cobrancaId: number) {
     return;
   }
 
-  if (cobranca.consequencia_executada) {
-    logger.info("[processarCobrancaPaga] Já processada, ignorando", {
-      cobrancaId,
-    });
-    return;
-  }
 
-  logger.info("[processarCobrancaPaga] Processando pela primeira vez", {
-    cobrancaId,
-    origem: cobranca.origem,
-    entidade_id: cobranca.entidade_id,
-  });
+
 
   if (cobranca.origem === "loja") {
 
-    // 🔒 BLOCO CRÍTICO PROTEGIDO POR TRANSAÇÃO
+    let marcou = false;
+
     await withTransaction(async (connection) => {
+
+      // 🔐 PRIMEIRA COISA: tentar marcar
+      marcou = await marcarConsequenciaExecutadaRepository(        cobrancaId,
+        connection
+      );
+
+      if (!marcou) {
+        logger.info("[processarCobrancaPaga] Já processado por outro webhook", {
+          cobrancaId,
+        });
+        return;
+      }
+      logger.info("[processarCobrancaPaga] Processando pela primeira vez", {
+        cobrancaId,
+        origem: cobranca.origem,
+        entidade_id: cobranca.entidade_id,
+      });
+      // 👇 só continua se marcou com sucesso
 
       await converterPedidoPorId(
         cobranca.organizacao_id,
         cobranca.entidade_id,
         connection
       );
+
       await estoqueRepository.baixarEstoquePorPedido(
         {
           pedidoId: cobranca.entidade_id,
           organizacaoId: cobranca.organizacao_id,
         },
-        connection 
+        connection
       );
-      
 
       await atualizarDadosPedidoAposPagamento(
         {
@@ -78,17 +87,12 @@ export async function processarCobrancaPaga(cobrancaId: number) {
         },
         connection
       );
-      
-
-      // 🔐 Marca consequência SOMENTE após tudo ter dado certo
-      await marcarConsequenciaExecutadaRepository(
-        cobrancaId,
-        connection
-      );
 
     });
 
-    // 🔽 Fora da transação (não pode travar commit por causa de e-mail)
+    if (!marcou) {
+      return;
+    }
 
     const pedidoCompleto = await buscarPedidoPorId(
       cobranca.organizacao_id,

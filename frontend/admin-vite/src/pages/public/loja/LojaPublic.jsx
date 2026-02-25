@@ -1,3 +1,4 @@
+// LojaPublic.jsx - Versão com as cores do projeto
 import { useParams } from "react-router-dom";
 import { useProdutosPublic } from "../../../hooks/public/loja/useProdutosPublic";
 import ProdutoCard from "../../../components/public/loja/ProdutoCard";
@@ -20,59 +21,116 @@ export default function LojaPublic() {
   );
 
   return (
-    <div className="min-h-screen bg-cor-fundo py-8">
-      <div className="w-full max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-cor-fundo">
+      
+      {/* Header com as cores do projeto */}
+      <header className="bg-cor-secundaria border-b border-cor-primaria/20 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-cor-titulo">
+              Minha Loja
+            </h1>
+            
+            <div className="flex items-center gap-6">
+              <button className="text-cor-texto/70 hover:text-cor-primaria text-sm font-medium transition">
+                Categorias
+              </button>
+              <button className="text-cor-texto/70 hover:text-cor-primaria text-sm font-medium transition">
+                Ofertas
+              </button>
+              <button className="text-cor-texto/70 hover:text-cor-primaria text-sm font-medium transition">
+                Ajuda
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-        <h1 className="text-2xl md:text-3xl font-bold text-center mb-8">
-          Loja Online
-        </h1>
+      {/* Conteúdo principal */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        
+        {/* Breadcrumb com cores do projeto */}
+        <div className="flex items-center gap-2 text-sm text-cor-texto/50 mb-6">
+          <span className="hover:text-cor-primaria cursor-pointer transition">Home</span>
+          <span className="text-cor-texto/30">›</span>
+          <span className="hover:text-cor-primaria cursor-pointer transition">Produtos</span>
+          <span className="text-cor-texto/30">›</span>
+          <span className="text-cor-texto font-medium">Todos</span>
+        </div>
 
+        {/* Título da página */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-cor-titulo">
+            Produtos disponíveis
+          </h2>
+          
+          {/* Filtros com cores do projeto */}
+          <select className="border border-cor-secundaria/50 rounded-lg px-3 py-2 text-sm bg-cor-fundo text-cor-texto focus:outline-none focus:ring-2 focus:ring-cor-primaria">
+            <option className="bg-cor-fundo text-cor-texto">Mais relevantes</option>
+            <option className="bg-cor-fundo text-cor-texto">Menor preço</option>
+            <option className="bg-cor-fundo text-cor-texto">Maior preço</option>
+          </select>
+        </div>
+
+        {/* Estados de carregamento/erro */}
         {carregando && (
-          <p className="text-center text-gray-600">
-            Carregando produtos...
-          </p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-12 h-12 border-4 border-cor-primaria border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-cor-texto/60 mt-4">Carregando produtos...</p>
+          </div>
         )}
 
         {erro && (
-          <p className="text-center text-red-500">
-            {erro}
-          </p>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 text-center">
+            <p className="text-red-500 font-medium">😕 {erro}</p>
+            <button className="mt-3 text-sm text-cor-primaria hover:text-cor-destaque transition">
+              Tentar novamente
+            </button>
+          </div>
         )}
 
         {!carregando && !erro && produtos.length === 0 && (
-          <p className="text-center text-gray-600">
-            Nenhum produto disponível.
-          </p>
+          <div className="bg-cor-secundaria/20 border border-cor-secundaria/30 rounded-lg p-12 text-center">
+            <span className="text-5xl mb-3 block text-cor-texto/30">🏪</span>
+            <p className="text-cor-texto font-medium">
+              Nenhum produto disponível no momento
+            </p>
+            <p className="text-sm text-cor-texto/50 mt-1">
+              Volte mais tarde ou explore outras categorias
+            </p>
+          </div>
         )}
 
+        {/* Grid de produtos */}
         {!carregando && produtos.length > 0 && (
-          <div
-            className="
-              grid 
-              grid-cols-2 
-              sm:grid-cols-3 
-              md:grid-cols-4 
-              lg:grid-cols-5 
-              gap-4
-            "
-          >
-            {produtos.map((produto) => (
-              <ProdutoCard
-                key={produto.id}
-                produto={produto}
-                onSelecionar={() => setProdutoSelecionado(produto)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="mb-4 text-sm text-cor-texto/50">
+              {produtos.length} {produtos.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {produtos.map((produto) => (
+                <ProdutoCard
+                  key={produto.id}
+                  produto={produto}
+                  onSelecionar={() => setProdutoSelecionado(produto)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
+      {/* Botão flutuante do carrinho */}
       {quantidadeTotal > 0 && (
         <button
           onClick={() => setDrawerAberto(true)}
-          className="fixed bottom-6 right-6 bg-black text-white px-4 py-3 rounded-full shadow-lg z-50"
+          className="fixed bottom-6 right-6 bg-cor-primaria text-cor-fundo px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 font-medium border border-cor-destaque/20"
         >
-          🛒 {quantidadeTotal}
+          <span className="text-xl">🛒</span>
+          <span className="bg-cor-fundo text-cor-texto text-sm px-2 py-0.5 rounded-full min-w-[24px] text-center">
+            {quantidadeTotal}
+          </span>
         </button>
       )}
 
