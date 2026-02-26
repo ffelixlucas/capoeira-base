@@ -286,3 +286,4 @@ export async function buscarPagamentoPorPedido(
 
   return rows[0] || null;
 }
+

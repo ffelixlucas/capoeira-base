@@ -302,6 +302,9 @@ function gerarLinhaItemAdmin(item: PedidoItem): string {
 
 function gerarEmailHtmlCliente(pedido: PedidoCliente): string {
   const total = calcularTotalItens(pedido.itens);
+  const possuiSobEncomenda = pedido.itens.some(
+    (item: any) => Number(item.encomenda) === 1
+  );
   const itensHtml = pedido.itens.map(gerarLinhaItemCliente).join('');
 
   return `
@@ -324,9 +327,14 @@ function gerarEmailHtmlCliente(pedido: PedidoCliente): string {
         Olá <strong>${pedido.nome_cliente}</strong>,
       </p>
       <p style="margin: 0 0 32px; line-height: 1.6;">
-        Seu pagamento foi aprovado com sucesso!<br>
-        O pedido <strong>#${pedido.id}</strong> já está em processo de separação.
-      </p>
+      Seu pagamento foi aprovado com sucesso!<br>
+      ${
+        possuiSobEncomenda
+          ? `Seu pedido <strong>#${pedido.id}</strong> contém item(s) sob encomenda.<br>
+             você receberá um e-mail quando estiver disponivel para retirada.`
+          : `O pedido <strong>#${pedido.id}</strong> já está em processo de separação.`
+      }
+    </p>
 
       <h3 style="margin: 0 0 16px; color: #1a1a1a; font-size: 18px;">Itens do pedido</h3>
       

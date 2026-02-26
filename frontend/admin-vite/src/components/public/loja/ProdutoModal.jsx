@@ -71,7 +71,11 @@ export default function ProdutoModal({ produto, fechar }) {
           mapa[v.tipo].add(v.valor);
         } else {
           if (!selecoes[tipoTamanho]) {
-            mapa[v.tipo].add(v.valor);
+            // Antes de escolher tamanho, só mostramos o próprio tamanho
+            if (v.tipo === tipoTamanho) {
+              mapa[v.tipo].add(v.valor);
+            }
+
           } else {
             const skuTemTamanho = sku.variacoes?.some(
               (vv) =>
@@ -149,7 +153,7 @@ export default function ProdutoModal({ produto, fechar }) {
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-auto">
         <div className="bg-cor-fundo text-cor-texto w-full max-w-6xl rounded-2xl shadow-2xl relative max-h-[90vh] overflow-auto border border-cor-secundaria/30">
-          
+
           {/* Header fixo */}
           <div className="sticky top-0 bg-cor-fundo border-b border-cor-secundaria/30 px-6 py-4 rounded-t-2xl flex items-center justify-between z-10">
             <h2 className="text-xl font-bold text-cor-titulo">
@@ -174,7 +178,7 @@ export default function ProdutoModal({ produto, fechar }) {
 
             {!carregando && dadosProduto && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
+
                 {/* Galeria */}
                 <GaleriaProduto
                   produto={dadosProduto}
@@ -183,7 +187,7 @@ export default function ProdutoModal({ produto, fechar }) {
 
                 {/* Informações */}
                 <div className="space-y-6">
-                  
+
                   {/* Descrição */}
                   <div>
                     <h2 className="text-2xl font-bold text-cor-titulo mb-2">
@@ -197,34 +201,35 @@ export default function ProdutoModal({ produto, fechar }) {
                   {/* Variações */}
                   {Object.keys(variacoesAgrupadas).length > 0 && (
                     <div className="space-y-4">
-                      {Object.keys(variacoesAgrupadas).map((tipo) => (
-                        <div key={tipo}>
-                          <p className="text-sm font-medium text-cor-texto/60 mb-2 capitalize">
-                            {tipo}:
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {variacoesAgrupadas[tipo].map((valor) => (
-                              <button
-                                key={valor}
-                                onClick={() => {
-                                  setSelecoes((prev) => ({
-                                    ...prev,
-                                    [tipo]: valor,
-                                  }));
-                                  setQuantidade(1);
-                                }}
-                                className={`px-4 py-2 border rounded-lg text-sm font-medium transition ${
-                                  selecoes[tipo] === valor
+                      {Object.keys(variacoesAgrupadas)
+                        .filter((tipo) => variacoesAgrupadas[tipo].length > 0)
+                        .map((tipo) => (
+                          <div key={tipo}>
+                            <p className="text-sm font-medium text-cor-texto/60 mb-2 capitalize">
+                              {tipo}:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {variacoesAgrupadas[tipo].map((valor) => (
+                                <button
+                                  key={valor}
+                                  onClick={() => {
+                                    setSelecoes((prev) => ({
+                                      ...prev,
+                                      [tipo]: valor,
+                                    }));
+                                    setQuantidade(1);
+                                  }}
+                                  className={`px-4 py-2 border rounded-lg text-sm font-medium transition ${selecoes[tipo] === valor
                                     ? "bg-cor-primaria border-cor-primaria text-cor-fundo"
                                     : "bg-transparent border-cor-secundaria/50 text-cor-texto hover:border-cor-primaria"
-                                }`}
-                              >
-                                {valor}
-                              </button>
-                            ))}
+                                    }`}
+                                >
+                                  {valor}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
 
@@ -238,7 +243,7 @@ export default function ProdutoModal({ produto, fechar }) {
                             {formatarPreco(skuSelecionado.preco)}
                           </p>
                         </div>
-                        
+
                         {/* Seletor quantidade */}
                         {skuSelecionado.quantidade_disponivel > 0 && (
                           <div className="flex items-center gap-2">
@@ -263,8 +268,10 @@ export default function ProdutoModal({ produto, fechar }) {
 
                       {/* Botão adicionar */}
                       <button
-                        disabled={!skuSelecionado || skuSelecionado.quantidade_disponivel <= 0}
-                        onClick={() => {
+                        disabled={
+                          !skuSelecionado ||
+                          (!skuSelecionado.encomenda && skuSelecionado.quantidade_disponivel <= 0)
+                        } onClick={() => {
                           adicionarItem({
                             skuId: skuSelecionado.id,
                             nome: dadosProduto.nome,
@@ -277,17 +284,29 @@ export default function ProdutoModal({ produto, fechar }) {
                         className="w-full bg-cor-primaria hover:bg-cor-destaque text-cor-fundo font-bold py-4 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         <span className="text-xl">🛒</span>
-                        {skuSelecionado.quantidade_disponivel > 0 
-                          ? 'Adicionar ao carrinho' 
-                          : 'produto indisponível'}
+                        {skuSelecionado.encomenda === 1
+                          ? 'Encomendar produto'
+                          : skuSelecionado.quantidade_disponivel > 0
+                            ? 'Adicionar ao carrinho'
+                            : 'Produto indisponível'}
                       </button>
 
                       {/* Info estoque */}
-                      <p className="text-xs text-center text-cor-texto/40 mt-3">
-                        {skuSelecionado.quantidade_disponivel > 0 
-                          ? `${skuSelecionado.quantidade_disponivel} unidades disponíveis` 
-                          : 'Produto temporariamente indisponível'}
-                      </p>
+                      {skuSelecionado.encomenda === 1 ? (
+                        <div className="bg-amber-50 border border-amber-300 text-amber-700 text-xs text-center py-2 px-3 rounded-lg mt-3">
+                          Produto sob encomenda. O prazo será informado após a confirmação do pedido.
+                        </div>
+                      ) : skuSelecionado.quantidade_disponivel > 0 ? (
+                        <p className="text-xs text-center text-cor-texto/40 mt-3">
+                          {skuSelecionado.quantidade_disponivel === 1
+                            ? "1 unidade disponível"
+                            : `${skuSelecionado.quantidade_disponivel} unidades disponíveis`}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-center text-red-500 mt-3">
+                          Produto temporariamente indisponível
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

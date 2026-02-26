@@ -9,20 +9,37 @@ async function listarProdutos(
   organizacaoId: number,
   isPublic: boolean = false
 ) {
-  const [produtos]: any = await db.pool.query(
+  const queryProdutos = isPublic
+    ? `
+      SELECT 
+        p.id,
+        p.nome,
+        p.descricao,
+        p.categoria,
+        p.tipo_produto,
+        p.ativo,
+        p.created_at
+      FROM produtos p
+      WHERE p.organizacao_id = ?
+        AND p.ativo = 1
+      ORDER BY p.created_at DESC
     `
-    SELECT 
-      p.id,
-      p.nome,
-      p.descricao,
-      p.categoria,
-      p.tipo_produto,
-      p.ativo,
-      p.created_at
-    FROM produtos p
-    WHERE p.organizacao_id = ?
-    ORDER BY p.created_at DESC
-    `,
+    : `
+      SELECT 
+        p.id,
+        p.nome,
+        p.descricao,
+        p.categoria,
+        p.tipo_produto,
+        p.ativo,
+        p.created_at
+      FROM produtos p
+      WHERE p.organizacao_id = ?
+      ORDER BY p.created_at DESC
+    `;
+
+  const [produtos]: any = await db.pool.query(
+    queryProdutos,
     [organizacaoId]
   );
 
@@ -69,6 +86,7 @@ async function listarProdutos(
       ps.preco,
       ps.pronta_entrega,
       ps.encomenda,
+      ps.ativo,
       COALESCE(e.quantidade, 0) AS quantidade
     FROM produtos_skus ps
     LEFT JOIN estoque e
@@ -108,6 +126,7 @@ async function buscarProdutoPorId(
     FROM produtos
     WHERE id = ?
       AND organizacao_id = ?
+
     `,
     [produtoId, organizacaoId]
   );
@@ -138,6 +157,7 @@ async function buscarProdutoPorId(
       ps.preco,
       ps.pronta_entrega,
       ps.encomenda,
+      ps.ativo,
       COALESCE(e.quantidade, 0) AS quantidade
     FROM produtos_skus ps
     LEFT JOIN estoque e
@@ -173,8 +193,8 @@ async function buscarProdutoPorId(
   );
 
   // 🔹 Buscar imagens das SKUs
-const [skuImagens]: any = await db.pool.query(
-  `
+  const [skuImagens]: any = await db.pool.query(
+    `
   SELECT id, sku_id, url, ordem, is_capa
   FROM sku_imagens
   WHERE organizacao_id = ?
@@ -186,28 +206,33 @@ const [skuImagens]: any = await db.pool.query(
     )
   ORDER BY ordem ASC
   `,
-  [organizacaoId, produtoId, organizacaoId]
-);
+    [organizacaoId, produtoId, organizacaoId]
+  );
 
   // 🔹 Agrupar variações por SKU
-  const skusComVariacoes = skus.map((sku: any) => {
-
-    const variacoesDaSku = variacoes
-      .filter((v: any) => v.sku_id === sku.id)
-      .map((v: any) => ({
-        tipo: v.tipo,
-        valor: v.valor
-      }));
+  const skusComVariacoes = await Promise.all(
+    skus.map(async (sku: any) => {
   
-    const imagensDaSku = skuImagens
-      .filter((img: any) => img.sku_id === sku.id);
+      const variacoesDaSku = variacoes
+        .filter((v: any) => v.sku_id === sku.id)
+        .map((v: any) => ({
+          tipo: v.tipo,
+          valor: v.valor
+        }));
   
-    return {
-      ...sku,
-      imagens: imagensDaSku,
-      variacoes: variacoesDaSku
-    };
-  });
+      const imagensDaSku = skuImagens
+        .filter((img: any) => img.sku_id === sku.id);
+  
+      const totalPedidos = await contarPedidosPorSku(organizacaoId, sku.id);
+  
+      return {
+        ...sku,
+        imagens: imagensDaSku,
+        variacoes: variacoesDaSku,
+        possuiPedidos: totalPedidos > 0
+      };
+    })
+  );
 
   return {
     ...produtos[0],
@@ -322,6 +347,7 @@ async function atualizarProduto(
   categoria: string,
   ativo: number,
   trx?: PoolConnection
+
 ) {
   const executor = trx ?? db.pool;
 
@@ -333,7 +359,8 @@ async function atualizarProduto(
         categoria = ?,
         ativo = ?
     WHERE id = ?
-      AND organizacao_id = ?
+          AND organizacao_id = ?
+          
     `,
     [nome, descricao, categoria, ativo, produtoId, organizacaoId]
   );
@@ -345,12 +372,13 @@ async function atualizarProduto(
 }
 
 /**
- * ATUALIZAR SKU (preço)
+ * ATUALIZAR SKU (preço + encomenda)
  */
 async function atualizarSku(
   organizacaoId: number,
   skuId: number,
   preco: number,
+  encomenda: number,
   trx?: PoolConnection
 ) {
   const executor = trx ?? db.pool;
@@ -358,11 +386,12 @@ async function atualizarSku(
   await executor.query(
     `
     UPDATE produtos_skus
-    SET preco = ?
+    SET preco = ?,
+        encomenda = ?
     WHERE id = ?
       AND organizacao_id = ?
     `,
-    [preco, skuId, organizacaoId]
+    [preco, encomenda, skuId, organizacaoId]
   );
 
   logger.debug("[produtosRepository] SKU atualizada", {
@@ -419,6 +448,76 @@ async function vincularSkuVariacao(
 }
 
 
+async function contarPedidosPorSku(
+  organizacaoId: number,
+  skuId: number
+): Promise<number> {
+  const [rows]: any = await db.pool.query(
+    `
+    SELECT COUNT(*) as total
+    FROM pedido_itens pi
+    INNER JOIN produtos_skus ps ON ps.id = pi.sku_id
+    WHERE ps.organizacao_id = ?
+      AND ps.id = ?
+    `,
+    [organizacaoId, skuId]
+  );
+
+  return rows[0]?.total || 0;
+}
+
+/**
+ * REATIVAR SKU
+ */
+async function reativarSku(
+  organizacaoId: number,
+  skuId: number,
+  trx?: PoolConnection
+) {
+  const executor = trx ?? db.pool;
+
+  await executor.query(
+    `
+    UPDATE produtos_skus
+    SET ativo = 1
+    WHERE id = ?
+      AND organizacao_id = ?
+    `,
+    [skuId, organizacaoId]
+  );
+
+  logger.info("[produtosRepository] SKU reativada", {
+    organizacaoId,
+    skuId,
+  });
+}
+
+/**
+ * DESATIVAR SKU
+ */
+async function desativarSku(
+  organizacaoId: number,
+  skuId: number,
+  trx?: PoolConnection
+) {
+  const executor = trx ?? db.pool;
+
+  await executor.query(
+    `
+    UPDATE produtos_skus
+    SET ativo = 0
+    WHERE id = ?
+      AND organizacao_id = ?
+    `,
+    [skuId, organizacaoId]
+  );
+
+  logger.info("[produtosRepository] SKU desativada", {
+    organizacaoId,
+    skuId,
+  });
+}
+
 
 export {
   listarProdutos,
@@ -430,4 +529,7 @@ export {
   atualizarProduto,
   atualizarEstoqueDireto,
   vincularSkuVariacao,
+  contarPedidosPorSku,
+  reativarSku,
+  desativarSku
 };

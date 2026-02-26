@@ -97,24 +97,25 @@ class LojaPublicRepository {
     const [rows] = await db.query(
       `
       SELECT
-        p.id,
-        p.nome,
-        p.descricao,
-        p.categoria,
-        MIN(ps.preco) AS preco_minimo,
-        SUM(
-          CASE 
-            WHEN ps.encomenda = 1 THEN 9999
-            ELSE COALESCE(e.quantidade, 0)
-          END
-        ) AS quantidade_total,
-        (
-          SELECT pi.url
-          FROM produto_imagens pi
-          WHERE pi.produto_id = p.id
-          ORDER BY pi.is_capa DESC, pi.ordem ASC
-          LIMIT 1
-        ) AS imagem_capa
+      p.id,
+      p.nome,
+      p.descricao,
+      p.categoria,
+      MIN(ps.preco) AS preco_minimo,
+      MAX(ps.encomenda) AS encomenda,
+      SUM(
+        CASE 
+          WHEN ps.encomenda = 1 THEN 9999
+          ELSE COALESCE(e.quantidade, 0)
+        END
+      ) AS quantidade_total,
+      (
+        SELECT pi.url
+        FROM produto_imagens pi
+        WHERE pi.produto_id = p.id
+        ORDER BY pi.is_capa DESC, pi.ordem ASC
+        LIMIT 1
+      ) AS imagem_capa
       FROM produtos p
       INNER JOIN produtos_skus ps
         ON ps.produto_id = p.id

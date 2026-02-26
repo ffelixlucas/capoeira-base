@@ -39,7 +39,8 @@ export async function buscarPedidoComItens(
       pi.quantidade,
       pi.preco_unitario,
       p.nome AS nome_produto,
-      ps.sku_codigo
+      ps.sku_codigo,
+      ps.encomenda
     FROM pedido_itens pi
     JOIN produtos_skus ps
       ON ps.id = pi.sku_id

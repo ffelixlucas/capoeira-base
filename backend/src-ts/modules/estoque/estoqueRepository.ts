@@ -37,8 +37,33 @@ async function baixarEstoquePorPedido(
     );
 
     for (const item of itens) {
-      if (item.encomenda === 1) {
-        logger.debug("[estoqueRepository] SKU encomenda, ignorando estoque", {
+      // Buscar estoque atual
+      const [estoqueAtualRows]: any = await executor.query(
+        `
+        SELECT quantidade
+        FROM estoque
+        WHERE sku_id = ?
+          AND organizacao_id = ?
+        `,
+        [item.sku_id, organizacaoId]
+      );
+      
+      if (!estoqueAtualRows.length) {
+        throw new Error(`Estoque não encontrado para SKU ${item.sku_id}`);
+      }
+      
+      const quantidadeAtual = estoqueAtualRows[0].quantidade;
+      
+      // Se estoque zerado e não permite encomenda → erro
+      if (quantidadeAtual <= 0 && item.encomenda === 0) {
+        throw new Error(
+          `Produto sem estoque e não permite encomenda (SKU ${item.sku_id})`
+        );
+      }
+      
+      // Se estoque zerado e permite encomenda → não baixa
+      if (quantidadeAtual <= 0 && item.encomenda === 1) {
+        logger.debug("[estoqueRepository] Venda sob encomenda", {
           skuId: item.sku_id,
         });
         continue;
@@ -186,9 +211,53 @@ async function entradaManualEstoque(
   });
 }
 
+async function validarEstoqueParaPedido(
+  organizacaoId: number,
+  pedidoId: number,
+  trx?: PoolConnection
+) {
+  const executor = trx ?? db.pool;
+
+  const [itens]: any = await executor.query(
+    `
+    SELECT 
+      pi.sku_id,
+      pi.quantidade,
+      ps.encomenda,
+      e.quantidade as estoque_atual
+    FROM pedido_itens pi
+    JOIN produtos_skus ps ON ps.id = pi.sku_id
+    JOIN estoque e ON e.sku_id = pi.sku_id
+      AND e.organizacao_id = pi.organizacao_id
+    WHERE pi.pedido_id = ?
+      AND pi.organizacao_id = ?
+    `,
+    [pedidoId, organizacaoId]
+  );
+
+  for (const item of itens) {
+
+    if (item.estoque_atual <= 0 && item.encomenda === 0) {
+      throw new Error(
+        `Produto indisponível (SKU ${item.sku_id})`
+      );
+    }
+
+    if (
+      item.estoque_atual > 0 &&
+      item.estoque_atual < item.quantidade
+    ) {
+      throw new Error(
+        `Estoque insuficiente para SKU ${item.sku_id}`
+      );
+    }
+  }
+}
+
 export {
   reverterEstoque,
   entradaManualEstoque,
+  validarEstoqueParaPedido,
 };
 
 export default {

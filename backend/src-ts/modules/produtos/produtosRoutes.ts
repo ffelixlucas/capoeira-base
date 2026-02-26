@@ -15,6 +15,9 @@ import {
   definirCapaSku,
   removerImagemSku,
   uploadImagemSku,
+  deletarSku,
+  reativarSku,
+  desativarSku
 
 } from "./produtosController";
 
@@ -24,6 +27,9 @@ const router = Router();
 router.post("/sku", verifyToken, criarSku);
 router.put("/sku/:id", verifyToken, atualizarSku);
 router.put("/sku/:id/estoque", verifyToken, atualizarEstoqueSku);
+router.delete("/sku/:id", verifyToken, deletarSku);
+router.patch("/sku/:id/desativar", verifyToken, desativarSku);
+router.patch("/sku/:id/reativar", verifyToken, reativarSku);
 router.put("/sku/:skuId/imagens/:imagemId/capa", verifyToken, definirCapaSku);
 router.delete("/sku/imagens/:imagemId", verifyToken, removerImagemSku);
 

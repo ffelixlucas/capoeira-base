@@ -43,21 +43,17 @@ export default function ProdutoGerenciarPage() {
 
   async function salvar() {
     try {
-      await produtosService.atualizar(id, { nome, descricao, categoria, ativo });
+      await produtosService.atualizar(id, {
+        nome,
+        descricao,
+        categoria,
+        ativo,
+      });
+  
       toast.success("Produto atualizado");
       carregar();
-    } catch { {imagemPreview && (
-      <div
-        className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50"
-        onClick={() => setImagemPreview(null)}
-      >
-        <img
-          src={imagemPreview}
-          alt="Preview"
-          className="max-h-[90vh] max-w-full object-contain rounded-lg"
-        />
-      </div>
-    )}
+    } catch (error) {
+      console.error(error);
       toast.error("Erro ao atualizar");
     }
   }

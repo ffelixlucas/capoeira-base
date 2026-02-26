@@ -9,7 +9,10 @@ import {
   atualizarSku,
   atualizarProduto,
   atualizarEstoqueDireto,
-  vincularSkuVariacao
+  vincularSkuVariacao,
+  contarPedidosPorSku,
+  reativarSku,
+  desativarSku
 } from "./produtosRepository";
 
 import { deletarArquivoFirebase } from "../../utils/firebaseStorageHelper";
@@ -36,6 +39,7 @@ interface AtualizarSkuInput {
   organizacaoId: number;
   skuId: number;
   preco: number;
+  encomenda: number;
 }
 
 interface AtualizarProdutoCompletoInput {
@@ -96,6 +100,8 @@ async function criarProdutoCompletoService(
 
   try {
     await connection.beginTransaction();
+
+
 
     const produtoId = await criarProduto(
       produtoData.organizacaoId,
@@ -246,16 +252,22 @@ async function atualizarSkuService({
   organizacaoId,
   skuId,
   preco,
+  encomenda,
 }: AtualizarSkuInput) {
 
   if (preco < 0) {
     throw new Error("Preço inválido");
   }
 
+  if (encomenda !== 0 && encomenda !== 1) {
+    throw new Error("Valor de encomenda inválido");
+  }
+
   await atualizarSku(
     organizacaoId,
     skuId,
-    preco
+    preco,
+    encomenda
   );
 
   logger.info("[produtosService] SKU atualizada", {
@@ -263,7 +275,6 @@ async function atualizarSkuService({
     skuId,
   });
 }
-
 /* =========================
    ATUALIZAR PRODUTO COMPLETO
 ========================= */
@@ -275,69 +286,22 @@ async function atualizarProdutoCompletoService({
   descricao,
   categoria,
   ativo,
-  preco,
-  quantidade,
-}: AtualizarProdutoCompletoInput) {
+}: any) {
 
-  const connection = await db.pool.getConnection();
+  await atualizarProduto(
+    organizacaoId,
+    produtoId,
+    nome,
+    descricao,
+    categoria,
+    ativo
+  );
 
-  try {
-    await connection.beginTransaction();
-
-    await atualizarProduto(
-      organizacaoId,
-      produtoId,
-      nome,
-      descricao,
-      categoria,
-      ativo,
-      connection
-    );
-
-    const [skuRows]: any = await connection.query(
-      `SELECT id 
-       FROM produtos_skus 
-       WHERE produto_id = ? 
-       AND organizacao_id = ?`,
-      [produtoId, organizacaoId]
-    );
-
-    if (!skuRows.length) {
-      throw new Error("SKU não encontrada");
-    }
-
-    const skuId = skuRows[0].id;
-
-    await atualizarSku(
-      organizacaoId,
-      skuId,
-      preco,
-      connection
-    );
-
-    await atualizarEstoqueDireto(
-      organizacaoId,
-      skuId,
-      quantidade,
-      connection
-    );
-
-    await connection.commit();
-
-    logger.info("[produtosService] Produto completo atualizado", {
-      organizacaoId,
-      produtoId,
-    });
-
-  } catch (error) {
-    await connection.rollback();
-    logger.error("[produtosService] Erro ao atualizar produto completo", { error });
-    throw error;
-  } finally {
-    connection.release();
-  }
+  logger.info("[produtosService] Produto atualizado", {
+    organizacaoId,
+    produtoId,
+  });
 }
-
 /* =========================
    GERAR SKUS VARIAÇÕES
 ========================= */
@@ -419,6 +383,27 @@ async function deletarProdutoService(
 
   try {
     await connection.beginTransaction();
+
+    // 🔒 Verificar se alguma SKU desse produto já teve pedido
+    const [skus]: any = await connection.query(
+      `SELECT id FROM produtos_skus
+   WHERE produto_id = ?
+   AND organizacao_id = ?`,
+      [produtoId, organizacaoId]
+    );
+
+    for (const sku of skus) {
+      const totalPedidos = await contarPedidosPorSku(
+        organizacaoId,
+        sku.id
+      );
+
+      if (totalPedidos > 0) {
+        throw new Error(
+          "Não é possível deletar este produto pois já possui pedidos vinculados"
+        );
+      }
+    }
 
     const [imagensProduto]: any = await connection.query(
       `SELECT url FROM produto_imagens
@@ -589,6 +574,139 @@ async function definirCapaSkuService(
   }
 }
 
+/* =========================
+   DELETAR SKU
+========================= */
+
+async function deletarSkuService(
+  organizacaoId: number,
+  skuId: number
+) {
+  const totalPedidos = await contarPedidosPorSku(
+    organizacaoId,
+    skuId
+  );
+
+  // 🚫 Se já teve pedido → bloqueia
+  if (totalPedidos > 0) {
+    await db.pool.query(
+      `UPDATE produtos_skus
+       SET ativo = 0
+       WHERE id = ?
+       AND organizacao_id = ?`,
+      [skuId, organizacaoId]
+    );
+  
+    logger.info("[produtosService] SKU desativada (já possuía pedidos)", {
+      organizacaoId,
+      skuId,
+    });
+  
+    return;
+  }
+
+  const connection = await db.pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // remove estoque
+    await connection.query(
+      `DELETE FROM estoque
+       WHERE sku_id = ?
+       AND organizacao_id = ?`,
+      [skuId, organizacaoId]
+    );
+
+    // remove imagens
+    const [imagens]: any = await connection.query(
+      `SELECT url FROM sku_imagens
+       WHERE sku_id = ?
+       AND organizacao_id = ?`,
+      [skuId, organizacaoId]
+    );
+
+    await connection.query(
+      `DELETE FROM sku_imagens
+       WHERE sku_id = ?
+       AND organizacao_id = ?`,
+      [skuId, organizacaoId]
+    );
+
+    // remove vínculos de variação
+    await connection.query(
+      `DELETE FROM sku_variacoes
+       WHERE sku_id = ?
+       AND organizacao_id = ?`,
+      [skuId, organizacaoId]
+    );
+
+    // remove SKU
+    await connection.query(
+      `DELETE FROM produtos_skus
+       WHERE id = ?
+       AND organizacao_id = ?`,
+      [skuId, organizacaoId]
+    );
+
+    await connection.commit();
+
+    // remove arquivos do firebase depois do commit
+    for (const img of imagens) {
+      await deletarArquivoFirebase(img.url);
+    }
+
+    logger.info("[produtosService] SKU deletada fisicamente", {
+      organizacaoId,
+      skuId,
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+/* =========================
+   REATIVAR SKU
+========================= */
+
+async function reativarSkuService(
+  organizacaoId: number,
+  skuId: number
+) {
+
+  await reativarSku(
+    organizacaoId,
+    skuId
+  );
+
+  logger.info("[produtosService] SKU reativada", {
+    organizacaoId,
+    skuId,
+  });
+}
+/* =========================
+   DESATIVAR SKU
+========================= */
+
+async function desativarSkuService(
+  organizacaoId: number,
+  skuId: number
+) {
+  await desativarSku(
+    organizacaoId,
+    skuId
+  );
+
+  logger.info("[produtosService] SKU desativada manualmente", {
+    organizacaoId,
+    skuId,
+  });
+}
+
 export {
   listarProdutosService,
   buscarProdutoPorIdService,
@@ -602,4 +720,7 @@ export {
   definirCapaProdutoService,
   deletarImagemSkuService,
   definirCapaSkuService,
+  deletarSkuService,
+  reativarSkuService,
+  desativarSkuService
 };

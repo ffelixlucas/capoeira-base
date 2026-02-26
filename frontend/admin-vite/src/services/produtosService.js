@@ -118,5 +118,29 @@ removerImagemSku: async (imagemId) => {
 
   return response.data;
 },
+
+// 🔴 DELETAR SKU
+deletarSku: async (skuId) => {
+  const response = await api.delete(
+    `/produtos/sku/${skuId}`
+  );
+  return response.data;
+},
+// 🔴 DESATIVAR SKU
+desativarSku: async (skuId) => {
+  const response = await api.patch(
+    `/produtos/sku/${skuId}/desativar`
+  );
+  return response.data;
+},
+
+// 🟢 REATIVAR SKU
+reativarSku: async (skuId) => {
+  const response = await api.patch(
+    `/produtos/sku/${skuId}/reativar`
+  );
+  return response.data;
+},
+
 }
 

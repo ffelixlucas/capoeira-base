@@ -9,8 +9,10 @@ function formatarPreco(valor) {
 }
 
 export default function ProdutoCard({ produto, onSelecionar }) {
-  const indisponivel = Number(produto.quantidade_total) <= 0;
+  const estoque = Number(produto.quantidade_total) || 0;
+  const sobEncomenda = Number(produto.encomenda) === 1;
 
+  const indisponivel = !sobEncomenda && estoque <= 0;
   const imagemCapa = produto.imagem_capa;
 
   return (
@@ -32,7 +34,7 @@ export default function ProdutoCard({ produto, onSelecionar }) {
         )}
 
         {/* Imagem */}
-        <div className="relative w-full pt-[100%] bg-gray-100 rounded-t-xl overflow-hidden">
+        <div className="relative w-full pt-[100%] bg-cor-secundaria rounded-t-xl overflow-hidden">
           {imagemCapa ? (
             <img
               src={imagemCapa}
@@ -48,7 +50,7 @@ export default function ProdutoCard({ produto, onSelecionar }) {
 
         {/* Informações */}
         <div className="p-3 space-y-2">
-          
+
           {/* Categoria */}
           {produto.categoria && (
             <span className="inline-block text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
@@ -78,13 +80,18 @@ export default function ProdutoCard({ produto, onSelecionar }) {
             <p className="text-xs font-medium text-red-500 bg-red-50 py-1 px-2 rounded inline-block">
               Indisponível
             </p>
+          ) : sobEncomenda ? (
+            <div className="flex items-center gap-2 text-xs text-amber-600">
+              <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+              <span>Sob encomenda</span>
+            </div>
           ) : (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              {produto.quantidade_total > 10 ? (
+              {estoque > 10 ? (
                 <span>Em estoque</span>
               ) : (
-                <span>Só {produto.quantidade_total} restantes!</span>
+                <span>Só {estoque} restantes!</span>
               )}
             </div>
           )}

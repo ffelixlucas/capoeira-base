@@ -12,6 +12,9 @@ import {
   deletarImagemProdutoService,
   definirCapaSkuService,
   deletarImagemSkuService,
+  deletarSkuService,
+    reativarSkuService,
+    desativarSkuService
 
 
 
@@ -194,14 +197,15 @@ async function atualizarSku(req: Request, res: Response) {
   try {
     const organizacaoId = req.usuario.organizacao_id;
     const skuId = Number(req.params.id);
-    const { preco } = req.body;
+
+    const { preco, encomenda } = req.body;
 
     await atualizarSkuService({
       organizacaoId,
       skuId,
       preco: Number(preco),
+      encomenda: Number(encomenda),
     });
-
     return res.json({
       success: true,
       message: "SKU atualizada com sucesso",
@@ -592,6 +596,85 @@ async function removerImagemSku(req: Request, res: Response) {
   }
 }
 
+async function deletarSku(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const skuId = Number(req.params.id);
+
+    await deletarSkuService(organizacaoId, skuId);
+
+    return res.json({
+      success: true,
+      message: "SKU deletada com sucesso",
+    });
+
+  } catch (error: any) {
+    logger.warn("[produtosController] Erro ao deletar SKU", { error });
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * REATIVAR SKU
+ * PATCH /api/produtos/sku/:id/reativar
+ */
+async function reativarSku(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const skuId = Number(req.params.id);
+
+    await reativarSkuService(
+      organizacaoId,
+      skuId
+    );
+
+    return res.json({
+      success: true,
+      message: "SKU reativada com sucesso",
+    });
+
+  } catch (error: any) {
+    logger.warn("[produtosController] Erro ao reativar SKU", { error });
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * DESATIVAR SKU
+ * PATCH /api/produtos/sku/:id/desativar
+ */
+async function desativarSku(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const skuId = Number(req.params.id);
+
+    await desativarSkuService(
+      organizacaoId,
+      skuId
+    );
+
+    return res.json({
+      success: true,
+      message: "SKU desativada com sucesso",
+    });
+
+  } catch (error: any) {
+    logger.warn("[produtosController] Erro ao desativar SKU", { error });
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
 
 export {
   listarProdutos,
@@ -608,6 +691,10 @@ export {
   definirCapaSku,
   removerImagemSku,
   uploadImagemSku,
+  deletarSku,
+  reativarSku,
+  desativarSku
+
 };
 
 

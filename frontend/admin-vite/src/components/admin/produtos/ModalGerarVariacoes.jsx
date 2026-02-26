@@ -11,7 +11,7 @@ export default function ModalGerarVariacoes({
   produtoId,
   onSuccess
 }) {
-
+  const [permitirEncomenda, setPermitirEncomenda] = useState(false)
   const [tipos, setTipos] = useState([])
   const [valoresPorTipo, setValoresPorTipo] = useState({})
   const [selecionados, setSelecionados] = useState({})
@@ -244,6 +244,17 @@ export default function ModalGerarVariacoes({
                   value={quantidade}
                   onChange={(e) => setQuantidade(e.target.value)}
                 />
+              </div>
+
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  checked={permitirEncomenda}
+                  onChange={(e) => setPermitirEncomenda(e.target.checked)}
+                />
+                <label className="text-sm text-on-surface/80">
+                  Permitir venda sob encomenda quando o estoque zerar
+                </label>
               </div>
             </div>
 

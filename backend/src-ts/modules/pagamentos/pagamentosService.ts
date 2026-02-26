@@ -6,6 +6,7 @@ import {
   atualizarCobrancaPagamentoRepository,
 } from "./pagamentosRepository";
 import { buscarPedidoPorId } from "../pedidos/pedidosService";
+import { validarEstoqueParaPedido } from "../estoque/estoqueRepository";
 
 /* ======================================================
    Tipos
@@ -70,6 +71,14 @@ export async function criarCobrancaService(dados: CriarCobrancaInput) {
     if (!pedido) {
       throw new Error("Pedido não encontrado para cobrança");
     }
+    
+    // 🔒 Validação antes do pagamento
+    await validarEstoqueParaPedido(
+      organizacao_id,
+      entidade_id
+    );
+
+
 
     valorFinal = pedido.itens.reduce(
       (total: number, item: any) =>
