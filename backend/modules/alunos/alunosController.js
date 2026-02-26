@@ -200,6 +200,31 @@ async function atualizarStatus(req, res) {
 
 /* -------------------------------------------------------------------------- */
 
+async function metricasLote(req, res) {
+  try {
+    const usuario = req.usuario;
+    const organizacaoId = usuario.organizacao_id;
+
+    const { ids, inicio, fim } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ erro: "IDs inválidos." });
+    }
+
+    const metricas = await alunoService.metricasAlunosLote(
+      ids,
+      inicio,
+      fim,
+      organizacaoId
+    );
+
+    return res.json(metricas);
+  } catch (err) {
+    logger.error("[alunosController] Erro métricas lote:", err);
+    return res.status(400).json({ erro: err.message });
+  }
+}
+
 module.exports = {
   listar,
   buscar,
@@ -210,4 +235,5 @@ module.exports = {
   contarPendentes,
   listarPendentes,
   atualizarStatus,
+  metricasLote
 };

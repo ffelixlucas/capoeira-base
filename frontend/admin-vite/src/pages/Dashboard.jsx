@@ -80,7 +80,7 @@ export default function Dashboard() {
     { to: "/turmas", label: "Turmas", roles: ["admin", ""] },
     { to: "/Loja", label: "Loja", roles: ["loja", "admin"] },
     { to: "/horarios", label: "Horários", roles: ["admin"] },
-    { to: "/video-aulas", label: "Aulas", roles: ["admin"] },
+    { to: "/admin/produtos", label: "Estoque", roles: ["admin", "loja"] },
     { to: "/contatos", label: "Contatos", roles: ["admin"] },
     { to: "/config", label: "Configurações", roles: ["admin"] },
   ];

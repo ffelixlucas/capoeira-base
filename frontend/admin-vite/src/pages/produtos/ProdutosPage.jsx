@@ -1,9 +1,11 @@
+// src/pages/produtos/ProdutosPage.jsx
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useProdutos } from '../../hooks/useProdutos'
 import { ProdutosTable } from '../../components/admin/produtos/ProdutosTable'
 import { ProdutoFormModal } from '../../components/admin/produtos/ProdutoFormModal'
 import { toast } from 'react-toastify'
+import { Breadcrumb } from '../../components/ui/Breadcrumb.jsx'
 
 export const ProdutosPage = () => {
   const navigate = useNavigate()
@@ -34,6 +36,14 @@ export const ProdutosPage = () => {
     <div className="min-h-screen bg-cor-fundo p-4">
       <div className="bg-surface text-on-surface rounded-2xl p-4 border border-cor-secundaria/30">
         
+        {/* Breadcrumb */}
+        <Breadcrumb 
+          items={[
+            { label: 'Loja', path: '/loja' },
+            { label: 'Estoque' } // Este fica amarelo
+          ]}
+        />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>

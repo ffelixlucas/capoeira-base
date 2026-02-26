@@ -329,6 +329,44 @@ async function atualizarStatus(id, status, organizacaoId) {
   );
 }
 
+async function metricasAlunosLote(alunoIds, inicio, fim, organizacaoId) {
+  if (!alunoIds || alunoIds.length === 0) return {};
+
+  const placeholders = alunoIds.map(() => "?").join(",");
+
+  const [rows] = await connection.execute(
+    `
+    SELECT
+      aluno_id,
+      SUM(CASE WHEN status = 'presente' THEN 1 ELSE 0 END) AS presentes,
+      SUM(CASE WHEN status = 'falta' THEN 1 ELSE 0 END) AS faltas,
+      COUNT(*) AS total
+    FROM presencas
+    WHERE aluno_id IN (${placeholders})
+      AND organizacao_id = ?
+      AND DATE(data) BETWEEN ? AND ?
+    GROUP BY aluno_id
+    `,
+    [...alunoIds, organizacaoId, inicio, fim]
+  );
+
+  const resultado = {};
+
+  for (const row of rows) {
+    const total = Number(row.total || 0);
+    const presentes = Number(row.presentes || 0);
+
+    resultado[row.aluno_id] = {
+      presentes,
+      faltas: Number(row.faltas || 0),
+      total,
+      taxa_presenca: total > 0 ? +(presentes / total).toFixed(2) : 0,
+    };
+  }
+
+  return resultado;
+}
+
 module.exports = {
   listarAlunosComTurmaAtual,
   listarAlunosPorTurmas,
@@ -341,4 +379,5 @@ module.exports = {
   contarPendentes,
   listarPendentes,
   atualizarStatus,
+  metricasAlunosLote
 };

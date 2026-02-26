@@ -11,6 +11,9 @@ import {
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 
+import { Link } from "react-router-dom";
+import { ArchiveBoxIcon } from "@heroicons/react/24/outline";
+
 export default function Loja() {
   const { estatisticas, loading } = useLojaDashboard();
   console.log(estatisticas);
@@ -51,13 +54,13 @@ export default function Loja() {
       setLoadingPedidos(true);
       let filtro = {};
 
-if (abaAtiva === "estornado") {
-  filtro.status_financeiro = "estornado";
-} else {
-  filtro.status_operacional = abaAtiva;
-}
+      if (abaAtiva === "estornado") {
+        filtro.status_financeiro = "estornado";
+      } else {
+        filtro.status_operacional = abaAtiva;
+      }
 
-const lista = await listarPedidosLoja(filtro);
+      const lista = await listarPedidosLoja(filtro);
       setPedidos(lista);
     } catch (err) {
       console.error("Erro ao buscar pedidos:", err);
@@ -83,8 +86,28 @@ const lista = await listarPedidosLoja(filtro);
   return (
     <div className="min-h-screen bg-cor-fundo text-cor-texto p-4 sm:p-6 pb-10 sm:pb-12">
       <div className="mx-auto w-full max-w-screen-xl space-y-6 md:space-y-8">
-        {/* Título */}
-        <h1 className="text-2xl sm:text-3xl font-semibold">Loja</h1>
+        {/* Título + Ação */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl sm:text-3xl font-semibold">
+            Loja
+          </h1>
+
+          <Link
+            to="/admin/produtos"
+            className="
+      inline-flex items-center gap-2
+      px-4 py-2
+      rounded-xl
+      bg-cor-secundaria/10
+      hover:bg-cor-secundaria/20
+      text-sm font-medium
+      transition
+    "
+          >
+            <ArchiveBoxIcon className="w-4 h-4" />
+            Gerenciar estoque
+          </Link>
+        </div>
 
         {/* Cards de estatísticas */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
@@ -125,10 +148,10 @@ const lista = await listarPedidosLoja(filtro);
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-cor-secundaria/10">
             {/* Versão mobile: select nativo */}
             <div className="sm:hidden">
-  <select
-    value={abaAtiva}
-    onChange={(e) => setAbaAtiva(e.target.value)}
-    className="
+              <select
+                value={abaAtiva}
+                onChange={(e) => setAbaAtiva(e.target.value)}
+                className="
       w-full px-4 py-3 min-h-[44px]
       bg-cor-fundo text-cor-texto
       border border-cor-secundaria/30
@@ -136,24 +159,24 @@ const lista = await listarPedidosLoja(filtro);
       focus:outline-none focus:ring-2 focus:ring-cor-primaria/50
       appearance-none
     "
-    style={{
-      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-      backgroundPosition: "right 1rem center",
-      backgroundRepeat: "no-repeat",
-      backgroundSize: "1.2em 1.2em",
-    }}
-  >
-    {statusDisponiveis.map((status) => (
-      <option
-        key={status.id}
-        value={status.id}
-        className="bg-cor-fundo text-cor-texto"
-      >
-        {status.labelCurto} ({status.contador})
-      </option>
-    ))}
-  </select>
-</div>
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                  backgroundPosition: "right 1rem center",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "1.2em 1.2em",
+                }}
+              >
+                {statusDisponiveis.map((status) => (
+                  <option
+                    key={status.id}
+                    value={status.id}
+                    className="bg-cor-fundo text-cor-texto"
+                  >
+                    {status.labelCurto} ({status.contador})
+                  </option>
+                ))}
+              </select>
+            </div>
 
 
             {/* Versão tablet/desktop: segmented pills */}
@@ -174,7 +197,7 @@ const lista = await listarPedidosLoja(filtro);
                       ${isActive ? "bg-cor-primaria text-on-surface shadow-sm" : "text-on-surface/70 hover:bg-cor-secundaria/30"}
                     `}
                   >
-                  <span className={`w-3 h-3 rounded-full ${config.dot}`} />
+                    <span className={`w-3 h-3 rounded-full ${config.dot}`} />
                     <span>{status.label}</span>
                     <span
                       className={`

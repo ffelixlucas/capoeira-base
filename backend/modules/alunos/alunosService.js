@@ -2,6 +2,7 @@ const alunoRepo = require("./alunosRepository");
 const turmaRepo = require("../turmas/turmasRepository");
 const logger = require("../../utils/logger.js");
 
+
 /* -------------------------------------------------------------------------- */
 /* 🔹 Listar todos os alunos (multi-org)                                      */
 /* -------------------------------------------------------------------------- */
@@ -126,6 +127,19 @@ async function atualizarStatus(id, status, organizacaoId) {
   }
 }
 
+async function metricasAlunosLote(alunoIds, inicio, fim, organizacaoId) {
+  const hoje = new Date().toISOString().split("T")[0];
+  if (!inicio) inicio = `${new Date().getFullYear()}-01-01`;
+  if (!fim) fim = hoje;
+
+  return await alunoRepo.metricasAlunosLote(
+    alunoIds,
+    inicio,
+    fim,
+    organizacaoId
+  );
+}
+
 module.exports = {
   listarTodos,
   buscarPorId,
@@ -136,4 +150,5 @@ module.exports = {
   contarPendentes,
   listarPendentes,
   atualizarStatus,
+  metricasAlunosLote
 };

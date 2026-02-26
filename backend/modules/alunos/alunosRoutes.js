@@ -21,6 +21,12 @@ router.get("/pendentes", checkRole(["admin"]), controller.listarPendentes);
 // 🔹 Buscar aluno por ID (admin / instrutor)
 router.get("/:id", checkRole(["admin", "instrutor"]), controller.buscar);
 
+router.post(
+  "/metricas/lote",
+  checkRole(["admin", "instrutor"]),
+  controller.metricasLote
+);
+
 // 🔹 Métricas (admin / instrutor)
 router.get(
   "/:id/metricas",

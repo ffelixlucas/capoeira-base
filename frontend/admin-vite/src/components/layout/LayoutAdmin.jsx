@@ -20,11 +20,12 @@ import {
   ArrowLeftOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
+  ArchiveBoxIcon
 } from "@heroicons/react/24/outline";
 import logo from "../../assets/images/logo.png";
 
 // 🔹 NOVO: Back e meta das rotas
-import BackButton from "./BackButton";
+import { Breadcrumb } from "../ui/Breadcrumb"
 import { routeMeta } from "../../routes/routeMeta";
 import { useRouteHistory } from "../../hooks/useRouteHistory";
 
@@ -37,18 +38,16 @@ function NavItem({ to, label, Icon, onClick, isActive }) {
     <Link
       to={to}
       onClick={onClick}
-      className={`group flex items-center space-x-3 rounded-xl p-4 transition ${
-        isActive
+      className={`group flex items-center space-x-3 rounded-xl p-4 transition ${isActive
           ? "bg-cor-primaria/20 text-cor-titulo border-l-4 border-cor-primaria"
           : "text-cor-texto hover:bg-cor-secundaria"
-      }`}
+        }`}
     >
       <div
-        className={`p-2 rounded-lg ${
-          isActive
+        className={`p-2 rounded-lg ${isActive
             ? "bg-cor-primaria text-cor-escura"
             : "bg-cor-secundaria text-cor-primaria"
-        }`}
+          }`}
       >
         <Icon className="h-5 w-5" />
       </div>
@@ -64,31 +63,31 @@ function LayoutAdmin() {
   const [menuAberto, setMenuAberto] = useState(false);
   const { temPapel } = usePermissao();
 
-// 🔹 Pede permissão apenas uma vez
-React.useEffect(() => {
-  solicitarPermissaoNotificacoes();
-}, []);
+  // 🔹 Pede permissão apenas uma vez
+  React.useEffect(() => {
+    solicitarPermissaoNotificacoes();
+  }, []);
 
-// 🔹 Registra push SOMENTE quando o usuário existir
-React.useEffect(() => {
-  if (!usuario?.id || !usuario?.organizacao_id) return;
+  // 🔹 Registra push SOMENTE quando o usuário existir
+  React.useEffect(() => {
+    if (!usuario?.id || !usuario?.organizacao_id) return;
 
-  registrarPushSubscription(usuario)
-    .then((sub) => console.log("Subscription registrada:", sub))
-    .catch((err) => console.error("Erro ao registrar push:", err));
-}, [usuario]);
+    registrarPushSubscription(usuario)
+      .then((sub) => console.log("Subscription registrada:", sub))
+      .catch((err) => console.error("Erro ao registrar push:", err));
+  }, [usuario]);
 
-  
+
 
   // 🔹 registra cada navegação dentro do admin
   useRouteHistory(location.pathname);
 
-const handleLogout = () => {
-  logout();
+  const handleLogout = () => {
+    logout();
 
-  // força desmontar toda a aplicação (zera estado + effects)
-  window.location.href = "/login";
-};
+    // força desmontar toda a aplicação (zera estado + effects)
+    window.location.href = "/login";
+  };
 
   const toggleMenu = () => setMenuAberto(!menuAberto);
 
@@ -117,6 +116,13 @@ const handleLogout = () => {
       roles: ["admin", "loja"],
     },
     {
+      to: "/admin/produtos",
+      label: "Estoque",
+      Icon: ArchiveBoxIcon,
+      roles: ["admin", "loja"],
+
+    },
+    {
       to: "/horarios",
       label: "Horários de aulas",
       Icon: ClockIcon,
@@ -128,6 +134,7 @@ const handleLogout = () => {
       Icon: VideoCameraIcon,
       roles: ["admin", "midia"],
     },
+
   ];
 
   const navItems = todosItens.filter(
@@ -209,7 +216,7 @@ const handleLogout = () => {
               to={item.to}
               label={item.label}
               Icon={item.Icon}
-              onClick={() => {}}
+              onClick={() => { }}
               isActive={location.pathname === item.to}
             />
           ))}
@@ -229,13 +236,13 @@ const handleLogout = () => {
       <div className="flex flex-col flex-1 sm:ml-72 min-h-screen">
         {/* Header */}
         <header className="flex items-center justify-between bg-cor-secundaria/50 backdrop-blur p-4 sm:p-6 border-b border-cor-secundaria">
-          <div className="flex items-center gap-3">
-            {/* 🔹 NOVO: Back sempre visível (mobile-first) */}
-            <BackButton />
-            <h2 className="text-xl font-semibold text-cor-titulo">
-              {getTitle()}
-            </h2>
-          </div>
+        <div className="flex flex-col gap-1">
+  <Breadcrumb
+    items={[
+      { label: getTitle(), path: location.pathname }
+    ]}
+  />
+</div>
           <button
             className="sm:hidden p-2 rounded-lg hover:bg-cor-secundaria"
             onClick={toggleMenu}

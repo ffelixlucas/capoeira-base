@@ -88,27 +88,31 @@ export default function AlunoList({
 
   useEffect(() => {
     async function carregarMetricas() {
-      if (!alunos || alunos.length === 0) return;
-
-      const anoAtual = new Date().getFullYear();
-      const inicio = `${anoAtual}-01-01`;
-      const fim = new Date().toISOString().split("T")[0];
-
-      const novasMetricas = {};
-      for (const aluno of alunos) {
-        try {
-          const { data } = await api.get(`/alunos/${aluno.id}/metricas`, {
-            params: { inicio, fim },
-          });
-          novasMetricas[aluno.id] = data;
-        } catch (err) {
-          logger.error("Erro ao buscar métricas", aluno.id, err);
-          novasMetricas[aluno.id] = { taxa_presenca: 0 };
-        }
+      if (!alunos || alunos.length === 0) {
+        setMetricas({});
+        return;
       }
-      setMetricas(novasMetricas);
+  
+      try {
+        const anoAtual = new Date().getFullYear();
+        const inicio = `${anoAtual}-01-01`;
+        const fim = new Date().toISOString().split("T")[0];
+  
+        const ids = alunos.map((a) => a.id);
+  
+        const { data } = await api.post("/alunos/metricas/lote", {
+          ids,
+          inicio,
+          fim,
+        });
+  
+        setMetricas(data || {});
+      } catch (err) {
+        logger.error("Erro ao buscar métricas em lote", err);
+        setMetricas({});
+      }
     }
-
+  
     carregarMetricas();
   }, [alunos]);
 
