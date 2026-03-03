@@ -71,6 +71,8 @@ function App() {
             <Route path="pedido/:id/confirmado" element={<PedidoConfirmado />} />
           </Route>
 
+          <Route path="/matricula/:slug" element={<PreMatriculaPublic />} />
+
 
 
 
@@ -95,7 +97,8 @@ function App() {
               }
             />
 
-            <Route path="/galeria" element={<Galeria />} />
+            <Route path="/noticias" element={<Galeria />} />
+            <Route path="/galeria" element={<Navigate to="/noticias" replace />} />
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/alunos" element={<Alunos />} />
             <Route path="/mensalidades" element={<Mensalidades />} />
@@ -138,9 +141,7 @@ function App() {
               path="/inscrever/:slug/:eventoId"
               element={<InscricaoEventoPublic />}
             />
-            <Route path="/cartao-pagamento" element={<CartaoPagamento />} />
-            <Route path="/matricula/:slug" element={<PreMatriculaPublic />} />
-          </Route>
+            <Route path="/cartao-pagamento" element={<CartaoPagamento />} />          </Route>
         </Routes>
       </Router>
 

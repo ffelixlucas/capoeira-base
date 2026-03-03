@@ -2,6 +2,7 @@ import {
   buscarIdPorSlug as repoBuscarIdPorSlug,
   buscarPorSlug as repoBuscarPorSlug,
   buscarPorId as repoBuscarPorId,
+  buscarConfiguracao as repoBuscarConfiguracao,
   Organizacao,
 } from "./organizacaoRepository";
 import logger from "../../../utils/logger";
@@ -54,6 +55,27 @@ export async function buscarPorSlug(slug: string): Promise<Organizacao> {
     );
     throw err;
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Buscar URL pública do site por slug (configuração multi-org)            */
+/* -------------------------------------------------------------------------- */
+export async function buscarSiteUrlPorSlug(slug: string): Promise<string | null> {
+  const organizacao = await buscarPorSlug(slug);
+
+  const valor = await repoBuscarConfiguracao(organizacao.id, "site_url");
+
+  if (typeof valor !== "string") {
+    logger.debug(
+      `[organizacaoService] site_url ausente para org ${organizacao.id} (slug: ${slug})`
+    );
+    return null;
+  }
+
+  const siteUrl = valor.trim();
+  if (!siteUrl) return null;
+
+  return siteUrl;
 }
 
 /* -------------------------------------------------------------------------- */

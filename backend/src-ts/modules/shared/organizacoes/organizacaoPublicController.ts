@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { buscarPorSlug } from "./organizacaoService";
-import logger  from "../../../utils/logger";
+import { buscarPorSlug, buscarSiteUrlPorSlug } from "./organizacaoService";
+import logger from "../../../utils/logger";
 
 /**
  * 🔹 Retorna dados públicos da organização via slug
@@ -19,6 +19,8 @@ export async function getOrganizacaoPublica(req: Request, res: Response) {
       return res.status(404).json({ error: "Organização não encontrada" });
     }
 
+    const siteUrl = await buscarSiteUrlPorSlug(slug);
+
     logger.debug(
       `[organizacaoPublicController] Organização pública encontrada: ${org.nome_fantasia} (org ${org.id})`
     );
@@ -32,6 +34,7 @@ export async function getOrganizacaoPublica(req: Request, res: Response) {
       estado: org.estado,
       pais: org.pais,
       slug: org.slug,
+      site_url: siteUrl,
     });
   } catch (err: any) {
     logger.error(

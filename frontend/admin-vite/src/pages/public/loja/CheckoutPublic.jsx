@@ -5,6 +5,7 @@ import { usePagamentoLoja } from "../../../hooks/public/pagamentos/usePagamentoL
 import ModalPagamentoPixPublic from "../../../components/public/pagamentos/ModalPagamentoPixPublic";
 import { QrCode, CreditCard, Landmark, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { usePublicSiteUrl } from "../../../hooks/public/loja/usePublicSiteUrl";
 
 function formatarPreco(valor) {
   return Number(valor).toLocaleString("pt-BR", {
@@ -66,6 +67,7 @@ const MetodoPagamentoCard = ({
 export default function CheckoutPublic() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const siteUrl = usePublicSiteUrl(slug);
   const { itens, limparCarrinho } = useCarrinho();
   const { pagarComPix, loading } = usePagamentoLoja();
 
@@ -127,12 +129,21 @@ export default function CheckoutPublic() {
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-8 text-gray-700">
 
         {/* VOLTAR */}
-        <button
-          onClick={() => navigate(`/loja/${slug}`)}
-          className="text-sm text-gray-500 mb-4 hover:text-black"
-        >
-          ← Voltar para loja
-        </button>
+        <div className="flex items-center justify-between mb-4 gap-3">
+          <button
+            onClick={() => navigate(`/loja/${slug}`)}
+            className="text-sm text-gray-500 hover:text-black"
+          >
+            ← Voltar para loja
+          </button>
+
+          <a
+            href={siteUrl}
+            className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+          >
+            Voltar para o site
+          </a>
+        </div>
 
         <h1 className="text-2xl font-bold mb-8 text-gray-800">
           Finalizar Compra

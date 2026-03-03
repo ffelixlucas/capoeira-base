@@ -1,15 +1,17 @@
 // LojaPublic.jsx - Versão com as cores do projeto
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useProdutosPublic } from "../../../hooks/public/loja/useProdutosPublic";
 import ProdutoCard from "../../../components/public/loja/ProdutoCard";
-import { useState } from "react";
 import { useCarrinho } from "../../../contexts/public/loja/CarrinhoContext";
 import CarrinhoDrawer from "../../../components/public/loja/CarrinhoDrawer";
 import ProdutoModal from "../../../components/public/loja/ProdutoModal";
+import { usePublicSiteUrl } from "../../../hooks/public/loja/usePublicSiteUrl";
 
 export default function LojaPublic() {
   const { slug } = useParams();
   const { produtos, carregando, erro } = useProdutosPublic(slug);
+  const siteUrl = usePublicSiteUrl(slug);
 
   const { itens } = useCarrinho();
   const [drawerAberto, setDrawerAberto] = useState(false);
@@ -26,11 +28,14 @@ export default function LojaPublic() {
       {/* Header com as cores do projeto */}
       <header className="bg-cor-secundaria border-b border-cor-primaria/20 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-cor-titulo">
-              Loja
-            </h1>          
-        
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold text-cor-titulo">Loja</h1>
+            <a
+              href={siteUrl}
+              className="text-sm px-3 py-1.5 rounded-lg border border-cor-primaria/30 text-cor-primaria hover:bg-cor-primaria/10 transition"
+            >
+              Voltar para o site
+            </a>
           </div>
         </div>
       </header>

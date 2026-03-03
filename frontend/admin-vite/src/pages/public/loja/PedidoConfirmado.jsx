@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, Package, Truck, Shield, ArrowRight } from "lucide-react";
 import axios from "axios";
+import { usePublicSiteUrl } from "../../../hooks/public/loja/usePublicSiteUrl";
 
 export default function PedidoConfirmado() {
   const { id, slug } = useParams();
   const navigate = useNavigate();
+  const siteUrl = usePublicSiteUrl(slug);
 
   const [pedido, setPedido] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -237,7 +239,7 @@ export default function PedidoConfirmado() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="mt-10"
+          className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
           <button
             onClick={() => navigate(`/loja/${slug}`)}
@@ -246,6 +248,13 @@ export default function PedidoConfirmado() {
             Voltar para a Loja
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
+
+          <a
+            href={siteUrl}
+            className="w-full min-h-[56px] border border-cor-secundaria/30 text-on-surface font-semibold rounded-2xl transition-all duration-300 hover:bg-cor-secundaria/10 flex items-center justify-center"
+          >
+            Voltar para o site
+          </a>
         </motion.div>
 
         <p className="text-center text-sm text-on-surface/50 mt-6">
