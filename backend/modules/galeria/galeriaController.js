@@ -20,7 +20,9 @@ async function uploadImagem(req, res) {
     return res.status(200).json(novaImagem);
   } catch (error) {
     logger.error("Erro no controller de upload:", error);
-    return res.status(500).json({ erro: "Erro interno no servidor." });
+    const message = error?.message || "Erro interno no servidor.";
+    const status = /limite|arquivo|inválido|invalido|não encontrada|nao encontrada|obrigat[oó]rio|excede|too long|data too long/i.test(message) ? 400 : 500;
+    return res.status(status).json({ erro: message });
   }
 }
 
@@ -55,26 +57,23 @@ async function deletarImagem(req, res) {
     res.status(500).json({ erro: "Erro ao excluir imagem." });
   }
 }
-async function atualizarLegenda(req, res) {
-  const { id } = req.params;
-  const { legenda } = req.body;
 
-  if (!legenda) {
-    return res.status(400).json({ erro: "Legenda não pode ser vazia." });
-  }
+async function atualizarNoticia(req, res) {
+  const { id } = req.params;
+  const { titulo, legenda } = req.body;
 
   try {
-    await galeriaService.atualizarLegenda(id, legenda);
-    res.status(200).json({ mensagem: "Legenda atualizada com sucesso." });
+    await galeriaService.atualizarNoticia(id, { titulo, legenda });
+    res.status(200).json({ mensagem: "Notícia atualizada com sucesso." });
   } catch (error) {
-    logger.error("Erro ao atualizar legenda:", error);
-    res.status(500).json({ erro: "Erro ao atualizar legenda." });
+    logger.error("Erro ao atualizar notícia:", error);
+    res.status(400).json({ erro: error.message || "Erro ao atualizar notícia." });
   }
 }
 
 module.exports = {
   uploadImagem,
-  atualizarLegenda,
+  atualizarNoticia,
   listarImagens,
   atualizarOrdem,
   deletarImagem,

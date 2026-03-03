@@ -22,8 +22,8 @@ router.post(
 // ✅ Atualizar ordem
 router.put("/ordem", verifyToken, checkRole(["admin", "midia"]), galeriaController.atualizarOrdem);
 
-// ✅ Atualizar legenda
-router.put("/:id", verifyToken, checkRole(["admin", "midia"]), galeriaController.atualizarLegenda);
+// ✅ Atualizar notícia
+router.put("/:id", verifyToken, checkRole(["admin", "midia"]), galeriaController.atualizarNoticia);
 
 // ✅ Deletar imagem
 router.delete("/:id", verifyToken, checkRole(["admin", "midia"]), galeriaController.deletarImagem);

@@ -3,6 +3,30 @@ const { v4: uuidv4 } = require("uuid");
 const galeriaRepository = require("./galeriaRepository");
 const logger = require("../../utils/logger.js");
 
+const TITULO_MAX_CHARS = 160;
+
+function normalizeTitulo(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+function normalizeLegenda(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+function validateTitulo(titulo) {
+  if (!titulo) {
+    throw new Error("Título é obrigatório.");
+  }
+
+  if (titulo.length > TITULO_MAX_CHARS) {
+    throw new Error(`Título excede ${TITULO_MAX_CHARS} caracteres.`);
+  }
+}
+
 async function processarUpload(
   imagem,
   titulo = null,
@@ -10,16 +34,21 @@ async function processarUpload(
   legenda = null
 ) {
   const totalItens = await galeriaRepository.contarTotalItens();
+  const limiteItens = Number(process.env.GALERIA_MAX_ITENS || 200);
 
-  if (totalItens >= 20) {
-    throw new Error("Limite de 20 itens atingido. Exclua um para continuar.");
+  if (totalItens >= limiteItens) {
+    throw new Error(`Limite de ${limiteItens} itens atingido. Exclua um para continuar.`);
   }
+
+  const tituloFinal = normalizeTitulo(titulo);
+  const legendaFinal = normalizeLegenda(legenda);
+
+  validateTitulo(tituloFinal);
 
   const nomeArquivo = `galeria/${uuidv4()}-${imagem.originalname}`;
   const file = bucket.file(nomeArquivo);
 
   try {
-    // ✅ Upload rápido e direto
     await file.save(imagem.buffer, {
       metadata: {
         contentType: imagem.mimetype,
@@ -27,14 +56,21 @@ async function processarUpload(
     });
 
     const url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
-    const id = await galeriaRepository.salvarImagem(
-      url,
-      titulo,
-      criadoPor,
-      legenda
-    );
-    const novaImagem = await galeriaRepository.buscarPorId(id);
-    return novaImagem;
+
+    try {
+      const id = await galeriaRepository.salvarImagem(
+        url,
+        tituloFinal,
+        criadoPor,
+        legendaFinal
+      );
+      const novaImagem = await galeriaRepository.buscarPorId(id);
+      return novaImagem;
+    } catch (dbError) {
+      // Evita arquivo órfão no bucket quando falha ao persistir no banco.
+      await file.delete({ ignoreNotFound: true }).catch(() => undefined);
+      throw dbError;
+    }
   } catch (error) {
     logger.error("Erro no upload direto:", error);
     throw error;
@@ -77,18 +113,33 @@ async function removerImagemPorId(id) {
   await bucket.file(caminhoArquivo).delete();
   await galeriaRepository.excluir(id);
 }
-async function atualizarLegenda(id, legenda) {
+
+async function atualizarNoticia(id, { titulo, legenda }) {
   const imagem = await galeriaRepository.buscarPorId(id);
   if (!imagem) {
     throw new Error("Imagem não encontrada.");
   }
 
-  return await galeriaRepository.atualizarLegenda(id, legenda);
+  const tituloFinal =
+    typeof titulo === "string" ? normalizeTitulo(titulo) : normalizeTitulo(imagem.titulo);
+  const legendaFinal =
+    typeof legenda === "string" ? normalizeLegenda(legenda) : normalizeLegenda(imagem.legenda);
+
+  validateTitulo(tituloFinal);
+
+  if (!legendaFinal) {
+    throw new Error("Conteúdo não pode ser vazio.");
+  }
+
+  return await galeriaRepository.atualizarNoticia(id, {
+    titulo: tituloFinal,
+    legenda: legendaFinal,
+  });
 }
 
 module.exports = {
   processarUpload,
-  atualizarLegenda,
+  atualizarNoticia,
   obterTodasImagens,
   atualizarOrdemGaleria,
   removerImagemPorId,

@@ -45,6 +45,8 @@ const organizacaoPublicRoutes = require("../modules/shared/organizacoes/organiza
 const pedidosPublicRoutes = require("../modules/public/pedidos/pedidosPublicRoutes");
 const lojaPublicRoutes = require("../modules/public/loja/lojaPublicRoutes");
 const horariosPublicRoutes = require("../modules/public/horarios/horariosPublicRoutes");
+const galeriaPublicRoutes = require("../modules/public/galeria/publicGaleriaRoutes");
+const noticiasPublicRoutes = require("../modules/public/noticias/publicNoticiasRoutes");
 
 // Mistas
 const notasAlunoRoutes = require("../modules/notasAluno/notasAlunoRoutes");
@@ -73,6 +75,8 @@ app.use("/api/pedidos", pedidosRoutes);
 app.use("/api/public/pedidos", pedidosPublicRoutes);
 app.use("/api/public/loja", lojaPublicRoutes);
 app.use("/api/public/horarios", horariosPublicRoutes);
+app.use("/api/public/galeria", galeriaPublicRoutes);
+app.use("/api/public/noticias", noticiasPublicRoutes);
 
 
 // -----------------------------------------------------------
@@ -89,6 +93,7 @@ app.use("/api/alunos", alunosRoutes);
 app.use("/api/equipe", equipeRoutes);
 app.use("/api/equipe", equipeRolesRoutes);
 app.use("/api/galeria", galeriaRoutes);
+app.use("/api/noticias", galeriaRoutes);
 app.use("/api/financeiro", financeiroRoutes);
 app.use("/api/estoque", estoqueRoutes);
 app.use("/api/produtos", produtosRoutes);

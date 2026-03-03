@@ -1,5 +1,25 @@
 const db = require('../../database/connection');
 
+let hasOrganizacaoIdColumnCache = null;
+
+async function galeriaHasOrganizacaoIdColumn() {
+  if (hasOrganizacaoIdColumnCache !== null) return hasOrganizacaoIdColumnCache;
+
+  const [rows] = await db.execute(
+    `
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = DATABASE()
+        AND table_name = 'galeria'
+        AND column_name = 'organizacao_id'
+      LIMIT 1
+    `
+  );
+
+  hasOrganizacaoIdColumnCache = rows.length > 0;
+  return hasOrganizacaoIdColumnCache;
+}
+
 async function contarTotalItens() {
   const [rows] = await db.execute('SELECT COUNT(*) as total FROM galeria');
   return rows[0].total;
@@ -14,6 +34,23 @@ async function salvarImagem(imagemUrl, titulo = null, criadoPor = null, legenda 
 }
 
 async function buscarTodasImagens() {
+  const [linhas] = await db.execute(
+    'SELECT * FROM galeria ORDER BY ordem IS NULL, ordem ASC, criado_em DESC'
+  );
+  return linhas;
+}
+
+async function buscarImagensPublicas(organizacaoId = null) {
+  const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
+
+  if (hasOrgColumn && organizacaoId) {
+    const [linhas] = await db.execute(
+      'SELECT * FROM galeria WHERE organizacao_id = ? ORDER BY ordem IS NULL, ordem ASC, criado_em DESC',
+      [organizacaoId]
+    );
+    return linhas;
+  }
+
   const [linhas] = await db.execute(
     'SELECT * FROM galeria ORDER BY ordem IS NULL, ordem ASC, criado_em DESC'
   );
@@ -41,6 +78,7 @@ async function atualizarOrdem(lista) {
     conn.release();
   }
 }
+
 async function buscarPorId(id) {
   const [rows] = await db.execute(
     'SELECT * FROM galeria WHERE id = ?',
@@ -55,23 +93,22 @@ async function excluir(id) {
     [id]
   );
 }
-async function atualizarLegenda(id, legenda) {
+
+async function atualizarNoticia(id, { titulo, legenda }) {
   const [result] = await db.execute(
-    'UPDATE galeria SET legenda = ? WHERE id = ?',
-    [legenda, id]
+    'UPDATE galeria SET titulo = ?, legenda = ? WHERE id = ?',
+    [titulo, legenda, id]
   );
   return result;
 }
 
-
-
-
 module.exports = {
   salvarImagem,
-  atualizarLegenda,
+  atualizarNoticia,
   buscarTodasImagens,
+  buscarImagensPublicas,
   atualizarOrdem,
   buscarPorId,
   excluir,
-  contarTotalItens
+  contarTotalItens,
 };
