@@ -1,0 +1,1 @@
+module.exports = require("../../../dist/modules/public/horarios/horariosPublicRoutes.js").default;

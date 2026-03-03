@@ -44,6 +44,7 @@ const publicInscricoesRoutes = require("../modules/public/inscricoes/inscricoesR
 const organizacaoPublicRoutes = require("../modules/shared/organizacoes/organizacaoPublicRoutes");
 const pedidosPublicRoutes = require("../modules/public/pedidos/pedidosPublicRoutes");
 const lojaPublicRoutes = require("../modules/public/loja/lojaPublicRoutes");
+const horariosPublicRoutes = require("../modules/public/horarios/horariosPublicRoutes");
 
 // Mistas
 const notasAlunoRoutes = require("../modules/notasAluno/notasAlunoRoutes");
@@ -71,6 +72,7 @@ app.use("/api/public/inscricoes", publicInscricoesRoutes);
 app.use("/api/pedidos", pedidosRoutes);
 app.use("/api/public/pedidos", pedidosPublicRoutes);
 app.use("/api/public/loja", lojaPublicRoutes);
+app.use("/api/public/horarios", horariosPublicRoutes);
 
 
 // -----------------------------------------------------------
