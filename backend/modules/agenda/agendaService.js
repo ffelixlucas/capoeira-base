@@ -17,6 +17,21 @@ function normalizarConfig(conf) {
   }
 }
 
+function normalizarTelefoneContato(value) {
+  if (value == null) return "";
+  return String(value).trim().slice(0, 30);
+}
+
+function normalizarWhatsappUrl(value) {
+  if (value == null) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  if (/^https?:\/\//i.test(raw)) return raw.slice(0, 255);
+  if (/^(chat\.whatsapp\.com|wa\.me)\//i.test(raw)) return `https://${raw}`.slice(0, 255);
+  return raw.slice(0, 255);
+}
+
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar eventos (multi-org)                                              */
 /* -------------------------------------------------------------------------- */
@@ -53,7 +68,8 @@ async function criarEvento(dados, usuarioId, organizacaoId) {
     descricao_completa: dados.descricao_completa || "",
     local: dados.local || "",
     endereco: dados.endereco || "",
-    telefone_contato: dados.telefone_contato || "",
+    telefone_contato: normalizarTelefoneContato(dados.telefone_contato),
+    whatsapp_url: normalizarWhatsappUrl(dados.whatsapp_url),
     data_inicio: dados.data_inicio,
     data_fim: dados.data_fim || null,
     imagem_url: dados.imagem_url || null,
@@ -96,7 +112,8 @@ async function processarUploadEvento(imagem, dados, usuarioId, organizacaoId) {
       descricao_completa: dados.descricao_completa || "",
       local: dados.local || "",
       endereco: dados.endereco || "",
-      telefone_contato: dados.telefone_contato || "",
+      telefone_contato: normalizarTelefoneContato(dados.telefone_contato),
+      whatsapp_url: normalizarWhatsappUrl(dados.whatsapp_url),
       data_inicio: dados.data_inicio || null,
       data_fim: dados.data_fim || null,
       imagem_url,
@@ -150,7 +167,8 @@ async function atualizarEvento(id, organizacaoId, dados) {
     descricao_completa: dados.descricao_completa ?? "",
     local: dados.local ?? "",
     endereco: dados.endereco ?? "",
-    telefone_contato: dados.telefone_contato ?? "",
+    telefone_contato: normalizarTelefoneContato(dados.telefone_contato),
+    whatsapp_url: normalizarWhatsappUrl(dados.whatsapp_url),
     data_inicio: dados.data_inicio ?? null,
     data_fim: dados.data_fim ?? null,
     imagem_url: dados.imagem_url ?? null,

@@ -1,5 +1,10 @@
 export default function EventoInfo({ evento }) {
   if (!evento) return null;
+  const whatsappHref = evento.whatsapp_url
+    ? evento.whatsapp_url
+    : (evento.telefone_contato
+        ? `https://wa.me/55${evento.telefone_contato.replace(/\D/g, "")}`
+        : null);
 
   const formatarDataHora = (dataISO) => {
     if (!dataISO) return "";
@@ -61,10 +66,10 @@ export default function EventoInfo({ evento }) {
       )}
 
       {/* WhatsApp */}
-      {evento.telefone_contato && (
+      {whatsappHref && (
         <div className="flex items-center gap-2 mt-2">
           <a
-            href={`https://wa.me/55${evento.telefone_contato.replace(/\D/g, "")}`}
+            href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1"
@@ -76,7 +81,9 @@ export default function EventoInfo({ evento }) {
               className="w-5 h-5"
             />
           </a>
-          <span className="text-sm text-gray-700">{evento.telefone_contato}</span>
+          <span className="text-sm text-gray-700">
+            {evento.whatsapp_url ? "Grupo de WhatsApp" : evento.telefone_contato}
+          </span>
         </div>
       )}
     </div>

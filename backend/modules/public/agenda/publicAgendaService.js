@@ -9,14 +9,13 @@ async function listarEventosPublicos(organizacaoId) {
     `
     SELECT 
       id, organizacao_id, titulo, descricao_curta, descricao_completa,
-      local, endereco, telefone_contato,
+      local, endereco, telefone_contato, whatsapp_url,
       data_inicio, data_fim, inscricoes_ate,
-      imagem_url, valor, possui_camiseta,
+      imagem_url, com_inscricao, valor, possui_camiseta,
       configuracoes
     FROM agenda
     WHERE 
-      com_inscricao = 1 
-      AND status = 'ativo'
+      status = 'ativo'
       AND organizacao_id = ?
     ORDER BY data_inicio ASC
     `,
@@ -43,15 +42,14 @@ async function buscarEventoPublicoPorId(id, organizacaoId) {
     `
     SELECT 
       id, organizacao_id, titulo, descricao_curta, descricao_completa,
-      local, endereco, telefone_contato,
+      local, endereco, telefone_contato, whatsapp_url,
       data_inicio, data_fim, inscricoes_ate,
-      imagem_url, valor, possui_camiseta,
+      imagem_url, com_inscricao, valor, possui_camiseta,
       configuracoes
     FROM agenda
     WHERE 
       id = ? 
       AND organizacao_id = ? 
-      AND com_inscricao = 1 
       AND status = 'ativo'
     LIMIT 1
     `,
