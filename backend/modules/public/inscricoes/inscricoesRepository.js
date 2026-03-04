@@ -332,6 +332,49 @@ async function verificarEncerramentoInscricao(eventoId) {
   return false;
 }
 
+/**
+ * Verifica se o evento atingiu o limite de inscritos pagos.
+ * O limite é configurado em agenda.configuracoes.limite_inscritos
+ */
+async function verificarLimiteInscritos(eventoId) {
+  const [rows] = await db.execute(
+    `
+    SELECT
+      a.configuracoes,
+      (
+        SELECT COUNT(*)
+        FROM inscricoes_evento i
+        WHERE i.evento_id = a.id
+          AND i.status = 'pago'
+      ) AS total_pagos
+    FROM agenda a
+    WHERE a.id = ?
+    LIMIT 1
+    `,
+    [eventoId]
+  );
+
+  if (!rows.length) return false;
+
+  const rawConfig = rows[0].configuracoes;
+  let config = {};
+  if (rawConfig && typeof rawConfig === "object") {
+    config = rawConfig;
+  } else if (typeof rawConfig === "string" && rawConfig.trim()) {
+    try {
+      config = JSON.parse(rawConfig);
+    } catch {
+      config = {};
+    }
+  }
+
+  const limite = Number(config?.limite_inscritos || 0);
+  const totalPagos = Number(rows[0].total_pagos || 0);
+
+  if (!Number.isFinite(limite) || limite < 1) return false;
+  return totalPagos >= limite;
+}
+
 module.exports = {
   buscarInscricaoPendente,
   criarInscricaoPendente,
@@ -342,4 +385,5 @@ module.exports = {
   verificarInscricaoPaga,
   buscarValorEvento,
   verificarEncerramentoInscricao,
+  verificarLimiteInscritos,
 };

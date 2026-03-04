@@ -16,7 +16,7 @@ async function listarEventos(organizacaoId, status, situacao) {
     SELECT 
       id, organizacao_id, titulo, descricao_curta, descricao_completa,
       local, endereco, telefone_contato, whatsapp_url, data_inicio, data_fim,
-      imagem_url, com_inscricao, valor, responsavel_id,
+      inscricoes_ate, imagem_url, com_inscricao, valor, responsavel_id,
       configuracoes, status, criado_em, criado_por, possui_camiseta
     FROM agenda
     WHERE organizacao_id = ?
@@ -54,9 +54,9 @@ async function criarEvento(evento) {
     INSERT INTO agenda (
       organizacao_id, titulo, descricao_curta, descricao_completa,
       local, endereco, telefone_contato, whatsapp_url, data_inicio, data_fim,
-      imagem_url, com_inscricao, valor, responsavel_id, configuracoes,
+      inscricoes_ate, imagem_url, com_inscricao, valor, responsavel_id, configuracoes,
       criado_por, possui_camiseta
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       evento.organizacao_id,
@@ -69,6 +69,7 @@ async function criarEvento(evento) {
       evento.whatsapp_url,
       evento.data_inicio,
       evento.data_fim,
+      evento.inscricoes_ate,
       evento.imagem_url,
       evento.com_inscricao,
       evento.valor,
@@ -107,7 +108,7 @@ async function atualizar(id, organizacaoId, dados) {
     UPDATE agenda SET
       titulo = ?, descricao_curta = ?, descricao_completa = ?,
       local = ?, endereco = ?, telefone_contato = ?, whatsapp_url = ?, data_inicio = ?,
-      data_fim = ?, imagem_url = ?, com_inscricao = ?, valor = ?,
+      data_fim = ?, inscricoes_ate = ?, imagem_url = ?, com_inscricao = ?, valor = ?,
       responsavel_id = ?, configuracoes = ?, possui_camiseta = ?, status = ?
     WHERE id = ? AND organizacao_id = ?
   `;
@@ -122,6 +123,7 @@ async function atualizar(id, organizacaoId, dados) {
     dados.whatsapp_url,
     dados.data_inicio,
     dados.data_fim,
+    dados.inscricoes_ate,
     dados.imagem_url,
     dados.com_inscricao,
     dados.valor,

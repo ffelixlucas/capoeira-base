@@ -14,6 +14,13 @@ function clampFocus(value, fallback = 50) {
   return Math.min(100, Math.max(0, parsed));
 }
 
+function normalizarLimiteInscritos(value) {
+  if (value === "" || value == null) return "";
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed < 1) return "";
+  return Math.floor(parsed);
+}
+
 function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
   const TAMANHOS_CAMISETA = [
     "04",
@@ -41,10 +48,13 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
     hora_inicio: "",
     data_fim: "",
     hora_fim: "",
+    data_limite_inscricao: "",
+    hora_limite_inscricao: "",
     imagem: null,
     com_inscricao: false,
     inscricao_externa_url: "",
     valor: "",
+    limite_inscritos: "",
     possui_camiseta: false,
     camiseta_tamanhos: [],
     imagem_foco_x: 50,
@@ -71,6 +81,9 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         const dataFim = eventoEditando.data_fim
           ? new Date(eventoEditando.data_fim)
           : null;
+        const dataLimiteInscricao = eventoEditando.inscricoes_ate
+          ? new Date(eventoEditando.inscricoes_ate)
+          : null;
         const horaInicioIso = dataInicio.toISOString().slice(11, 16);
         const semHoraInicio = horaInicioIso === "00:00";
         const horaFimIso = dataFim ? dataFim.toISOString().slice(11, 16) : "";
@@ -84,12 +97,21 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
           hora_inicio: semHoraInicio ? "" : horaInicioIso,
           data_fim: dataFim ? dataFim.toISOString().slice(0, 10) : "",
           hora_fim: dataFim && !semHoraFim ? horaFimIso : "",
+          data_limite_inscricao: dataLimiteInscricao
+            ? dataLimiteInscricao.toISOString().slice(0, 10)
+            : "",
+          hora_limite_inscricao: dataLimiteInscricao
+            ? dataLimiteInscricao.toISOString().slice(11, 16)
+            : "",
           imagem: null,
           possui_camiseta: eventoEditando.possui_camiseta ?? false,
           camiseta_tamanhos: configuracoes.camiseta_tamanhos || [],
           inscricao_externa_url: configuracoes.inscricao_externa_url || "",
           com_inscricao: eventoEditando.com_inscricao ?? false,
           valor: eventoEditando.valor || "",
+          limite_inscritos: normalizarLimiteInscritos(
+            configuracoes.limite_inscritos
+          ),
           imagem_foco_x: clampFocus(configuracoes.imagem_foco_x, 50),
           imagem_foco_y: clampFocus(configuracoes.imagem_foco_y, 50),
         });
@@ -114,10 +136,13 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         hora_inicio: "",
         data_fim: "",
         hora_fim: "",
+        data_limite_inscricao: "",
+        hora_limite_inscricao: "",
         imagem: null,
         com_inscricao: false,
         inscricao_externa_url: "",
         valor: "",
+        limite_inscritos: "",
         possui_camiseta: false,
         camiseta_tamanhos: [],
         imagem_foco_x: 50,
@@ -177,6 +202,13 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
     const data_fim = form.data_fim
       ? composeDateTime(form.data_fim, semHorarioFim ? "" : form.hora_fim)
       : null;
+    const inscricoes_ate = form.data_limite_inscricao
+      ? composeDateTime(
+          form.data_limite_inscricao,
+          form.hora_limite_inscricao || "23:59"
+        )
+      : null;
+    const limiteInscritos = normalizarLimiteInscritos(form.limite_inscritos);
 
     setEnviando(true);
     try {
@@ -185,9 +217,11 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
           ...form,
           data_inicio,
           data_fim,
+          inscricoes_ate,
           configuracoes: {
             camiseta_tamanhos: form.camiseta_tamanhos,
             inscricao_externa_url: form.inscricao_externa_url?.trim() || "",
+            limite_inscritos: limiteInscritos || null,
             imagem_foco_x: clampFocus(form.imagem_foco_x, 50),
             imagem_foco_y: clampFocus(form.imagem_foco_y, 50),
           },
@@ -210,6 +244,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         }).forEach(([k, v]) => formData.append(k, v));
 
         if (data_fim) formData.append("data_fim", data_fim);
+        if (inscricoes_ate) formData.append("inscricoes_ate", inscricoes_ate);
         if (form.com_inscricao) formData.append("valor", form.valor || 0);
         if (form.imagem) formData.append("imagem", form.imagem);
 
@@ -218,6 +253,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
           JSON.stringify({
             camiseta_tamanhos: form.camiseta_tamanhos || [],
             inscricao_externa_url: form.inscricao_externa_url?.trim() || "",
+            limite_inscritos: limiteInscritos || null,
             imagem_foco_x: clampFocus(form.imagem_foco_x, 50),
             imagem_foco_y: clampFocus(form.imagem_foco_y, 50),
           })
@@ -240,10 +276,13 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         hora_inicio: "",
         data_fim: "",
         hora_fim: "",
+        data_limite_inscricao: "",
+        hora_limite_inscricao: "",
         imagem: null,
         com_inscricao: false,
         inscricao_externa_url: "",
         valor: "",
+        limite_inscritos: "",
         possui_camiseta: false,
         camiseta_tamanhos: [],
         imagem_foco_x: 50,
@@ -508,6 +547,36 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
                 step="0.01"
               />
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <InputBase
+                  type="date"
+                  name="data_limite_inscricao"
+                  value={form.data_limite_inscricao}
+                  onChange={handleChange}
+                  max={form.data_inicio || undefined}
+                />
+                <InputBase
+                  type="time"
+                  name="hora_limite_inscricao"
+                  value={form.hora_limite_inscricao}
+                  onChange={handleChange}
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                Data limite para inscrição (se vazio, usa a data de início do
+                evento).
+              </p>
+
+              <InputBase
+                type="number"
+                name="limite_inscritos"
+                placeholder="Limite de inscritos (opcional)"
+                value={form.limite_inscritos}
+                onChange={handleChange}
+                min="1"
+                step="1"
+              />
+
               <div className="flex flex-col gap-2">
                 {/* Checkbox principal */}
                 <div className="flex items-center gap-2">
@@ -752,6 +821,8 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
             configuracoes: {
               camiseta_tamanhos: form.camiseta_tamanhos,
               inscricao_externa_url: form.inscricao_externa_url,
+              limite_inscritos:
+                normalizarLimiteInscritos(form.limite_inscritos) || null,
               imagem_foco_x: clampFocus(form.imagem_foco_x, 50),
               imagem_foco_y: clampFocus(form.imagem_foco_y, 50),
             },

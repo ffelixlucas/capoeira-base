@@ -14,6 +14,7 @@ const {
   verificarInscricaoPaga,
   buscarValorEvento,
   verificarEncerramentoInscricao,
+  verificarLimiteInscritos,
 } = require("./inscricoesRepository");
 const {
   enviarEmailConfirmacao,
@@ -89,6 +90,11 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   const encerrado = await verificarEncerramentoInscricao(evento_id);
   if (encerrado) {
     throw new Error("As inscrições para este evento estão encerradas.");
+  }
+
+  const limiteAtingido = await verificarLimiteInscritos(evento_id);
+  if (limiteAtingido) {
+    throw new Error("Limite de inscritos atingido para este evento.");
   }
 
   // 🔒 Validar CPF do inscrito
@@ -254,6 +260,11 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
     const encerrado = await verificarEncerramentoInscricao(evento_id);
     if (encerrado) {
       throw new Error("As inscrições para este evento estão encerradas.");
+    }
+
+    const limiteAtingido = await verificarLimiteInscritos(evento_id);
+    if (limiteAtingido) {
+      throw new Error("Limite de inscritos atingido para este evento.");
     }
 
     if (!token) throw new Error("Token do cartão ausente.");
@@ -681,6 +692,11 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
     const encerrado = await verificarEncerramentoInscricao(evento_id);
     if (encerrado) {
       throw new Error("As inscrições para este evento estão encerradas.");
+    }
+
+    const limiteAtingido = await verificarLimiteInscritos(evento_id);
+    if (limiteAtingido) {
+      throw new Error("Limite de inscritos atingido para este evento.");
     }
 
     // 🔒 Validações básicas
