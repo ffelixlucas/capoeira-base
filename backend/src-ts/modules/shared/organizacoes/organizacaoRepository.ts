@@ -145,3 +145,57 @@ export async function buscarConfiguracao(
     throw err;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Upsert de configuração da organização                                   */
+/* -------------------------------------------------------------------------- */
+export async function salvarConfiguracao(
+  organizacaoId: number,
+  chave: string,
+  valor: string
+): Promise<void> {
+  await db.execute(
+    `
+      INSERT INTO organizacoes_configuracoes (organizacao_id, chave, valor)
+      VALUES (?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        valor = VALUES(valor),
+        atualizado_em = CURRENT_TIMESTAMP
+    `,
+    [organizacaoId, chave, valor]
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Remove configuração específica da organização                           */
+/* -------------------------------------------------------------------------- */
+export async function removerConfiguracao(
+  organizacaoId: number,
+  chave: string
+): Promise<void> {
+  await db.execute(
+    `
+      DELETE FROM organizacoes_configuracoes
+      WHERE organizacao_id = ?
+        AND chave = ?
+    `,
+    [organizacaoId, chave]
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Atualiza telefone principal da organização                              */
+/* -------------------------------------------------------------------------- */
+export async function atualizarTelefoneOrganizacao(
+  organizacaoId: number,
+  telefone: string
+): Promise<void> {
+  await db.execute(
+    `
+      UPDATE organizacoes
+      SET telefone = ?
+      WHERE id = ?
+    `,
+    [telefone, organizacaoId]
+  );
+}

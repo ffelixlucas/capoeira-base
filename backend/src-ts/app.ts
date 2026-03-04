@@ -42,6 +42,7 @@ const preMatriculasRoutes = require("../modules/public/preMatriculas/preMatricul
 const publicAgendaRoutes = require("../modules/public/agenda/publicAgendaRoutes");
 const publicInscricoesRoutes = require("../modules/public/inscricoes/inscricoesRoutes");
 const organizacaoPublicRoutes = require("../modules/shared/organizacoes/organizacaoPublicRoutes");
+const organizacaoAdminRoutes = require("../modules/shared/organizacoes/organizacaoAdminRoutes");
 const pedidosPublicRoutes = require("../modules/public/pedidos/pedidosPublicRoutes");
 const lojaPublicRoutes = require("../modules/public/loja/lojaPublicRoutes");
 const horariosPublicRoutes = require("../modules/public/horarios/horariosPublicRoutes");
@@ -120,5 +121,6 @@ app.use("/api/produtos/variacoes", variacoesRoutes);
 app.use("/api/public", preMatriculasRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/public/organizacoes", organizacaoPublicRoutes);
+app.use("/api/organizacoes", organizacaoAdminRoutes);
 
 export default app;

@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
-import { buscarPorSlug, buscarSiteUrlPorSlug } from "./organizacaoService";
+import {
+  buscarPorSlug,
+  buscarSiteUrlPorSlug,
+  buscarWhatsappContatoPorSlug
+} from "./organizacaoService";
 import logger from "../../../utils/logger";
 
 /**
@@ -20,6 +24,7 @@ export async function getOrganizacaoPublica(req: Request, res: Response) {
     }
 
     const siteUrl = await buscarSiteUrlPorSlug(slug);
+    const whatsappContato = await buscarWhatsappContatoPorSlug(slug);
 
     logger.debug(
       `[organizacaoPublicController] Organização pública encontrada: ${org.nome_fantasia} (org ${org.id})`
@@ -35,6 +40,7 @@ export async function getOrganizacaoPublica(req: Request, res: Response) {
       pais: org.pais,
       slug: org.slug,
       site_url: siteUrl,
+      whatsapp_contato: whatsappContato,
     });
   } catch (err: any) {
     logger.error(

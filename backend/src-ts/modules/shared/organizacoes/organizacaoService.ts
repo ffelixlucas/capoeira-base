@@ -3,6 +3,9 @@ import {
   buscarPorSlug as repoBuscarPorSlug,
   buscarPorId as repoBuscarPorId,
   buscarConfiguracao as repoBuscarConfiguracao,
+  salvarConfiguracao as repoSalvarConfiguracao,
+  removerConfiguracao as repoRemoverConfiguracao,
+  atualizarTelefoneOrganizacao as repoAtualizarTelefoneOrganizacao,
   Organizacao,
 } from "./organizacaoRepository";
 import logger from "../../../utils/logger";
@@ -76,6 +79,61 @@ export async function buscarSiteUrlPorSlug(slug: string): Promise<string | null>
   if (!siteUrl) return null;
 
   return siteUrl;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Resolver WhatsApp público por slug (config -> fallback telefone)        */
+/* -------------------------------------------------------------------------- */
+export async function buscarWhatsappContatoPorSlug(slug: string): Promise<string | null> {
+  const organizacao = await buscarPorSlug(slug);
+
+  const valorConfig = await repoBuscarConfiguracao(organizacao.id, "whatsapp_contato");
+  if (typeof valorConfig === "string" && valorConfig.trim()) {
+    return valorConfig.trim();
+  }
+
+  if (typeof organizacao.telefone === "string" && organizacao.telefone.trim()) {
+    return organizacao.telefone.trim();
+  }
+
+  return null;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Buscar contato admin por organização                                     */
+/* -------------------------------------------------------------------------- */
+export async function buscarContatoAdminPorOrganizacaoId(organizacaoId: number) {
+  const organizacao = await buscarPorId(organizacaoId);
+  const valorConfig = await repoBuscarConfiguracao(organizacaoId, "whatsapp_contato");
+
+  const whatsappConfig = typeof valorConfig === "string" ? valorConfig.trim() : null;
+  const telefone = typeof organizacao.telefone === "string" ? organizacao.telefone.trim() : "";
+  const whatsappContato = whatsappConfig || telefone;
+
+  return {
+    telefone,
+    whatsapp_contato: whatsappContato,
+    origem: whatsappConfig ? "configuracao" : "organizacao"
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Atualizar contato admin por organização                                  */
+/* -------------------------------------------------------------------------- */
+export async function atualizarContatoAdminPorOrganizacaoId(
+  organizacaoId: number,
+  contato: string
+) {
+  const valorLimpo = contato.trim();
+
+  await repoAtualizarTelefoneOrganizacao(organizacaoId, valorLimpo);
+
+  // Mantemos sincronizado na configuração para consumidores que já usam essa chave.
+  if (valorLimpo) {
+    await repoSalvarConfiguracao(organizacaoId, "whatsapp_contato", valorLimpo);
+  } else {
+    await repoRemoverConfiguracao(organizacaoId, "whatsapp_contato");
+  }
 }
 
 /* -------------------------------------------------------------------------- */
