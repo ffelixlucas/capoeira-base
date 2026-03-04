@@ -1,7 +1,5 @@
 import util from "util";
 
-console.log(`[LOGGER-TS] Versão TypeScript carregada com sucesso`);
-
 /** Máscara de CPF */
 export function mascararCpf(cpf?: string): string {
   if (!cpf) return "";
@@ -21,13 +19,33 @@ export function timestamp(): string {
   return new Date().toISOString();
 }
 
-const isProd = process.env.NODE_ENV === "production";
+type LogLevelName = "debug" | "info" | "warn" | "error";
+type PrintLevel = "INFO" | "DEBUG" | "WARN" | "ERROR" | "LOG";
 
-/** Níveis de log permitidos */
-type LogLevel = "INFO" | "DEBUG" | "WARN" | "ERROR" | "LOG";
+const isProd = process.env.NODE_ENV === "production";
+const defaultLevel: LogLevelName = isProd ? "info" : "debug";
+const envLevelRaw = String(process.env.LOG_LEVEL || defaultLevel).toLowerCase();
+const envLevel: LogLevelName =
+  envLevelRaw === "debug" ||
+  envLevelRaw === "info" ||
+  envLevelRaw === "warn" ||
+  envLevelRaw === "error"
+    ? envLevelRaw
+    : defaultLevel;
+
+const LEVEL_WEIGHT: Record<LogLevelName, number> = {
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+};
+
+function shouldLog(level: LogLevelName): boolean {
+  return LEVEL_WEIGHT[level] >= LEVEL_WEIGHT[envLevel];
+}
 
 /** Impressão base */
-function print(level: LogLevel, ...args: unknown[]): void {
+function print(level: PrintLevel, ...args: unknown[]): void {
   const ts = timestamp();
 
   const msg = args.map((a) =>
@@ -66,18 +84,19 @@ export interface ILogger {
 /** Implementação do logger */
 export const logger: ILogger = {
   log: (...args) => {
-    if (!isProd) print("LOG", ...args);
+    if (shouldLog("info")) print("LOG", ...args);
   },
   info: (...args) => {
-    if (!isProd) print("INFO", ...args);
+    if (shouldLog("info")) print("INFO", ...args);
   },
   debug: (...args) => {
-    if (!isProd) print("DEBUG", ...args);
+    if (shouldLog("debug")) print("DEBUG", ...args);
   },
   warn: (...args) => {
-    if (!isProd) print("WARN", ...args);
+    if (shouldLog("warn")) print("WARN", ...args);
   },
   error: (msg, err) => {
+    if (!shouldLog("error")) return;
     if (err instanceof Error) {
       print("ERROR", msg, { message: err.message, stack: err.stack });
     } else {
@@ -89,5 +108,4 @@ export const logger: ILogger = {
   mascararTelefone,
 };
 
-/** Export default — compatível com JS e TS */
 export default logger;
