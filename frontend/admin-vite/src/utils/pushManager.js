@@ -22,8 +22,23 @@ function urlBase64ToUint8Array(base64String) {
  */
 export async function registrarPushSubscription(usuario) {
   try {
+    if (!usuario?.id || !usuario?.organizacao_id) {
+      return null;
+    }
+
     if (!("serviceWorker" in navigator)) {
       console.warn("Service Worker não suportado neste navegador.");
+      return null;
+    }
+
+    if (!("Notification" in window)) {
+      console.warn("Notificações não são suportadas neste navegador.");
+      return null;
+    }
+
+    // Não tenta registrar push quando permissão foi negada ou ainda não concedida
+    if (Notification.permission !== "granted") {
+      console.log("Push não registrado: permissão de notificação não concedida.");
       return null;
     }
 

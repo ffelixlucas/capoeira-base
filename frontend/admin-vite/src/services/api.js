@@ -76,13 +76,15 @@ api.interceptors.response.use(
     const method = error?.config?.method?.toUpperCase() || "GET";
     const isProtected = !url.includes("/public/");
     const isAuthRoute = url.includes("/auth/");
-    const message = error?.response?.data?.message || error.message;
+    const message = error?.response?.data?.message || error?.response?.data?.erro || error.message;
 
-    logger.warn(
-      `[api] ⚠️ Erro em ${method} ${url} → ${
-        status || "sem status"
-      } | ${message}`
-    );
+    if (!error?.config?.meta?.suppressWarn) {
+      logger.warn(
+        `[api] ⚠️ Erro em ${method} ${url} → ${
+          status || "sem status"
+        } | ${message}`
+      );
+    }
 
     // Ignora erro de perfil durante boot inicial
     const isPerfilRequest =

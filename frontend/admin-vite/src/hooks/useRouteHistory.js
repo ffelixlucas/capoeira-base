@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 const KEY = "adminRouteHistory";
 const ADMIN_PREFIXES = [
-  "/dashboard","/agenda","/inscricoes","/alunos","/turmas","/galeria",
+  "/dashboard","/agenda","/inscricoes","/alunos","/turmas","/noticias","/galeria",
   "/equipe","/uniformes","/video-aulas","/horarios","/contatos","/mensalidades"
 ];
 

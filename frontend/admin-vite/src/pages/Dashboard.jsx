@@ -283,10 +283,10 @@ export default function Dashboard() {
 
               <CardEstat
                 valor={qtdFotos}
-                label="Fotos"
+                label="Noticias"
                 Icon={PhotoIcon}
                 cor="amber"
-                onClick={() => navigate("/galeria")}
+                onClick={() => navigate("/noticias")}
                 cursor="pointer"
               />
             </>

@@ -68,9 +68,14 @@ function LayoutAdmin() {
     solicitarPermissaoNotificacoes();
   }, []);
 
-  // 🔹 Registra push SOMENTE quando o usuário existir
+  // 🔹 Registra push SOMENTE uma vez por sessão e com usuário válido
   React.useEffect(() => {
     if (!usuario?.id || !usuario?.organizacao_id) return;
+
+    const pushAttemptKey = "push.registration.attempted";
+    if (sessionStorage.getItem(pushAttemptKey) === "1") return;
+
+    sessionStorage.setItem(pushAttemptKey, "1");
 
     registrarPushSubscription(usuario)
       .then((sub) => console.log("Subscription registrada:", sub))
@@ -103,8 +108,8 @@ function LayoutAdmin() {
       roles: ["admin"],
     },
     {
-      to: "/galeria",
-      label: "Galeria",
+      to: "/noticias",
+      label: "Noticias",
       Icon: PhotoIcon,
       roles: ["admin", "midia"],
     },

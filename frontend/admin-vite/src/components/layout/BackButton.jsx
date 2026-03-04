@@ -6,7 +6,7 @@ import { routeMeta, DEFAULT_FALLBACK } from "../../routes/routeMeta";
 import { useRouteHistory } from "../../hooks/useRouteHistory";
 
 const ROOTS = [
-  "/dashboard","/agenda","/alunos","/turmas","/galeria","/inscricoes",
+  "/dashboard","/agenda","/alunos","/turmas","/noticias","/galeria","/inscricoes",
   "/horarios","/equipe","/uniformes","/video-aulas","/contatos","/mensalidades",
 ];
 

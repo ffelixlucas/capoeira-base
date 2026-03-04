@@ -7,10 +7,16 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { initMP } from "./utils/mercadoPago";
 import { useRipple } from "./hooks/useRipple";
 import "flowbite";
+import { logger } from "./utils/logger";
+
+if (import.meta.env.MODE === "production" && import.meta.env.VITE_ALLOW_CONSOLE !== "true") {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
 
 initMP();
 
-// 🔹 Wrapper para ativar ripple depois que AuthProvider já existe
 function AppWithRipple() {
   useRipple();
   return <App />;
@@ -24,16 +30,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
-// 🔹 Registro do Service Worker (PWA)
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
       .then((reg) => {
-        console.log("Service Worker registrado:", reg);
+        logger.info("Service Worker registrado", reg);
       })
       .catch((err) => {
-        console.error("Erro ao registrar Service Worker:", err);
+        logger.error("Erro ao registrar Service Worker", err);
       });
   });
 }
