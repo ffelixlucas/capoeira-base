@@ -1,3 +1,5 @@
+import { FaWhatsapp } from "react-icons/fa";
+
 export default function EventoInfo({ evento }) {
   if (!evento) return null;
   const whatsappHref = evento.whatsapp_url
@@ -72,14 +74,11 @@ export default function EventoInfo({ evento }) {
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1"
+            className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
             title="WhatsApp"
+            aria-label="Abrir WhatsApp"
           >
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/733/733585.png"
-              alt="WhatsApp"
-              className="w-5 h-5"
-            />
+            <FaWhatsapp className="w-3.5 h-3.5" aria-hidden="true" />
           </a>
           <span className="text-sm text-gray-700">
             {evento.whatsapp_url ? "Grupo de WhatsApp" : evento.telefone_contato}
