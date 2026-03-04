@@ -9,6 +9,7 @@ const {
   buscarInscricaoDetalhadaService,
   verificarInscricaoPaga,
   calcularParcelasService,
+  calcularValorComTaxa,
 } = require("./inscricoesService");
 const { enviarEmailConfirmacao } = require("../../../services/emailService");
 const {

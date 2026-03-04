@@ -30,6 +30,37 @@ const client = new MercadoPagoConfig({
 
 const payment = new Payment(client);
 
+const TAXA_CARTAO = 0.0499;
+
+function arredondarValor(valor) {
+  return Number(Number(valor || 0).toFixed(2));
+}
+
+function calcularValorComTaxa(valorBase, metodoPagamento) {
+  const base = Number(valorBase);
+  if (!Number.isFinite(base) || base <= 0) return 0;
+
+  if (metodoPagamento === "cartao") {
+    return arredondarValor(base / (1 - TAXA_CARTAO));
+  }
+
+  // Pix e boleto seguem o valor base atual.
+  return arredondarValor(base);
+}
+
+function calcularValores(valorBase) {
+  const base = Number(valorBase);
+  if (!Number.isFinite(base) || base <= 0) {
+    throw new Error("Valor do evento inválido.");
+  }
+
+  return {
+    pix: arredondarValor(base),
+    cartao: calcularValorComTaxa(base, "cartao"),
+    boleto: calcularValorComTaxa(base, "boleto"),
+  };
+}
+
 function mapearStatusMP(status) {
   switch (status) {
     case "approved":
@@ -882,6 +913,7 @@ module.exports = {
   gerarPagamentoPixService,
   gerarPagamentoCartaoService,
   calcularParcelasService,
+  calcularValorComTaxa,
   processarWebhookService,
   buscarInscricaoDetalhadaService,
   verificarInscricaoPaga,

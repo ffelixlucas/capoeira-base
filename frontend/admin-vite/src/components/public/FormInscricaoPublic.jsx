@@ -19,7 +19,10 @@ export default function FormInscricaoPublic({
   evento,
 }) {
   const valorComTaxa = calcularValorComTaxa(evento?.valor || 0, "cartao");
-  const { categorias, graduacoes, carregarGraduacoes } = useCategorias();
+  const { categorias = [] } = useCategorias();
+  const graduacoesDaCategoria =
+    categorias.find((c) => String(c.id) === String(form.categoria_id))
+      ?.graduacoes || [];
 
   function handleChange(e) {
     const { name, type, value, checked } = e.target;
@@ -36,7 +39,6 @@ export default function FormInscricaoPublic({
       categoria_id: categoriaId, // salva id
       graduacao_id: "", // reseta graduacao
     }));
-    if (categoriaId) carregarGraduacoes(categoriaId);
   }
 
   function handleGraduacaoChange(e) {
@@ -244,7 +246,7 @@ export default function FormInscricaoPublic({
           required
         >
           <option value="">Selecione a graduação</option>
-          {graduacoes.map((g) => (
+          {graduacoesDaCategoria.map((g) => (
             <option key={g.id} value={g.id}>
               {g.nome}
             </option>
