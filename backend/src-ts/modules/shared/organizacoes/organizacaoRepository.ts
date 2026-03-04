@@ -199,3 +199,43 @@ export async function atualizarTelefoneOrganizacao(
     [telefone, organizacaoId]
   );
 }
+
+type AtualizarContatoOrganizacaoPayload = {
+  telefone: string;
+  email: string;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+};
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 Atualiza dados de contato públicos da organização                       */
+/* -------------------------------------------------------------------------- */
+export async function atualizarContatoPublicoOrganizacao(
+  organizacaoId: number,
+  payload: AtualizarContatoOrganizacaoPayload
+): Promise<void> {
+  await db.execute(
+    `
+      UPDATE organizacoes
+      SET
+        telefone = ?,
+        email = ?,
+        endereco = ?,
+        cidade = ?,
+        estado = ?,
+        pais = ?
+      WHERE id = ?
+    `,
+    [
+      payload.telefone,
+      payload.email,
+      payload.endereco,
+      payload.cidade,
+      payload.estado,
+      payload.pais,
+      organizacaoId
+    ]
+  );
+}

@@ -36,17 +36,52 @@ export async function putMeuContatoOrganizacao(req: Request, res: Response) {
     }
 
     const organizacaoId = req.usuario.organizacao_id;
+    const telefone = String(req.body?.telefone || "").trim();
     const whatsapp = String(req.body?.whatsapp_contato || "").trim();
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const endereco = String(req.body?.endereco || "").trim();
+    const cidade = String(req.body?.cidade || "").trim();
+    const estado = String(req.body?.estado || "").trim();
+    const pais = String(req.body?.pais || "").trim();
 
-    if (!whatsapp) {
-      return res.status(400).json({ message: "Informe o WhatsApp de contato." });
+    if (!telefone) {
+      return res.status(400).json({ message: "Informe o telefone de contato." });
     }
 
-    if (whatsapp.length > 30) {
-      return res.status(400).json({ message: "WhatsApp deve ter no máximo 30 caracteres." });
+    if (telefone.length > 30 || whatsapp.length > 30) {
+      return res.status(400).json({ message: "Telefone/WhatsApp deve ter no máximo 30 caracteres." });
     }
 
-    await atualizarContatoAdminPorOrganizacaoId(organizacaoId, whatsapp);
+    if (!email) {
+      return res.status(400).json({ message: "Informe o e-mail de contato." });
+    }
+
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isValidEmail) {
+      return res.status(400).json({ message: "E-mail de contato invalido." });
+    }
+
+    if (!endereco) {
+      return res.status(400).json({ message: "Informe o endereco de contato." });
+    }
+
+    if (email.length > 150) {
+      return res.status(400).json({ message: "E-mail deve ter no maximo 150 caracteres." });
+    }
+
+    if (endereco.length > 200) {
+      return res.status(400).json({ message: "Endereco deve ter no maximo 200 caracteres." });
+    }
+
+    await atualizarContatoAdminPorOrganizacaoId(organizacaoId, {
+      telefone,
+      whatsapp_contato: whatsapp || telefone,
+      email,
+      endereco,
+      cidade,
+      estado,
+      pais
+    });
     const atualizado = await buscarContatoAdminPorOrganizacaoId(organizacaoId);
 
     return res.json({

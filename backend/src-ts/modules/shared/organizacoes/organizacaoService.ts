@@ -5,7 +5,7 @@ import {
   buscarConfiguracao as repoBuscarConfiguracao,
   salvarConfiguracao as repoSalvarConfiguracao,
   removerConfiguracao as repoRemoverConfiguracao,
-  atualizarTelefoneOrganizacao as repoAtualizarTelefoneOrganizacao,
+  atualizarContatoPublicoOrganizacao as repoAtualizarContatoPublicoOrganizacao,
   Organizacao,
 } from "./organizacaoRepository";
 import logger from "../../../utils/logger";
@@ -109,9 +109,19 @@ export async function buscarContatoAdminPorOrganizacaoId(organizacaoId: number) 
   const whatsappConfig = typeof valorConfig === "string" ? valorConfig.trim() : null;
   const telefone = typeof organizacao.telefone === "string" ? organizacao.telefone.trim() : "";
   const whatsappContato = whatsappConfig || telefone;
+  const email = typeof organizacao.email === "string" ? organizacao.email.trim() : "";
+  const endereco = typeof organizacao.endereco === "string" ? organizacao.endereco.trim() : "";
+  const cidade = typeof organizacao.cidade === "string" ? organizacao.cidade.trim() : "";
+  const estado = typeof organizacao.estado === "string" ? organizacao.estado.trim() : "";
+  const pais = typeof organizacao.pais === "string" ? organizacao.pais.trim() : "";
 
   return {
     telefone,
+    email,
+    endereco,
+    cidade,
+    estado,
+    pais,
     whatsapp_contato: whatsappContato,
     origem: whatsappConfig ? "configuracao" : "organizacao"
   };
@@ -122,15 +132,36 @@ export async function buscarContatoAdminPorOrganizacaoId(organizacaoId: number) 
 /* -------------------------------------------------------------------------- */
 export async function atualizarContatoAdminPorOrganizacaoId(
   organizacaoId: number,
-  contato: string
+  payload: {
+    telefone: string;
+    whatsapp_contato: string;
+    email: string;
+    endereco: string;
+    cidade?: string;
+    estado?: string;
+    pais?: string;
+  }
 ) {
-  const valorLimpo = contato.trim();
+  const telefone = payload.telefone.trim();
+  const whatsappContato = payload.whatsapp_contato.trim() || telefone;
+  const email = payload.email.trim();
+  const endereco = payload.endereco.trim();
+  const cidade = payload.cidade?.trim() || "";
+  const estado = payload.estado?.trim() || "";
+  const pais = payload.pais?.trim() || "Brasil";
 
-  await repoAtualizarTelefoneOrganizacao(organizacaoId, valorLimpo);
+  await repoAtualizarContatoPublicoOrganizacao(organizacaoId, {
+    telefone,
+    email,
+    endereco,
+    cidade,
+    estado,
+    pais
+  });
 
   // Mantemos sincronizado na configuração para consumidores que já usam essa chave.
-  if (valorLimpo) {
-    await repoSalvarConfiguracao(organizacaoId, "whatsapp_contato", valorLimpo);
+  if (whatsappContato) {
+    await repoSalvarConfiguracao(organizacaoId, "whatsapp_contato", whatsappContato);
   } else {
     await repoRemoverConfiguracao(organizacaoId, "whatsapp_contato");
   }
