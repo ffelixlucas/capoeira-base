@@ -119,10 +119,19 @@ export const AuthProvider = ({ children }) => {
       return { sucesso: true };
     } catch (error) {
       logger.error("Erro ao fazer login:", error);
+      const mensagemBackend =
+        error?.response?.data?.message ||
+        error?.response?.data?.erro ||
+        "";
+      const status = error?.response?.status;
+      const mensagemAmigavel =
+        status === 401
+          ? "E-mail ou senha incorretos. Confira os dados e tente novamente."
+          : mensagemBackend || "Erro ao fazer login";
 
       return {
         sucesso: false,
-        mensagem: error?.response?.data?.message || "Erro ao fazer login",
+        mensagem: mensagemAmigavel,
       };
     }
   };

@@ -53,14 +53,15 @@ async function forgotPassword(req, res) {
 
 async function resetPassword(req, res) {
   const { token, novaSenha } = req.body || {};
-  if (!token || !novaSenha) {
+  const tokenLimpo = String(token || "").trim();
+  if (!tokenLimpo || !novaSenha) {
     return res
       .status(400)
       .json({ message: "Token e nova senha são obrigatórios" });
   }
 
   try {
-    await authService.resetPassword(token, novaSenha);
+    await authService.resetPassword(tokenLimpo, novaSenha);
     return res.status(200).json({ message: "Senha redefinida com sucesso" });
   } catch (e) {
     logger.error("resetPassword error:", e);

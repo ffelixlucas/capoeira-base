@@ -12,6 +12,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [erroLogin, setErroLogin] = useState("");
 
   useEffect(() => {
     // 🔥 Mostra aviso se a sessão expirou
@@ -24,6 +25,7 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErroLogin("");
     setCarregando(true);
 
     const resultado = await login(email, senha);
@@ -36,7 +38,11 @@ function Login() {
       const next = params.get("next") || "/dashboard";
       navigate(next, { replace: true });
     } else {
-      toast.error(resultado.mensagem || "Erro ao fazer login");
+      const mensagem =
+        resultado.mensagem ||
+        "Não foi possível entrar. Verifique seu e-mail e senha.";
+      setErroLogin(mensagem);
+      toast.error(mensagem);
     }
 
     setCarregando(false);
@@ -69,7 +75,10 @@ function Login() {
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (erroLogin) setErroLogin("");
+                }}
                 className="w-full px-4 py-3 rounded-lg bg-cor-fundo border border-cor-primaria/30 text-cor-texto placeholder-cor-primaria/50 focus:outline-none focus:ring-2 focus:ring-cor-primaria focus:border-transparent"
                 required
               />
@@ -87,10 +96,22 @@ function Login() {
                 type="password"
                 placeholder="••••••••"
                 value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-cor-fundo border border-cor-primaria/30 text-cor-texto placeholder-cor-primaria/50 focus:outline-none focus:ring-2 focus:ring-cor-primaria focus:border-transparent"
+                onChange={(e) => {
+                  setSenha(e.target.value);
+                  if (erroLogin) setErroLogin("");
+                }}
+                className={`w-full px-4 py-3 rounded-lg bg-cor-fundo text-cor-texto placeholder-cor-primaria/50 focus:outline-none focus:ring-2 focus:border-transparent ${
+                  erroLogin
+                    ? "border border-red-400/60 focus:ring-red-400/60"
+                    : "border border-cor-primaria/30 focus:ring-cor-primaria"
+                }`}
                 required
               />
+              {erroLogin && (
+                <p className="mt-2 text-xs text-red-300">
+                  {erroLogin}
+                </p>
+              )}
             </div>
 
             <div className="pt-4">

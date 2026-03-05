@@ -10,13 +10,11 @@ async function createReset({ userId, tokenHash, expiresAt }) {
   return res.insertId;
 }
 
-// busca um token válido pelo hash
+// busca o token mais recente pelo hash
 async function getValidByTokenHash(tokenHash) {
   const [rows] = await db.execute(
     `SELECT * FROM password_resets
      WHERE token_hash = ?
-       AND used_at IS NULL
-       AND expires_at > NOW()
      ORDER BY id DESC
      LIMIT 1`,
     [tokenHash]

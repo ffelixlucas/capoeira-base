@@ -48,11 +48,12 @@ export default function Presencas() {
   const [detalhesAtividade, setDetalhesAtividade] = useState([]);
   const [carregandoDetalhesAtividade, setCarregandoDetalhesAtividade] = useState(false);
   const [salvandoPresencaId, setSalvandoPresencaId] = useState(null);
-  const [mostrarResumoInstrutor, setMostrarResumoInstrutor] = useState(false);
+  const mostrarResumoInstrutor = true;
   const [anoResumoInstrutor, setAnoResumoInstrutor] = useState(new Date().getFullYear());
   const [turmaResumoAdmin, setTurmaResumoAdmin] = useState(null);
   const [mostrarUltimaChamadaAdmin, setMostrarUltimaChamadaAdmin] = useState(true);
   const [filtroUltimaChamadaAdmin, setFiltroUltimaChamadaAdmin] = useState("todas");
+  const [abaPainel, setAbaPainel] = useState("chamada");
 
   const isAdmin = useMemo(
     () => Array.isArray(usuario?.roles) && usuario.roles.includes("admin"),
@@ -598,6 +599,35 @@ const alunosOrdenados = useMemo(() => {
         </div>
       </div>
 
+      <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-2 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setAbaPainel("chamada")}
+            className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+              abaPainel === "chamada"
+                ? "bg-cor-primaria text-[#1a2213]"
+                : "border border-cor-secundaria/30 text-cor-titulo hover:bg-cor-fundo/35"
+            }`}
+          >
+            Chamada
+          </button>
+          <button
+            type="button"
+            onClick={() => setAbaPainel("informacoes")}
+            className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+              abaPainel === "informacoes"
+                ? "bg-cor-primaria text-[#1a2213]"
+                : "border border-cor-secundaria/30 text-cor-titulo hover:bg-cor-fundo/35"
+            }`}
+          >
+            Informações
+          </button>
+        </div>
+      </div>
+
+      {abaPainel === "informacoes" && (
+        <>
       {isAdmin && (
         <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-4 space-y-3 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
           <button
@@ -654,34 +684,51 @@ const alunosOrdenados = useMemo(() => {
           )}
           {!carregandoAtividades && atividadeInstrutor && (
             <>
-              <div className="mt-2 space-y-2">
-                {historicoCards.map((atividade, idx) => (
+              {isAdmin ? (
+                <>
+                  <div className="mt-2 space-y-2">
+                    {historicoCards.map((atividade, idx) => (
+                      <button
+                        key={`${atividade.turma_id}-${atividade.data}-${idx}`}
+                        type="button"
+                        onClick={() => abrirModalAtividade(atividade)}
+                        className="w-full rounded-xl border border-cor-secundaria/20 bg-cor-fundo/20 px-3 py-2 text-left hover:bg-cor-fundo/35 transition-colors"
+                      >
+                        <p className="text-xs text-cor-titulo font-semibold">
+                          {atividade.turma_nome} • {formatarDataDia(atividade.data)}
+                        </p>
+                        <p className="text-[11px] text-cor-texto/70">
+                          Atualizado em {formatarDataHora(atividade.ultima_atualizacao)}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                  {historicoInstrutor.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFiltroDataHistorico("");
+                        setModalHistoricoAberto(true);
+                      }}
+                      className="text-xs underline text-cor-primaria mt-2 ml-3 font-medium"
+                    >
+                      Ver tudo
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-cor-texto/70 mt-1">
+                    {atividadeInstrutor.turma_nome} • {formatarDataDia(atividadeInstrutor.data)}
+                  </p>
                   <button
-                    key={`${atividade.turma_id}-${atividade.data}-${idx}`}
                     type="button"
-                    onClick={() => abrirModalAtividade(atividade)}
-                    className="w-full rounded-xl border border-cor-secundaria/20 bg-cor-fundo/20 px-3 py-2 text-left hover:bg-cor-fundo/35 transition-colors"
+                    onClick={() => abrirModalAtividade(atividadeInstrutor)}
+                    className="text-xs underline text-cor-primaria mt-2 font-medium"
                   >
-                    <p className="text-xs text-cor-titulo font-semibold">
-                      {atividade.turma_nome} • {formatarDataDia(atividade.data)}
-                    </p>
-                    <p className="text-[11px] text-cor-texto/70">
-                      Atualizado em {formatarDataHora(atividade.ultima_atualizacao)}
-                    </p>
+                    Ver detalhes da chamada
                   </button>
-                ))}
-              </div>
-              {historicoInstrutor.length > 3 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFiltroDataHistorico("");
-                    setModalHistoricoAberto(true);
-                  }}
-                  className="text-xs underline text-cor-primaria mt-2 ml-3 font-medium"
-                >
-                  Ver tudo
-                </button>
+                </>
               )}
             </>
           )}
@@ -692,13 +739,9 @@ const alunosOrdenados = useMemo(() => {
         <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-4 space-y-3 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setMostrarResumoInstrutor((v) => !v)}
-                className="text-sm font-semibold text-cor-titulo underline"
-              >
-                {mostrarResumoInstrutor ? "Ocultar resumo geral" : isAdmin ? "Resumo geral das turmas" : "Resumo geral"}
-              </button>
+              <p className="text-sm font-semibold text-cor-titulo">
+                {isAdmin ? "Resumo geral das turmas" : "Resumo geral"}
+              </p>
               {isAdmin && (
                 <select
                   value={
@@ -719,32 +762,29 @@ const alunosOrdenados = useMemo(() => {
                 </select>
               )}
             </div>
-            {mostrarResumoInstrutor && (
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setAnoResumoInstrutor((ano) => ano - 1)}
-                  className="px-2 py-1 rounded-lg text-xs border border-cor-secundaria/30 text-cor-texto hover:bg-cor-fundo/35 transition-colors"
-                >
-                  Ano anterior
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAnoResumoInstrutor(new Date().getFullYear())}
-                  className={`px-2 py-1 rounded-lg text-xs border transition-colors ${
-                    anoResumoInstrutor === new Date().getFullYear()
-                      ? "border-cor-primaria/60 bg-cor-primaria/20 text-cor-primaria"
-                      : "border-cor-secundaria/30 text-cor-texto hover:bg-cor-fundo/35"
-                  }`}
-                >
-                  Ano atual
-                </button>
-              </div>
-            )}
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setAnoResumoInstrutor((ano) => ano - 1)}
+                className="px-2 py-1 rounded-lg text-xs border border-cor-secundaria/30 text-cor-texto hover:bg-cor-fundo/35 transition-colors"
+              >
+                Ano anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnoResumoInstrutor(new Date().getFullYear())}
+                className={`px-2 py-1 rounded-lg text-xs border transition-colors ${
+                  anoResumoInstrutor === new Date().getFullYear()
+                    ? "border-cor-primaria/60 bg-cor-primaria/20 text-cor-primaria"
+                    : "border-cor-secundaria/30 text-cor-texto hover:bg-cor-fundo/35"
+                }`}
+              >
+                Ano atual
+              </button>
+            </div>
           </div>
 
-          {mostrarResumoInstrutor && (
-            <>
+          <>
               <p className="text-xs text-cor-texto/70">
                 Ano letivo <strong>{anoResumoInstrutor}</strong> • <strong>{resumoAnoLetivo.totalAulas}</strong> aulas registradas.
               </p>
@@ -797,10 +837,13 @@ const alunosOrdenados = useMemo(() => {
                 </ul>
               </div>
             </>
-          )}
         </div>
       )}
+        </>
+      )}
 
+      {abaPainel === "chamada" && (
+        <>
       {/* Seletor de turma quando não vier ?turma=ID */}
       {!turmaIdNum && (
         <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
@@ -993,6 +1036,8 @@ const alunosOrdenados = useMemo(() => {
           {salvando ? "Salvando..." : "Salvar presenças"}
         </button>
       </div>
+        </>
+      )}
 
       {modalAtividade && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-3">

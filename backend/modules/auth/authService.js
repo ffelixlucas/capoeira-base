@@ -87,9 +87,21 @@ async function requestPasswordReset(email, baseResetUrl) {
 
 // fluxo: redefinir senha
 async function resetPassword(rawToken, novaSenha) {
-  const tokenHash = sha256Hex(rawToken);
+  const tokenHash = sha256Hex(String(rawToken || "").trim());
   const pr = await passwordResetRepository.getValidByTokenHash(tokenHash);
   if (!pr) throw new Error("Token inválido ou expirado");
+  if (pr.used_at) throw new Error("Token inválido ou expirado");
+
+  const expiraEmMs = new Date(pr.expires_at).getTime();
+  if (!Number.isFinite(expiraEmMs) || expiraEmMs <= Date.now()) {
+    logger.warn("[authService] reset token expirado", {
+      resetId: pr.id,
+      userId: pr.user_id,
+      expires_at: pr.expires_at,
+      now: new Date().toISOString(),
+    });
+    throw new Error("Token inválido ou expirado");
+  }
 
   const db = require("../../database/connection");
   const [rows] = await db.execute(`SELECT * FROM equipe WHERE id = ? LIMIT 1`, [
