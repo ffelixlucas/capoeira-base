@@ -8,7 +8,7 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ✅ Rota pública
-router.get("/", galeriaController.listarImagens);
+router.get("/", verifyToken, checkRole(["admin", "midia"]), galeriaController.listarImagens);
 
 // ✅ Upload de imagem
 router.post(

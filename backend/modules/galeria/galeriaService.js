@@ -31,9 +31,10 @@ async function processarUpload(
   imagem,
   titulo = null,
   criadoPor = null,
-  legenda = null
+  legenda = null,
+  organizacaoId = null
 ) {
-  const totalItens = await galeriaRepository.contarTotalItens();
+  const totalItens = await galeriaRepository.contarTotalItens(organizacaoId);
   const limiteItens = Number(process.env.GALERIA_MAX_ITENS || 200);
 
   if (totalItens >= limiteItens) {
@@ -62,9 +63,10 @@ async function processarUpload(
         url,
         tituloFinal,
         criadoPor,
-        legendaFinal
+        legendaFinal,
+        organizacaoId
       );
-      const novaImagem = await galeriaRepository.buscarPorId(id);
+      const novaImagem = await galeriaRepository.buscarPorId(id, organizacaoId);
       return novaImagem;
     } catch (dbError) {
       // Evita arquivo órfão no bucket quando falha ao persistir no banco.
@@ -77,11 +79,11 @@ async function processarUpload(
   }
 }
 
-async function obterTodasImagens() {
-  return await galeriaRepository.buscarTodasImagens();
+async function obterTodasImagens(organizacaoId) {
+  return await galeriaRepository.buscarTodasImagens(organizacaoId);
 }
 
-async function atualizarOrdemGaleria(lista) {
+async function atualizarOrdemGaleria(lista, organizacaoId) {
   if (!Array.isArray(lista) || lista.length === 0) {
     throw new Error("Lista de ordem inválida");
   }
@@ -95,11 +97,11 @@ async function atualizarOrdemGaleria(lista) {
     }
   }
 
-  return await galeriaRepository.atualizarOrdem(lista);
+  return await galeriaRepository.atualizarOrdem(lista, organizacaoId);
 }
 
-async function removerImagemPorId(id) {
-  const imagem = await galeriaRepository.buscarPorId(id);
+async function removerImagemPorId(id, organizacaoId) {
+  const imagem = await galeriaRepository.buscarPorId(id, organizacaoId);
 
   if (!imagem) {
     throw new Error("Imagem não encontrada");
@@ -111,11 +113,11 @@ async function removerImagemPorId(id) {
   );
 
   await bucket.file(caminhoArquivo).delete();
-  await galeriaRepository.excluir(id);
+  await galeriaRepository.excluir(id, organizacaoId);
 }
 
-async function atualizarNoticia(id, { titulo, legenda }) {
-  const imagem = await galeriaRepository.buscarPorId(id);
+async function atualizarNoticia(id, { titulo, legenda }, organizacaoId) {
+  const imagem = await galeriaRepository.buscarPorId(id, organizacaoId);
   if (!imagem) {
     throw new Error("Imagem não encontrada.");
   }
@@ -134,7 +136,7 @@ async function atualizarNoticia(id, { titulo, legenda }) {
   return await galeriaRepository.atualizarNoticia(id, {
     titulo: tituloFinal,
     legenda: legendaFinal,
-  });
+  }, organizacaoId);
 }
 
 module.exports = {

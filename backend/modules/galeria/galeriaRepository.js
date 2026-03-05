@@ -20,12 +20,28 @@ async function galeriaHasOrganizacaoIdColumn() {
   return hasOrganizacaoIdColumnCache;
 }
 
-async function contarTotalItens() {
+async function contarTotalItens(organizacaoId = null) {
+  const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
+  if (hasOrgColumn && organizacaoId) {
+    const [rows] = await db.execute(
+      'SELECT COUNT(*) as total FROM galeria WHERE organizacao_id = ?',
+      [organizacaoId]
+    );
+    return rows[0].total;
+  }
   const [rows] = await db.execute('SELECT COUNT(*) as total FROM galeria');
   return rows[0].total;
 }
 
-async function salvarImagem(imagemUrl, titulo = null, criadoPor = null, legenda = null) {
+async function salvarImagem(imagemUrl, titulo = null, criadoPor = null, legenda = null, organizacaoId = null) {
+  const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
+  if (hasOrgColumn && organizacaoId) {
+    const [resultado] = await db.execute(
+      'INSERT INTO galeria (imagem_url, titulo, criado_por, legenda, organizacao_id) VALUES (?, ?, ?, ?, ?)',
+      [imagemUrl, titulo, criadoPor, legenda, organizacaoId]
+    );
+    return resultado.insertId;
+  }
   const [resultado] = await db.execute(
     'INSERT INTO galeria (imagem_url, titulo, criado_por, legenda) VALUES (?, ?, ?, ?)',
     [imagemUrl, titulo, criadoPor, legenda]
@@ -33,7 +49,15 @@ async function salvarImagem(imagemUrl, titulo = null, criadoPor = null, legenda 
   return resultado.insertId;
 }
 
-async function buscarTodasImagens() {
+async function buscarTodasImagens(organizacaoId = null) {
+  const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
+  if (hasOrgColumn && organizacaoId) {
+    const [linhas] = await db.execute(
+      'SELECT * FROM galeria WHERE organizacao_id = ? ORDER BY ordem IS NULL, ordem ASC, criado_em DESC',
+      [organizacaoId]
+    );
+    return linhas;
+  }
   const [linhas] = await db.execute(
     'SELECT * FROM galeria ORDER BY ordem IS NULL, ordem ASC, criado_em DESC'
   );
@@ -57,16 +81,24 @@ async function buscarImagensPublicas(organizacaoId = null) {
   return linhas;
 }
 
-async function atualizarOrdem(lista) {
+async function atualizarOrdem(lista, organizacaoId = null) {
+  const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
     for (const item of lista) {
-      await conn.execute(
-        'UPDATE galeria SET ordem = ? WHERE id = ?',
-        [item.ordem, item.id]
-      );
+      if (hasOrgColumn && organizacaoId) {
+        await conn.execute(
+          'UPDATE galeria SET ordem = ? WHERE id = ? AND organizacao_id = ?',
+          [item.ordem, item.id, organizacaoId]
+        );
+      } else {
+        await conn.execute(
+          'UPDATE galeria SET ordem = ? WHERE id = ?',
+          [item.ordem, item.id]
+        );
+      }
     }
 
     await conn.commit();
@@ -79,26 +111,43 @@ async function atualizarOrdem(lista) {
   }
 }
 
-async function buscarPorId(id) {
-  const [rows] = await db.execute(
-    'SELECT * FROM galeria WHERE id = ?',
-    [id]
-  );
+async function buscarPorId(id, organizacaoId = null) {
+  const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
+  const [rows] = hasOrgColumn && organizacaoId
+    ? await db.execute(
+      'SELECT * FROM galeria WHERE id = ? AND organizacao_id = ?',
+      [id, organizacaoId]
+    )
+    : await db.execute(
+      'SELECT * FROM galeria WHERE id = ?',
+      [id]
+    );
   return rows[0];
 }
 
-async function excluir(id) {
-  await db.execute(
-    'DELETE FROM galeria WHERE id = ?',
-    [id]
-  );
+async function excluir(id, organizacaoId = null) {
+  const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
+  if (hasOrgColumn && organizacaoId) {
+    await db.execute(
+      'DELETE FROM galeria WHERE id = ? AND organizacao_id = ?',
+      [id, organizacaoId]
+    );
+    return;
+  }
+  await db.execute('DELETE FROM galeria WHERE id = ?', [id]);
 }
 
-async function atualizarNoticia(id, { titulo, legenda }) {
-  const [result] = await db.execute(
-    'UPDATE galeria SET titulo = ?, legenda = ? WHERE id = ?',
-    [titulo, legenda, id]
-  );
+async function atualizarNoticia(id, { titulo, legenda }, organizacaoId = null) {
+  const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
+  const [result] = hasOrgColumn && organizacaoId
+    ? await db.execute(
+      'UPDATE galeria SET titulo = ?, legenda = ? WHERE id = ? AND organizacao_id = ?',
+      [titulo, legenda, id, organizacaoId]
+    )
+    : await db.execute(
+      'UPDATE galeria SET titulo = ?, legenda = ? WHERE id = ?',
+      [titulo, legenda, id]
+    );
   return result;
 }
 

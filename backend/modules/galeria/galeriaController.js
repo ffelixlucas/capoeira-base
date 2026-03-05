@@ -6,6 +6,7 @@ async function uploadImagem(req, res) {
     const imagem = req.file;
     const { titulo = null, legenda = null } = req.body;
     const criadoPor = req.user?.id || null;
+    const organizacaoId = req.user?.organizacao_id || null;
 
     if (!imagem) {
       return res.status(400).json({ erro: "Nenhum arquivo enviado." });
@@ -15,7 +16,8 @@ async function uploadImagem(req, res) {
       imagem,
       titulo,
       criadoPor,
-      legenda
+      legenda,
+      organizacaoId
     );
     return res.status(200).json(novaImagem);
   } catch (error) {
@@ -28,7 +30,8 @@ async function uploadImagem(req, res) {
 
 async function listarImagens(req, res) {
   try {
-    const imagens = await galeriaService.obterTodasImagens();
+    const organizacaoId = req.user?.organizacao_id || null;
+    const imagens = await galeriaService.obterTodasImagens(organizacaoId);
     res.status(200).json(imagens);
   } catch (error) {
     logger.error("Erro ao listar imagens:", error);
@@ -39,7 +42,8 @@ async function listarImagens(req, res) {
 async function atualizarOrdem(req, res) {
   try {
     const { ordem } = req.body;
-    const resultado = await galeriaService.atualizarOrdemGaleria(ordem);
+    const organizacaoId = req.user?.organizacao_id || null;
+    const resultado = await galeriaService.atualizarOrdemGaleria(ordem, organizacaoId);
     res.status(200).json(resultado);
   } catch (error) {
     logger.error("Erro ao atualizar ordem da galeria:", error.message);
@@ -50,7 +54,8 @@ async function atualizarOrdem(req, res) {
 async function deletarImagem(req, res) {
   try {
     const { id } = req.params;
-    await galeriaService.removerImagemPorId(id);
+    const organizacaoId = req.user?.organizacao_id || null;
+    await galeriaService.removerImagemPorId(id, organizacaoId);
     res.status(200).json({ mensagem: "Imagem excluída com sucesso." });
   } catch (error) {
     logger.error("Erro ao excluir imagem:", error.message);
@@ -61,9 +66,10 @@ async function deletarImagem(req, res) {
 async function atualizarNoticia(req, res) {
   const { id } = req.params;
   const { titulo, legenda } = req.body;
+  const organizacaoId = req.user?.organizacao_id || null;
 
   try {
-    await galeriaService.atualizarNoticia(id, { titulo, legenda });
+    await galeriaService.atualizarNoticia(id, { titulo, legenda }, organizacaoId);
     res.status(200).json({ mensagem: "Notícia atualizada com sucesso." });
   } catch (error) {
     logger.error("Erro ao atualizar notícia:", error);
