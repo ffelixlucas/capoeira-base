@@ -14,9 +14,15 @@ export const routeMeta = [
     { pattern: "/galeria", title: "Noticias", parent: "/dashboard" },
     { pattern: "/alunos", title: "Alunos", parent: "/dashboard" },
     { pattern: "/mensalidades", title: "Mensalidades", parent: "/dashboard" },
-    { pattern: "/Loja", title: "Loja", parent: "/dashboard" },
+    { pattern: "/loja", title: "Loja", parent: "/dashboard" },
+    { pattern: "/loja/pedido/:id", title: "Pedido", parent: "/loja" },
+    { pattern: "/admin/produtos", title: "Estoque", parent: "/dashboard" },
+    { pattern: "/admin/produtos/:id", title: "Produto", parent: "/admin/produtos" },
+    { pattern: "/presencas", title: "Presenças", parent: "/dashboard" },
+    { pattern: "/perfil", title: "Perfil", parent: "/dashboard" },
+    { pattern: "/config", title: "Configurações", parent: "/dashboard" },
     { pattern: "/contatos", title: "Contatos", parent: "/dashboard" },
-    { pattern: "/inscricoes", title: "Inscrições", parent: "/dashboard" },
+    { pattern: "/inscricoes", title: "Inscrições", parent: "/agenda" },
   
     // detalhes/nível 2 (mesmo que ainda não existam telas, já fica pronto)
     { pattern: "/agenda/:id", title: "Detalhe do Evento", parent: "/agenda" },

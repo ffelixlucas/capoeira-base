@@ -37,7 +37,7 @@ function renderTextWithLinks(text) {
   });
 }
 
-function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
+function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextEvent = false }) {
   if (!evento) return null;
   const navigate = useNavigate();
   const [detalhesAbertos, setDetalhesAbertos] = useState(false);
@@ -123,8 +123,20 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
 
   const descricao = descricao_curta || local || "Detalhes do evento em breve.";
 
+  const handleCardClick = (event) => {
+    const target = event.target;
+    if (target.closest("button, a")) return;
+    if (Number(com_inscricao) !== 1) return;
+    navigate(`/inscricoes/${id}`);
+  };
+
   return (
-    <article className="group relative h-full overflow-hidden rounded-2xl border border-emerald-200/20 bg-gradient-to-br from-[#153f31] to-[#1d4a39] text-[#f8f2dc] shadow-[0_20px_45px_rgba(2,26,19,0.35)] flex flex-col">
+    <article
+      onClick={handleCardClick}
+      className={`group relative h-full overflow-hidden rounded-2xl border border-emerald-200/20 bg-gradient-to-br from-[#153f31] to-[#1d4a39] text-[#f8f2dc] shadow-[0_20px_45px_rgba(2,26,19,0.35)] flex flex-col ${
+        Number(com_inscricao) === 1 ? "cursor-pointer" : "cursor-default"
+      }`}
+    >
       <div className="relative h-44 md:h-52">
         {imagem_url ? (
           <img
@@ -138,6 +150,12 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
           <div className="h-full w-full bg-gradient-to-br from-[#225843] to-[#17392d]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b241c]/95 via-[#0b241c]/35 to-transparent" />
+
+        {isNextEvent && !encerrado && (
+          <span className="absolute left-3 top-3 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[0.12em] font-extrabold bg-[#f4cf4e]/15 text-[#f4cf4e] border border-[#f4cf4e]/55">
+            PROXIMO EVENTO
+          </span>
+        )}
 
         <span
           className={`absolute right-3 top-3 px-3 py-1 rounded-full text-[11px] uppercase tracking-[0.12em] font-extrabold ${

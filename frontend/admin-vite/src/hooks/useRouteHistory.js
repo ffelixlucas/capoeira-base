@@ -4,7 +4,7 @@ import { useEffect } from "react";
 const KEY = "adminRouteHistory";
 const ADMIN_PREFIXES = [
   "/dashboard","/agenda","/inscricoes","/alunos","/turmas","/noticias","/galeria",
-  "/equipe","/uniformes","/contatos","/mensalidades"
+  "/equipe","/contatos","/mensalidades","/loja","/admin/produtos","/presencas","/perfil","/config"
 ];
 
 function isAdminPath(path) {

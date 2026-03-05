@@ -78,7 +78,7 @@ export default function Dashboard() {
       roles: ["admin"],
     },
     { to: "/turmas", label: "Turmas", roles: ["admin", ""] },
-    { to: "/Loja", label: "Loja", roles: ["loja", "admin"] },
+    { to: "/loja", label: "Loja", roles: ["loja", "admin"] },
     { to: "/admin/produtos", label: "Estoque", roles: ["admin", "loja"] },
     { to: "/contatos", label: "Contatos", roles: ["admin"] },
     { to: "/config", label: "Configurações", roles: ["admin"] },

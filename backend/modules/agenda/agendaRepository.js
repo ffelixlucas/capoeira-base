@@ -14,34 +14,55 @@ async function listarEventos(organizacaoId, status, situacao) {
 
   let sql = `
     SELECT 
-      id, organizacao_id, titulo, descricao_curta, descricao_completa,
-      local, endereco, telefone_contato, whatsapp_url, data_inicio, data_fim,
-      inscricoes_ate, imagem_url, com_inscricao, valor, responsavel_id,
-      configuracoes, status, criado_em, criado_por, possui_camiseta
-    FROM agenda
-    WHERE organizacao_id = ?
+      a.id, a.organizacao_id, a.titulo, a.descricao_curta, a.descricao_completa,
+      a.local, a.endereco, a.telefone_contato, a.whatsapp_url, a.data_inicio, a.data_fim,
+      a.inscricoes_ate, a.imagem_url, a.com_inscricao, a.valor, a.responsavel_id,
+      a.configuracoes, a.status, a.criado_em, a.criado_por, a.possui_camiseta,
+      COALESCE(stats.total_inscritos, 0) AS total_inscritos,
+      COALESCE(stats.total_pendentes, 0) AS total_pendentes,
+      COALESCE(stats.total_extornados, 0) AS total_extornados,
+      COALESCE(stats.valor_bruto_total, 0) AS valor_bruto_total,
+      COALESCE(stats.valor_liquido_total, 0) AS valor_liquido_total
+    FROM agenda a
+    LEFT JOIN (
+      SELECT
+        ie.evento_id,
+        SUM(CASE WHEN ie.status = 'pago' THEN 1 ELSE 0 END) AS total_inscritos,
+        SUM(CASE WHEN ie.status = 'pendente' THEN 1 ELSE 0 END) AS total_pendentes,
+        SUM(CASE WHEN ie.status = 'extornado' THEN 1 ELSE 0 END) AS total_extornados,
+        SUM(CASE WHEN ie.status = 'pago' THEN COALESCE(ie.valor_bruto, 0) ELSE 0 END) AS valor_bruto_total,
+        SUM(CASE WHEN ie.status = 'pago' THEN COALESCE(ie.valor_liquido, 0) ELSE 0 END) AS valor_liquido_total
+      FROM inscricoes_evento ie
+      GROUP BY ie.evento_id
+    ) stats ON stats.evento_id = a.id
+    WHERE a.organizacao_id = ?
   `;
 
   const params = [organizacaoId];
 
   if (status) {
-    sql += " AND status = ?";
+    sql += " AND a.status = ?";
     params.push(status);
   }
 
   if (situacao === "ativos") {
-    sql += " AND NOW() <= COALESCE(data_fim, data_inicio)";
+    sql += " AND NOW() <= COALESCE(a.data_fim, a.data_inicio)";
   } else if (situacao === "concluidos") {
-    sql += " AND NOW() > COALESCE(data_fim, data_inicio)";
+    sql += " AND NOW() > COALESCE(a.data_fim, a.data_inicio)";
   }
 
-  sql += " ORDER BY data_inicio ASC";
+  sql += " ORDER BY a.data_inicio ASC";
 
   const [rows] = await db.execute(sql, params);
 
   return rows.map((evento) => ({
     ...evento,
     configuracoes: safeJSON(evento.configuracoes),
+    total_inscritos: Number(evento.total_inscritos ?? 0),
+    total_pendentes: Number(evento.total_pendentes ?? 0),
+    total_extornados: Number(evento.total_extornados ?? 0),
+    valor_bruto_total: Number(evento.valor_bruto_total ?? 0),
+    valor_liquido_total: Number(evento.valor_liquido_total ?? 0),
   }));
 }
 

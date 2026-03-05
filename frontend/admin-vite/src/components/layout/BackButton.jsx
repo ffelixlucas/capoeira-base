@@ -7,7 +7,7 @@ import { useRouteHistory } from "../../hooks/useRouteHistory";
 
 const ROOTS = [
   "/dashboard","/agenda","/alunos","/turmas","/noticias","/galeria","/inscricoes",
-  "/equipe","/uniformes","/contatos","/mensalidades",
+  "/equipe","/contatos","/mensalidades","/loja","/admin/produtos","/presencas","/perfil","/config",
 ];
 
 const isRoot = (p) => ROOTS.includes(p);

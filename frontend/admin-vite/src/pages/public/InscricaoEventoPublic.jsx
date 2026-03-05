@@ -319,7 +319,7 @@ export default function InscricaoEventoPublic() {
           As inscrições para este evento foram encerradas.
         </p>
         <button
-          onClick={() => navigate("/inscrever")}
+          onClick={() => navigate(`/inscrever/${slug}`)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
         >
           Ver outros eventos disponíveis

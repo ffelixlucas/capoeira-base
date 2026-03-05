@@ -131,17 +131,52 @@ function LayoutAdmin() {
     (item) => item.roles.length === 0 || temPapel(item.roles)
   );
 
-  // 🔹 NOVO: Título baseado no pattern (suporta rotas com :params)
-  const getTitle = () => {
+  const getMetaByPath = (pathname) => {
     for (const meta of routeMeta) {
-      if (matchPath({ path: meta.pattern, end: true }, location.pathname)) {
-        return meta.title;
+      if (matchPath({ path: meta.pattern, end: true }, pathname)) {
+        return meta;
       }
     }
-    // fallback antigo por compatibilidade
+    return null;
+  };
+
+  const routeMetaByPattern = routeMeta.reduce((acc, meta) => {
+    acc[meta.pattern] = meta;
+    return acc;
+  }, {});
+
+  // 🔹 NOVO: Título baseado no pattern (suporta rotas com :params)
+  const getTitle = () => {
+    const currentMeta = getMetaByPath(location.pathname);
+    if (currentMeta?.title) return currentMeta.title;
     return (
       navItems.find((item) => item.to === location.pathname)?.label || "Painel"
     );
+  };
+
+  const getBreadcrumbItems = () => {
+    const items = [];
+    const visited = new Set();
+    let currentMeta = getMetaByPath(location.pathname);
+
+    while (currentMeta && !visited.has(currentMeta.pattern)) {
+      visited.add(currentMeta.pattern);
+      const path =
+        currentMeta.pattern.includes(":") ? currentMeta.parent || undefined : currentMeta.pattern;
+      items.unshift({ label: currentMeta.title, path });
+      if (!currentMeta.parent) break;
+      currentMeta = routeMetaByPattern[currentMeta.parent] || getMetaByPath(currentMeta.parent);
+      if (currentMeta?.pattern === "/dashboard") break;
+    }
+
+    if (items.length > 0) {
+      return items.map((item, index) => ({
+        ...item,
+        path: index === items.length - 1 ? undefined : item.path
+      }));
+    }
+
+    return [{ label: getTitle(), path: undefined }];
   };
 
   return (
@@ -228,9 +263,7 @@ function LayoutAdmin() {
         <header className="flex items-center justify-between bg-cor-secundaria/50 backdrop-blur p-4 sm:p-6 border-b border-cor-secundaria">
         <div className="flex flex-col gap-1">
   <Breadcrumb
-    items={[
-      { label: getTitle(), path: location.pathname }
-    ]}
+    items={getBreadcrumbItems()}
   />
 </div>
           <button

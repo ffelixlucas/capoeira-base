@@ -6,20 +6,45 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
   const [canGoPrev, setCanGoPrev] = useState(false);
   const [canGoNext, setCanGoNext] = useState(false);
 
+  const parseEventoDate = (value) => {
+    if (!value) return Number.NaN;
+    const raw = String(value).trim();
+    if (!raw) return Number.NaN;
+
+    // aceita formatos ISO e também MySQL ("YYYY-MM-DD HH:MM:SS")
+    const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+    const withTz = /[zZ]|[+\-]\d{2}:\d{2}$/.test(normalized)
+      ? normalized
+      : `${normalized}-03:00`;
+
+    const parsed = new Date(withTz).getTime();
+    return Number.isFinite(parsed) ? parsed : Number.NaN;
+  };
+
   const eventosOrdenados = useMemo(() => {
     if (!Array.isArray(eventos)) return [];
     const agora = Date.now();
     return [...eventos].sort((a, b) => {
-      const aTime = new Date(a.data_fim || a.data_inicio || 0).getTime();
-      const bTime = new Date(b.data_fim || b.data_inicio || 0).getTime();
-      const aPassou = Number.isFinite(aTime) ? aTime < agora : true;
-      const bPassou = Number.isFinite(bTime) ? bTime < agora : true;
+      const aTime = parseEventoDate(a.data_inicio || a.data_fim);
+      const bTime = parseEventoDate(b.data_inicio || b.data_fim);
+      const aPassou = Number.isFinite(aTime) ? aTime < agora : false;
+      const bPassou = Number.isFinite(bTime) ? bTime < agora : false;
       if (aPassou !== bPassou) return aPassou ? 1 : -1;
+      if (!Number.isFinite(aTime) && !Number.isFinite(bTime)) return 0;
+      if (!Number.isFinite(aTime)) return 1;
+      if (!Number.isFinite(bTime)) return -1;
       return aTime - bTime;
     });
   }, [eventos]);
 
-  if (eventosOrdenados.length === 0) return null;
+  if (eventosOrdenados.length === 0) {
+    return <p className="text-sm text-cor-texto/70">Nenhum evento cadastrado.</p>;
+  }
+
+  const nextIndex = eventosOrdenados.findIndex((evento) => {
+    const ts = parseEventoDate(evento.data_fim || evento.data_inicio);
+    return Number.isFinite(ts) ? ts >= Date.now() : false;
+  });
 
   const atualizarControles = () => {
     const track = trackRef.current;
@@ -65,7 +90,7 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
         ref={trackRef}
         className="w-full min-w-0 flex items-stretch gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {eventosOrdenados.map((evento) => (
+        {eventosOrdenados.map((evento, index) => (
           <div
             key={evento.id}
             data-agenda-card
@@ -73,6 +98,7 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
           >
             <AgendaItem
               evento={evento}
+              isNextEvent={nextIndex !== -1 && index === nextIndex}
               onEditar={() => onEditar(evento)}
               onExcluir={onExcluir}
             />
