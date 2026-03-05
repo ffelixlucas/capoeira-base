@@ -203,7 +203,7 @@ function LayoutAdmin() {
       )}
 
       {/* Desktop */}
-      <aside className="hidden sm:flex flex-col w-72 h-screen fixed left-0 top-0 z-40 bg-cor-secundaria/90 backdrop-blur-md p-6">
+      <aside className="hidden sm:flex flex-col w-72 h-screen fixed left-0 top-0 z-40 bg-cor-secundaria/90 backdrop-blur-md p-6 overflow-y-auto">
         <div className="flex justify-center mb-8">
           <div className="w-24 h-24">
             <img
@@ -214,7 +214,7 @@ function LayoutAdmin() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-2">
+        <nav className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-1">
           {navItems.map((item) => (
             <NavItem
               key={item.to}
@@ -226,7 +226,7 @@ function LayoutAdmin() {
             />
           ))}
         </nav>
-        <div className="border-t border-cor-secundaria pt-4">
+        <div className="border-t border-cor-secundaria pt-4 mt-4 shrink-0">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center space-x-2 rounded-lg px-4 py-3 text-red-400 hover:bg-red-400/10 transition"
