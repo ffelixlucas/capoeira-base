@@ -47,8 +47,14 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
   const scrollByStep = (direction) => {
     const track = trackRef.current;
     if (!track) return;
+    const firstCard = track.querySelector("[data-agenda-card]");
+    const gap = Number.parseFloat(getComputedStyle(track).columnGap || "0");
     const viewport = track.clientWidth;
-    const step = window.innerWidth >= 1024 ? Math.floor(viewport * 0.6) : Math.floor(viewport * 0.9);
+    const step = firstCard
+      ? Math.max(220, Math.floor(firstCard.getBoundingClientRect().width + gap))
+      : window.innerWidth >= 1024
+      ? Math.floor(viewport * 0.6)
+      : Math.floor(viewport * 0.9);
     track.scrollBy({ left: direction === "next" ? step : -step, behavior: "smooth" });
   };
 
@@ -57,12 +63,13 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
 
       <div
         ref={trackRef}
-        className="flex items-stretch gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="w-full min-w-0 flex items-stretch gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {eventosOrdenados.map((evento) => (
           <div
             key={evento.id}
-            className="snap-start shrink-0 basis-[88%] sm:basis-[72%] lg:basis-[48%] 2xl:basis-[32%] h-full"
+            data-agenda-card
+            className="snap-start shrink-0 basis-full sm:basis-[72%] lg:basis-[48%] 2xl:basis-[32%] h-full"
           >
             <AgendaItem
               evento={evento}
@@ -77,7 +84,7 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
         <button
           type="button"
           onClick={() => scrollByStep("prev")}
-          className="h-10 w-10 rounded-full border border-emerald-100/35 bg-emerald-950/45 text-amber-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-950/70 transition-colors"
+          className="h-11 w-11 rounded-full border border-emerald-100/35 bg-emerald-950/40 text-amber-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-950/70 transition-colors shadow-[0_0_18px_rgba(8,38,30,0.45)]"
           aria-label="Anterior"
           disabled={!canGoPrev}
         >
@@ -86,7 +93,7 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
         <button
           type="button"
           onClick={() => scrollByStep("next")}
-          className="h-10 w-10 rounded-full border border-emerald-100/35 bg-emerald-950/45 text-amber-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-950/70 transition-colors"
+          className="h-11 w-11 rounded-full border border-emerald-100/35 bg-emerald-950/40 text-amber-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-950/70 transition-colors shadow-[0_0_18px_rgba(8,38,30,0.45)]"
           aria-label="Próximo"
           disabled={!canGoNext}
         >

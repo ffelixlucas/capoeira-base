@@ -160,7 +160,7 @@ function LayoutAdmin() {
   };
 
   return (
-    <div className="flex bg-cor-fundo text-cor-texto">
+    <div className="flex bg-cor-fundo text-cor-texto overflow-x-hidden">
       {/* ============== MENU ============== */}
       {/* Mobile */}
       {menuAberto && (
@@ -238,7 +238,7 @@ function LayoutAdmin() {
       </aside>
 
       {/* ============ CONTEÚDO PRINCIPAL ============ */}
-      <div className="flex flex-col flex-1 sm:ml-72 min-h-screen">
+      <div className="flex flex-col flex-1 sm:ml-72 min-h-screen min-w-0">
         {/* Header */}
         <header className="flex items-center justify-between bg-cor-secundaria/50 backdrop-blur p-4 sm:p-6 border-b border-cor-secundaria">
         <div className="flex flex-col gap-1">
@@ -257,8 +257,8 @@ function LayoutAdmin() {
         </header>
 
         {/* Conteúdo */}
-        <main className="flex-1 bg-cor-fundo p-4 sm:p-6">
-          <div className="w-full max-w-[1400px] mx-auto">
+        <main className="flex-1 bg-cor-fundo p-4 sm:p-6 min-w-0 overflow-x-hidden">
+          <div className="w-full max-w-[1400px] mx-auto min-w-0">
             <Outlet />
           </div>
         </main>

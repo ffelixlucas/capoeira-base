@@ -31,14 +31,31 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 );
 
 if ("serviceWorker" in navigator) {
+  const isLocalhost =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+  const shouldRegisterSw = import.meta.env.MODE === "production" && !isLocalhost;
+
   window.addEventListener("load", () => {
+    if (shouldRegisterSw) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          logger.info("Service Worker registrado", reg);
+        })
+        .catch((err) => {
+          logger.error("Erro ao registrar Service Worker", err);
+        });
+      return;
+    }
+
     navigator.serviceWorker
-      .register("/sw.js")
-      .then((reg) => {
-        logger.info("Service Worker registrado", reg);
-      })
+      .getRegistrations()
+      .then((registrations) =>
+        Promise.all(registrations.map((registration) => registration.unregister()))
+      )
       .catch((err) => {
-        logger.error("Erro ao registrar Service Worker", err);
+        logger.warn("Não foi possível limpar Service Workers locais", err);
       });
   });
 }

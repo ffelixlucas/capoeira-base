@@ -30,7 +30,7 @@ function InscricoesPublic() {
 
   return (
     <div className="w-full">
-      <h1 className="text-2xl font-bold text-cor-titulo mb-6 text-center">
+      <h1 className="text-xl sm:text-2xl font-bold text-cor-titulo mb-5 sm:mb-6 text-center px-2">
         Inscreva-se nos próximos eventos
       </h1>
 
@@ -44,30 +44,30 @@ function InscricoesPublic() {
         </p>
       )}
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
         {eventos.map((evento) => (
           <div
             key={evento.id}
-            className="bg-white rounded-xl shadow-md p-4 flex flex-col items-start"
+            className="bg-white rounded-xl shadow-md p-3 sm:p-4 flex flex-col items-start w-full overflow-hidden"
           >
             {evento.imagem_url && (
               <img
                 src={evento.imagem_url}
                 alt={evento.titulo}
-                className="w-full h-40 object-cover rounded-lg mb-3"
+                className="w-full h-40 sm:h-44 object-cover rounded-lg mb-3"
               />
             )}
 
-            <h2 className="text-lg font-semibold text-black mb-1">
+            <h2 className="text-base sm:text-lg font-semibold text-black mb-1 leading-snug break-words">
               {evento.titulo}
             </h2>
 
-            <p className="text-sm text-gray-700 mb-1">
+            <p className="text-xs sm:text-sm text-gray-700 mb-1">
               {new Date(evento.data_inicio).toLocaleDateString("pt-BR")}
             </p>
 
             {evento.valor && (
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-xs sm:text-sm text-gray-600 mb-2">
                 Valor:{" "}
                 <span className="font-semibold text-cor-primaria">
                   R$ {parseFloat(evento.valor).toFixed(2)}
@@ -75,12 +75,12 @@ function InscricoesPublic() {
               </p>
             )}
 
-            <p className="text-sm text-gray-700 mb-3">
+            <p className="text-sm text-gray-700 mb-3 break-words">
               {evento.descricao_curta || "Sem descrição"}
             </p>
 
             <button
-              className="bg-cor-primaria text-white py-2 px-4 rounded-lg text-sm font-medium self-stretch hover:bg-cor-primaria/90 transition"
+              className="bg-cor-primaria text-white py-2.5 px-4 rounded-lg text-sm font-medium self-stretch hover:bg-cor-primaria/90 transition min-h-11"
               onClick={() => navigate(`/inscrever/${slug}/${evento.id}`)} // 🟦 mantém slug na navegação
             >
               Inscrever-se

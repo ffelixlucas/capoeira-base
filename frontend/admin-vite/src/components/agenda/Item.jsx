@@ -149,24 +149,24 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
           {encerrado ? "Encerrado" : "Aberto"}
         </span>
 
-        <span className="absolute bottom-3 left-3 inline-flex items-center rounded-full bg-[#0b241c]/85 border border-[#f4cf4e]/45 text-[#f4cf4e] text-[11px] font-bold tracking-[0.1em] uppercase px-3 py-1">
-          {formatarDataSelo(data_fim || data_inicio)}
+        <span className="absolute bottom-3 left-3 inline-flex max-w-[calc(100%-5.5rem)] items-center rounded-full bg-[#0b241c]/85 border border-[#f4cf4e]/45 text-[#f4cf4e] text-[10px] md:text-[11px] font-bold tracking-[0.08em] uppercase px-3 py-1 leading-tight">
+          <span className="truncate">{formatarDataSelo(data_fim || data_inicio)}</span>
         </span>
       </div>
 
       <div className="p-5 md:p-6 flex flex-col flex-1">
-        <h3 className="text-[#f8f2dc] text-lg md:text-xl font-bold leading-tight line-clamp-2 min-h-[3.5rem]">
+        <h3 className="text-[#f8f2dc] text-lg md:text-xl font-bold leading-tight line-clamp-2 md:min-h-[3.5rem]">
           {titulo}
         </h3>
-        <p className="mt-3 text-[#d6e4dc] text-sm md:text-base leading-relaxed line-clamp-3 min-h-[4.75rem]">
+        <p className="mt-3 text-[#d6e4dc] text-sm md:text-base leading-relaxed line-clamp-3 md:min-h-[4.75rem] break-words">
           {descricao}
         </p>
 
-        <p className="mt-2 text-[#c4d8ce] text-sm md:text-base line-clamp-1 min-h-[1.5rem]">
+        <p className="mt-2 text-[#c4d8ce] text-sm md:text-base line-clamp-1 md:min-h-[1.5rem] break-words">
           {local || "\u00A0"}
         </p>
 
-        <div className="mt-auto pt-5 flex items-center gap-3">
+        <div className="mt-auto pt-5 flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => setDetalhesAbertos(true)}
@@ -179,12 +179,12 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
             <button
               type="button"
               onClick={() => navigate(`/inscricoes/${id}`)}
-              className="ml-auto rounded-full bg-[#f4cf4e] px-4 py-2 text-xs md:text-sm font-bold text-[#101a15] hover:bg-[#f7d96f]"
+              className="ml-auto rounded-full bg-[#f4cf4e] px-4 py-2 text-xs md:text-sm font-bold text-[#101a15] hover:bg-[#f7d96f] max-w-full"
             >
               Inscrever
             </button>
           ) : (
-            <span className="ml-auto text-xs md:text-sm text-[#b7cdbf]">
+            <span className="ml-auto text-xs md:text-sm text-[#b7cdbf] break-words">
               {encerrado ? "Evento finalizado" : "Sem inscrição"}
             </span>
           )}
@@ -216,12 +216,12 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
       )}
 
       {detalhesAbertos && (
-        <div className="fixed inset-0 z-[120]">
+        <div className="fixed inset-0 z-[120] flex items-end md:items-start justify-center p-3 md:p-6 overflow-y-auto">
           <div
             className="absolute inset-0 bg-[#04120e]/85 backdrop-blur-sm"
             onClick={() => setDetalhesAbertos(false)}
           />
-          <div className="relative z-10 mx-auto mt-8 md:mt-12 w-[94%] max-w-3xl max-h-[86vh] overflow-y-auto rounded-3xl border border-emerald-200/20 bg-gradient-to-br from-[#153f31] to-[#1d4a39] p-4 md:p-6 text-[#f8f2dc] shadow-[0_20px_70px_rgba(2,26,19,0.5)]">
+          <div className="relative z-10 w-full max-w-3xl max-h-[calc(100vh-1.5rem)] md:max-h-[86vh] overflow-y-auto rounded-2xl md:rounded-3xl border border-emerald-200/20 bg-gradient-to-br from-[#153f31] to-[#1d4a39] p-4 md:p-6 pb-[max(env(safe-area-inset-bottom),1rem)] text-[#f8f2dc] shadow-[0_20px_70px_rgba(2,26,19,0.5)]">
             <button
               type="button"
               onClick={() => setDetalhesAbertos(false)}
@@ -235,7 +235,7 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
                 <img
                   src={imagem_url}
                   alt={titulo}
-                  className="w-full max-h-[320px] object-cover cursor-zoom-in"
+                  className="w-full max-h-[40vh] md:max-h-[320px] object-cover cursor-zoom-in"
                   style={{ objectPosition }}
                   onClick={() => setMostrarImagem(true)}
                 />
@@ -244,11 +244,11 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true }) {
 
             <div className="mt-4">
               <h3 className="text-xl md:text-3xl font-black leading-tight">{titulo}</h3>
-              <p className="mt-3 inline-flex items-center rounded-full border border-[#f4cf4e]/45 bg-[#0b241c]/85 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-[#f4cf4e]">
-                {formatarDataSelo(data_fim || data_inicio)}
+              <p className="mt-3 inline-flex max-w-full items-center rounded-full border border-[#f4cf4e]/45 bg-[#0b241c]/85 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-[#f4cf4e]">
+                <span className="truncate">{formatarDataSelo(data_fim || data_inicio)}</span>
               </p>
 
-              <div className="mt-4 text-sm md:text-base leading-relaxed text-[#d6e4dc]">
+              <div className="mt-4 text-sm md:text-base leading-relaxed text-[#d6e4dc] break-words">
                 {renderTextWithLinks(descricao_completa || descricao || endereco || "")}
               </div>
 
