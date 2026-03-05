@@ -15,10 +15,8 @@ export const routeMeta = [
     { pattern: "/alunos", title: "Alunos", parent: "/dashboard" },
     { pattern: "/mensalidades", title: "Mensalidades", parent: "/dashboard" },
     { pattern: "/Loja", title: "Loja", parent: "/dashboard" },
-    { pattern: "/video-aulas", title: "Aulas", parent: "/dashboard" },
     { pattern: "/contatos", title: "Contatos", parent: "/dashboard" },
     { pattern: "/inscricoes", title: "Inscrições", parent: "/dashboard" },
-    { pattern: "/horarios", title: "Horários de aulas", parent: "/dashboard" },
   
     // detalhes/nível 2 (mesmo que ainda não existam telas, já fica pronto)
     { pattern: "/agenda/:id", title: "Detalhe do Evento", parent: "/agenda" },

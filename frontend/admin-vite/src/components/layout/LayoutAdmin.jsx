@@ -10,11 +10,9 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { usePermissao } from "../../hooks/usePermissao";
 import {
-  PhotoIcon,
+  NewspaperIcon,
   CalendarIcon,
   TagIcon,
-  VideoCameraIcon,
-  ClockIcon,
   UserGroupIcon,
   HomeIcon,
   ArrowLeftOnRectangleIcon,
@@ -110,7 +108,7 @@ function LayoutAdmin() {
     {
       to: "/noticias",
       label: "Noticias",
-      Icon: PhotoIcon,
+      Icon: NewspaperIcon,
       roles: ["admin", "midia"],
     },
     { to: "/equipe", label: "Equipe", Icon: UserGroupIcon, roles: ["admin"] },
@@ -127,19 +125,6 @@ function LayoutAdmin() {
       roles: ["admin", "loja"],
 
     },
-    {
-      to: "/horarios",
-      label: "Horários de aulas",
-      Icon: ClockIcon,
-      roles: ["admin"],
-    },
-    {
-      to: "/video-aulas",
-      label: "Aulas",
-      Icon: VideoCameraIcon,
-      roles: ["admin", "midia"],
-    },
-
   ];
 
   const navItems = todosItens.filter(

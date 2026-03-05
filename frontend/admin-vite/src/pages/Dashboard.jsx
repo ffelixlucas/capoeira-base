@@ -18,7 +18,7 @@ import {
   UserGroupIcon,
   CalendarIcon,
   BellAlertIcon,
-  PhotoIcon,
+  NewspaperIcon,
   ExclamationTriangleIcon,
   Cog6ToothIcon,
   UserCircleIcon,
@@ -79,7 +79,6 @@ export default function Dashboard() {
     },
     { to: "/turmas", label: "Turmas", roles: ["admin", ""] },
     { to: "/Loja", label: "Loja", roles: ["loja", "admin"] },
-    { to: "/horarios", label: "Horários", roles: ["admin"] },
     { to: "/admin/produtos", label: "Estoque", roles: ["admin", "loja"] },
     { to: "/contatos", label: "Contatos", roles: ["admin"] },
     { to: "/config", label: "Configurações", roles: ["admin"] },
@@ -284,7 +283,7 @@ export default function Dashboard() {
               <CardEstat
                 valor={qtdFotos}
                 label="Noticias"
-                Icon={PhotoIcon}
+                Icon={NewspaperIcon}
                 cor="amber"
                 onClick={() => navigate("/noticias")}
                 cursor="pointer"

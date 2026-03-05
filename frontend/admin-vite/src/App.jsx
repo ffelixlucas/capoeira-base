@@ -23,7 +23,6 @@ import Agenda from "./pages/Agenda";
 import Alunos from "./pages/Alunos";
 import Mensalidades from "./pages/Mensalidades";
 import NotFound from "./pages/NotFound";
-import Horarios from "./pages/Horarios";
 import NaoAutorizado from "./pages/NaoAutorizado";
 import Equipe from "./pages/Equipe";
 import Turmas from "./pages/Turmas";
@@ -109,11 +108,6 @@ function App() {
   path="/admin/produtos/:id"
   element={<ProdutoGerenciarPage />}
 />
-
-
-
-
-            <Route path="/video-aulas" element={<div>Vídeo-aulas</div>} />
             <Route path="/contatos" element={<Contatos />} />
             <Route path="/inscricoes" element={<Inscricoes />} />
             <Route path="/inscricoes/:eventoId" element={<InscritosEvento />} />
@@ -121,14 +115,6 @@ function App() {
             <Route path="/perfil" element={<EditarPerfil />} />
             <Route path="/config" element={<ConfigSistema />} />
 
-            <Route
-              path="/horarios"
-              element={
-                <RoleRoute permitido={["admin", "instrutor"]}>
-                  <Horarios />
-                </RoleRoute>
-              }
-            />
           </Route>
 
           {/* Rota de fallback */}
