@@ -156,6 +156,36 @@ export default function Dashboard() {
       })
     : [];
 
+  const getEventoTimestamp = (evento) => {
+    const raw = evento?.data_fim || evento?.data_inicio || evento?.data;
+    if (!raw) return Number.NaN;
+    const parsed = new Date(raw).getTime();
+    return Number.isFinite(parsed) ? parsed : Number.NaN;
+  };
+
+  const eventosFuturos = eventosOrdenados.filter(
+    (evento) => getEventoTimestamp(evento) >= Date.now()
+  );
+  const proximoEvento = eventosFuturos[0] || null;
+  const outrosEventos = eventosFuturos.slice(1, 6);
+
+  const formatarDataEvento = (evento) => {
+    const raw = evento?.data_inicio || evento?.data;
+    if (!raw) return "Data a definir";
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return "Data a definir";
+    const data = parsed.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    const hora = parsed.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return hora === "00:00" ? data : `${data} • ${hora}`;
+  };
+
   return (
     <>
       <div className="space-y-6 pb-28">
@@ -294,29 +324,72 @@ export default function Dashboard() {
 
         {/* Agenda — somente admin */}
         {temPapel(["admin"]) && (
-          <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30">
-            <h3 className="text-lg font-semibold text-cor-titulo mb-4">
-              📅 Agenda
-            </h3>
-            <ul className="space-y-2 text-sm text-cor-texto/80">
-              {eventosOrdenados.length > 0 ? (
-                eventosOrdenados.slice(0, 5).map((evento) => (
-                  <li key={evento.id}>
+          <div className="rounded-xl p-4 border border-cor-secundaria/20 bg-cor-secundaria/10">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-cor-texto/75">Agenda</h3>
+              <button
+                type="button"
+                onClick={() => navigate("/agenda")}
+                className="text-xs font-medium text-cor-texto/65 hover:text-cor-primaria transition-colors"
+              >
+                Ver tudo
+              </button>
+            </div>
+
+            <ul className="space-y-1.5">
+              {proximoEvento ? (
+                <>
+                  <li key={proximoEvento.id}>
                     <Link
                       to="/agenda"
-                      className="block hover:text-cor-primaria transition"
+                      className="block rounded-lg border border-cor-primaria/30 bg-cor-primaria/10 px-2.5 py-2 hover:bg-cor-primaria/15 transition-colors"
                     >
-                      <span className="text-sm text-cor-texto/80">
-                        • <strong>{evento.titulo}</strong> <br />
-                        <span className="text-xs text-cor-texto/60">
-                          {evento.data_formatada} às {evento.horario_formatado}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <span className="inline-flex rounded-full border border-cor-primaria/35 bg-cor-fundo/40 px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-cor-primaria mb-1.5">
+                            PROXIMO EVENTO
+                          </span>
+                          <p className="text-sm font-semibold text-cor-texto/95 truncate">
+                            {proximoEvento.titulo || "Evento sem título"}
+                          </p>
+                          <p className="mt-0.5 text-xs text-cor-texto/65 truncate">
+                            {proximoEvento.local || "Local a definir"}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-[11px] text-cor-texto/70 whitespace-nowrap">
+                          {formatarDataEvento(proximoEvento)}
                         </span>
-                      </span>
+                      </div>
                     </Link>
                   </li>
-                ))
+
+                  {outrosEventos.map((evento) => (
+                    <li key={evento.id}>
+                      <Link
+                        to="/agenda"
+                        className="block rounded-lg px-2.5 py-2 hover:bg-cor-secundaria/20 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-cor-texto/90 truncate">
+                              {evento.titulo || "Evento sem título"}
+                            </p>
+                            <p className="mt-0.5 text-xs text-cor-texto/60 truncate">
+                              {evento.local || "Local a definir"}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-[11px] text-cor-texto/65 whitespace-nowrap">
+                            {formatarDataEvento(evento)}
+                          </span>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </>
               ) : (
-                <li>Sem eventos cadastrados.</li>
+                <li className="px-2.5 py-2 text-sm text-cor-texto/60">
+                  Nenhum evento futuro disponível.
+                </li>
               )}
             </ul>
           </div>
