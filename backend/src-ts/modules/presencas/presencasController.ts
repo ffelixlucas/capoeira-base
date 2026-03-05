@@ -118,3 +118,49 @@ export async function relatorioPorPeriodo(req: Request, res: Response) {
     });
   }
 }
+
+/* --------------------------------------------------------- */
+/* GET /api/presencas/resumo-dia?data=2026-03-05            */
+/* --------------------------------------------------------- */
+export async function resumoDia(req: Request, res: Response) {
+  try {
+    const { data } = req.query;
+
+    if (!data) {
+      return res.status(400).json({ erro: "data é obrigatória" });
+    }
+
+    const result = await service.resumoDia({
+      user: (req as any).user,
+      data: String(data),
+    });
+
+    return res.json(result);
+  } catch (e: any) {
+    logger.error(e);
+    return res.status(e.status || 500).json({
+      erro: e.message || "Falha ao gerar resumo diário",
+    });
+  }
+}
+
+/* --------------------------------------------------------- */
+/* GET /api/presencas/atividades-recentes?limit=20          */
+/* --------------------------------------------------------- */
+export async function atividadesRecentes(req: Request, res: Response) {
+  try {
+    const limit = Number(req.query.limit || 20);
+
+    const result = await service.atividadesRecentes({
+      user: (req as any).user,
+      limit: Number.isFinite(limit) && limit > 0 ? limit : 20,
+    });
+
+    return res.json(result);
+  } catch (e: any) {
+    logger.error(e);
+    return res.status(e.status || 500).json({
+      erro: e.message || "Falha ao buscar atividades recentes",
+    });
+  }
+}

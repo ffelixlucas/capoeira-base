@@ -2,9 +2,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { listarAlunos } from "../services/alunoService";
-import { salvarBatch, listarPorTurmaEData } from "../services/presencaService";
+import {
+  salvarBatch,
+  listarPorTurmaEData,
+  listarAtividadesRecentes,
+  atualizarPresenca,
+} from "../services/presencaService";
 import { listarTurmas, getMinhasTurmas } from "../services/turmaService";
 import { ArrowLeftIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { useAuth } from "../contexts/AuthContext";
 import { logger } from "../utils/logger";
 
 function useQuery() {
@@ -15,6 +21,7 @@ function useQuery() {
 export default function Presencas() {
   const query = useQuery();
   const navigate = useNavigate();
+  const { usuario } = useAuth();
 
   const turmaId = query.get("turma"); // /presencas?turma=4
   const turmaIdNum = turmaId ? Number(turmaId) : null;
@@ -31,6 +38,24 @@ export default function Presencas() {
   // Todas as turmas (para resolver nome pelo id, se necessário)
   const [todasTurmas, setTodasTurmas] = useState([]); // [{id, nome}]
   const [descobrindoTurma, setDescobrindoTurma] = useState(true);
+  const [atividadesRecentes, setAtividadesRecentes] = useState([]);
+  const [atividadeInstrutor, setAtividadeInstrutor] = useState(null);
+  const [historicoInstrutor, setHistoricoInstrutor] = useState([]);
+  const [carregandoAtividades, setCarregandoAtividades] = useState(false);
+  const [modalAtividade, setModalAtividade] = useState(null);
+  const [modalHistoricoAberto, setModalHistoricoAberto] = useState(false);
+  const [modalDiasResumo, setModalDiasResumo] = useState(null);
+  const [filtroDataHistorico, setFiltroDataHistorico] = useState("");
+  const [detalhesAtividade, setDetalhesAtividade] = useState([]);
+  const [carregandoDetalhesAtividade, setCarregandoDetalhesAtividade] = useState(false);
+  const [salvandoPresencaId, setSalvandoPresencaId] = useState(null);
+  const [mostrarResumoInstrutor, setMostrarResumoInstrutor] = useState(false);
+  const [anoResumoInstrutor, setAnoResumoInstrutor] = useState(new Date().getFullYear());
+
+  const isAdmin = useMemo(
+    () => Array.isArray(usuario?.roles) && usuario.roles.includes("admin"),
+    [usuario]
+  );
 
   // ---- Carregar turmas (minhas + todas) ----
   useEffect(() => {
@@ -67,23 +92,56 @@ export default function Presencas() {
     return (id) => map.get(Number(id)) || null;
   }, [todasTurmas, minhasTurmas]);
 
+  const turmasPermitidas = useMemo(
+    () => (isAdmin ? todasTurmas : minhasTurmas),
+    [isAdmin, todasTurmas, minhasTurmas]
+  );
+
   // Se não veio ?turma, autodetecta:
   // - Se houver 1 única turma responsável, redireciona direto
   // - Se houver mais de uma, mostra seletor
   useEffect(() => {
     if (turmaIdNum || descobrindoTurma) return;
-    const idsPermitidos = (minhasTurmas || []).map((t) => Number(t.id));
+    const idsPermitidos = (turmasPermitidas || []).map((t) => Number(t.id));
     if (idsPermitidos.length === 1) {
       navigate(`/presencas?turma=${idsPermitidos[0]}`, { replace: true });
     }
-  }, [turmaIdNum, minhasTurmas, descobrindoTurma, navigate]);
+  }, [turmaIdNum, turmasPermitidas, descobrindoTurma, navigate]);
 
   // Verificação de permissão: só permite chamar turmas das quais o usuário é responsável
   const idsPermitidos = useMemo(
-    () => new Set((minhasTurmas || []).map((t) => Number(t.id))),
-    [minhasTurmas]
+    () => new Set((turmasPermitidas || []).map((t) => Number(t.id))),
+    [turmasPermitidas]
   );
   const turmaPermitida = turmaIdNum ? idsPermitidos.has(turmaIdNum) : false;
+
+  useEffect(() => {
+    let ativo = true;
+    async function carregarAtividades() {
+      try {
+        setCarregandoAtividades(true);
+        const resp = await listarAtividadesRecentes(365);
+        if (!ativo) return;
+        if (resp?.tipo === "admin") {
+          setAtividadesRecentes(Array.isArray(resp.atividades) ? resp.atividades : []);
+          setAtividadeInstrutor(null);
+          setHistoricoInstrutor([]);
+        } else {
+          setAtividadeInstrutor(resp?.atividade || null);
+          setHistoricoInstrutor(Array.isArray(resp?.historico) ? resp.historico : []);
+          setAtividadesRecentes([]);
+        }
+      } catch (e) {
+        logger.error(e);
+      } finally {
+        if (ativo) setCarregandoAtividades(false);
+      }
+    }
+    carregarAtividades();
+    return () => {
+      ativo = false;
+    };
+  }, [isAdmin, salvando]);
 
   // ---- Carregar alunos da turma + presenças do dia ----
   useEffect(() => {
@@ -189,27 +247,216 @@ const alunosOrdenados = useMemo(() => {
 }, [alunosTurma]);
 
 
+  const formatarDataHora = (raw) => {
+    if (!raw) return "Sem registro";
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return "Sem registro";
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatarDataDia = (raw) => {
+    if (!raw) return "Data inválida";
+    const valor = String(raw).trim();
+    if (!valor) return "Data inválida";
+    const normalizado = /^\d{4}-\d{2}-\d{2}$/.test(valor)
+      ? `${valor}T00:00:00`
+      : valor;
+    const d = new Date(normalizado);
+    if (Number.isNaN(d.getTime())) return "Data inválida";
+    return d.toLocaleDateString("pt-BR");
+  };
+
+  const normalizarDataParaApi = (raw) => {
+    if (!raw) return "";
+    const valor = String(raw).trim();
+    if (!valor) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+    const d = new Date(valor);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toISOString().slice(0, 10);
+  };
+
+  const historicoFiltrado = useMemo(() => {
+    if (!filtroDataHistorico) return historicoInstrutor;
+    return historicoInstrutor.filter((item) => String(item.data).slice(0, 10) === filtroDataHistorico);
+  }, [historicoInstrutor, filtroDataHistorico]);
+
+  const historicoAnoLetivo = useMemo(() => {
+    return (historicoInstrutor || []).filter((a) => {
+      const d = new Date(a.data);
+      if (Number.isNaN(d.getTime())) return false;
+      return d.getFullYear() === Number(anoResumoInstrutor);
+    });
+  }, [historicoInstrutor, anoResumoInstrutor]);
+
+  const resumoAnoLetivo = useMemo(() => {
+    const base = historicoAnoLetivo;
+    const totalAulas = base.length;
+    const totalRegistros = base.reduce((acc, a) => acc + Number(a.total_registros || 0), 0);
+    const presentes = base.reduce((acc, a) => acc + Number(a.presentes || 0), 0);
+    const faltas = base.reduce((acc, a) => acc + Number(a.faltas || 0), 0);
+    const taxa = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+
+    const porTurmaMap = new Map();
+    for (const a of base) {
+      const key = Number(a.turma_id);
+      const atual = porTurmaMap.get(key) || {
+        turma_id: key,
+        turma_nome: a.turma_nome || `Turma #${key}`,
+        total: 0,
+        presentes: 0,
+      };
+      atual.total += Number(a.total_registros || 0);
+      atual.presentes += Number(a.presentes || 0);
+      porTurmaMap.set(key, atual);
+    }
+
+    const turmas = Array.from(porTurmaMap.values())
+      .map((t) => ({
+        ...t,
+        taxa: t.total > 0 ? Math.round((t.presentes / t.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    return {
+      totalAulas,
+      totalRegistros,
+      presentes,
+      faltas,
+      taxa,
+      turmas,
+    };
+  }, [historicoAnoLetivo]);
+
+  async function carregarDetalhesAtividade(atividade, mostrarLoading = true) {
+    if (!atividade) return;
+    if (mostrarLoading) setCarregandoDetalhesAtividade(true);
+    try {
+      const dataRef = normalizarDataParaApi(atividade.data);
+      if (!dataRef) {
+        setDetalhesAtividade([]);
+        return;
+      }
+      const resp = await listarPorTurmaEData(atividade.turma_id, dataRef);
+      const lista = Array.isArray(resp?.presencas) ? resp.presencas : [];
+      setDetalhesAtividade(lista);
+      const presentes = lista.filter((p) => p.status === "presente").length;
+      const faltas = lista.filter((p) => p.status !== "presente").length;
+      setModalAtividade((prev) =>
+        prev
+          ? {
+              ...prev,
+              data: dataRef,
+              total_registros: lista.length,
+              presentes,
+              faltas,
+            }
+          : prev
+      );
+    } catch (e) {
+      logger.error(e);
+    } finally {
+      if (mostrarLoading) setCarregandoDetalhesAtividade(false);
+    }
+  }
+
+  async function abrirModalAtividade(atividade) {
+    setModalAtividade(atividade);
+    setDetalhesAtividade([]);
+    await carregarDetalhesAtividade(atividade, true);
+  }
+
+  function abrirDetalhesPeloHistorico(atividade) {
+    setModalHistoricoAberto(false);
+    setTimeout(() => {
+      abrirModalAtividade(atividade);
+    }, 0);
+  }
+
+  function abrirDiasDoResumo(tipo) {
+    const base = historicoAnoLetivo;
+    const itens = base.filter((a) => {
+      if (tipo === "faltas") return Number(a.faltas || 0) > 0;
+      if (tipo === "presentes") return Number(a.presentes || 0) > 0;
+      return Number(a.total_registros || 0) > 0;
+    });
+    setModalDiasResumo({
+      tipo,
+      titulo:
+        tipo === "faltas"
+          ? "Dias com faltas"
+          : tipo === "presentes"
+          ? "Dias com presenças"
+          : "Dias com registros",
+      itens,
+    });
+  }
+
+  function abrirChamadaDoDiaPeloResumo(atividade) {
+    setModalDiasResumo(null);
+    setTimeout(() => {
+      abrirModalAtividade(atividade);
+    }, 0);
+  }
+
+  async function alterarStatusPresencaModal(registro, novoStatus) {
+    if (!registro?.id) return;
+    const statusAtual = registro.status === "presente" ? "presente" : "falta";
+    if (statusAtual === novoStatus) return;
+
+    const nome = registro.apelido || registro.aluno_nome || `Aluno #${registro.aluno_id}`;
+    const ok = window.confirm(
+      `Tem certeza que deseja alterar ${nome} para ${novoStatus === "presente" ? "Presente" : "Falta"}?`
+    );
+    if (!ok) return;
+
+    try {
+      setSalvandoPresencaId(registro.id);
+      await atualizarPresenca(registro.id, { status: novoStatus });
+      await carregarDetalhesAtividade(modalAtividade, false);
+      const resp = await listarAtividadesRecentes(365);
+      if (resp?.tipo === "admin") {
+        setAtividadesRecentes(Array.isArray(resp.atividades) ? resp.atividades : []);
+      } else {
+        setAtividadeInstrutor(resp?.atividade || null);
+        setHistoricoInstrutor(Array.isArray(resp?.historico) ? resp.historico : []);
+      }
+    } catch (e) {
+      logger.error(e);
+      alert(e?.response?.data?.erro || "Não foi possível atualizar a presença.");
+    } finally {
+      setSalvandoPresencaId(null);
+    }
+  }
+
+
   return (
-    <div className="space-y-4 pb-28">
+    <div className="max-w-6xl mx-auto space-y-4 pb-28 px-1 sm:px-2">
       {/* Topbar */}
-      <div className="sticky top-0 z-10 bg-cor-fundo/80 backdrop-blur-sm py-3">
-        <div className="flex items-center gap-3 px-2">
+      <div className="sticky top-0 z-10 bg-cor-fundo/90 backdrop-blur-sm py-3">
+        <div className="mx-2 flex items-center gap-3 rounded-2xl border border-cor-secundaria/25 bg-gradient-to-r from-[#0d2a21]/95 to-[#14362b]/90 px-3 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.25)]">
           <button
             onClick={() => navigate(-1)}
-            className="h-9 w-9 rounded-lg border border-cor-secundaria/30 flex items-center justify-center"
+            className="h-9 w-9 rounded-xl border border-cor-secundaria/35 bg-cor-fundo/30 flex items-center justify-center hover:bg-cor-fundo/55 transition-colors"
             aria-label="Voltar"
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="text-sm text-cor-texto/70">Chamada</div>
-            <div className="text-base font-semibold text-cor-titulo">
+            <div className="text-base font-semibold text-cor-titulo truncate">
               {tituloTurma}
             </div>
           </div>
           <input
             type="date"
-            className="h-9 rounded-lg border border-cor-secundaria/30 px-2 text-sm bg-transparent"
+            className="h-9 rounded-xl border border-cor-secundaria/35 px-2.5 text-sm bg-cor-fundo/25"
             value={data}
             onChange={(e) => setData(e.target.value)}
             aria-label="Selecionar data"
@@ -217,15 +464,187 @@ const alunosOrdenados = useMemo(() => {
         </div>
       </div>
 
+      {isAdmin && (
+        <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-4 space-y-3 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
+          <div>
+            <p className="text-sm font-semibold text-cor-titulo">Últimas atividades dos instrutores</p>
+            <p className="text-xs text-cor-texto/70">
+              Toque em uma atividade para ver o que foi feito no dia.
+            </p>
+          </div>
+
+          {carregandoAtividades && (
+            <p className="text-xs text-cor-texto/60">Carregando atividades…</p>
+          )}
+
+          {!carregandoAtividades && atividadesRecentes.length === 0 && (
+            <p className="text-xs text-cor-texto/70">Sem atividades registradas ainda.</p>
+          )}
+
+          {!carregandoAtividades && atividadesRecentes.length > 0 && (
+            <ul className="divide-y divide-cor-secundaria/10 rounded-xl border border-cor-secundaria/20 bg-cor-fundo/25">
+              {atividadesRecentes.map((atividade, idx) => (
+                <li key={`${atividade.created_by || "user"}-${atividade.turma_id}-${atividade.data}-${idx}`}>
+                  <button
+                    type="button"
+                    onClick={() => abrirModalAtividade(atividade)}
+                    className="w-full text-left p-3 hover:bg-cor-fundo/30 transition-colors"
+                  >
+                    <p className="text-sm font-semibold text-cor-titulo">
+                      {atividade.nome_instrutor || "Instrutor"}
+                    </p>
+                    <p className="text-xs text-cor-texto/70">
+                      {atividade.turma_nome} • {formatarDataDia(atividade.data)}
+                    </p>
+                    <p className="text-[11px] text-cor-texto/70 mt-1">
+                      Atualizado em {formatarDataHora(atividade.ultima_atualizacao)}
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {!isAdmin && (
+        <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-4 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
+          <p className="text-sm font-semibold text-cor-titulo">Sua última chamada</p>
+          {carregandoAtividades && (
+            <p className="text-xs text-cor-texto/60 mt-1">Carregando…</p>
+          )}
+          {!carregandoAtividades && !atividadeInstrutor && (
+            <p className="text-xs text-cor-texto/70 mt-1">Você ainda não registrou chamada.</p>
+          )}
+          {!carregandoAtividades && atividadeInstrutor && (
+            <>
+              <p className="text-xs text-cor-texto/70 mt-1">
+                {atividadeInstrutor.turma_nome} •{" "}
+                {formatarDataDia(atividadeInstrutor.data)}
+              </p>
+              <button
+                type="button"
+                onClick={() => abrirModalAtividade(atividadeInstrutor)}
+                className="text-xs underline text-cor-primaria mt-2 font-medium"
+              >
+                Ver detalhes da chamada
+              </button>
+              {historicoInstrutor.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFiltroDataHistorico("");
+                    setModalHistoricoAberto(true);
+                  }}
+                  className="text-xs underline text-cor-primaria mt-2 ml-3 font-medium"
+                >
+                  Ver tudo
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {!isAdmin && (
+        <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-4 space-y-3 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setMostrarResumoInstrutor((v) => !v)}
+              className="text-sm font-semibold text-cor-titulo underline"
+            >
+              {mostrarResumoInstrutor ? "Ocultar resumo geral" : "Resumo geral"}
+            </button>
+            {mostrarResumoInstrutor && (
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setAnoResumoInstrutor((ano) => ano - 1)}
+                  className="px-2 py-1 rounded-lg text-xs border border-cor-secundaria/30 text-cor-texto hover:bg-cor-fundo/35 transition-colors"
+                >
+                  Ano anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAnoResumoInstrutor(new Date().getFullYear())}
+                  className={`px-2 py-1 rounded-lg text-xs border transition-colors ${
+                    anoResumoInstrutor === new Date().getFullYear()
+                      ? "border-cor-primaria/60 bg-cor-primaria/20 text-cor-primaria"
+                      : "border-cor-secundaria/30 text-cor-texto hover:bg-cor-fundo/35"
+                  }`}
+                >
+                  Ano atual
+                </button>
+              </div>
+            )}
+          </div>
+
+          {mostrarResumoInstrutor && (
+            <>
+              <p className="text-xs text-cor-texto/70">
+                Ano letivo <strong>{anoResumoInstrutor}</strong> • <strong>{resumoAnoLetivo.totalAulas}</strong> aulas registradas.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg border border-cor-secundaria/20 bg-cor-fundo/25 p-2">
+                  <p className="text-cor-texto/70">Taxa de presença</p>
+                  <p className="text-sm font-bold text-cor-titulo">{resumoAnoLetivo.taxa}%</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => abrirDiasDoResumo("registros")}
+                  className="rounded-lg border border-cor-secundaria/20 bg-cor-fundo/25 p-2 text-left hover:bg-cor-fundo/40 transition-colors"
+                >
+                  <p className="text-cor-texto/70">Registros</p>
+                  <p className="text-sm font-bold text-cor-titulo">{resumoAnoLetivo.totalRegistros}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => abrirDiasDoResumo("presentes")}
+                  className="rounded-lg border border-green-500/30 bg-green-500/5 p-2 text-left hover:bg-green-500/10 transition-colors"
+                >
+                  <p className="text-green-300">Presentes</p>
+                  <p className="text-sm font-bold text-green-300">{resumoAnoLetivo.presentes}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => abrirDiasDoResumo("faltas")}
+                  className="rounded-lg border border-red-500/30 bg-red-500/5 p-2 text-left hover:bg-red-500/10 transition-colors"
+                >
+                  <p className="text-red-300">Faltas</p>
+                  <p className="text-sm font-bold text-red-300">{resumoAnoLetivo.faltas}</p>
+                </button>
+              </div>
+
+              <div className="rounded-xl border border-cor-secundaria/20 bg-cor-fundo/25 p-3">
+                <p className="text-xs font-semibold text-cor-titulo mb-2">Desempenho por turma</p>
+                <ul className="space-y-1">
+                  {resumoAnoLetivo.turmas.slice(0, 4).map((turma) => (
+                    <li key={turma.turma_id} className="text-xs flex items-center justify-between gap-2">
+                      <span className="text-cor-texto truncate">{turma.turma_nome}</span>
+                      <span className="text-cor-titulo font-semibold">{turma.taxa}%</span>
+                    </li>
+                  ))}
+                  {resumoAnoLetivo.turmas.length === 0 && (
+                    <li className="text-xs text-cor-texto/70">Sem aulas registradas nesse ano letivo.</li>
+                  )}
+                </ul>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Seletor de turma quando não vier ?turma=ID */}
       {!turmaIdNum && (
-        <div className="mx-2 rounded-xl border border-cor-secundaria/20">
+        <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
           <div className="p-4">
             <div className="text-sm font-semibold text-cor-titulo">
               Selecione a turma
             </div>
             <p className="text-xs text-cor-texto/70 mt-1">
-              Toque na turma para abrir a chamada de hoje.
+              Toque na turma para abrir a chamada da data selecionada.
             </p>
 
             {descobrindoTurma && (
@@ -234,19 +653,21 @@ const alunosOrdenados = useMemo(() => {
               </p>
             )}
 
-            {!descobrindoTurma && minhasTurmas.length === 0 && (
+            {!descobrindoTurma && turmasPermitidas.length === 0 && (
               <div className="mt-3 text-xs">
-                Você não é responsável por nenhuma turma.
+                {isAdmin
+                  ? "Nenhuma turma cadastrada."
+                  : "Você não é responsável por nenhuma turma."}
               </div>
             )}
 
-            {!descobrindoTurma && minhasTurmas.length > 0 && (
+            {!descobrindoTurma && turmasPermitidas.length > 0 && (
               <ul className="mt-3 divide-y divide-cor-secundaria/10">
-                {minhasTurmas.map((t) => (
+                {turmasPermitidas.map((t) => (
                   <li key={t.id}>
                     <button
                       onClick={() => navigate(`/presencas?turma=${t.id}`)}
-                      className="w-full text-left px-3 py-3 text-sm flex items-center justify-between active:scale-[0.99]"
+                      className="w-full text-left px-3 py-3 text-sm flex items-center justify-between active:scale-[0.99] hover:bg-cor-fundo/30 transition-colors"
                     >
                       <span className="font-medium text-cor-titulo">
                         {t.nome || `Turma #${t.id}`}
@@ -280,9 +701,9 @@ const alunosOrdenados = useMemo(() => {
             alunosTurma.length === 0
           }
           onClick={() => marcarTodos("presente")}
-          className={`rounded-xl border px-3 py-3 text-sm ${
+          className={`rounded-xl border px-3 py-3 text-sm font-semibold ${
             turmaIdNum && turmaPermitida && !carregando && alunosTurma.length
-              ? "border-cor-secundaria/30 active:scale-[0.99]"
+              ? "border-green-500/45 bg-green-500/10 text-green-200 active:scale-[0.99]"
               : "border-cor-secundaria/10 opacity-60"
           }`}
         >
@@ -297,9 +718,9 @@ const alunosOrdenados = useMemo(() => {
             alunosTurma.length === 0
           }
           onClick={() => marcarTodos("falta")}
-          className={`rounded-xl border px-3 py-3 text-sm ${
+          className={`rounded-xl border px-3 py-3 text-sm font-semibold ${
             turmaIdNum && turmaPermitida && !carregando && alunosTurma.length
-              ? "border-cor-secundaria/30 active:scale-[0.99]"
+              ? "border-red-500/45 bg-red-500/10 text-red-200 active:scale-[0.99]"
               : "border-cor-secundaria/10 opacity-60"
           }`}
         >
@@ -308,8 +729,8 @@ const alunosOrdenados = useMemo(() => {
       </div>
 
       {/* Lista de alunos com toggles grandes */}
-      <div className="mx-2 rounded-xl border border-cor-secundaria/20">
-        <div className="p-4 text-sm font-semibold text-cor-titulo">
+      <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
+        <div className="p-4 text-sm font-semibold text-cor-titulo border-b border-cor-secundaria/15">
           Lista de alunos
         </div>
 
@@ -334,7 +755,7 @@ const alunosOrdenados = useMemo(() => {
     return (
       <li
         key={aluno.id}
-        className="flex items-center justify-between px-4 py-3"
+        className="flex items-center justify-between px-4 py-3 hover:bg-cor-fundo/25 transition-colors"
       >
         <div className="flex items-start gap-3 min-w-0">
           <span className="text-xs font-semibold text-cor-texto/50 w-5 text-right">
@@ -359,7 +780,7 @@ const alunosOrdenados = useMemo(() => {
           <button
             type="button"
             onClick={() => setStatusAluno(aluno.id, "falta")}
-            className={`px-3 py-2 rounded-lg border text-xs ${
+            className={`px-3 py-2 rounded-lg border text-xs font-semibold ${
               !presente
                 ? "bg-red-500 text-white border-red-500"
                 : "border-cor-secundaria/30 text-cor-texto/80"
@@ -371,7 +792,7 @@ const alunosOrdenados = useMemo(() => {
           <button
             type="button"
             onClick={() => setStatusAluno(aluno.id, "presente")}
-            className={`px-3 py-2 rounded-lg border text-xs ${
+            className={`px-3 py-2 rounded-lg border text-xs font-semibold ${
               presente
                 ? "bg-green-600 text-white border-green-600"
                 : "border-cor-secundaria/30 text-cor-texto/80"
@@ -388,17 +809,17 @@ const alunosOrdenados = useMemo(() => {
       </div>
 
       {/* Botão fixo de salvar */}
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[min(92vw,360px)]">
         <button
           disabled={
             !turmaIdNum || !turmaPermitida || salvando || itens.length === 0
           }
           onClick={handleSalvar}
-          className={`rounded-2xl px-6 py-3 text-white shadow-xl flex items-center justify-center gap-2
+          className={`w-full rounded-2xl px-6 py-3 text-white shadow-xl flex items-center justify-center gap-2 font-semibold
       ${
         !turmaIdNum || !turmaPermitida || salvando || itens.length === 0
           ? "bg-cor-secundaria/40"
-          : "bg-cor-primaria active:scale-[0.98]"
+          : "bg-gradient-to-r from-[#f4cf4e] to-[#f0bc3d] text-[#1a2213] active:scale-[0.98]"
       }
     `}
           aria-label="Salvar presenças"
@@ -407,6 +828,208 @@ const alunosOrdenados = useMemo(() => {
           {salvando ? "Salvando..." : "Salvar presenças"}
         </button>
       </div>
+
+      {modalAtividade && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-3">
+          <div
+            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+            onClick={() => setModalAtividade(null)}
+          />
+          <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0f2e24] to-[#173d31] p-4 max-h-[80vh] overflow-y-auto shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-cor-titulo">
+                  {modalAtividade.nome_instrutor || "Instrutor"} • {modalAtividade.turma_nome}
+                </h3>
+                <p className="text-xs text-cor-texto/70">
+                  {formatarDataDia(modalAtividade.data)} •
+                  Atualizado em {formatarDataHora(modalAtividade.ultima_atualizacao)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalAtividade(null)}
+                className="text-sm rounded-lg border border-cor-secundaria/30 px-2 py-1"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+              <div className="rounded-lg border border-cor-secundaria/20 bg-cor-fundo/20 p-2">
+                <p className="text-cor-texto/70">Total</p>
+                <p className="font-bold text-cor-titulo">{Number(modalAtividade.total_registros || 0)}</p>
+              </div>
+              <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-2">
+                <p className="text-green-400/90">Presentes</p>
+                <p className="font-bold text-green-300">{Number(modalAtividade.presentes || 0)}</p>
+              </div>
+              <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-2">
+                <p className="text-red-400/90">Faltas</p>
+                <p className="font-bold text-red-300">{Number(modalAtividade.faltas || 0)}</p>
+              </div>
+            </div>
+
+            {carregandoDetalhesAtividade && (
+              <p className="text-xs text-cor-texto/70 mt-3">Carregando detalhes…</p>
+            )}
+
+            {!carregandoDetalhesAtividade && (
+              <ul className="mt-3 divide-y divide-cor-secundaria/10 rounded-lg border border-cor-secundaria/20">
+                {detalhesAtividade.map((p) => (
+                  <li key={p.id || `${p.aluno_id}-${p.data}`} className="p-2 text-xs flex items-center justify-between gap-2">
+                    <span className="text-cor-titulo truncate">{p.apelido || p.aluno_nome || `Aluno #${p.aluno_id}`}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={salvandoPresencaId === p.id}
+                        onClick={() => alterarStatusPresencaModal(p, "falta")}
+                        className={`px-2 py-1 rounded border ${
+                          p.status !== "presente"
+                            ? "bg-red-500 text-white border-red-500"
+                            : "border-cor-secundaria/30 text-cor-texto/80"
+                        } ${salvandoPresencaId === p.id ? "opacity-60" : ""}`}
+                      >
+                        Falta
+                      </button>
+                      <button
+                        type="button"
+                        disabled={salvandoPresencaId === p.id}
+                        onClick={() => alterarStatusPresencaModal(p, "presente")}
+                        className={`px-2 py-1 rounded border ${
+                          p.status === "presente"
+                            ? "bg-green-600 text-white border-green-600"
+                            : "border-cor-secundaria/30 text-cor-texto/80"
+                        } ${salvandoPresencaId === p.id ? "opacity-60" : ""}`}
+                      >
+                        Presente
+                      </button>
+                    </div>
+                  </li>
+                ))}
+                {detalhesAtividade.length === 0 && (
+                  <li className="p-2 text-xs text-cor-texto/70">Sem detalhes para esta chamada.</li>
+                )}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
+      {modalHistoricoAberto && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-3">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setModalHistoricoAberto(false)}
+          />
+          <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-cor-secundaria/20 bg-cor-fundo p-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-cor-titulo">Seus registros de chamada</h3>
+                <p className="text-xs text-cor-texto/70">Use o calendário para filtrar por data.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalHistoricoAberto(false)}
+                className="text-sm rounded-lg border border-cor-secundaria/30 px-2 py-1"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="mt-3">
+              <input
+                type="date"
+                className="h-9 rounded-lg border border-cor-secundaria/30 px-2 text-sm bg-transparent"
+                value={filtroDataHistorico}
+                onChange={(e) => setFiltroDataHistorico(e.target.value)}
+                aria-label="Filtrar histórico por data"
+              />
+              {filtroDataHistorico && (
+                <button
+                  type="button"
+                  onClick={() => setFiltroDataHistorico("")}
+                  className="ml-2 text-xs underline text-cor-primaria"
+                >
+                  Limpar filtro
+                </button>
+              )}
+            </div>
+
+            <ul className="mt-3 divide-y divide-cor-secundaria/10 rounded-lg border border-cor-secundaria/20">
+              {historicoFiltrado.map((atividade, idx) => (
+                <li key={`${atividade.turma_id}-${atividade.data}-${idx}`} className="p-3">
+                  <button
+                    type="button"
+                    onClick={() => abrirDetalhesPeloHistorico(atividade)}
+                    className="w-full text-left"
+                  >
+                    <p className="text-sm font-semibold text-cor-titulo">
+                      {atividade.turma_nome}
+                    </p>
+                    <p className="text-xs text-cor-texto/70">
+                      {formatarDataDia(atividade.data)} • Atualizado em {formatarDataHora(atividade.ultima_atualizacao)}
+                    </p>
+                  </button>
+                </li>
+              ))}
+              {historicoFiltrado.length === 0 && (
+                <li className="p-3 text-xs text-cor-texto/70">Nenhum registro para esta data.</li>
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {modalDiasResumo && (
+        <div className="fixed inset-0 z-[125] flex items-center justify-center p-3">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setModalDiasResumo(null)}
+          />
+          <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-cor-secundaria/20 bg-cor-fundo p-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-cor-titulo">{modalDiasResumo.titulo}</h3>
+                <p className="text-xs text-cor-texto/70">
+                  Toque em um dia para abrir a chamada.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalDiasResumo(null)}
+                className="text-sm rounded-lg border border-cor-secundaria/30 px-2 py-1"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <ul className="mt-3 divide-y divide-cor-secundaria/10 rounded-lg border border-cor-secundaria/20">
+              {modalDiasResumo.itens.map((atividade, idx) => (
+                <li key={`${atividade.turma_id}-${atividade.data}-${idx}`} className="p-3">
+                  <button
+                    type="button"
+                    onClick={() => abrirChamadaDoDiaPeloResumo(atividade)}
+                    className="w-full text-left"
+                  >
+                    <p className="text-sm font-semibold text-cor-titulo">
+                      {formatarDataDia(atividade.data)}
+                    </p>
+                    <p className="text-xs text-cor-texto/70">
+                      {atividade.turma_nome} • Presentes: {Number(atividade.presentes || 0)} • Faltas: {Number(atividade.faltas || 0)}
+                    </p>
+                  </button>
+                </li>
+              ))}
+              {modalDiasResumo.itens.length === 0 && (
+                <li className="p-3 text-xs text-cor-texto/70">
+                  Nenhum dia encontrado para esse filtro.
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,8 +2,10 @@ import { Router } from "express";
 import verifyToken from "../../middlewares/verifyToken";
 import checkRole from "../../middlewares/checkRole";
 import {
+  atividadesRecentes,
   listarPorTurmaEData,
   relatorioPorPeriodo,
+  resumoDia,
   salvarBatch,
   atualizarUma,
 } from "./presencasController";
@@ -24,6 +26,22 @@ router.get(
   verifyToken,
   checkRole(["admin", "instrutor"]),
   relatorioPorPeriodo
+);
+
+// GET /api/presencas/resumo-dia?data=2026-03-05
+router.get(
+  "/resumo-dia",
+  verifyToken,
+  checkRole(["admin", "instrutor"]),
+  resumoDia
+);
+
+// GET /api/presencas/atividades-recentes?limit=20
+router.get(
+  "/atividades-recentes",
+  verifyToken,
+  checkRole(["admin", "instrutor"]),
+  atividadesRecentes
 );
 
 // POST /api/presencas/batch

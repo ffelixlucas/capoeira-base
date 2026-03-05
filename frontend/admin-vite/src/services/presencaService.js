@@ -16,3 +16,29 @@ export async function salvarBatch({ turma_id, data, itens }) {
   });
   return resp; // { ok: true, mensagem: 'Presenças salvas' }
 }
+
+export async function listarResumoDia(data) {
+  const { data: resp } = await api.get(`/presencas/resumo-dia`, {
+    params: { data },
+  });
+  return resp;
+}
+
+export async function listarAtividadesRecentes(limit = 20) {
+  const { data: resp } = await api.get(`/presencas/atividades-recentes`, {
+    params: { limit },
+  });
+  return resp;
+}
+
+export async function atualizarPresenca(id, dados) {
+  const { data: resp } = await api.put(`/presencas/${id}`, dados);
+  return resp;
+}
+
+export async function relatorioPresencas(inicio, fim) {
+  const { data: resp } = await api.get(`/presencas/relatorio`, {
+    params: { inicio, fim },
+  });
+  return resp;
+}

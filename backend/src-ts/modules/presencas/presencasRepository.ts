@@ -233,3 +233,235 @@ export async function relatorioPorPeriodo({
   const [rows] = await db.execute<RowDataPacket[]>(sql, params);
   return rows;
 }
+
+/* --------------------------------------------------------- */
+/* Resumo diário por turma                                   */
+/* --------------------------------------------------------- */
+export async function resumoPorData({
+  data,
+  organizacaoId,
+}: {
+  data: string;
+  organizacaoId: number;
+}) {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `
+    SELECT
+      t.id AS turma_id,
+      t.nome AS turma_nome,
+      t.equipe_id,
+      e.nome AS nome_instrutor,
+      COALESCE(r.total_registros, 0) AS total_registros,
+      COALESCE(r.presentes, 0) AS presentes,
+      COALESCE(r.faltas, 0) AS faltas,
+      r.ultima_atualizacao,
+      cb.nome AS lancado_por_nome
+    FROM turmas t
+    LEFT JOIN equipe e ON e.id = t.equipe_id
+    LEFT JOIN (
+      SELECT
+        p.turma_id,
+        COUNT(*) AS total_registros,
+        SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
+        SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
+        MAX(p.updated_at) AS ultima_atualizacao,
+        CAST(
+          SUBSTRING_INDEX(
+            GROUP_CONCAT(p.created_by ORDER BY p.updated_at DESC SEPARATOR ','),
+            ',',
+            1
+          ) AS UNSIGNED
+        ) AS ultimo_created_by
+      FROM presencas p
+      WHERE p.organizacao_id = ? AND p.data = ?
+      GROUP BY p.turma_id
+    ) r ON r.turma_id = t.id
+    LEFT JOIN equipe cb ON cb.id = r.ultimo_created_by
+    WHERE t.organizacao_id = ?
+    ORDER BY t.nome ASC
+    `,
+    [organizacaoId, data, organizacaoId]
+  );
+
+  return rows;
+}
+
+/* --------------------------------------------------------- */
+/* Última atividade por instrutor (admin)                    */
+/* --------------------------------------------------------- */
+export async function ultimasAtividadesPorInstrutor({
+  organizacaoId,
+  limit = 20,
+}: {
+  organizacaoId: number;
+  limit?: number;
+}) {
+  const limite = Math.min(200, Math.max(1, Number(limit) || 20));
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `
+    WITH sessoes AS (
+      SELECT
+        p.created_by,
+        p.turma_id,
+        p.data,
+        COUNT(*) AS total_registros,
+        SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
+        SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
+        MAX(p.updated_at) AS ultima_atualizacao
+      FROM presencas p
+      WHERE p.organizacao_id = ?
+      GROUP BY p.created_by, p.turma_id, p.data
+    ),
+    ranked AS (
+      SELECT
+        s.*,
+        ROW_NUMBER() OVER (
+          PARTITION BY s.created_by
+          ORDER BY s.data DESC, s.ultima_atualizacao DESC
+        ) AS rn
+      FROM sessoes s
+    )
+    SELECT
+      r.created_by,
+      e.nome AS nome_instrutor,
+      r.turma_id,
+      t.nome AS turma_nome,
+      r.data,
+      r.total_registros,
+      r.presentes,
+      r.faltas,
+      r.ultima_atualizacao
+    FROM ranked r
+    LEFT JOIN equipe e ON e.id = r.created_by
+    LEFT JOIN turmas t ON t.id = r.turma_id
+    WHERE r.rn = 1
+    ORDER BY r.data DESC, r.ultima_atualizacao DESC
+    LIMIT ${limite}
+    `,
+    [organizacaoId]
+  );
+
+  return rows;
+}
+
+/* --------------------------------------------------------- */
+/* Última atividade do usuário                               */
+/* --------------------------------------------------------- */
+export async function ultimaAtividadeDoUsuario({
+  organizacaoId,
+  userId,
+}: {
+  organizacaoId: number;
+  userId: number;
+}) {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `
+    SELECT
+      p.created_by,
+      e.nome AS nome_instrutor,
+      p.turma_id,
+      t.nome AS turma_nome,
+      p.data,
+      COUNT(*) AS total_registros,
+      SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
+      SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
+      MAX(p.updated_at) AS ultima_atualizacao
+    FROM presencas p
+    LEFT JOIN equipe e ON e.id = p.created_by
+    LEFT JOIN turmas t ON t.id = p.turma_id
+    WHERE p.organizacao_id = ? AND p.created_by = ?
+    GROUP BY p.created_by, e.nome, p.turma_id, t.nome, p.data
+    ORDER BY p.data DESC, MAX(p.updated_at) DESC
+    LIMIT 1
+    `,
+    [organizacaoId, userId]
+  );
+
+  return rows[0] || null;
+}
+
+/* --------------------------------------------------------- */
+/* Histórico de atividades do usuário                        */
+/* --------------------------------------------------------- */
+export async function atividadesDoUsuario({
+  organizacaoId,
+  userId,
+  limit = 90,
+}: {
+  organizacaoId: number;
+  userId: number;
+  limit?: number;
+}) {
+  const limite = Math.min(365, Math.max(1, Number(limit) || 90));
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `
+    SELECT
+      p.created_by,
+      e.nome AS nome_instrutor,
+      p.turma_id,
+      t.nome AS turma_nome,
+      p.data,
+      COUNT(*) AS total_registros,
+      SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
+      SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
+      MAX(p.updated_at) AS ultima_atualizacao
+    FROM presencas p
+    LEFT JOIN equipe e ON e.id = p.created_by
+    LEFT JOIN turmas t ON t.id = p.turma_id
+    WHERE p.organizacao_id = ? AND p.created_by = ?
+    GROUP BY p.created_by, e.nome, p.turma_id, t.nome, p.data
+    ORDER BY p.data DESC, MAX(p.updated_at) DESC
+    LIMIT ${limite}
+    `,
+    [organizacaoId, userId]
+  );
+
+  return rows;
+}
+
+/* --------------------------------------------------------- */
+/* Histórico por turmas do instrutor (fallback)              */
+/* --------------------------------------------------------- */
+export async function atividadesPorTurmas({
+  organizacaoId,
+  turmaIds,
+  limit = 90,
+}: {
+  organizacaoId: number;
+  turmaIds: number[];
+  limit?: number;
+}) {
+  if (!Array.isArray(turmaIds) || turmaIds.length === 0) return [];
+
+  const limite = Math.min(365, Math.max(1, Number(limit) || 90));
+  const inPh = turmaIds.map(() => "?").join(",");
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `
+    SELECT
+      CAST(
+        SUBSTRING_INDEX(
+          GROUP_CONCAT(p.created_by ORDER BY p.updated_at DESC SEPARATOR ','),
+          ',',
+          1
+        ) AS UNSIGNED
+      ) AS created_by,
+      p.turma_id,
+      t.nome AS turma_nome,
+      p.data,
+      COUNT(*) AS total_registros,
+      SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
+      SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
+      MAX(p.updated_at) AS ultima_atualizacao
+    FROM presencas p
+    LEFT JOIN turmas t ON t.id = p.turma_id
+    WHERE p.organizacao_id = ?
+      AND p.turma_id IN (${inPh})
+    GROUP BY p.turma_id, t.nome, p.data
+    ORDER BY p.data DESC, MAX(p.updated_at) DESC
+    LIMIT ${limite}
+    `,
+    [organizacaoId, ...turmaIds]
+  );
+
+  return rows;
+}
