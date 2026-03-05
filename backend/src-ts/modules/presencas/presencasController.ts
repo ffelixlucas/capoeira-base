@@ -150,10 +150,37 @@ export async function resumoDia(req: Request, res: Response) {
 export async function atividadesRecentes(req: Request, res: Response) {
   try {
     const limit = Number(req.query.limit || 20);
+    const turma_id = req.query.turma_id ? Number(req.query.turma_id) : undefined;
+    const user = (req as any).user;
+    logger.debug("[presencasController] atividadesRecentes:entrada", {
+      userId: user?.id,
+      organizacaoId: user?.organizacao_id,
+      roles: user?.roles,
+      limitRecebido: req.query.limit,
+      limitNormalizado: Number.isFinite(limit) && limit > 0 ? limit : 20,
+      turmaIdRecebida: req.query.turma_id,
+      turmaIdNormalizada:
+        Number.isFinite(turma_id as number) && (turma_id as number) > 0
+          ? (turma_id as number)
+          : undefined,
+    });
 
     const result = await service.atividadesRecentes({
-      user: (req as any).user,
+      user,
       limit: Number.isFinite(limit) && limit > 0 ? limit : 20,
+      turma_id: Number.isFinite(turma_id as number) && (turma_id as number) > 0 ? (turma_id as number) : undefined,
+    });
+
+    logger.debug("[presencasController] atividadesRecentes:saida", {
+      tipo: (result as any)?.tipo,
+      atividades: Array.isArray((result as any)?.atividades)
+        ? (result as any).atividades.length
+        : undefined,
+      historico: Array.isArray((result as any)?.historico)
+        ? (result as any).historico.length
+        : undefined,
+      atividadeData: (result as any)?.atividade?.data,
+      atividadeTurmaId: (result as any)?.atividade?.turma_id,
     });
 
     return res.json(result);

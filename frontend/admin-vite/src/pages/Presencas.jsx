@@ -38,7 +38,6 @@ export default function Presencas() {
   // Todas as turmas (para resolver nome pelo id, se necessário)
   const [todasTurmas, setTodasTurmas] = useState([]); // [{id, nome}]
   const [descobrindoTurma, setDescobrindoTurma] = useState(true);
-  const [atividadesRecentes, setAtividadesRecentes] = useState([]);
   const [atividadeInstrutor, setAtividadeInstrutor] = useState(null);
   const [historicoInstrutor, setHistoricoInstrutor] = useState([]);
   const [carregandoAtividades, setCarregandoAtividades] = useState(false);
@@ -51,6 +50,9 @@ export default function Presencas() {
   const [salvandoPresencaId, setSalvandoPresencaId] = useState(null);
   const [mostrarResumoInstrutor, setMostrarResumoInstrutor] = useState(false);
   const [anoResumoInstrutor, setAnoResumoInstrutor] = useState(new Date().getFullYear());
+  const [turmaResumoAdmin, setTurmaResumoAdmin] = useState(null);
+  const [mostrarUltimaChamadaAdmin, setMostrarUltimaChamadaAdmin] = useState(true);
+  const [filtroUltimaChamadaAdmin, setFiltroUltimaChamadaAdmin] = useState("todas");
 
   const isAdmin = useMemo(
     () => Array.isArray(usuario?.roles) && usuario.roles.includes("admin"),
@@ -103,10 +105,14 @@ export default function Presencas() {
   useEffect(() => {
     if (turmaIdNum || descobrindoTurma) return;
     const idsPermitidos = (turmasPermitidas || []).map((t) => Number(t.id));
+    if (isAdmin && idsPermitidos.length > 0) {
+      navigate(`/presencas?turma=${idsPermitidos[0]}`, { replace: true });
+      return;
+    }
     if (idsPermitidos.length === 1) {
       navigate(`/presencas?turma=${idsPermitidos[0]}`, { replace: true });
     }
-  }, [turmaIdNum, turmasPermitidas, descobrindoTurma, navigate]);
+  }, [turmaIdNum, turmasPermitidas, descobrindoTurma, navigate, isAdmin]);
 
   // Verificação de permissão: só permite chamar turmas das quais o usuário é responsável
   const idsPermitidos = useMemo(
@@ -116,21 +122,83 @@ export default function Presencas() {
   const turmaPermitida = turmaIdNum ? idsPermitidos.has(turmaIdNum) : false;
 
   useEffect(() => {
+    if (!isAdmin) return;
+    if (!Array.isArray(turmasPermitidas) || turmasPermitidas.length === 0) return;
+    if (turmaResumoAdmin && turmasPermitidas.some((t) => Number(t.id) === Number(turmaResumoAdmin))) return;
+    const preferida = turmaIdNum && turmasPermitidas.some((t) => Number(t.id) === Number(turmaIdNum))
+      ? Number(turmaIdNum)
+      : Number(turmasPermitidas[0].id);
+    setTurmaResumoAdmin(preferida);
+    logger.debug("[Presencas] turmaResumoAdmin:auto-select", {
+      turmaIdQuery: turmaIdNum,
+      turmaResumoAdminAnterior: turmaResumoAdmin,
+      turmaResumoAdminNova: preferida,
+      turmasPermitidas: turmasPermitidas.map((t) => Number(t.id)),
+    });
+  }, [isAdmin, turmasPermitidas, turmaResumoAdmin, turmaIdNum]);
+
+  useEffect(() => {
     let ativo = true;
     async function carregarAtividades() {
       try {
         setCarregandoAtividades(true);
+        if (isAdmin) {
+          if (filtroUltimaChamadaAdmin === "todas") {
+            const ids = (turmasPermitidas || []).map((t) => Number(t.id)).filter(Boolean);
+            const respostas = await Promise.all(
+              ids.map((id) => listarAtividadesRecentes(365, id).catch(() => null))
+            );
+            if (!ativo) return;
+            const combinado = respostas
+              .flatMap((resp) =>
+                resp?.tipo === "admin_turma" && Array.isArray(resp.historico) ? resp.historico : []
+              )
+              .sort((a, b) => {
+                const da = new Date(a?.data || 0).getTime();
+                const db = new Date(b?.data || 0).getTime();
+                if (db !== da) return db - da;
+                const ua = new Date(a?.ultima_atualizacao || 0).getTime();
+                const ub = new Date(b?.ultima_atualizacao || 0).getTime();
+                return ub - ua;
+              });
+            setHistoricoInstrutor(combinado);
+            setAtividadeInstrutor(combinado[0] || null);
+            return;
+          }
+
+          const respTurma = turmaResumoAdmin
+            ? await listarAtividadesRecentes(365, turmaResumoAdmin)
+            : null;
+          if (!ativo) return;
+          if (respTurma?.tipo === "admin_turma") {
+            setAtividadeInstrutor(respTurma?.atividade || null);
+            setHistoricoInstrutor(Array.isArray(respTurma?.historico) ? respTurma.historico : []);
+            logger.debug("[Presencas] atividades:admin", {
+              turmaResumoAdmin,
+              historicoTurma: Array.isArray(respTurma?.historico) ? respTurma.historico.length : 0,
+              ultimaTurmaData: respTurma?.atividade?.data,
+              ultimaTurmaTurmaId: respTurma?.atividade?.turma_id,
+            });
+          } else {
+            setAtividadeInstrutor(null);
+            setHistoricoInstrutor([]);
+            logger.debug("[Presencas] atividades:admin_sem_turma", {
+              turmaResumoAdmin,
+              tipoRespostaTurma: respTurma?.tipo || null,
+            });
+          }
+          return;
+        }
+
         const resp = await listarAtividadesRecentes(365);
         if (!ativo) return;
-        if (resp?.tipo === "admin") {
-          setAtividadesRecentes(Array.isArray(resp.atividades) ? resp.atividades : []);
-          setAtividadeInstrutor(null);
-          setHistoricoInstrutor([]);
-        } else {
-          setAtividadeInstrutor(resp?.atividade || null);
-          setHistoricoInstrutor(Array.isArray(resp?.historico) ? resp.historico : []);
-          setAtividadesRecentes([]);
-        }
+        setAtividadeInstrutor(resp?.atividade || null);
+        setHistoricoInstrutor(Array.isArray(resp?.historico) ? resp.historico : []);
+        logger.debug("[Presencas] atividades:instrutor", {
+          historico: Array.isArray(resp?.historico) ? resp.historico.length : 0,
+          ultimaData: resp?.atividade?.data,
+          ultimaTurmaId: resp?.atividade?.turma_id,
+        });
       } catch (e) {
         logger.error(e);
       } finally {
@@ -141,7 +209,7 @@ export default function Presencas() {
     return () => {
       ativo = false;
     };
-  }, [isAdmin, salvando]);
+  }, [isAdmin, salvando, turmaResumoAdmin, mostrarUltimaChamadaAdmin, filtroUltimaChamadaAdmin, turmasPermitidas]);
 
   // ---- Carregar alunos da turma + presenças do dia ----
   useEffect(() => {
@@ -234,6 +302,10 @@ export default function Presencas() {
       : turmaIdNum && !turmaPermitida
       ? "Sem permissão para esta turma"
       : "Selecione a turma";
+  const escopoAdminLabel =
+    filtroUltimaChamadaAdmin === "todas"
+      ? "Escopo: todas as turmas"
+      : `Escopo: ${nomeDaTurma(turmaResumoAdmin) || `Turma #${turmaResumoAdmin}`}`;
 
 const alunosOrdenados = useMemo(() => {
   return [...alunosTurma].sort((a, b) => {
@@ -286,6 +358,10 @@ const alunosOrdenados = useMemo(() => {
     if (!filtroDataHistorico) return historicoInstrutor;
     return historicoInstrutor.filter((item) => String(item.data).slice(0, 10) === filtroDataHistorico);
   }, [historicoInstrutor, filtroDataHistorico]);
+  const historicoCards = useMemo(
+    () => (historicoInstrutor || []).slice(0, 3),
+    [historicoInstrutor]
+  );
 
   const historicoAnoLetivo = useMemo(() => {
     return (historicoInstrutor || []).filter((a) => {
@@ -333,6 +409,20 @@ const alunosOrdenados = useMemo(() => {
       turmas,
     };
   }, [historicoAnoLetivo]);
+
+  useEffect(() => {
+    logger.debug("[Presencas] resumoAnoLetivo", {
+      isAdmin,
+      turmaResumoAdmin,
+      anoResumoInstrutor,
+      historicoInstrutor: historicoInstrutor.length,
+      totalAulas: resumoAnoLetivo.totalAulas,
+      totalRegistros: resumoAnoLetivo.totalRegistros,
+      presentes: resumoAnoLetivo.presentes,
+      faltas: resumoAnoLetivo.faltas,
+      taxa: resumoAnoLetivo.taxa,
+    });
+  }, [isAdmin, turmaResumoAdmin, anoResumoInstrutor, historicoInstrutor.length, resumoAnoLetivo]);
 
   async function carregarDetalhesAtividade(atividade, mostrarLoading = true) {
     if (!atividade) return;
@@ -405,6 +495,15 @@ const alunosOrdenados = useMemo(() => {
     }, 0);
   }
 
+  function onChangeFiltroAdmin(valor) {
+    if (valor === "todas") {
+      setFiltroUltimaChamadaAdmin("todas");
+      return;
+    }
+    setFiltroUltimaChamadaAdmin("turma");
+    setTurmaResumoAdmin(Number(valor));
+  }
+
   async function alterarStatusPresencaModal(registro, novoStatus) {
     if (!registro?.id) return;
     const statusAtual = registro.status === "presente" ? "presente" : "falta";
@@ -420,10 +519,40 @@ const alunosOrdenados = useMemo(() => {
       setSalvandoPresencaId(registro.id);
       await atualizarPresenca(registro.id, { status: novoStatus });
       await carregarDetalhesAtividade(modalAtividade, false);
-      const resp = await listarAtividadesRecentes(365);
-      if (resp?.tipo === "admin") {
-        setAtividadesRecentes(Array.isArray(resp.atividades) ? resp.atividades : []);
+      if (isAdmin) {
+        if (filtroUltimaChamadaAdmin === "todas") {
+          const ids = (turmasPermitidas || []).map((t) => Number(t.id)).filter(Boolean);
+          const respostas = await Promise.all(
+            ids.map((id) => listarAtividadesRecentes(365, id).catch(() => null))
+          );
+          const combinado = respostas
+            .flatMap((resp) =>
+              resp?.tipo === "admin_turma" && Array.isArray(resp.historico) ? resp.historico : []
+            )
+            .sort((a, b) => {
+              const da = new Date(a?.data || 0).getTime();
+              const db = new Date(b?.data || 0).getTime();
+              if (db !== da) return db - da;
+              const ua = new Date(a?.ultima_atualizacao || 0).getTime();
+              const ub = new Date(b?.ultima_atualizacao || 0).getTime();
+              return ub - ua;
+            });
+          setHistoricoInstrutor(combinado);
+          setAtividadeInstrutor(combinado[0] || null);
+          return;
+        }
+        const respTurma = turmaResumoAdmin
+          ? await listarAtividadesRecentes(365, turmaResumoAdmin)
+          : null;
+        if (respTurma?.tipo === "admin_turma") {
+          setAtividadeInstrutor(respTurma?.atividade || null);
+          setHistoricoInstrutor(Array.isArray(respTurma?.historico) ? respTurma.historico : []);
+        } else {
+          setAtividadeInstrutor(null);
+          setHistoricoInstrutor([]);
+        }
       } else {
+        const resp = await listarAtividadesRecentes(365);
         setAtividadeInstrutor(resp?.atividade || null);
         setHistoricoInstrutor(Array.isArray(resp?.historico) ? resp.historico : []);
       }
@@ -453,6 +582,11 @@ const alunosOrdenados = useMemo(() => {
             <div className="text-base font-semibold text-cor-titulo truncate">
               {tituloTurma}
             </div>
+            {isAdmin && (
+              <div className="text-[11px] text-cor-texto/65 mt-0.5">
+                Turma em edição da chamada
+              </div>
+            )}
           </div>
           <input
             type="date"
@@ -466,70 +600,78 @@ const alunosOrdenados = useMemo(() => {
 
       {isAdmin && (
         <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-4 space-y-3 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
-          <div>
-            <p className="text-sm font-semibold text-cor-titulo">Últimas atividades dos instrutores</p>
-            <p className="text-xs text-cor-texto/70">
-              Toque em uma atividade para ver o que foi feito no dia.
-            </p>
-          </div>
-
-          {carregandoAtividades && (
-            <p className="text-xs text-cor-texto/60">Carregando atividades…</p>
-          )}
-
-          {!carregandoAtividades && atividadesRecentes.length === 0 && (
-            <p className="text-xs text-cor-texto/70">Sem atividades registradas ainda.</p>
-          )}
-
-          {!carregandoAtividades && atividadesRecentes.length > 0 && (
-            <ul className="divide-y divide-cor-secundaria/10 rounded-xl border border-cor-secundaria/20 bg-cor-fundo/25">
-              {atividadesRecentes.map((atividade, idx) => (
-                <li key={`${atividade.created_by || "user"}-${atividade.turma_id}-${atividade.data}-${idx}`}>
-                  <button
-                    type="button"
-                    onClick={() => abrirModalAtividade(atividade)}
-                    className="w-full text-left p-3 hover:bg-cor-fundo/30 transition-colors"
-                  >
-                    <p className="text-sm font-semibold text-cor-titulo">
-                      {atividade.nome_instrutor || "Instrutor"}
-                    </p>
-                    <p className="text-xs text-cor-texto/70">
-                      {atividade.turma_nome} • {formatarDataDia(atividade.data)}
-                    </p>
-                    <p className="text-[11px] text-cor-texto/70 mt-1">
-                      Atualizado em {formatarDataHora(atividade.ultima_atualizacao)}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <button
+            type="button"
+            onClick={() => setMostrarUltimaChamadaAdmin((v) => !v)}
+            className="rounded-xl border border-cor-secundaria/30 bg-cor-fundo/20 px-3 py-2 text-sm font-semibold text-cor-titulo hover:bg-cor-fundo/35 transition-colors"
+          >
+            {mostrarUltimaChamadaAdmin ? "Ocultar última chamada" : "Ver última chamada"}
+          </button>
         </div>
       )}
 
-      {!isAdmin && (
+      {(!isAdmin || (isAdmin && turmaResumoAdmin && mostrarUltimaChamadaAdmin)) && (
         <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-4 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
-          <p className="text-sm font-semibold text-cor-titulo">Sua última chamada</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-cor-titulo">
+              {isAdmin && filtroUltimaChamadaAdmin === "todas"
+                ? "Últimas chamadas"
+                : isAdmin
+                ? "Última chamada da turma"
+                : "Sua última chamada"}
+            </p>
+            {isAdmin && (
+              <select
+                value={
+                  filtroUltimaChamadaAdmin === "todas"
+                    ? "todas"
+                    : String(turmaResumoAdmin || "")
+                }
+                onChange={(e) => onChangeFiltroAdmin(e.target.value)}
+                className="h-8 rounded-lg border border-cor-secundaria/35 bg-cor-fundo/25 px-2 text-xs"
+              >
+                <option value="todas">Todas as turmas</option>
+                {turmasPermitidas.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {`Somente: ${t.nome || `Turma #${t.id}`}`}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          {isAdmin && (
+            <p className="text-[11px] text-cor-texto/70 mt-1">{escopoAdminLabel}</p>
+          )}
           {carregandoAtividades && (
             <p className="text-xs text-cor-texto/60 mt-1">Carregando…</p>
           )}
           {!carregandoAtividades && !atividadeInstrutor && (
-            <p className="text-xs text-cor-texto/70 mt-1">Você ainda não registrou chamada.</p>
+            <p className="text-xs text-cor-texto/70 mt-1">
+              {isAdmin
+                ? "Sem chamada registrada para a turma selecionada."
+                : "Você ainda não registrou chamada."}
+            </p>
           )}
           {!carregandoAtividades && atividadeInstrutor && (
             <>
-              <p className="text-xs text-cor-texto/70 mt-1">
-                {atividadeInstrutor.turma_nome} •{" "}
-                {formatarDataDia(atividadeInstrutor.data)}
-              </p>
-              <button
-                type="button"
-                onClick={() => abrirModalAtividade(atividadeInstrutor)}
-                className="text-xs underline text-cor-primaria mt-2 font-medium"
-              >
-                Ver detalhes da chamada
-              </button>
-              {historicoInstrutor.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {historicoCards.map((atividade, idx) => (
+                  <button
+                    key={`${atividade.turma_id}-${atividade.data}-${idx}`}
+                    type="button"
+                    onClick={() => abrirModalAtividade(atividade)}
+                    className="w-full rounded-xl border border-cor-secundaria/20 bg-cor-fundo/20 px-3 py-2 text-left hover:bg-cor-fundo/35 transition-colors"
+                  >
+                    <p className="text-xs text-cor-titulo font-semibold">
+                      {atividade.turma_nome} • {formatarDataDia(atividade.data)}
+                    </p>
+                    <p className="text-[11px] text-cor-texto/70">
+                      Atualizado em {formatarDataHora(atividade.ultima_atualizacao)}
+                    </p>
+                  </button>
+                ))}
+              </div>
+              {historicoInstrutor.length > 3 && (
                 <button
                   type="button"
                   onClick={() => {
@@ -546,16 +688,37 @@ const alunosOrdenados = useMemo(() => {
         </div>
       )}
 
-      {!isAdmin && (
+      {(!isAdmin || (isAdmin && turmaResumoAdmin)) && (
         <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] p-4 space-y-3 shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
           <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setMostrarResumoInstrutor((v) => !v)}
-              className="text-sm font-semibold text-cor-titulo underline"
-            >
-              {mostrarResumoInstrutor ? "Ocultar resumo geral" : "Resumo geral"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMostrarResumoInstrutor((v) => !v)}
+                className="text-sm font-semibold text-cor-titulo underline"
+              >
+                {mostrarResumoInstrutor ? "Ocultar resumo geral" : isAdmin ? "Resumo geral das turmas" : "Resumo geral"}
+              </button>
+              {isAdmin && (
+                <select
+                  value={
+                    filtroUltimaChamadaAdmin === "todas"
+                      ? "todas"
+                      : String(turmaResumoAdmin || "")
+                  }
+                  onChange={(e) => onChangeFiltroAdmin(e.target.value)}
+                  className="h-8 rounded-lg border border-cor-secundaria/35 bg-cor-fundo/25 px-2 text-xs"
+                  aria-label="Selecionar turma do resumo"
+                >
+                  <option value="todas">Todas as turmas</option>
+                  {turmasPermitidas.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {`Somente: ${t.nome || `Turma #${t.id}`}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
             {mostrarResumoInstrutor && (
               <div className="flex gap-1">
                 <button
@@ -618,7 +781,9 @@ const alunosOrdenados = useMemo(() => {
               </div>
 
               <div className="rounded-xl border border-cor-secundaria/20 bg-cor-fundo/25 p-3">
-                <p className="text-xs font-semibold text-cor-titulo mb-2">Desempenho por turma</p>
+                <p className="text-xs font-semibold text-cor-titulo mb-2">
+                  {isAdmin ? "Desempenho da turma selecionada" : "Desempenho por turma"}
+                </p>
                 <ul className="space-y-1">
                   {resumoAnoLetivo.turmas.slice(0, 4).map((turma) => (
                     <li key={turma.turma_id} className="text-xs flex items-center justify-between gap-2">

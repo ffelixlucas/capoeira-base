@@ -465,3 +465,53 @@ export async function atividadesPorTurmas({
 
   return rows;
 }
+
+/* --------------------------------------------------------- */
+/* Histórico de atividades de uma turma (admin)              */
+/* --------------------------------------------------------- */
+export async function atividadesDaTurma({
+  organizacaoId,
+  turmaId,
+  limit = 365,
+}: {
+  organizacaoId: number;
+  turmaId: number;
+  limit?: number;
+}) {
+  const limite = Math.min(365, Math.max(1, Number(limit) || 365));
+
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `
+    SELECT
+      CAST(
+        SUBSTRING_INDEX(
+          GROUP_CONCAT(p.created_by ORDER BY p.updated_at DESC SEPARATOR ','),
+          ',',
+          1
+        ) AS UNSIGNED
+      ) AS created_by,
+      SUBSTRING_INDEX(
+        GROUP_CONCAT(cb.nome ORDER BY p.updated_at DESC SEPARATOR ','),
+        ',',
+        1
+      ) AS nome_instrutor,
+      p.turma_id,
+      t.nome AS turma_nome,
+      p.data,
+      COUNT(*) AS total_registros,
+      SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
+      SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
+      MAX(p.updated_at) AS ultima_atualizacao
+    FROM presencas p
+    LEFT JOIN turmas t ON t.id = p.turma_id
+    LEFT JOIN equipe cb ON cb.id = p.created_by
+    WHERE p.organizacao_id = ? AND p.turma_id = ?
+    GROUP BY p.turma_id, t.nome, p.data
+    ORDER BY p.data DESC, MAX(p.updated_at) DESC
+    LIMIT ${limite}
+    `,
+    [organizacaoId, turmaId]
+  );
+
+  return rows;
+}

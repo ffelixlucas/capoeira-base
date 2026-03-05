@@ -1,4 +1,5 @@
 import * as repo from "./presencasRepository";
+import { logger } from "../../utils/logger";
 
 /* --------------------------------------------------------- */
 /* Tipos                                                     */
@@ -49,6 +50,7 @@ interface ResumoDiaParams {
 interface AtividadesRecentesParams {
   user: UserToken;
   limit?: number;
+  turma_id?: number;
 }
 
 /* --------------------------------------------------------- */
@@ -272,14 +274,57 @@ export async function resumoDia({ user, data }: ResumoDiaParams) {
 export async function atividadesRecentes({
   user,
   limit = 20,
+  turma_id,
 }: AtividadesRecentesParams) {
   const organizacaoId = user.organizacao_id;
   if (!organizacaoId) throw httpError("organização não encontrada", 401);
 
   if (isAdmin(user)) {
+    logger.debug("[presencasService] atividadesRecentes:admin", {
+      userId: user.id,
+      organizacaoId,
+      limit,
+      turma_id,
+    });
+
+    if (Number.isFinite(turma_id) && Number(turma_id) > 0) {
+      const rows = await repo.atividadesDaTurma({
+        organizacaoId,
+        turmaId: Number(turma_id),
+        limit,
+      });
+      logger.debug("[presencasService] atividadesRecentes:admin_turma_rows", {
+        turma_id,
+        totalRows: rows.length,
+        primeiraData: rows[0]?.data || null,
+      });
+
+      const historico = rows.map((r: any) => ({
+        created_by: r.created_by ? Number(r.created_by) : null,
+        nome_instrutor: r.nome_instrutor || "Instrutor",
+        turma_id: Number(r.turma_id),
+        turma_nome: r.turma_nome || `Turma #${r.turma_id}`,
+        data: r.data,
+        total_registros: Number(r.total_registros || 0),
+        presentes: Number(r.presentes || 0),
+        faltas: Number(r.faltas || 0),
+        ultima_atualizacao: r.ultima_atualizacao || null,
+      }));
+
+      return {
+        tipo: "admin_turma",
+        atividade: historico[0] || null,
+        historico,
+      };
+    }
+
     const rows = await repo.ultimasAtividadesPorInstrutor({
       organizacaoId,
       limit,
+    });
+    logger.debug("[presencasService] atividadesRecentes:admin_lista_rows", {
+      totalRows: rows.length,
+      primeiraData: rows[0]?.data || null,
     });
 
     const atividades = rows.map((r: any) => ({
@@ -307,6 +352,12 @@ export async function atividadesRecentes({
     userId: user.id,
     limit,
   });
+  logger.debug("[presencasService] atividadesRecentes:instrutor_base", {
+    userId: user.id,
+    limit,
+    ultimaExiste: Boolean(ultima),
+    historicoRows: historicoRows.length,
+  });
 
   let historicoFonte = historicoRows;
   if (historicoFonte.length === 0) {
@@ -316,6 +367,11 @@ export async function atividadesRecentes({
       organizacaoId,
       turmaIds,
       limit,
+    });
+    logger.debug("[presencasService] atividadesRecentes:instrutor_fallback_turmas", {
+      userId: user.id,
+      turmaIds,
+      historicoFallback: historicoFonte.length,
     });
   }
 
