@@ -1,6 +1,29 @@
 import api from './api';
 import logger from '../utils/logger';
 
+function normalizarValorDataAgenda(value) {
+  if (typeof value !== "string") return value;
+  const raw = value.trim();
+  if (!raw) return value;
+  // Backend da agenda retorna DATETIME como "...000Z", mas esse dado e salvo como horario local.
+  // Removemos o sufixo UTC artificial para evitar deslocamento de 3h na exibicao.
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.000Z$/.test(raw)) {
+    return raw.replace(/\.000Z$/, "");
+  }
+  return value;
+}
+
+function normalizarEventoAgenda(evento) {
+  if (!evento || typeof evento !== "object") return evento;
+  return {
+    ...evento,
+    data_inicio: normalizarValorDataAgenda(evento.data_inicio),
+    data_fim: normalizarValorDataAgenda(evento.data_fim),
+    inscricoes_ate: normalizarValorDataAgenda(evento.inscricoes_ate),
+    criado_em: normalizarValorDataAgenda(evento.criado_em),
+  };
+}
+
 /* ============================
    ROTAS PÚBLICAS (somente leitura)
 ============================ */
@@ -11,7 +34,8 @@ export async function listarEventosPublicos(slug) {
       : "/public/agenda";
 
     const { data } = await api.get(endpoint);
-    return data.data || [];
+    const eventos = Array.isArray(data.data) ? data.data : [];
+    return eventos.map(normalizarEventoAgenda);
   } catch (error) {
     console.error("[listarEventosPublicos] Erro ao buscar eventos:", error);
     return [];
@@ -23,8 +47,9 @@ export async function listarEventosPublicos(slug) {
 export const buscarEventoPublicoPorId = async (id, slug) => {
   try {
     const { data } = await api.get(`/public/agenda/${id}?slug=${slug}`);
-    console.log("[DEBUG AGENDA SERVICE] Evento público carregado:", data);
-    return data;
+    const normalizado = normalizarEventoAgenda(data);
+    console.log("[DEBUG AGENDA SERVICE] Evento público carregado:", normalizado);
+    return normalizado;
   } catch (error) {
     console.error("[AGENDA SERVICE] Erro ao buscar evento público:", error);
     throw error;
@@ -50,7 +75,8 @@ export async function listarEventos() {
     });
 
     logger.log("✅ Resposta bruta da API:", response);
-    return response.data?.data || [];
+    const eventos = Array.isArray(response.data?.data) ? response.data.data : [];
+    return eventos.map(normalizarEventoAgenda);
   } catch (error) {
     logger.warn("⚠️ Erro na chamada /api/agenda:", error.response?.data || error.message);
     throw error;
@@ -61,7 +87,7 @@ export async function listarEventos() {
 
 export const buscarEventoPorId = async (id) => {
   const response = await api.get(`/agenda/${id}`);
-  return response.data;
+  return normalizarEventoAgenda(response.data);
 };
 
 export const criarEvento = async (dados, token) => {
