@@ -14,20 +14,11 @@ import { useMinhasTurmas } from "../hooks/useMinhasTurmas";
 import api from "../services/api";
 import { RefreshCcw, UserPlus, Bell } from "lucide-react";
 
-import ExportarPDFModal from "../components/shared/ExportarPDFModal";
-import {
-  exportarListaExcelAlunos,
-  exportarRelatorioExcelAlunos,
-} from "../utils/relatorioAlunosExcel";
-// (PDF ficará pronto ainda — deixamos placeholders aqui)
-import {
-  exportarListaPDFAlunos,
-  exportarRelatorioPDFAlunos,
-} from "../utils/relatorioAlunosPDF";
-
 import ModalSelecionarRelatorio from "../components/relatorios/ModalSelecionarRelatorio";
 import ModalRelatorioGeralAlunos from "../components/relatorios/ModalRelatorioGeralAlunos";
 import ModalRelatorioPresencasTurma from "../components/relatorios/ModalRelatorioPresencasTurma";
+import ModalRelatorioIndividualAluno from "../components/relatorios/ModalRelatorioIndividualAluno";
+import ModalRelatorioFaltasCronicas from "../components/relatorios/ModalRelatorioFaltasCronicas";
 
 function Alunos() {
   const { token, usuario, carregando: carregandoAuth } = useAuth(); // 👈 pega estado global do Auth
@@ -61,6 +52,9 @@ function Alunos() {
   const [mostrarRelatorioGeral, setMostrarRelatorioGeral] = useState(false);
   const [mostrarRelatorioPresencas, setMostrarRelatorioPresencas] =
     useState(false);
+  const [mostrarRelatorioIndividual, setMostrarRelatorioIndividual] =
+    useState(false);
+  const [mostrarRelatorioFaltas, setMostrarRelatorioFaltas] = useState(false);
 
   useEffect(() => {
     if (usuario?.roles?.includes("admin")) {
@@ -346,6 +340,14 @@ function Alunos() {
             setTurmaSelecionada("todos"); // 👈 força "todas" ao abrir
             setMostrarRelatorioPresencas(true);
           }
+
+          if (tipo === "individual") {
+            setMostrarRelatorioIndividual(true);
+          }
+
+          if (tipo === "faltas") {
+            setMostrarRelatorioFaltas(true);
+          }
         }}
       />
 
@@ -365,6 +367,24 @@ function Alunos() {
         turmas={turmas}
         turmaSelecionada={turmaSelecionada}
         onTrocarTurma={(id) => setTurmaSelecionada(id)}
+      />
+
+      <ModalRelatorioIndividualAluno
+        aberto={mostrarRelatorioIndividual}
+        onClose={() => setMostrarRelatorioIndividual(false)}
+        alunos={alunosFiltrados}
+        turmas={turmas}
+        turmaSelecionada={turmaSelecionada}
+        onTrocarTurma={setTurmaSelecionada}
+      />
+
+      <ModalRelatorioFaltasCronicas
+        aberto={mostrarRelatorioFaltas}
+        onClose={() => setMostrarRelatorioFaltas(false)}
+        alunos={alunosFiltrados}
+        turmas={turmas}
+        turmaSelecionada={turmaSelecionada}
+        onTrocarTurma={setTurmaSelecionada}
       />
     </div>
   );

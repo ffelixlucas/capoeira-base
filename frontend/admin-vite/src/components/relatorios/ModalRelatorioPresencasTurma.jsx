@@ -3,6 +3,13 @@ import api from "../../services/api";
 import { logger } from "../../utils/logger";
 import { exportarRelatorioPresencasPDF } from "../../utils/relatorioPresencasPDF";
 
+function formatarDataLocalISO(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
 export default function ModalRelatorioPresencasTurma({
   aberto,
   onClose,
@@ -23,7 +30,7 @@ export default function ModalRelatorioPresencasTurma({
   // 🔥 PERÍODO — padrão = Ano atual
   const [tipoPeriodo, setTipoPeriodo] = useState("ano");
   const anoAtual = new Date().getFullYear();
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = formatarDataLocalISO(new Date());
 
   const [inicio, setInicio] = useState(`${anoAtual}-01-01`);
   const [fim, setFim] = useState(hoje);
@@ -43,7 +50,7 @@ export default function ModalRelatorioPresencasTurma({
     if (tipoPeriodo === "ano") {
       const ano = new Date().getFullYear();
       setInicio(`${ano}-01-01`);
-      setFim(new Date().toISOString().slice(0, 10));
+      setFim(formatarDataLocalISO(new Date()));
 
       logger.log("[ModalPresenca] Período → Ano atual:", `${ano}-01-01`, hoje);
     }
@@ -54,8 +61,7 @@ export default function ModalRelatorioPresencasTurma({
       const mes = agora.getMonth() + 1;
 
       const primeiro = `${ano}-${String(mes).padStart(2, "0")}-01`;
-      const ultimoDia = new Date(ano, mes, 0).getDate();
-      const ultimo = `${ano}-${String(mes).padStart(2, "0")}-${ultimoDia}`;
+      const ultimo = formatarDataLocalISO(agora);
 
       setInicio(primeiro);
       setFim(ultimo);
