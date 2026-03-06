@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AgendaItem from "./Item";
 
-function CarrosselEventos({ eventos, onEditar, onExcluir }) {
+function CarrosselEventos({ eventos, onEditar, onExcluir, focusedEventId = null }) {
   const trackRef = useRef(null);
   const [canGoPrev, setCanGoPrev] = useState(false);
   const [canGoNext, setCanGoNext] = useState(false);
@@ -69,6 +69,18 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
     };
   }, [eventosOrdenados.length]);
 
+  useEffect(() => {
+    if (!focusedEventId) return;
+    const track = trackRef.current;
+    if (!track) return;
+
+    const alvo = track.querySelector(`[data-event-id="${focusedEventId}"]`);
+    if (!alvo) return;
+
+    const left = alvo.offsetLeft - Math.max(0, Math.round((track.clientWidth - alvo.clientWidth) / 2));
+    track.scrollTo({ left, behavior: "smooth" });
+  }, [focusedEventId, eventosOrdenados.length]);
+
   const scrollByStep = (direction) => {
     const track = trackRef.current;
     if (!track) return;
@@ -94,7 +106,12 @@ function CarrosselEventos({ eventos, onEditar, onExcluir }) {
           <div
             key={evento.id}
             data-agenda-card
-            className="snap-start shrink-0 basis-full sm:basis-[72%] lg:basis-[48%] 2xl:basis-[32%] h-full"
+            data-event-id={evento.id}
+            className={`snap-start shrink-0 basis-full sm:basis-[72%] lg:basis-[48%] 2xl:basis-[32%] h-full ${
+              Number(focusedEventId) === Number(evento.id)
+                ? "rounded-2xl ring-2 ring-[#f4cf4e]/60 ring-offset-2 ring-offset-transparent"
+                : ""
+            }`}
           >
             <AgendaItem
               evento={evento}

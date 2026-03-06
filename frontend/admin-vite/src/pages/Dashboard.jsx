@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listarEventos } from "../services/agendaService";
 import { listarImagens } from "../services/galeriaService";
 import { listarLembretes } from "../services/lembretesService";
@@ -24,20 +24,41 @@ import {
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import ModalLembretes from "../components/lembretes/ModalLembretes";
+import InfoTip from "../components/ui/InfoTip";
 import logo from "../assets/images/logo.png";
-import { listarAlunos } from "../services/alunoService";
-import { getMinhasTurmas } from "../services/turmaService";
+import {
+  listarAlunos,
+  solicitarTransferenciaTurma,
+  desfazerTransferencia,
+  listarAuditoriaAtividades,
+} from "../services/alunoService";
+import { getMinhasTurmas, listarTurmas } from "../services/turmaService";
 import { logger } from "../utils/logger";
+import { TZ_SAO_PAULO, formatDateTime, parseDateTime } from "../utils/datetime";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
   const { temPapel } = usePermissao();
+  const isAdmin = temPapel(["admin"]);
   const [qtdEventos, setQtdEventos] = useState(0);
   const [abrirModal, setAbrirModal] = useState(false);
   const [qtdAlunos, setQtdAlunos] = useState(0);
   const [minhasTurmas, setMinhasTurmas] = useState([]);
   const [temTurmaResponsavel, setTemTurmaResponsavel] = useState(false);
+  const [resumoTurmasInstrutor, setResumoTurmasInstrutor] = useState([]);
+  const [resumoTurmasKey, setResumoTurmasKey] = useState(0);
+  const [turmaOrigemAjuste, setTurmaOrigemAjuste] = useState("");
+  const [turmaDestinoAjuste, setTurmaDestinoAjuste] = useState("");
+  const [alunoSelecionadoAjuste, setAlunoSelecionadoAjuste] = useState("");
+  const [alunosTurmaOrigem, setAlunosTurmaOrigem] = useState([]);
+  const [carregandoAlunosAjuste, setCarregandoAlunosAjuste] = useState(false);
+  const [salvandoAjusteTurma, setSalvandoAjusteTurma] = useState(false);
+  const [turmasDestinoDisponiveis, setTurmasDestinoDisponiveis] = useState([]);
+  const [noticiasResumo, setNoticiasResumo] = useState([]);
+  const [abrirModalHistoricoSistema, setAbrirModalHistoricoSistema] = useState(false);
+  const [auditoriaAtividades, setAuditoriaAtividades] = useState([]);
+  const [auditoriaRefreshKey, setAuditoriaRefreshKey] = useState(0);
 
   useEffect(() => {
     let ativo = true;
@@ -58,6 +79,99 @@ export default function Dashboard() {
       ativo = false;
     };
   }, []);
+
+  useEffect(() => {
+    let ativo = true;
+    async function carregarResumoTurmas() {
+      if (!Array.isArray(minhasTurmas) || minhasTurmas.length === 0) {
+        setResumoTurmasInstrutor([]);
+        return;
+      }
+      try {
+        const respostas = await Promise.all(
+          minhasTurmas.map(async (turma) => {
+            const alunos = await listarAlunos(turma.id);
+            return {
+              id: turma.id,
+              nome: turma.nome || `Turma #${turma.id}`,
+              totalAlunos: Array.isArray(alunos) ? alunos.length : 0,
+            };
+          })
+        );
+        if (!ativo) return;
+        setResumoTurmasInstrutor(respostas);
+      } catch (error) {
+        logger.error("Erro ao montar resumo por turma:", error);
+        if (ativo) setResumoTurmasInstrutor([]);
+      }
+    }
+    carregarResumoTurmas();
+    return () => {
+      ativo = false;
+    };
+  }, [minhasTurmas, resumoTurmasKey]);
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      try {
+        const turmas = await listarTurmas();
+        if (!ativo) return;
+        setTurmasDestinoDisponiveis(Array.isArray(turmas) ? turmas : []);
+      } catch (error) {
+        logger.error("Erro ao listar turmas para destino de transferência:", error);
+        if (ativo) setTurmasDestinoDisponiveis([]);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      if (!isAdmin) return;
+      try {
+        const itens = await listarAuditoriaAtividades(200);
+        if (!ativo) return;
+        setAuditoriaAtividades(Array.isArray(itens) ? itens : []);
+      } catch (error) {
+        logger.error("Erro ao carregar auditoria de atividades:", error);
+        if (ativo) setAuditoriaAtividades([]);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, [auditoriaRefreshKey, isAdmin]);
+
+  useEffect(() => {
+    let ativo = true;
+    async function carregarAlunosDaTurmaOrigem() {
+      if (!turmaOrigemAjuste) {
+        setAlunosTurmaOrigem([]);
+        setAlunoSelecionadoAjuste("");
+        return;
+      }
+
+      setCarregandoAlunosAjuste(true);
+      try {
+        const alunos = await listarAlunos(Number(turmaOrigemAjuste));
+        if (!ativo) return;
+        setAlunosTurmaOrigem(Array.isArray(alunos) ? alunos : []);
+      } catch (error) {
+        logger.error("Erro ao carregar alunos da turma para ajuste rápido:", error);
+        if (ativo) setAlunosTurmaOrigem([]);
+      } finally {
+        if (ativo) setCarregandoAlunosAjuste(false);
+      }
+    }
+    carregarAlunosDaTurmaOrigem();
+    return () => {
+      ativo = false;
+    };
+  }, [turmaOrigemAjuste, resumoTurmasKey]);
 
   useEffect(() => {
     const fetchAlunos = async () => {
@@ -122,7 +236,9 @@ export default function Dashboard() {
     const fetchFotos = async () => {
       try {
         const imagens = await listarImagens();
-        setQtdFotos(imagens.length);
+        const lista = Array.isArray(imagens) ? imagens : [];
+        setQtdFotos(lista.length);
+        setNoticiasResumo(lista);
       } catch (error) {
         logger.error("Erro ao buscar fotos:", error);
       }
@@ -186,6 +302,196 @@ export default function Dashboard() {
     return hora === "00:00" ? data : `${data} • ${hora}`;
   };
 
+  const abrirTelaChamada = () => {
+    if (minhasTurmas.length === 1) {
+      navigate(`/presencas?turma=${minhasTurmas[0].id}`);
+      return;
+    }
+    navigate("/presencas");
+  };
+
+  const formatarDataAtividade = (value) => {
+    const texto = formatDateTime(
+      value,
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+      "utc"
+    );
+    return texto || "Sem data";
+  };
+
+  const parseDataAuditoria = (value) => {
+    return parseDateTime(value, "utc");
+  };
+
+  const atividadesSistema = useMemo(() => {
+    return (auditoriaAtividades || [])
+      .map((item) => ({
+      id: `aud-${item.id}`,
+      tipo: item.entidade || "sistema",
+      entidadeId: item.entidade_id || null,
+      transferenciaId: item.metadata?.transferencia_id || null,
+      transferenciaStatus: item.metadata?.status || null,
+      acao: item.acao || null,
+      quando: item.created_at,
+      descricao: item.descricao || "Atividade registrada",
+      usuarioNome: item.usuario_nome || null,
+      }))
+      .filter((item) => parseDataAuditoria(item.quando))
+      .sort(
+        (a, b) =>
+          parseDataAuditoria(b.quando).getTime() - parseDataAuditoria(a.quando).getTime()
+      );
+  }, [auditoriaAtividades]);
+
+  const alteracoesMesAtual = useMemo(() => {
+    const agora = new Date();
+    const [mesAtual, anoAtual] = [
+      Number(
+        new Intl.DateTimeFormat("pt-BR", {
+          timeZone: TZ_SAO_PAULO,
+          month: "2-digit",
+        }).format(agora)
+      ),
+      Number(
+        new Intl.DateTimeFormat("pt-BR", {
+          timeZone: TZ_SAO_PAULO,
+          year: "numeric",
+        }).format(agora)
+      ),
+    ];
+    return atividadesSistema.filter((item) => {
+      const data = parseDataAuditoria(item.quando);
+      if (!data) return false;
+
+      const mesItem = Number(
+        new Intl.DateTimeFormat("pt-BR", {
+          timeZone: TZ_SAO_PAULO,
+          month: "2-digit",
+        }).format(data)
+      );
+      const anoItem = Number(
+        new Intl.DateTimeFormat("pt-BR", {
+          timeZone: TZ_SAO_PAULO,
+          year: "numeric",
+        }).format(data)
+      );
+      return mesItem === mesAtual && anoItem === anoAtual;
+    }).length;
+  }, [atividadesSistema]);
+
+  const obterDestinoAtividade = (item) => {
+    const entidadeIdNum = Number(item?.entidadeId);
+    const transferenciaIdNum = Number(item?.transferenciaId);
+
+    if (item?.tipo === "agenda" && Number.isFinite(entidadeIdNum) && entidadeIdNum > 0) {
+      return `/agenda?refEvento=${entidadeIdNum}`;
+    }
+    if (item?.tipo === "noticia" && Number.isFinite(entidadeIdNum) && entidadeIdNum > 0) {
+      return `/noticias?refNoticia=${entidadeIdNum}`;
+    }
+    if (
+      item?.tipo === "transferencia_turma" &&
+      Number.isFinite(transferenciaIdNum) &&
+      transferenciaIdNum > 0
+    ) {
+      return "/alunos";
+    }
+    return null;
+  };
+
+  const abrirReferenciaAtividade = (item) => {
+    const destino = obterDestinoAtividade(item);
+    if (!destino) return;
+    navigate(destino);
+  };
+
+  const handleDesfazerTransferencia = async (atividade) => {
+    const transferenciaId = Number(atividade?.transferenciaId);
+    if (!transferenciaId) return;
+    const status = String(atividade?.transferenciaStatus || "");
+    const ehPendente = status === "pendente";
+
+    const confirmar = window.confirm(
+      ehPendente
+        ? "Confirme que deseja cancelar esta transferência pendente."
+        : "Confirme que deseja desfazer esta transferência.\n\nEsta ação moverá o aluno de volta para a turma de origem."
+    );
+    if (!confirmar) return;
+
+    const texto = window.prompt('Digite DESFAZER para confirmar a operação:');
+    if (texto !== "DESFAZER") {
+      window.alert("Confirmação inválida. Operação cancelada.");
+      return;
+    }
+
+    try {
+      await desfazerTransferencia(transferenciaId);
+      window.alert(
+        ehPendente
+          ? "Transferência pendente cancelada com sucesso."
+          : "Transferência desfeita com sucesso."
+      );
+      setResumoTurmasKey((prev) => prev + 1);
+      setAuditoriaRefreshKey((prev) => prev + 1);
+    } catch (error) {
+      logger.error("Erro ao desfazer transferência:", error);
+      window.alert(error?.response?.data?.erro || "Não foi possível desfazer a transferência.");
+    }
+  };
+
+  const salvarAjusteRapidoTurma = async () => {
+    if (!turmaOrigemAjuste || !alunoSelecionadoAjuste || !turmaDestinoAjuste) {
+      window.alert("Selecione turma de origem, aluno e nova turma.");
+      return;
+    }
+    if (Number(turmaOrigemAjuste) === Number(turmaDestinoAjuste)) {
+      window.alert("A nova turma precisa ser diferente da turma atual.");
+      return;
+    }
+
+    const aluno = alunosTurmaOrigem.find(
+      (item) => Number(item.id) === Number(alunoSelecionadoAjuste)
+    );
+    const turmaOrigem = minhasTurmas.find(
+      (item) => Number(item.id) === Number(turmaOrigemAjuste)
+    );
+    const turmaDestino = minhasTurmas.find(
+      (item) => Number(item.id) === Number(turmaDestinoAjuste)
+    );
+
+    const confirmar = window.confirm(
+      `Confirmar transferência?\n\nAluno: ${aluno?.nome || "Sem nome"}\nDe: ${
+        turmaOrigem?.nome || "Turma origem"
+      }\nPara: ${turmaDestino?.nome || "Turma destino"}`
+    );
+    if (!confirmar) return;
+
+    try {
+      setSalvandoAjusteTurma(true);
+      await solicitarTransferenciaTurma(
+        Number(alunoSelecionadoAjuste),
+        Number(turmaOrigemAjuste),
+        Number(turmaDestinoAjuste)
+      );
+      window.alert("Transferência solicitada. A turma destino precisa confirmar.");
+      setAlunoSelecionadoAjuste("");
+      setTurmaDestinoAjuste("");
+      setResumoTurmasKey((prev) => prev + 1);
+      setAuditoriaRefreshKey((prev) => prev + 1);
+    } catch (error) {
+      logger.error("Erro ao executar ajuste rápido de turma:", error);
+      window.alert(error?.response?.data?.erro || "Não foi possível solicitar a transferência.");
+    } finally {
+      setSalvandoAjusteTurma(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-6 pb-28">
@@ -217,19 +523,89 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {temPapel(["admin"]) && (
+          <div className="rounded-2xl p-4 border border-cor-secundaria/30 bg-cor-card/70">
+            <InfoTip type="info" className="mb-2 !py-2 !px-3 text-xs">
+              Auditoria de atividades no sistema.
+            </InfoTip>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h3 className="text-sm font-semibold text-cor-titulo">
+                Controle do sistema
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] rounded-full border border-cor-secundaria/35 px-2 py-1 text-cor-texto/80">
+                  Alterações: {alteracoesMesAtual} no mês • {atividadesSistema.length} totais
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAbrirModalHistoricoSistema(true)}
+                  className="text-xs text-cor-texto/70 hover:text-cor-primaria"
+                >
+                  Ver tudo
+                </button>
+              </div>
+            </div>
+            {atividadesSistema.length === 0 ? (
+              <p className="text-xs text-cor-texto/70">
+                Nenhuma atividade registrada ainda.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {atividadesSistema.slice(0, 3).map((item) => (
+                  <li
+                    key={item.id}
+                    onClick={() => abrirReferenciaAtividade(item)}
+                    className={`rounded-lg border border-cor-secundaria/20 bg-cor-secundaria/10 px-3 py-2 ${
+                      obterDestinoAtividade(item) ? "cursor-pointer hover:bg-cor-secundaria/20" : ""
+                    }`}
+                  >
+                    <p className="text-xs text-cor-texto/90">{item.descricao}</p>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <p className="text-[11px] text-cor-texto/65">
+                        {item.usuarioNome ? `${item.usuarioNome} • ` : ""}
+                        {formatarDataAtividade(item.quando)}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            item.transferenciaStatus === "confirmada"
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40"
+                              : item.transferenciaStatus === "cancelada"
+                              ? "bg-rose-500/20 text-rose-300 border border-rose-400/40"
+                              : "bg-amber-500/20 text-amber-300 border border-amber-400/40"
+                          }`}
+                        >
+                          {item.transferenciaStatus
+                            ? item.transferenciaStatus.toUpperCase()
+                            : item.tipo.toUpperCase()}
+                        </span>
+                        {item.transferenciaId &&
+                          ["confirmada", "pendente"].includes(item.transferenciaStatus) && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleDesfazerTransferencia(item);
+                              }}
+                              className="rounded-md border border-rose-300/40 bg-rose-300/15 px-2 py-1 text-[11px] font-semibold text-rose-100 hover:bg-rose-300/25"
+                            >
+                              {item.transferenciaStatus === "pendente" ? "Cancelar" : "Desfazer"}
+                            </button>
+                          )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {/* Ação Rápida: Chamada (outline, diferente dos cards) */}
         {(temPapel(["instrutor"]) ||
           (temPapel(["admin"]) && temTurmaResponsavel)) && (
           <button
-            onClick={() => {
-              if (minhasTurmas.length === 1) {
-                // vai direto para a turma do usuário
-                navigate(`/presencas?turma=${minhasTurmas[0].id}`);
-              } else {
-                // deixa escolher na página de presenças
-                navigate("/presencas");
-              }
-            }}
+            onClick={abrirTelaChamada}
             aria-label="Abrir chamada para tirar faltas"
             className="w-full rounded-xl border-2 border-dashed border-cor-primaria/80 
                bg-transparent text-cor-primaria px-4 py-3
@@ -436,7 +812,191 @@ export default function Dashboard() {
             </p>
           )}
         </div>
+
+        {(temPapel(["instrutor"]) ||
+          (temPapel(["admin"]) && temTurmaResponsavel)) && (
+          <div className="rounded-2xl p-4 border border-sky-300/45 bg-gradient-to-r from-sky-500/15 to-sky-300/10 space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-semibold text-sky-100">
+                  Ajuste rapido de turma
+                </h3>
+                <p className="text-xs text-sky-50/85 mt-0.5">
+                  Muda somente a turma do aluno com confirmação. Sem abrir edição completa.
+                </p>
+              </div>
+              <span className="text-[11px] rounded-full border border-sky-300/45 px-2 py-1 text-sky-100">
+                {minhasTurmas.length} turma{minhasTurmas.length === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="rounded-lg border border-sky-300/35 bg-cor-fundo/20 p-2">
+                <p className="text-sky-50/80">Turmas</p>
+                <p className="text-sm font-bold text-sky-100">{minhasTurmas.length}</p>
+              </div>
+              <div className="rounded-lg border border-sky-300/35 bg-cor-fundo/20 p-2">
+                <p className="text-sky-50/80">Lembretes</p>
+                <p className="text-sm font-bold text-sky-100">{lembretes.length}</p>
+              </div>
+              <div className="rounded-lg border border-sky-300/35 bg-cor-fundo/20 p-2">
+                <p className="text-sky-50/80">Alunos</p>
+                <p className="text-sm font-bold text-sky-100">
+                  {resumoTurmasInstrutor.reduce((acc, turma) => acc + Number(turma.totalAlunos || 0), 0)}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-sky-300/35 bg-cor-fundo/20 p-3">
+              <p className="text-xs font-semibold text-sky-100 mb-2">Transferência segura</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <label className="text-xs text-sky-50/85">
+                  Turma atual
+                  <select
+                    value={turmaOrigemAjuste}
+                    onChange={(e) => {
+                      setTurmaOrigemAjuste(e.target.value);
+                      setAlunoSelecionadoAjuste("");
+                    }}
+                    className="mt-1 w-full rounded-lg border border-sky-300/35 bg-cor-fundo/30 px-2 py-2 text-xs text-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
+                  >
+                    <option value="">Selecione</option>
+                    {minhasTurmas.map((turma) => (
+                      <option key={turma.id} value={turma.id}>
+                        {turma.nome || `Turma #${turma.id}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-sky-50/85">
+                  Aluno
+                  <select
+                    value={alunoSelecionadoAjuste}
+                    onChange={(e) => setAlunoSelecionadoAjuste(e.target.value)}
+                    disabled={!turmaOrigemAjuste || carregandoAlunosAjuste}
+                    className="mt-1 w-full rounded-lg border border-sky-300/35 bg-cor-fundo/30 px-2 py-2 text-xs text-sky-50 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
+                  >
+                    <option value="">
+                      {carregandoAlunosAjuste ? "Carregando..." : "Selecione"}
+                    </option>
+                    {alunosTurmaOrigem.map((aluno) => (
+                      <option key={aluno.id} value={aluno.id}>
+                        {aluno.apelido || aluno.nome || `Aluno #${aluno.id}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-sky-50/85">
+                  Nova turma
+                  <select
+                    value={turmaDestinoAjuste}
+                    onChange={(e) => setTurmaDestinoAjuste(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-sky-300/35 bg-cor-fundo/30 px-2 py-2 text-xs text-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
+                  >
+                    <option value="">Selecione</option>
+                    {turmasDestinoDisponiveis
+                      .filter((turma) => Number(turma.id) !== Number(turmaOrigemAjuste))
+                      .map((turma) => (
+                        <option key={turma.id} value={turma.id}>
+                          {turma.nome || `Turma #${turma.id}`}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="text-[11px] text-sky-50/70">
+                  Fluxo seguro: cria solicitação e aguarda confirmação da turma destino.
+                </p>
+                <button
+                  type="button"
+                  onClick={salvarAjusteRapidoTurma}
+                  disabled={salvandoAjusteTurma}
+                  className="rounded-lg border border-sky-300/40 bg-sky-300/20 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-300/30 disabled:opacity-60 transition-colors"
+                >
+                  {salvandoAjusteTurma ? "Salvando..." : "Solicitar transferência"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      {abrirModalHistoricoSistema && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Fechar histórico do sistema"
+            className="absolute inset-0 bg-black/75 backdrop-blur-[2px]"
+            onClick={() => setAbrirModalHistoricoSistema(false)}
+          />
+          <div className="relative z-[71] w-full max-w-2xl rounded-2xl border border-[#2f4f44] bg-[#0b1b17] p-4 max-h-[80vh] overflow-auto shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h3 className="text-base font-semibold text-[#f3f7f5]">Histórico completo do sistema</h3>
+              <button
+                type="button"
+                onClick={() => setAbrirModalHistoricoSistema(false)}
+                className="rounded-lg border border-[#3e6659] px-3 py-1.5 text-xs text-[#d2ddd8] hover:bg-[#123127]"
+              >
+                Fechar
+              </button>
+            </div>
+            {atividadesSistema.length === 0 ? (
+              <p className="text-sm text-[#b8c9c2]">Nenhuma atividade registrada.</p>
+            ) : (
+              <ul className="space-y-2">
+                {atividadesSistema.map((item) => (
+                  <li
+                    key={item.id}
+                    onClick={() => abrirReferenciaAtividade(item)}
+                    className={`rounded-lg border border-[#2e4a40] bg-[#102721] px-3 py-2 ${
+                      obterDestinoAtividade(item) ? "cursor-pointer hover:bg-[#143228]" : ""
+                    }`}
+                  >
+                    <p className="text-sm text-[#e4ece9]">{item.descricao}</p>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <p className="text-xs text-[#9db2aa]">
+                        {item.usuarioNome ? `${item.usuarioNome} • ` : ""}
+                        {formatarDataAtividade(item.quando)}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            item.transferenciaStatus === "confirmada"
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40"
+                              : item.transferenciaStatus === "cancelada"
+                              ? "bg-rose-500/20 text-rose-300 border border-rose-400/40"
+                              : "bg-amber-500/20 text-amber-300 border border-amber-400/40"
+                          }`}
+                        >
+                          {item.transferenciaStatus
+                            ? item.transferenciaStatus.toUpperCase()
+                            : item.tipo.toUpperCase()}
+                        </span>
+                        {item.transferenciaId &&
+                          ["confirmada", "pendente"].includes(item.transferenciaStatus) && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleDesfazerTransferencia(item);
+                              }}
+                              className="rounded-md border border-rose-300/40 bg-rose-300/15 px-2 py-1 text-[11px] font-semibold text-rose-100 hover:bg-rose-300/25"
+                            >
+                              {item.transferenciaStatus === "pendente" ? "Cancelar" : "Desfazer"}
+                            </button>
+                          )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
       </div>
+
       <ModalLembretes
         aberto={abrirModal}
         aoFechar={() => {

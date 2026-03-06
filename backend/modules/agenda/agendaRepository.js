@@ -23,12 +23,16 @@ async function listarEventos(organizacaoId, status, situacao) {
       a.configuracoes, a.status,
       DATE_FORMAT(a.criado_em, '%Y-%m-%dT%H:%i:%s.000Z') AS criado_em,
       a.criado_por, a.possui_camiseta,
+      criador.nome AS criado_por_nome,
       COALESCE(stats.total_inscritos, 0) AS total_inscritos,
       COALESCE(stats.total_pendentes, 0) AS total_pendentes,
       COALESCE(stats.total_extornados, 0) AS total_extornados,
       COALESCE(stats.valor_bruto_total, 0) AS valor_bruto_total,
       COALESCE(stats.valor_liquido_total, 0) AS valor_liquido_total
     FROM agenda a
+    LEFT JOIN equipe criador
+      ON criador.id = a.criado_por
+      AND criador.organizacao_id = a.organizacao_id
     LEFT JOIN (
       SELECT
         ie.evento_id,

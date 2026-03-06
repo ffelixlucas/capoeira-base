@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAgenda } from "../hooks/useAgenda";
 import {
   ModalEvento as ModalEvento,
@@ -8,9 +8,13 @@ import {
 
 function Agenda() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { eventos, carregarEventos, carregando } = useAgenda();
   const [eventoEditando, setEventoEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const refEventoId = Number(searchParams.get("refEvento"));
+  const focoEventoId =
+    Number.isFinite(refEventoId) && refEventoId > 0 ? refEventoId : null;
 
   const abrirNovoEvento = () => {
     setEventoEditando(null);
@@ -78,6 +82,7 @@ function Agenda() {
           eventos={eventos}
           onEditar={abrirEdicaoEvento}
           onExcluir={carregarEventos}
+          focusedEventId={focoEventoId}
         />
       )}
 

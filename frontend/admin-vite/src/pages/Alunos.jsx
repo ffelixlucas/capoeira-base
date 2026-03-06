@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useLocation } from "react-router-dom";
 
 import AlunoList from "../components/alunos/AlunoList";
 import AlunoForm from "../components/alunos/AlunoForm";
@@ -30,6 +31,7 @@ import ModalRelatorioPresencasTurma from "../components/relatorios/ModalRelatori
 
 function Alunos() {
   const { token, usuario, carregando: carregandoAuth } = useAuth(); // 👈 pega estado global do Auth
+  const location = useLocation();
 
   const [mostrarForm, setMostrarForm] = useState(false);
   const [alunoSelecionado, setAlunoSelecionado] = useState(null);
@@ -53,6 +55,7 @@ function Alunos() {
   const [contadorPendentes, setContadorPendentes] = useState(0);
   const [mostrarPendentes, setMostrarPendentes] = useState(false);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
+  const [mostrarGuiaTrocaTurma, setMostrarGuiaTrocaTurma] = useState(false);
 
   const [mostrarModalRelatorios, setMostrarModalRelatorios] = useState(false);
   const [mostrarRelatorioGeral, setMostrarRelatorioGeral] = useState(false);
@@ -67,6 +70,23 @@ function Alunos() {
         .catch(() => toast.error("Erro ao carregar pré-matrículas pendentes"));
     }
   }, [usuario]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const acao = params.get("acao");
+    const turmaFromQuery = params.get("turma");
+
+    if (acao === "trocar-turma") {
+      setMostrarGuiaTrocaTurma(true);
+    }
+
+    if (turmaFromQuery && turmas.length > 0) {
+      const existe = turmas.some((t) => String(t.id) === String(turmaFromQuery));
+      if (existe) {
+        setTurmaSelecionada(String(turmaFromQuery));
+      }
+    }
+  }, [location.search, turmas, setTurmaSelecionada]);
 
   async function atualizarContadorPendentes() {
     try {
@@ -149,6 +169,37 @@ function Alunos() {
 
   return (
     <div className="p-0 m-0 w-full">
+      {mostrarGuiaTrocaTurma && (
+        <div className="mb-3 rounded-xl border border-amber-300/40 bg-amber-100/10 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-200">
+                Guia rápido: corrigir turma de aluno
+              </p>
+              <p className="text-xs text-amber-100/85 mt-1">
+                1. Encontre o aluno na lista.
+              </p>
+              <p className="text-xs text-amber-100/85">
+                2. Clique em <strong>Editar</strong>.
+              </p>
+              <p className="text-xs text-amber-100/85">
+                3. Altere o campo <strong>Turma</strong> e salve.
+              </p>
+              <p className="text-xs text-amber-100/85">
+                4. Volte na Chamada para confirmar a turma correta.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMostrarGuiaTrocaTurma(false)}
+              className="text-xs rounded-lg border border-amber-300/40 px-2 py-1 text-amber-100 hover:bg-amber-200/10 transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-3">
         <div className="w-full sm:w-auto text-left">
           <label className="block text-sm font-medium text-gray-700 mb-1">

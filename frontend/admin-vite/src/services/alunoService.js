@@ -39,3 +39,47 @@ export async function trocarTurma(id, novaTurmaId) {
   });
   return res.data;
 }
+
+export async function solicitarTransferenciaTurma(
+  alunoId,
+  turmaOrigemId,
+  turmaDestinoId,
+  observacao = null
+) {
+  const res = await api.post(`/alunos/${alunoId}/solicitar-transferencia`, {
+    turma_origem_id: turmaOrigemId,
+    turma_destino_id: turmaDestinoId,
+    observacao,
+  });
+  return res.data;
+}
+
+export async function listarTransferenciasPendentes(turmaId) {
+  const params = turmaId ? { turma_id: turmaId } : undefined;
+  const res = await api.get("/alunos/transferencias/pendentes", { params });
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+export async function listarTransferenciasRecentes(limit = 10) {
+  const res = await api.get("/alunos/transferencias/recentes", {
+    params: { limit },
+  });
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+export async function confirmarTransferencia(transferenciaId) {
+  const res = await api.post(`/alunos/transferencias/${transferenciaId}/confirmar`);
+  return res.data;
+}
+
+export async function desfazerTransferencia(transferenciaId) {
+  const res = await api.post(`/alunos/transferencias/${transferenciaId}/desfazer`);
+  return res.data;
+}
+
+export async function listarAuditoriaAtividades(limit = 120) {
+  const res = await api.get("/alunos/auditoria/atividades", {
+    params: { limit },
+  });
+  return Array.isArray(res.data) ? res.data : [];
+}

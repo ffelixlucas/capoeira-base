@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useGaleria } from "../hooks/useGaleria";
 
 function formatarData(value) {
@@ -22,6 +23,7 @@ function extrairResumo(texto = "") {
 }
 
 function Galeria() {
+  const [searchParams] = useSearchParams();
   const {
     arquivo,
     setArquivo,
@@ -41,6 +43,11 @@ function Galeria() {
   const [tituloEdicao, setTituloEdicao] = useState("");
   const [conteudoEdicao, setConteudoEdicao] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
+  const [noticiaDestacadaId, setNoticiaDestacadaId] = useState(null);
+
+  const refNoticiaIdRaw = Number(searchParams.get("refNoticia"));
+  const refNoticiaId =
+    Number.isFinite(refNoticiaIdRaw) && refNoticiaIdRaw > 0 ? refNoticiaIdRaw : null;
 
   useEffect(() => {
     if (!arquivo) {
@@ -53,6 +60,16 @@ function Galeria() {
 
     return () => URL.revokeObjectURL(objectUrl);
   }, [arquivo]);
+
+  useEffect(() => {
+    if (!refNoticiaId) return;
+    const el = document.getElementById(`noticia-${refNoticiaId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setNoticiaDestacadaId(refNoticiaId);
+    const timeout = setTimeout(() => setNoticiaDestacadaId(null), 3000);
+    return () => clearTimeout(timeout);
+  }, [refNoticiaId, imagens.length]);
 
   const noticiasFiltradas = useMemo(() => {
     const term = filtro.trim().toLowerCase();
@@ -192,7 +209,12 @@ function Galeria() {
               return (
                 <article
                   key={item.id}
-                  className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4 rounded-2xl border border-cor-secundaria/70 bg-cor-fundo/35 p-3 sm:p-4"
+                  id={`noticia-${item.id}`}
+                  className={`grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4 rounded-2xl border bg-cor-fundo/35 p-3 sm:p-4 ${
+                    Number(noticiaDestacadaId) === Number(item.id)
+                      ? "border-[#f4cf4e] ring-2 ring-[#f4cf4e]/40"
+                      : "border-cor-secundaria/70"
+                  }`}
                 >
                   <div className="rounded-xl overflow-hidden bg-black/20 border border-cor-secundaria/60 h-48 md:h-full">
                     <img src={item.imagem_url} alt={item.titulo || "Notícia"} className="w-full h-full object-cover" />

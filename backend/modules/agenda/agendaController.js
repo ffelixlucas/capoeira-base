@@ -2,6 +2,7 @@
 const agendaService = require("./agendaService");
 const organizacaoService = require("../shared/organizacoes/organizacaoService");
 const logger = require("../../utils/logger.js");
+const { registrarAuditoria } = require("../../utils/auditoriaAtividades");
 
 /* -------------------------------------------------------------------------- */
 /* 🕒 Utilitário: formatação de data e hora                                   */
@@ -97,6 +98,15 @@ async function criarEvento(req, res) {
     res
       .status(201)
       .json({ mensagem: "Evento criado com sucesso.", id: idCriado });
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId,
+      usuarioNome: req.usuario?.nome || null,
+      acao: "evento_criado",
+      entidade: "agenda",
+      entidadeId: idCriado,
+      descricao: `Criou evento: ${req.body?.titulo || "Sem título"}`,
+    });
   } catch (error) {
     logger.error("[agendaController] Erro ao criar evento", error);
     res.status(400).json({ erro: error.message });
@@ -130,6 +140,15 @@ async function criarEventoComImagem(req, res) {
       organizacaoId
     );
 
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId,
+      usuarioNome: req.usuario?.nome || null,
+      acao: "evento_criado",
+      entidade: "agenda",
+      entidadeId: resultado.id,
+      descricao: `Criou evento com imagem: ${dados?.titulo || "Sem título"}`,
+    });
     return res.status(201).json({
       mensagem: "Evento criado com imagem com sucesso.",
       id: resultado.id,
@@ -154,6 +173,15 @@ async function excluirEvento(req, res) {
       return res.status(404).json({ erro: "Evento não encontrado." });
 
     res.json({ mensagem: "Evento excluído com sucesso." });
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: req.usuario?.id || null,
+      usuarioNome: req.usuario?.nome || null,
+      acao: "evento_excluido",
+      entidade: "agenda",
+      entidadeId: id,
+      descricao: `Excluiu evento #${id}`,
+    });
   } catch (error) {
     logger.error("[agendaController] Erro ao excluir evento", error);
     res.status(500).json({ erro: "Erro ao excluir evento." });
@@ -174,6 +202,15 @@ async function atualizarEvento(req, res) {
 
     await agendaService.atualizarEvento(id, organizacaoId, dados);
     res.status(200).json({ message: "Evento atualizado com sucesso" });
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: req.usuario?.id || null,
+      usuarioNome: req.usuario?.nome || null,
+      acao: "evento_atualizado",
+      entidade: "agenda",
+      entidadeId: id,
+      descricao: `Atualizou evento: ${dados?.titulo || `#${id}`}`,
+    });
   } catch (error) {
     logger.error("[agendaController] Erro ao atualizar evento", error);
     res.status(500).json({ message: "Erro ao atualizar evento" });
@@ -199,6 +236,15 @@ async function atualizarStatus(req, res) {
         .status(404)
         .json({ sucesso: false, erro: "Evento não encontrado" });
 
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: req.usuario?.id || null,
+      usuarioNome: req.usuario?.nome || null,
+      acao: "evento_status",
+      entidade: "agenda",
+      entidadeId: id,
+      descricao: `Alterou status do evento #${id} para ${status}`,
+    });
     return res
       .status(200)
       .json({ sucesso: true, mensagem: `Evento marcado como ${status}` });
@@ -225,6 +271,15 @@ async function arquivarEvento(req, res) {
         .status(404)
         .json({ sucesso: false, erro: "Evento não encontrado" });
 
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: req.usuario?.id || null,
+      usuarioNome: req.usuario?.nome || null,
+      acao: "evento_arquivado",
+      entidade: "agenda",
+      entidadeId: id,
+      descricao: `Arquivou evento #${id}`,
+    });
     return res
       .status(200)
       .json({ sucesso: true, mensagem: "Evento arquivado com sucesso" });

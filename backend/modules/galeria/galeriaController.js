@@ -1,5 +1,6 @@
 const logger = require("../../utils/logger.js");
 const galeriaService = require("./galeriaService");
+const { registrarAuditoria } = require("../../utils/auditoriaAtividades");
 
 async function uploadImagem(req, res) {
   try {
@@ -19,6 +20,15 @@ async function uploadImagem(req, res) {
       legenda,
       organizacaoId
     );
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: criadoPor,
+      usuarioNome: req.user?.nome || null,
+      acao: "noticia_criada",
+      entidade: "noticia",
+      entidadeId: novaImagem?.id,
+      descricao: `Publicou notícia: ${titulo || "Sem título"}`,
+    });
     return res.status(200).json(novaImagem);
   } catch (error) {
     logger.error("Erro no controller de upload:", error);
@@ -56,6 +66,15 @@ async function deletarImagem(req, res) {
     const { id } = req.params;
     const organizacaoId = req.user?.organizacao_id || null;
     await galeriaService.removerImagemPorId(id, organizacaoId);
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: req.user?.id || null,
+      usuarioNome: req.user?.nome || null,
+      acao: "noticia_excluida",
+      entidade: "noticia",
+      entidadeId: id,
+      descricao: `Excluiu notícia #${id}`,
+    });
     res.status(200).json({ mensagem: "Imagem excluída com sucesso." });
   } catch (error) {
     logger.error("Erro ao excluir imagem:", error.message);
@@ -70,6 +89,15 @@ async function atualizarNoticia(req, res) {
 
   try {
     await galeriaService.atualizarNoticia(id, { titulo, legenda }, organizacaoId);
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: req.user?.id || null,
+      usuarioNome: req.user?.nome || null,
+      acao: "noticia_atualizada",
+      entidade: "noticia",
+      entidadeId: id,
+      descricao: `Atualizou notícia: ${titulo || `#${id}`}`,
+    });
     res.status(200).json({ mensagem: "Notícia atualizada com sucesso." });
   } catch (error) {
     logger.error("Erro ao atualizar notícia:", error);

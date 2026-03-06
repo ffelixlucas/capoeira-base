@@ -1,6 +1,33 @@
 const connection = require("../../database/connection");
 const logger = require("../../utils/logger.js");
 
+let transferenciasTableReady = false;
+
+async function ensureTransferenciasTable() {
+  if (transferenciasTableReady) return;
+
+  await connection.execute(`
+    CREATE TABLE IF NOT EXISTS transferencias_turma (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      organizacao_id INT NOT NULL,
+      aluno_id INT NOT NULL,
+      turma_origem_id INT NOT NULL,
+      turma_destino_id INT NOT NULL,
+      solicitado_por INT NOT NULL,
+      confirmado_por INT NULL,
+      status ENUM('pendente','confirmada','cancelada') NOT NULL DEFAULT 'pendente',
+      observacao VARCHAR(255) NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      confirmed_at DATETIME NULL,
+      INDEX idx_transferencia_org_status (organizacao_id, status),
+      INDEX idx_transferencia_destino (organizacao_id, turma_destino_id, status),
+      INDEX idx_transferencia_aluno (organizacao_id, aluno_id, status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  transferenciasTableReady = true;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 🔹 Lista todos os alunos ativos com a turma atual                          */
 /* -------------------------------------------------------------------------- */
@@ -367,6 +394,185 @@ async function metricasAlunosLote(alunoIds, inicio, fim, organizacaoId) {
   return resultado;
 }
 
+async function criarSolicitacaoTransferencia(
+  alunoId,
+  turmaOrigemId,
+  turmaDestinoId,
+  organizacaoId,
+  solicitadoPor,
+  observacao = null
+) {
+  await ensureTransferenciasTable();
+
+  const [pendentes] = await connection.execute(
+    `
+    SELECT id
+    FROM transferencias_turma
+    WHERE organizacao_id = ?
+      AND aluno_id = ?
+      AND status = 'pendente'
+    ORDER BY id DESC
+    LIMIT 1
+    `,
+    [organizacaoId, alunoId]
+  );
+
+  if (pendentes.length > 0) {
+    throw new Error("Já existe uma transferência pendente para este aluno.");
+  }
+
+  const [result] = await connection.execute(
+    `
+    INSERT INTO transferencias_turma (
+      organizacao_id, aluno_id, turma_origem_id, turma_destino_id, solicitado_por, observacao
+    ) VALUES (?, ?, ?, ?, ?, ?)
+    `,
+    [organizacaoId, alunoId, turmaOrigemId, turmaDestinoId, solicitadoPor, observacao]
+  );
+
+  return result.insertId;
+}
+
+async function listarTransferenciasRecentes(organizacaoId, limit = 10) {
+  await ensureTransferenciasTable();
+  const limitSeguro = Math.max(1, Math.min(Number(limit) || 10, 50));
+
+  const [rows] = await connection.execute(
+    `
+    SELECT
+      tt.id,
+      tt.aluno_id,
+      tt.turma_origem_id,
+      tt.turma_destino_id,
+      tt.solicitado_por,
+      tt.confirmado_por,
+      tt.status,
+      tt.observacao,
+      tt.created_at,
+      tt.confirmed_at,
+      a.nome AS aluno_nome,
+      tor.nome AS turma_origem_nome,
+      tde.nome AS turma_destino_nome,
+      es.nome AS solicitado_por_nome,
+      ec.nome AS confirmado_por_nome
+    FROM transferencias_turma tt
+    LEFT JOIN alunos a ON a.id = tt.aluno_id
+    LEFT JOIN turmas tor ON tor.id = tt.turma_origem_id
+    LEFT JOIN turmas tde ON tde.id = tt.turma_destino_id
+    LEFT JOIN equipe es ON es.id = tt.solicitado_por
+    LEFT JOIN equipe ec ON ec.id = tt.confirmado_por
+    WHERE tt.organizacao_id = ?
+    ORDER BY tt.created_at DESC, tt.id DESC
+    LIMIT ${limitSeguro}
+    `,
+    [organizacaoId]
+  );
+
+  return rows;
+}
+
+async function listarTransferenciasPendentes(organizacaoId, turmaDestinoId = null) {
+  await ensureTransferenciasTable();
+
+  const params = [organizacaoId];
+  let filtroTurma = "";
+  if (turmaDestinoId) {
+    filtroTurma = " AND tt.turma_destino_id = ?";
+    params.push(turmaDestinoId);
+  }
+
+  const [rows] = await connection.execute(
+    `
+    SELECT
+      tt.id,
+      tt.aluno_id,
+      tt.turma_origem_id,
+      tt.turma_destino_id,
+      tt.solicitado_por,
+      tt.status,
+      tt.observacao,
+      tt.created_at,
+      a.nome AS aluno_nome,
+      a.apelido AS aluno_apelido,
+      tor.nome AS turma_origem_nome,
+      tde.nome AS turma_destino_nome,
+      tde.equipe_id AS turma_destino_equipe_id,
+      es.nome AS solicitado_por_nome
+    FROM transferencias_turma tt
+    LEFT JOIN alunos a ON a.id = tt.aluno_id
+    LEFT JOIN turmas tor ON tor.id = tt.turma_origem_id
+    LEFT JOIN turmas tde ON tde.id = tt.turma_destino_id
+    LEFT JOIN equipe es ON es.id = tt.solicitado_por
+    WHERE tt.organizacao_id = ?
+      AND tt.status = 'pendente'
+      ${filtroTurma}
+    ORDER BY tt.created_at DESC, tt.id DESC
+    `,
+    params
+  );
+
+  return rows;
+}
+
+async function buscarTransferenciaPorId(id, organizacaoId) {
+  await ensureTransferenciasTable();
+
+  const [rows] = await connection.execute(
+    `
+    SELECT
+      tt.*,
+      tde.equipe_id AS turma_destino_equipe_id
+    FROM transferencias_turma tt
+    LEFT JOIN turmas tde ON tde.id = tt.turma_destino_id
+    WHERE tt.id = ?
+      AND tt.organizacao_id = ?
+    LIMIT 1
+    `,
+    [id, organizacaoId]
+  );
+
+  return rows[0] || null;
+}
+
+async function confirmarTransferencia(id, organizacaoId, confirmadoPor) {
+  await ensureTransferenciasTable();
+
+  await connection.execute(
+    `
+    UPDATE transferencias_turma
+    SET status = 'confirmada',
+        confirmado_por = ?,
+        confirmed_at = NOW()
+    WHERE id = ?
+      AND organizacao_id = ?
+      AND status = 'pendente'
+    `,
+    [confirmadoPor, id, organizacaoId]
+  );
+}
+
+async function cancelarTransferencia(
+  id,
+  organizacaoId,
+  usuarioId,
+  statusAtual = "confirmada"
+) {
+  await ensureTransferenciasTable();
+
+  await connection.execute(
+    `
+    UPDATE transferencias_turma
+    SET status = 'cancelada',
+        confirmado_por = ?,
+        confirmed_at = NOW()
+    WHERE id = ?
+      AND organizacao_id = ?
+      AND status = ?
+    `,
+    [usuarioId, id, organizacaoId, statusAtual]
+  );
+}
+
 module.exports = {
   listarAlunosComTurmaAtual,
   listarAlunosPorTurmas,
@@ -379,5 +585,11 @@ module.exports = {
   contarPendentes,
   listarPendentes,
   atualizarStatus,
-  metricasAlunosLote
+  metricasAlunosLote,
+  criarSolicitacaoTransferencia,
+  listarTransferenciasRecentes,
+  listarTransferenciasPendentes,
+  buscarTransferenciaPorId,
+  confirmarTransferencia,
+  cancelarTransferencia
 };

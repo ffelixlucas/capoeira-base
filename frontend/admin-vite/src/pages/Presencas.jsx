@@ -1,7 +1,11 @@
 // src/pages/Presencas.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { listarAlunos } from "../services/alunoService";
+import {
+  listarAlunos,
+  listarTransferenciasPendentes,
+  confirmarTransferencia,
+} from "../services/alunoService";
 import {
   salvarBatch,
   listarPorTurmaEData,
@@ -79,6 +83,8 @@ export default function Presencas() {
   const [filtroUltimaChamadaAdmin, setFiltroUltimaChamadaAdmin] = useState("todas");
   const [abaPainel, setAbaPainel] = useState("chamada");
   const [agora, setAgora] = useState(() => new Date());
+  const [transferenciasPendentes, setTransferenciasPendentes] = useState([]);
+  const [confirmandoTransferenciaId, setConfirmandoTransferenciaId] = useState(null);
 
   const isAdmin = useMemo(
     () => Array.isArray(usuario?.roles) && usuario.roles.includes("admin"),
@@ -244,6 +250,28 @@ export default function Presencas() {
     };
   }, [isAdmin, salvando, turmaResumoAdmin, mostrarUltimaChamadaAdmin, filtroUltimaChamadaAdmin, turmasPermitidas]);
 
+  useEffect(() => {
+    let ativo = true;
+    async function carregarTransferenciasPendentesTurma() {
+      if (!turmaIdNum || !turmaPermitida) {
+        if (ativo) setTransferenciasPendentes([]);
+        return;
+      }
+      try {
+        const lista = await listarTransferenciasPendentes(turmaIdNum);
+        if (!ativo) return;
+        setTransferenciasPendentes(Array.isArray(lista) ? lista : []);
+      } catch (error) {
+        logger.error("[Presencas] Erro ao listar transferências pendentes:", error);
+        if (ativo) setTransferenciasPendentes([]);
+      }
+    }
+    carregarTransferenciasPendentesTurma();
+    return () => {
+      ativo = false;
+    };
+  }, [turmaIdNum, turmaPermitida, salvando]);
+
   // ---- Carregar alunos da turma + presenças do dia ----
   useEffect(() => {
     let ativo = true;
@@ -349,6 +377,34 @@ export default function Presencas() {
       alert(e?.response?.data?.erro || "Falha ao salvar presenças.");
     } finally {
       setSalvando(false);
+    }
+  }
+
+  async function handleConfirmarTransferencia(transferencia) {
+    if (!transferencia?.id || !turmaIdNum) return;
+
+    const ok = window.confirm(
+      `Confirmar entrada de ${transferencia.aluno_nome || "aluno"} nesta turma?\n\n` +
+        "Após confirmar, ele aparecerá na lista de chamada."
+    );
+    if (!ok) return;
+
+    try {
+      setConfirmandoTransferenciaId(transferencia.id);
+      await confirmarTransferencia(transferencia.id);
+
+      const [listaAtualizada, alunosAtualizados] = await Promise.all([
+        listarTransferenciasPendentes(turmaIdNum).catch(() => []),
+        listarAlunos(turmaIdNum).catch(() => []),
+      ]);
+      setTransferenciasPendentes(Array.isArray(listaAtualizada) ? listaAtualizada : []);
+      setAlunosTurma(Array.isArray(alunosAtualizados) ? alunosAtualizados : []);
+      alert("Transferência confirmada com sucesso.");
+    } catch (error) {
+      logger.error("[Presencas] Erro ao confirmar transferência:", error);
+      alert(error?.response?.data?.erro || "Não foi possível confirmar a transferência.");
+    } finally {
+      setConfirmandoTransferenciaId(null);
     }
   }
 
@@ -998,6 +1054,46 @@ const alunosOrdenados = useMemo(() => {
           </p>
         </div>
       </div>
+
+      {turmaIdNum && turmaPermitida && transferenciasPendentes.length > 0 && (
+        <div className="mx-2 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-amber-100">
+              Transferências pendentes para esta turma
+            </p>
+            <span className="text-[11px] text-amber-100/80">
+              {transferenciasPendentes.length} pendente(s)
+            </span>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {transferenciasPendentes.slice(0, 6).map((item) => (
+              <li
+                key={item.id}
+                className="rounded-lg border border-amber-300/25 bg-cor-fundo/20 px-3 py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-cor-titulo truncate">
+                    {item.aluno_nome || "Aluno"} • origem: {item.turma_origem_nome || "-"}
+                  </p>
+                  <p className="text-[11px] text-cor-texto/70 mt-1 truncate">
+                    Solicitado por {item.solicitado_por_nome || "instrutor"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleConfirmarTransferencia(item)}
+                  disabled={confirmandoTransferenciaId === item.id}
+                  className="h-8 rounded-lg border border-amber-300/40 bg-amber-300/20 px-3 text-xs font-semibold text-amber-100 hover:bg-amber-300/30 disabled:opacity-60"
+                >
+                  {confirmandoTransferenciaId === item.id
+                    ? "Confirmando..."
+                    : "Confirmar entrada na chamada"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Lista de alunos com toggles grandes */}
       <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] shadow-[0_14px_30px_rgba(0,0,0,0.22)]">

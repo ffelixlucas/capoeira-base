@@ -10,6 +10,36 @@ router.use(verifyToken);
 // 🔹 Listar alunos (admin / instrutor)
 router.get("/", checkRole(["admin", "instrutor"]), controller.listar);
 
+router.get(
+  "/transferencias/pendentes",
+  checkRole(["admin", "instrutor"]),
+  controller.listarTransferenciasPendentes
+);
+
+router.get(
+  "/transferencias/recentes",
+  checkRole(["admin", "instrutor"]),
+  controller.listarTransferenciasRecentes
+);
+
+router.get(
+  "/auditoria/atividades",
+  checkRole(["admin"]),
+  controller.listarAuditoriaAtividades
+);
+
+router.post(
+  "/transferencias/:transferenciaId/confirmar",
+  checkRole(["admin", "instrutor"]),
+  controller.confirmarTransferencia
+);
+
+router.post(
+  "/transferencias/:transferenciaId/desfazer",
+  checkRole(["admin"]),
+  controller.desfazerTransferencia
+);
+
 // 🔹 Pendentes (apenas admin)
 router.get(
   "/pendentes/count",
@@ -45,6 +75,12 @@ router.put(
   "/:id/trocar-turma",
   checkRole(["admin", "instrutor"]),
   controller.trocarTurma
+);
+
+router.post(
+  "/:id/solicitar-transferencia",
+  checkRole(["admin", "instrutor"]),
+  controller.solicitarTransferenciaTurma
 );
 
 // 🔹 Atualizar status (apenas admin)

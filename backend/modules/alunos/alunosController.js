@@ -2,6 +2,10 @@
 const logger = require("../../utils/logger.js");
 const alunoService = require("./alunosService");
 const matriculaService = require("../matricula/matriculaService");
+const {
+  registrarAuditoria,
+  listarAuditoriaPorOrganizacao,
+} = require("../../utils/auditoriaAtividades");
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 Listar todos os alunos                                                  */
@@ -109,11 +113,157 @@ async function trocarTurma(req, res) {
       nova_turma_id,
       organizacaoId
     );
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: usuario.id,
+      usuarioNome: usuario.nome || null,
+      acao: "aluno_turma_trocada",
+      entidade: "aluno",
+      entidadeId: req.params.id,
+      descricao: `Trocou aluno #${req.params.id} para turma #${nova_turma_id}`,
+    });
 
     return res.json({ sucesso: true });
   } catch (err) {
     logger.error("[alunosController] Erro ao trocar turma:", err);
     return res.status(400).json({ erro: err.message });
+  }
+}
+
+async function solicitarTransferenciaTurma(req, res) {
+  try {
+    const usuario = req.usuario;
+    const organizacaoId = usuario.organizacao_id;
+    const alunoId = Number(req.params.id);
+    const { turma_origem_id, turma_destino_id, observacao } = req.body || {};
+
+    const transferenciaId = await alunoService.solicitarTransferenciaTurma({
+      alunoId,
+      turmaOrigemId: Number(turma_origem_id),
+      turmaDestinoId: Number(turma_destino_id),
+      organizacaoId,
+      solicitadoPor: usuario.id,
+      observacao: observacao || null,
+    });
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: usuario.id,
+      usuarioNome: usuario.nome || null,
+      acao: "transferencia_solicitada",
+      entidade: "transferencia_turma",
+      entidadeId: transferenciaId,
+      descricao: `Solicitou transferência do aluno #${alunoId}`,
+      metadata: { transferencia_id: transferenciaId, status: "pendente" },
+    });
+
+    return res.status(201).json({ sucesso: true, transferencia_id: transferenciaId });
+  } catch (err) {
+    logger.error("[alunosController] Erro ao solicitar transferência:", err);
+    return res.status(400).json({ erro: err.message });
+  }
+}
+
+async function listarTransferenciasPendentes(req, res) {
+  try {
+    const usuario = req.usuario;
+    const organizacaoId = usuario.organizacao_id;
+    const turmaId = req.query.turma_id ? Number(req.query.turma_id) : null;
+    const itens = await alunoService.listarTransferenciasPendentes(
+      organizacaoId,
+      usuario,
+      turmaId
+    );
+    return res.json(itens);
+  } catch (err) {
+    logger.error("[alunosController] Erro ao listar transferências pendentes:", err);
+    return res.status(400).json({ erro: err.message });
+  }
+}
+
+async function listarTransferenciasRecentes(req, res) {
+  try {
+    const usuario = req.usuario;
+    const organizacaoId = usuario.organizacao_id;
+    const limit = req.query.limit ? Number(req.query.limit) : 10;
+    const itens = await alunoService.listarTransferenciasRecentes(
+      organizacaoId,
+      usuario,
+      limit
+    );
+    return res.json(itens);
+  } catch (err) {
+    logger.error("[alunosController] Erro ao listar transferências recentes:", err);
+    return res.status(400).json({ erro: err.message });
+  }
+}
+
+async function confirmarTransferencia(req, res) {
+  try {
+    const usuario = req.usuario;
+    const organizacaoId = usuario.organizacao_id;
+    const transferenciaId = Number(req.params.transferenciaId);
+
+    await alunoService.confirmarTransferencia({
+      transferenciaId,
+      organizacaoId,
+      usuario,
+    });
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: usuario.id,
+      usuarioNome: usuario.nome || null,
+      acao: "transferencia_confirmada",
+      entidade: "transferencia_turma",
+      entidadeId: transferenciaId,
+      descricao: `Confirmou transferência #${transferenciaId}`,
+      metadata: { transferencia_id: transferenciaId, status: "confirmada" },
+    });
+
+    return res.json({ sucesso: true });
+  } catch (err) {
+    logger.error("[alunosController] Erro ao confirmar transferência:", err);
+    return res.status(400).json({ erro: err.message });
+  }
+}
+
+async function desfazerTransferencia(req, res) {
+  try {
+    const usuario = req.usuario;
+    const organizacaoId = usuario.organizacao_id;
+    const transferenciaId = Number(req.params.transferenciaId);
+
+    await alunoService.desfazerTransferencia({
+      transferenciaId,
+      organizacaoId,
+      usuario,
+    });
+    await registrarAuditoria({
+      organizacaoId,
+      usuarioId: usuario.id,
+      usuarioNome: usuario.nome || null,
+      acao: "transferencia_cancelada",
+      entidade: "transferencia_turma",
+      entidadeId: transferenciaId,
+      descricao: `Desfez/cancelou transferência #${transferenciaId}`,
+      metadata: { transferencia_id: transferenciaId, status: "cancelada" },
+    });
+
+    return res.json({ sucesso: true });
+  } catch (err) {
+    logger.error("[alunosController] Erro ao desfazer transferência:", err);
+    return res.status(400).json({ erro: err.message });
+  }
+}
+
+async function listarAuditoriaAtividades(req, res) {
+  try {
+    const organizacaoId = req.usuario?.organizacao_id;
+    const limit = req.query.limit ? Number(req.query.limit) : 120;
+    const itens = await listarAuditoriaPorOrganizacao(organizacaoId, limit);
+    return res.json(itens);
+  } catch (err) {
+    logger.error("[alunosController] Erro ao listar auditoria:", err);
+    return res.status(500).json({ erro: "Erro ao listar auditoria." });
   }
 }
 
@@ -231,6 +381,12 @@ module.exports = {
   editar,
   excluir,
   trocarTurma,
+  solicitarTransferenciaTurma,
+  listarTransferenciasPendentes,
+  listarTransferenciasRecentes,
+  confirmarTransferencia,
+  desfazerTransferencia,
+  listarAuditoriaAtividades,
   metricasAluno,
   contarPendentes,
   listarPendentes,

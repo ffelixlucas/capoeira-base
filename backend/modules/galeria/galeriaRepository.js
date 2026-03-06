@@ -53,13 +53,22 @@ async function buscarTodasImagens(organizacaoId = null) {
   const hasOrgColumn = await galeriaHasOrganizacaoIdColumn();
   if (hasOrgColumn && organizacaoId) {
     const [linhas] = await db.execute(
-      'SELECT * FROM galeria WHERE organizacao_id = ? ORDER BY ordem IS NULL, ordem ASC, criado_em DESC',
+      `SELECT g.*, e.nome AS criado_por_nome
+       FROM galeria g
+       LEFT JOIN equipe e
+         ON e.id = g.criado_por
+         AND e.organizacao_id = g.organizacao_id
+       WHERE g.organizacao_id = ?
+       ORDER BY g.ordem IS NULL, g.ordem ASC, g.criado_em DESC`,
       [organizacaoId]
     );
     return linhas;
   }
   const [linhas] = await db.execute(
-    'SELECT * FROM galeria ORDER BY ordem IS NULL, ordem ASC, criado_em DESC'
+    `SELECT g.*, e.nome AS criado_por_nome
+     FROM galeria g
+     LEFT JOIN equipe e ON e.id = g.criado_por
+     ORDER BY g.ordem IS NULL, g.ordem ASC, g.criado_em DESC`
   );
   return linhas;
 }
@@ -69,14 +78,23 @@ async function buscarImagensPublicas(organizacaoId = null) {
 
   if (hasOrgColumn && organizacaoId) {
     const [linhas] = await db.execute(
-      'SELECT * FROM galeria WHERE organizacao_id = ? ORDER BY ordem IS NULL, ordem ASC, criado_em DESC',
+      `SELECT g.*, e.nome AS criado_por_nome
+       FROM galeria g
+       LEFT JOIN equipe e
+         ON e.id = g.criado_por
+         AND e.organizacao_id = g.organizacao_id
+       WHERE g.organizacao_id = ?
+       ORDER BY g.ordem IS NULL, g.ordem ASC, g.criado_em DESC`,
       [organizacaoId]
     );
     return linhas;
   }
 
   const [linhas] = await db.execute(
-    'SELECT * FROM galeria ORDER BY ordem IS NULL, ordem ASC, criado_em DESC'
+    `SELECT g.*, e.nome AS criado_por_nome
+     FROM galeria g
+     LEFT JOIN equipe e ON e.id = g.criado_por
+     ORDER BY g.ordem IS NULL, g.ordem ASC, g.criado_em DESC`
   );
   return linhas;
 }
