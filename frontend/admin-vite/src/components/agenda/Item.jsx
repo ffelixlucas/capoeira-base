@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ImageModal from "./ImageModal";
@@ -57,8 +57,11 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextE
     whatsapp_url,
     com_inscricao,
     valor,
+    inscricoes_ate,
+    total_inscritos,
     configuracoes,
   } = evento;
+  const [agoraMs, setAgoraMs] = useState(Date.now());
 
   const imagemFocoX = Math.min(
     100,
@@ -69,12 +72,21 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextE
     Math.max(0, Number(configuracoes?.imagem_foco_y ?? 50))
   );
   const objectPosition = `${imagemFocoX}% ${imagemFocoY}%`;
+  const limiteInscritos = Number(configuracoes?.limite_inscritos || 0);
+  const possuiLimiteInscritos = Number.isFinite(limiteInscritos) && limiteInscritos > 0;
+  const inscritosPagos = Number(total_inscritos ?? 0);
 
   const encerrado = useMemo(() => {
     const fimOuInicio = data_fim || data_inicio;
     if (!fimOuInicio) return false;
     return Date.now() > new Date(fimOuInicio).getTime();
   }, [data_inicio, data_fim]);
+
+  useEffect(() => {
+    if (Number(com_inscricao) !== 1 || !inscricoes_ate) return undefined;
+    const id = setInterval(() => setAgoraMs(Date.now()), 60 * 1000);
+    return () => clearInterval(id);
+  }, [com_inscricao, inscricoes_ate]);
 
   const whatsappHref = whatsapp_url
     ? whatsapp_url
@@ -95,6 +107,42 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextE
     const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     return time === "00:00" ? date : `${date} • ${time}`;
   };
+
+  const formatarDataInscricao = (raw) => {
+    if (!raw) return "";
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "America/Sao_Paulo",
+    });
+  };
+
+  const contagemInscricao = useMemo(() => {
+    if (!inscricoes_ate) return null;
+    const limite = new Date(inscricoes_ate).getTime();
+    if (!Number.isFinite(limite)) return null;
+    const diff = limite - agoraMs;
+    if (diff <= 0) return "Prazo encerrado";
+    const totalMin = Math.floor(diff / (1000 * 60));
+    const dias = Math.floor(totalMin / (60 * 24));
+    const horas = Math.floor((totalMin % (60 * 24)) / 60);
+    const minutos = totalMin % 60;
+    if (dias > 0) return `${dias}d ${horas}h`;
+    if (horas > 0) return `${horas}h ${minutos}min`;
+    return `${minutos}min`;
+  }, [inscricoes_ate, agoraMs]);
+  const resumoInscricao = useMemo(() => {
+    if (Number(com_inscricao) !== 1 || (!inscricoes_ate && !possuiLimiteInscritos)) return "";
+    const inscritosLabel = possuiLimiteInscritos
+      ? `${inscritosPagos}/${limiteInscritos}`
+      : `${inscritosPagos}`;
+    const contagemLabel = contagemInscricao ? ` • ${contagemInscricao}` : "";
+    return `Inscritos ${inscritosLabel}${contagemLabel}`;
+  }, [com_inscricao, inscricoes_ate, possuiLimiteInscritos, inscritosPagos, limiteInscritos, contagemInscricao]);
 
   const handleAcaoRemocao = async () => {
     const token = localStorage.getItem("token");
@@ -184,6 +232,14 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextE
           {local || "\u00A0"}
         </p>
 
+        <div className="mt-2 min-h-[16px] text-[11px]">
+          {Number(com_inscricao) === 1 && resumoInscricao ? (
+            <p className="truncate text-[#8fffc8]">{resumoInscricao}</p>
+          ) : (
+            <span className="block">&nbsp;</span>
+          )}
+        </div>
+
         <div className="mt-auto pt-5 flex flex-wrap items-center gap-3">
           <button
             type="button"
@@ -197,12 +253,12 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextE
             <button
               type="button"
               onClick={() => navigate(`/inscricoes/${id}`)}
-              className="ml-auto rounded-full bg-[#f4cf4e] px-4 py-2 text-xs md:text-sm font-bold text-[#101a15] hover:bg-[#f7d96f] max-w-full"
+              className="ml-auto inline-flex h-10 items-center rounded-full bg-[#f4cf4e] px-4 text-xs md:text-sm font-bold text-[#101a15] hover:bg-[#f7d96f] max-w-full"
             >
               Inscrever
             </button>
           ) : (
-            <span className="ml-auto text-xs md:text-sm text-[#b7cdbf] break-words">
+            <span className="ml-auto inline-flex h-10 items-center rounded-full border border-[#d6e4dc]/20 px-4 text-xs md:text-sm text-[#b7cdbf] break-words">
               {encerrado ? "Evento finalizado" : "Sem inscrição"}
             </span>
           )}

@@ -14,8 +14,16 @@ async function listarEventosPublicos(organizacaoId) {
       DATE_FORMAT(data_fim, '%Y-%m-%dT%H:%i:%s.000Z') AS data_fim,
       DATE_FORMAT(inscricoes_ate, '%Y-%m-%dT%H:%i:%s.000Z') AS inscricoes_ate,
       imagem_url, com_inscricao, valor, possui_camiseta,
-      configuracoes
-    FROM agenda
+      configuracoes,
+      COALESCE(stats.total_inscritos, 0) AS total_inscritos
+    FROM agenda a
+    LEFT JOIN (
+      SELECT
+        ie.evento_id,
+        SUM(CASE WHEN ie.status = 'pago' THEN 1 ELSE 0 END) AS total_inscritos
+      FROM inscricoes_evento ie
+      GROUP BY ie.evento_id
+    ) stats ON stats.evento_id = a.id
     WHERE 
       status = 'ativo'
       AND organizacao_id = ?
@@ -49,8 +57,16 @@ async function buscarEventoPublicoPorId(id, organizacaoId) {
       DATE_FORMAT(data_fim, '%Y-%m-%dT%H:%i:%s.000Z') AS data_fim,
       DATE_FORMAT(inscricoes_ate, '%Y-%m-%dT%H:%i:%s.000Z') AS inscricoes_ate,
       imagem_url, com_inscricao, valor, possui_camiseta,
-      configuracoes
-    FROM agenda
+      configuracoes,
+      COALESCE(stats.total_inscritos, 0) AS total_inscritos
+    FROM agenda a
+    LEFT JOIN (
+      SELECT
+        ie.evento_id,
+        SUM(CASE WHEN ie.status = 'pago' THEN 1 ELSE 0 END) AS total_inscritos
+      FROM inscricoes_evento ie
+      GROUP BY ie.evento_id
+    ) stats ON stats.evento_id = a.id
     WHERE 
       id = ? 
       AND organizacao_id = ? 
