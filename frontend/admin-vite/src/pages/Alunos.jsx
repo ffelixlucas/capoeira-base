@@ -12,7 +12,7 @@ import { buscarAluno } from "../services/alunoService";
 import { toast } from "react-toastify";
 import { useMinhasTurmas } from "../hooks/useMinhasTurmas";
 import api from "../services/api";
-import { RefreshCcw, UserPlus, Bell } from "lucide-react";
+import { RefreshCcw, UserPlus, Bell, FileText, Filter } from "lucide-react";
 
 import ModalSelecionarRelatorio from "../components/relatorios/ModalSelecionarRelatorio";
 import ModalRelatorioGeralAlunos from "../components/relatorios/ModalRelatorioGeralAlunos";
@@ -162,7 +162,18 @@ function Alunos() {
     });
 
   return (
-    <div className="p-0 m-0 w-full">
+    <div className="page-shell">
+      <section className="page-header">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-cor-texto">
+            Gestão de Alunos
+          </h1>
+          <p className="text-sm text-cor-texto/80 mt-1">
+            Cadastro, acompanhamento e relatórios em um só lugar.
+          </p>
+        </div>
+      </section>
+
       {mostrarGuiaTrocaTurma && (
         <div className="mb-3 rounded-xl border border-amber-300/40 bg-amber-100/10 p-3">
           <div className="flex items-start justify-between gap-3">
@@ -194,51 +205,52 @@ function Alunos() {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-3">
-        <div className="w-full sm:w-auto text-left">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Filtrar por turma:
-          </label>
-          {turmas.length === 1 && turmas[0].id === "todos" && (
-            <p className="text-sm text-gray-500 mb-2">
-              Nenhuma turma vinculada diretamente. Exibindo todos os alunos.
-            </p>
-          )}
-          <select
-            className="w-full sm:w-60 p-2 border rounded-md bg-white text-gray-800 text-sm"
-            value={turmaSelecionada || "todos"}
-            onChange={(e) => setTurmaSelecionada(e.target.value)}
-          >
-            {turmas.map((turma) => (
-              <option key={turma.id} value={turma.id}>
-                {turma.nome}
-              </option>
-            ))}
-          </select>
+      <div className="page-toolbar mb-3 border-cor-secundaria/20 bg-cor-clara/95 !p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter size={16} className="text-cor-secundaria" />
+          <h2 className="text-sm font-semibold text-cor-secundaria">Filtros e ações</h2>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
-          {/* 🔹 Barra de ações — duas linhas, layout equilibrado */}
-          <div className="flex flex-col items-center sm:items-start w-full gap-2 mt-2">
-            {/* Linha principal */}
-            <div className="flex flex-wrap justify-center sm:justify-start gap-2 w-full">
-              {/* Cadastrar aluno */}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3">
+          <div className="w-full text-left">
+            <label className="block text-sm font-medium text-cor-secundaria mb-1">
+              Filtrar por turma
+            </label>
+            {turmas.length === 1 && turmas[0].id === "todos" && (
+              <p className="text-sm text-cor-secundaria/70 mb-2">
+                Nenhuma turma vinculada diretamente. Exibindo todos os alunos.
+              </p>
+            )}
+            <select
+              className="select-admin w-full"
+              value={turmaSelecionada || "todos"}
+              onChange={(e) => setTurmaSelecionada(e.target.value)}
+            >
+              {turmas.map((turma) => (
+                <option key={turma.id} value={turma.id}>
+                  {turma.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <div className="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 w-full">
               <button
                 onClick={() => setMostrarForm(!mostrarForm)}
-                className="flex items-center justify-center gap-2 bg-cor-primaria hover:bg-cor-destaque text-black px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+                className="inline-flex h-10 w-full lg:w-auto items-center justify-center gap-1.5 rounded-lg border border-cor-secundaria/35 bg-cor-fundo/10 px-2.5 text-xs font-semibold text-cor-secundaria transition-colors hover:bg-cor-fundo/15"
               >
                 <UserPlus size={16} /> {mostrarForm ? "Fechar" : "Cadastrar"}
               </button>
 
-              {/* Pré-matrículas pendentes */}
               {usuario?.roles?.includes("admin") && (
                 <button
                   onClick={() => setMostrarPendentes(true)}
-                  className="relative flex items-center justify-center gap-2 bg-cor-primaria hover:bg-cor-destaque text-black px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+                  className="relative inline-flex h-10 w-full lg:w-auto items-center justify-center gap-1.5 rounded-lg border border-cor-secundaria/35 bg-cor-fundo/10 px-2.5 text-xs font-semibold text-cor-secundaria transition-colors hover:bg-cor-fundo/15"
                 >
                   <Bell size={16} /> Pré-Matrículas
                   {contadorPendentes > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
+                    <span className="absolute -top-2 -right-2 bg-cor-secundaria text-cor-texto text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
                       {contadorPendentes}
                     </span>
                   )}
@@ -247,23 +259,22 @@ function Alunos() {
 
               <button
                 onClick={() => setMostrarModalRelatorios(true)}
-                className="flex items-center justify-center gap-2 bg-cor-primaria hover:bg-cor-destaque text-black px-4 py-2 rounded-md text-sm font-medium transition-all active:scale-[0.97]"
+                className="inline-flex h-10 w-full lg:w-auto items-center justify-center gap-1.5 rounded-lg border border-cor-secundaria/35 bg-cor-fundo/10 px-2.5 text-xs font-semibold text-cor-secundaria transition-colors hover:bg-cor-fundo/15"
               >
-                📄 Relatórios
+                <FileText size={16} /> Relatórios
               </button>
             </div>
 
-            {/* Linha secundária — Atualizar + hora */}
-            <div className="flex items-center justify-center sm:justify-start gap-2 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
               <button
                 onClick={atualizarContadorPendentes}
-                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium transition-all active:scale-[0.97]"
+                className="inline-flex h-9 w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg border border-cor-secundaria/30 bg-transparent px-2.5 text-xs font-medium text-cor-secundaria transition-colors hover:bg-cor-fundo/10"
               >
-                <RefreshCcw size={14} className="text-gray-600" /> Atualizar
+                <RefreshCcw size={13} className="text-cor-secundaria/80" /> Atualizar
               </button>
 
               {ultimaAtualizacao && (
-                <span className="text-xs text-gray-400 italic whitespace-nowrap">
+                <span className="text-xs text-cor-secundaria/70">
                   Última atualização{" "}
                   {ultimaAtualizacao.toLocaleTimeString("pt-BR", {
                     hour: "2-digit",
@@ -277,8 +288,9 @@ function Alunos() {
       </div>
 
       <Busca
-        placeholder="Buscar por nome, apelido ou turma"
+        placeholder="Buscar aluno por nome, apelido ou turma"
         onBuscar={setBusca}
+        className="rounded-xl border-cor-secundaria/20 bg-cor-clara/95"
       />
 
       <AlunoList

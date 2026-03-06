@@ -3,7 +3,7 @@ import { ChevronRightIcon } from "@heroicons/react/24/outline";
 export default function ListagemItem({ titulo, subtitulo, onVerMais }) {
   return (
     <div
-className="flex items-start gap-1.5 p-2 hover:bg-gray-50 cursor-pointer"
+      className="flex items-start gap-2 px-3 py-3 hover:bg-emerald-50/50 cursor-pointer transition-colors"
 
       onClick={onVerMais}
     >
@@ -19,7 +19,7 @@ className="flex items-start gap-1.5 p-2 hover:bg-gray-50 cursor-pointer"
         )}
       </div>
 
-      <ChevronRightIcon className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
+      <ChevronRightIcon className="h-5 w-5 text-gray-400 mt-1.5 flex-shrink-0" />
     </div>
   );
 }

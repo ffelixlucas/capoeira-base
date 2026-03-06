@@ -1,6 +1,6 @@
-function ContadorLista({ total, label = "encontrados" }) {
+function ContadorLista({ total, label = "encontrados", className = "" }) {
     return (
-      <p className="text-sm text-white">
+      <p className={`text-sm ${className}`}>
         {total} {label}
       </p>
     );

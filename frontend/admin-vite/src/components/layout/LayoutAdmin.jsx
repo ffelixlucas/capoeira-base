@@ -63,6 +63,9 @@ function LayoutAdmin() {
 
   // 🔹 Pede permissão apenas uma vez
   React.useEffect(() => {
+    const permissionAttemptKey = "notifications.permission.attempted";
+    if (sessionStorage.getItem(permissionAttemptKey) === "1") return;
+    sessionStorage.setItem(permissionAttemptKey, "1");
     solicitarPermissaoNotificacoes();
   }, []);
 

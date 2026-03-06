@@ -30,8 +30,10 @@ import {
   listarAlunos,
   solicitarTransferenciaTurma,
   desfazerTransferencia,
+  confirmarTransferencia,
   listarAuditoriaAtividades,
   listarTransferenciasRecentes,
+  listarTransferenciasPendentes,
 } from "../services/alunoService";
 import { getMinhasTurmas, listarTurmas } from "../services/turmaService";
 import { logger } from "../utils/logger";
@@ -42,6 +44,7 @@ export default function Dashboard() {
   const { usuario } = useAuth();
   const { temPapel } = usePermissao();
   const isAdmin = temPapel(["admin"]);
+  const isInstrutor = temPapel(["instrutor"]);
   const [qtdEventos, setQtdEventos] = useState(0);
   const [abrirModal, setAbrirModal] = useState(false);
   const [qtdAlunos, setQtdAlunos] = useState(0);
@@ -55,13 +58,17 @@ export default function Dashboard() {
   const [alunosTurmaOrigem, setAlunosTurmaOrigem] = useState([]);
   const [carregandoAlunosAjuste, setCarregandoAlunosAjuste] = useState(false);
   const [salvandoAjusteTurma, setSalvandoAjusteTurma] = useState(false);
+  const [confirmandoTransferenciaId, setConfirmandoTransferenciaId] = useState(null);
+  const [mostrarAjusteRapidoTurma, setMostrarAjusteRapidoTurma] = useState(false);
   const [turmasDestinoDisponiveis, setTurmasDestinoDisponiveis] = useState([]);
   const [noticiasResumo, setNoticiasResumo] = useState([]);
   const [abrirModalHistoricoSistema, setAbrirModalHistoricoSistema] = useState(false);
   const [auditoriaAtividades, setAuditoriaAtividades] = useState([]);
+  const [transferenciasRecentesAuditoria, setTransferenciasRecentesAuditoria] = useState([]);
+  const [transferenciasPendentesDashboard, setTransferenciasPendentesDashboard] = useState([]);
   const [auditoriaRefreshKey, setAuditoriaRefreshKey] = useState(0);
   const turmasOrigemAjuste = isAdmin ? turmasDestinoDisponiveis : minhasTurmas;
-  const turmasDestinoAjuste = isAdmin ? turmasDestinoDisponiveis : minhasTurmas;
+  const turmasDestinoAjuste = turmasDestinoDisponiveis;
 
   const mapearTransferenciasParaAuditoria = (rows) =>
     (Array.isArray(rows) ? rows : []).map((item) => {
@@ -161,6 +168,12 @@ export default function Dashboard() {
     (async () => {
       if (!isAdmin) return;
       try {
+        const transferencias = await listarTransferenciasRecentes(200);
+        if (!ativo) return;
+        setTransferenciasRecentesAuditoria(
+          Array.isArray(transferencias) ? transferencias : []
+        );
+
         const itens = await listarAuditoriaAtividades(200);
         if (!ativo) return;
         if (Array.isArray(itens) && itens.length > 0) {
@@ -168,8 +181,6 @@ export default function Dashboard() {
           return;
         }
 
-        const transferencias = await listarTransferenciasRecentes(200);
-        if (!ativo) return;
         setAuditoriaAtividades(mapearTransferenciasParaAuditoria(transferencias));
       } catch (error) {
         const status = error?.response?.status;
@@ -177,6 +188,9 @@ export default function Dashboard() {
           try {
             const transferencias = await listarTransferenciasRecentes(200);
             if (!ativo) return;
+            setTransferenciasRecentesAuditoria(
+              Array.isArray(transferencias) ? transferencias : []
+            );
             setAuditoriaAtividades(mapearTransferenciasParaAuditoria(transferencias));
             return;
           } catch (fallbackError) {
@@ -185,6 +199,7 @@ export default function Dashboard() {
         } else {
           logger.error("Erro ao carregar auditoria de atividades:", error);
         }
+        if (ativo) setTransferenciasRecentesAuditoria([]);
         if (ativo) setAuditoriaAtividades([]);
       }
     })();
@@ -221,6 +236,37 @@ export default function Dashboard() {
   }, [turmaOrigemAjuste, resumoTurmasKey]);
 
   useEffect(() => {
+    if (!Array.isArray(turmasOrigemAjuste)) return;
+    if (turmasOrigemAjuste.length === 1) {
+      const unica = turmasOrigemAjuste[0];
+      if (unica?.id && String(turmaOrigemAjuste) !== String(unica.id)) {
+        setTurmaOrigemAjuste(String(unica.id));
+      }
+    }
+  }, [turmasOrigemAjuste, turmaOrigemAjuste]);
+
+  useEffect(() => {
+    if (!turmaOrigemAjuste) return;
+    if (Number(turmaDestinoAjuste) === Number(turmaOrigemAjuste)) {
+      setTurmaDestinoAjuste("");
+    }
+  }, [turmaOrigemAjuste, turmaDestinoAjuste]);
+
+  useEffect(() => {
+    if (isInstrutor && !isAdmin) {
+      const total = resumoTurmasInstrutor.reduce(
+        (acc, turma) => acc + (Number(turma?.totalAlunos) || 0),
+        0
+      );
+      setQtdAlunos(total);
+      return;
+    }
+
+    if (!isAdmin) {
+      setQtdAlunos(0);
+      return;
+    }
+
     const fetchAlunos = async () => {
       try {
         const alunos = await listarAlunos();
@@ -231,7 +277,28 @@ export default function Dashboard() {
     };
 
     fetchAlunos();
-  }, []);
+  }, [isAdmin, isInstrutor, resumoTurmasInstrutor]);
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      if (!isAdmin && !isInstrutor) {
+        if (ativo) setTransferenciasPendentesDashboard([]);
+        return;
+      }
+      try {
+        const itens = await listarTransferenciasPendentes();
+        if (!ativo) return;
+        setTransferenciasPendentesDashboard(Array.isArray(itens) ? itens : []);
+      } catch (error) {
+        logger.error("Erro ao carregar transferências pendentes no dashboard:", error);
+        if (ativo) setTransferenciasPendentesDashboard([]);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, [auditoriaRefreshKey, isAdmin, isInstrutor]);
   const botoes = [
     {
       to: "/equipe",
@@ -248,6 +315,12 @@ export default function Dashboard() {
   const [eventosResumo, setEventosResumo] = useState([]);
 
   useEffect(() => {
+    if (!isAdmin) {
+      setQtdEventos(0);
+      setEventosResumo([]);
+      return;
+    }
+
     const fetchEventos = async () => {
       try {
         const eventos = await listarEventos();
@@ -259,7 +332,7 @@ export default function Dashboard() {
     };
 
     fetchEventos();
-  }, []);
+  }, [isAdmin]);
 
   const [lembretes, setLembretes] = useState([]);
 
@@ -280,6 +353,12 @@ export default function Dashboard() {
   const [qtdPreMatriculas, setQtdPreMatriculas] = useState(0);
 
   useEffect(() => {
+    if (!isAdmin) {
+      setQtdFotos(0);
+      setNoticiasResumo([]);
+      return;
+    }
+
     const fetchFotos = async () => {
       try {
         const imagens = await listarImagens();
@@ -292,7 +371,7 @@ export default function Dashboard() {
     };
 
     fetchFotos();
-  }, []);
+  }, [isAdmin]);
   useEffect(() => {
     async function fetchPreMatriculas() {
       try {
@@ -357,6 +436,32 @@ export default function Dashboard() {
     navigate("/presencas");
   };
 
+  const confirmarTransferenciaNoDashboard = async (item) => {
+    const transferenciaId = Number(item?.id);
+    if (!transferenciaId) return;
+
+    const nomeAluno = item?.aluno_apelido || item?.aluno_nome || "aluno";
+    const confirmar = window.confirm(
+      `Confirmar entrada de ${nomeAluno} na turma destino?`
+    );
+    if (!confirmar) return;
+
+    try {
+      setConfirmandoTransferenciaId(transferenciaId);
+      await confirmarTransferencia(transferenciaId);
+      window.alert("Transferência confirmada com sucesso.");
+      setResumoTurmasKey((prev) => prev + 1);
+      setAuditoriaRefreshKey((prev) => prev + 1);
+    } catch (error) {
+      logger.error("Erro ao confirmar transferência no dashboard:", error);
+      window.alert(
+        error?.response?.data?.erro || "Não foi possível confirmar a transferência."
+      );
+    } finally {
+      setConfirmandoTransferenciaId(null);
+    }
+  };
+
   const formatarDataAtividade = (value) => {
     const texto = formatDateTime(
       value,
@@ -395,6 +500,41 @@ export default function Dashboard() {
           parseDataAuditoria(b.quando).getTime() - parseDataAuditoria(a.quando).getTime()
       );
   }, [auditoriaAtividades]);
+
+  const transferenciasRecentesMap = useMemo(() => {
+    const mapa = new Map();
+    (transferenciasRecentesAuditoria || []).forEach((item) => {
+      mapa.set(Number(item.id), item);
+    });
+    return mapa;
+  }, [transferenciasRecentesAuditoria]);
+
+  const obterBadgeTransferencia = (status, tipo) => {
+    const valor = String(status || "").toLowerCase();
+    if (valor === "pendente") return "Aguardando confirmação";
+    if (valor === "confirmada") return "Confirmada";
+    if (valor === "cancelada") return "Cancelada";
+    return String(tipo || "Atividade");
+  };
+
+  const montarDescricaoAtividade = (item) => {
+    if (item?.tipo !== "transferencia_turma") return item.descricao;
+
+    const transferencia = transferenciasRecentesMap.get(Number(item.transferenciaId));
+    const solicitante =
+      transferencia?.solicitado_por_nome || item.usuarioNome || "Instrutor";
+    const alunoNome = transferencia?.aluno_nome || `Aluno #${transferencia?.aluno_id || ""}`.trim();
+    const turmaDestino = turmasDestinoDisponiveis.find(
+      (turma) => Number(turma.id) === Number(transferencia?.turma_destino_id)
+    );
+    const destinoNome =
+      turmaDestino?.nome_instrutor ||
+      transferencia?.turma_destino_nome ||
+      "instrutor da turma destino";
+
+    if (!transferencia) return item.descricao;
+    return `${solicitante} enviou transferência do aluno "${alunoNome}" para "${destinoNome}".`;
+  };
 
   const alteracoesMesAtual = useMemo(() => {
     const agora = new Date();
@@ -606,7 +746,7 @@ export default function Dashboard() {
                       obterDestinoAtividade(item) ? "cursor-pointer hover:bg-cor-secundaria/20" : ""
                     }`}
                   >
-                    <p className="text-xs text-cor-texto/90">{item.descricao}</p>
+                    <p className="text-xs text-cor-texto/90">{montarDescricaoAtividade(item)}</p>
                     <div className="mt-1 flex items-center justify-between gap-2">
                       <p className="text-[11px] text-cor-texto/65">
                         {item.usuarioNome ? `${item.usuarioNome} • ` : ""}
@@ -622,9 +762,7 @@ export default function Dashboard() {
                               : "bg-amber-500/20 text-amber-300 border border-amber-400/40"
                           }`}
                         >
-                          {item.transferenciaStatus
-                            ? item.transferenciaStatus.toUpperCase()
-                            : item.tipo.toUpperCase()}
+                          {obterBadgeTransferencia(item.transferenciaStatus, item.tipo)}
                         </span>
                         {item.transferenciaId &&
                           ["confirmada", "pendente"].includes(item.transferenciaStatus) && (
@@ -688,6 +826,49 @@ export default function Dashboard() {
               aria-hidden="true"
             />
           </button>
+        )}
+
+        {temPapel(["admin", "instrutor"]) && transferenciasPendentesDashboard.length > 0 && (
+          <div className="rounded-xl p-4 border border-amber-300/35 bg-gradient-to-r from-amber-500/15 to-amber-300/10 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-amber-100">
+                Transferências pendentes para confirmação
+              </h3>
+              <span className="inline-flex h-7 items-center whitespace-nowrap rounded-full border border-amber-300/45 bg-amber-200/10 px-3 text-xs font-semibold text-amber-100">
+                {transferenciasPendentesDashboard.length} pendente{transferenciasPendentesDashboard.length === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            <ul className="space-y-2">
+              {transferenciasPendentesDashboard.slice(0, 4).map((item) => (
+                <li
+                  key={item.id}
+                  className="rounded-lg border border-amber-300/35 bg-cor-fundo/20 p-3 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-amber-100 truncate">
+                      {(item.aluno_apelido || item.aluno_nome || `Aluno #${item.aluno_id}`)} • origem: {item.turma_origem_nome || "-"}
+                    </p>
+                    <p className="text-xs text-amber-50/80 truncate">
+                      Solicitado por {item.solicitado_por_nome || "instrutor"}
+                    </p>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => confirmarTransferenciaNoDashboard(item)}
+                      disabled={confirmandoTransferenciaId === Number(item.id)}
+                      className="rounded-lg border border-emerald-300/45 bg-emerald-300/20 px-3 py-2 text-xs font-semibold text-emerald-100 hover:bg-emerald-300/30 disabled:opacity-60 transition-colors"
+                    >
+                      {confirmandoTransferenciaId === Number(item.id)
+                        ? "Confirmando..."
+                        : "Confirmar entrada"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {/* Estatísticas Rápidas */}
@@ -863,110 +1044,105 @@ export default function Dashboard() {
         {(temPapel(["instrutor"]) ||
           (temPapel(["admin"]) && turmasOrigemAjuste.length > 0)) && (
           <div className="rounded-2xl p-4 border border-sky-300/45 bg-gradient-to-r from-sky-500/15 to-sky-300/10 space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h3 className="text-base font-semibold text-sky-100">
-                  Ajuste rapido de turma
-                </h3>
-                <p className="text-xs text-sky-50/85 mt-0.5">
-                  Muda somente a turma do aluno com confirmação. Sem abrir edição completa.
-                </p>
+            <button
+              type="button"
+              onClick={() => setMostrarAjusteRapidoTurma((prev) => !prev)}
+              className="w-full rounded-xl border border-sky-300/40 bg-cor-fundo/25 px-3 py-2 text-left transition-colors hover:bg-cor-fundo/35"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-sky-100">Trocar aluno de turma</span>
+                <span className="text-xs text-sky-100/85">
+                  {mostrarAjusteRapidoTurma ? "Ocultar" : "Expandir"}
+                </span>
               </div>
-              <span className="text-[11px] rounded-full border border-sky-300/45 px-2 py-1 text-sky-100">
-                {turmasOrigemAjuste.length} turma{turmasOrigemAjuste.length === 1 ? "" : "s"}
-              </span>
-            </div>
+            </button>
 
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div className="rounded-lg border border-sky-300/35 bg-cor-fundo/20 p-2">
-                <p className="text-sky-50/80">Turmas</p>
-                <p className="text-sm font-bold text-sky-100">{turmasOrigemAjuste.length}</p>
-              </div>
-              <div className="rounded-lg border border-sky-300/35 bg-cor-fundo/20 p-2">
-                <p className="text-sky-50/80">Lembretes</p>
-                <p className="text-sm font-bold text-sky-100">{lembretes.length}</p>
-              </div>
-              <div className="rounded-lg border border-sky-300/35 bg-cor-fundo/20 p-2">
-                <p className="text-sky-50/80">Alunos</p>
-                <p className="text-sm font-bold text-sky-100">
-                  {resumoTurmasInstrutor.reduce((acc, turma) => acc + Number(turma.totalAlunos || 0), 0)}
-                </p>
-              </div>
-            </div>
+            {mostrarAjusteRapidoTurma && (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-sky-50/85">
+                    Muda somente a turma do aluno com confirmação. Sem abrir edição completa.
+                  </p>
+                  <span className="inline-flex h-7 items-center whitespace-nowrap rounded-full border border-sky-300/45 bg-sky-200/10 px-3 text-xs font-semibold text-sky-100">
+                    {turmasOrigemAjuste.length} turma{turmasOrigemAjuste.length === 1 ? "" : "s"}
+                  </span>
+                </div>
 
-            <div className="rounded-xl border border-sky-300/35 bg-cor-fundo/20 p-3">
-              <p className="text-xs font-semibold text-sky-100 mb-2">Transferência segura</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <label className="text-xs text-sky-50/85">
-                  Turma atual
-                  <select
-                    value={turmaOrigemAjuste}
-                    onChange={(e) => {
-                      setTurmaOrigemAjuste(e.target.value);
-                      setAlunoSelecionadoAjuste("");
-                    }}
-                    className="mt-1 w-full rounded-lg border border-sky-300/35 bg-cor-fundo/30 px-2 py-2 text-xs text-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
-                  >
-                    <option value="">Selecione</option>
-                    {turmasOrigemAjuste.map((turma) => (
-                      <option key={turma.id} value={turma.id}>
-                        {turma.nome || `Turma #${turma.id}`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="rounded-xl border border-sky-300/35 bg-cor-fundo/20 p-3">
+                  <p className="text-xs font-semibold text-sky-100 mb-2">Transferência segura</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <label className="text-xs text-sky-50/85">
+                      Turma atual
+                      <select
+                        value={turmaOrigemAjuste}
+                        onChange={(e) => {
+                          setTurmaOrigemAjuste(e.target.value);
+                          setAlunoSelecionadoAjuste("");
+                        }}
+                        className="mt-1 w-full rounded-lg border border-sky-200 bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
+                      >
+                        <option value="">Selecione</option>
+                        {turmasOrigemAjuste.map((turma) => (
+                          <option key={turma.id} value={turma.id}>
+                            {turma.nome || `Turma #${turma.id}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
 
-                <label className="text-xs text-sky-50/85">
-                  Aluno
-                  <select
-                    value={alunoSelecionadoAjuste}
-                    onChange={(e) => setAlunoSelecionadoAjuste(e.target.value)}
-                    disabled={!turmaOrigemAjuste || carregandoAlunosAjuste}
-                    className="mt-1 w-full rounded-lg border border-sky-300/35 bg-cor-fundo/30 px-2 py-2 text-xs text-sky-50 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
-                  >
-                    <option value="">
-                      {carregandoAlunosAjuste ? "Carregando..." : "Selecione"}
-                    </option>
-                    {alunosTurmaOrigem.map((aluno) => (
-                      <option key={aluno.id} value={aluno.id}>
-                        {aluno.apelido || aluno.nome || `Aluno #${aluno.id}`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="text-xs text-sky-50/85">
-                  Nova turma
-                  <select
-                    value={turmaDestinoAjuste}
-                    onChange={(e) => setTurmaDestinoAjuste(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-sky-300/35 bg-cor-fundo/30 px-2 py-2 text-xs text-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
-                  >
-                    <option value="">Selecione</option>
-                    {turmasDestinoAjuste
-                      .filter((turma) => Number(turma.id) !== Number(turmaOrigemAjuste))
-                      .map((turma) => (
-                        <option key={turma.id} value={turma.id}>
-                          {turma.nome || `Turma #${turma.id}`}
+                    <label className="text-xs text-sky-50/85">
+                      Aluno
+                      <select
+                        value={alunoSelecionadoAjuste}
+                        onChange={(e) => setAlunoSelecionadoAjuste(e.target.value)}
+                        disabled={!turmaOrigemAjuste || carregandoAlunosAjuste}
+                        className="mt-1 w-full rounded-lg border border-sky-200 bg-white px-2 py-2 text-xs text-gray-900 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
+                      >
+                        <option value="">
+                          {carregandoAlunosAjuste ? "Carregando..." : "Selecione"}
                         </option>
-                      ))}
-                  </select>
-                </label>
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] text-sky-50/70">
-                  Fluxo seguro: cria solicitação e aguarda confirmação da turma destino.
-                </p>
-                <button
-                  type="button"
-                  onClick={salvarAjusteRapidoTurma}
-                  disabled={salvandoAjusteTurma}
-                  className="rounded-lg border border-sky-300/40 bg-sky-300/20 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-300/30 disabled:opacity-60 transition-colors"
-                >
-                  {salvandoAjusteTurma ? "Salvando..." : "Solicitar transferência"}
-                </button>
-              </div>
-            </div>
+                        {alunosTurmaOrigem.map((aluno) => (
+                          <option key={aluno.id} value={aluno.id}>
+                            {aluno.apelido || aluno.nome || `Aluno #${aluno.id}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="text-xs text-sky-50/85">
+                      Nova turma
+                      <select
+                        value={turmaDestinoAjuste}
+                        onChange={(e) => setTurmaDestinoAjuste(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-sky-200 bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
+                      >
+                        <option value="">Selecione</option>
+                        {turmasDestinoAjuste
+                          .filter((turma) => Number(turma.id) !== Number(turmaOrigemAjuste))
+                          .map((turma) => (
+                            <option key={turma.id} value={turma.id}>
+                              {turma.nome || `Turma #${turma.id}`}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-[11px] text-sky-50/70">
+                      Fluxo seguro: cria solicitação e aguarda confirmação da turma destino.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={salvarAjusteRapidoTurma}
+                      disabled={salvandoAjusteTurma}
+                      className="rounded-lg border border-sky-300/40 bg-sky-300/20 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-300/30 disabled:opacity-60 transition-colors"
+                    >
+                      {salvandoAjusteTurma ? "Salvando..." : "Solicitar transferência"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       {abrirModalHistoricoSistema && (
@@ -1000,7 +1176,7 @@ export default function Dashboard() {
                       obterDestinoAtividade(item) ? "cursor-pointer hover:bg-[#143228]" : ""
                     }`}
                   >
-                    <p className="text-sm text-[#e4ece9]">{item.descricao}</p>
+                    <p className="text-sm text-[#e4ece9]">{montarDescricaoAtividade(item)}</p>
                     <div className="mt-1 flex items-center justify-between gap-2">
                       <p className="text-xs text-[#9db2aa]">
                         {item.usuarioNome ? `${item.usuarioNome} • ` : ""}
@@ -1016,9 +1192,7 @@ export default function Dashboard() {
                               : "bg-amber-500/20 text-amber-300 border border-amber-400/40"
                           }`}
                         >
-                          {item.transferenciaStatus
-                            ? item.transferenciaStatus.toUpperCase()
-                            : item.tipo.toUpperCase()}
+                          {obterBadgeTransferencia(item.transferenciaStatus, item.tipo)}
                         </span>
                         {item.transferenciaId &&
                           ["confirmada", "pendente"].includes(item.transferenciaStatus) && (
@@ -1044,13 +1218,15 @@ export default function Dashboard() {
       )}
       </div>
 
-      <ModalLembretes
-        aberto={abrirModal}
-        aoFechar={() => {
-          setAbrirModal(false);
-          buscarLembretes();
-        }}
-      />
+      {abrirModal && (
+        <ModalLembretes
+          aberto={abrirModal}
+          aoFechar={() => {
+            setAbrirModal(false);
+            buscarLembretes();
+          }}
+        />
+      )}
       <div className="flex flex-col items-center pt-10">
         <img
           src={logoSistema}

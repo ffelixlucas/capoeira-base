@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-function Busca({ placeholder, onBuscar, delay = 400 }) {
+function Busca({ placeholder, onBuscar, delay = 400, className = "" }) {
   const [texto, setTexto] = useState("");
 
   // Sempre que o texto mudar, esperar "delay" ms antes de chamar onBuscar
@@ -18,7 +18,7 @@ function Busca({ placeholder, onBuscar, delay = 400 }) {
       placeholder={placeholder}
       value={texto}
       onChange={(e) => setTexto(e.target.value)}
-      className="w-full border px-3 py-2 rounded-md text-sm text-black placeholder-gray-500"
+      className={`w-full min-h-[44px] border px-3 py-2 rounded-md text-sm text-black placeholder-gray-500 ${className}`}
     />
   );
 }

@@ -2,6 +2,11 @@
 import api from "./api";
 import { logger } from "../utils/logger";
 
+let perfilCache = null;
+let perfilCacheAt = 0;
+let perfilInFlight = null;
+const PERFIL_CACHE_TTL_MS = 5000;
+
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar todos os membros da equipe (multi-org automático via token)      */
 /* -------------------------------------------------------------------------- */
@@ -64,13 +69,27 @@ export async function removerMembro(id) {
 /* 👤 Buscar e atualizar perfil do usuário logado                             */
 /* -------------------------------------------------------------------------- */
 export async function buscarPerfil() {
+  const agora = Date.now();
+  if (perfilCache && agora - perfilCacheAt < PERFIL_CACHE_TTL_MS) {
+    return perfilCache;
+  }
+
+  if (perfilInFlight) {
+    return perfilInFlight;
+  }
+
   try {
     logger.debug("[equipeService] Buscando perfil do usuário logado...");
-    const { data } = await api.get("/equipe/me");
+    perfilInFlight = api.get("/equipe/me");
+    const { data } = await perfilInFlight;
+    perfilCache = data;
+    perfilCacheAt = Date.now();
     return data;
   } catch (erro) {
     logger.error("[equipeService] Erro ao buscar perfil", { erro: erro.message });
     throw erro.response?.data || erro;
+  } finally {
+    perfilInFlight = null;
   }
 }
 

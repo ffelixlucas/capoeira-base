@@ -4,6 +4,9 @@ import { buscarPerfil } from "../services/equipeService";
 import { logger } from "../utils/logger";
 logger.log("🔍 [AuthContext] Inicializando contexto...");
 
+let perfilBootstrapPromise = null;
+let perfilBootstrapToken = null;
+
 
 export const AuthContext = createContext(null);
 
@@ -69,22 +72,39 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const tokenSalvo = localStorage.getItem("token");
-  
+
     if (tokenSalvo) {
       setToken(tokenSalvo);
       scheduleAutoLogout(tokenSalvo);
-  
-      buscarPerfil()
+
+      const usuarioLocalRaw = localStorage.getItem("usuario");
+      if (usuarioLocalRaw) {
+        try {
+          const usuarioLocal = JSON.parse(usuarioLocalRaw);
+          if (usuarioLocal?.id) {
+            setUsuario(usuarioLocal);
+          }
+        } catch {
+          localStorage.removeItem("usuario");
+        }
+      }
+
+      if (!perfilBootstrapPromise || perfilBootstrapToken !== tokenSalvo) {
+        perfilBootstrapToken = tokenSalvo;
+        perfilBootstrapPromise = buscarPerfil();
+      }
+
+      perfilBootstrapPromise
         .then((dados) => {
           // 🔹 Agora mantemos o organizacao_id real, sem forçar "1"
           const usuarioFinal = {
             ...dados,
             organizacao_id: dados.organizacao_id,
           };
-  
+
           setUsuario(usuarioFinal);
           localStorage.setItem("usuario", JSON.stringify(usuarioFinal));
-          logger.log("📌 Perfil atualizado:", usuarioFinal);
+          logger.debug("📌 Perfil atualizado:", usuarioFinal);
         })
         .catch((erro) => {
           // 🔥 Novo comportamento: não faz logout imediato

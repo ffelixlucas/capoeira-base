@@ -1,6 +1,11 @@
 // src/services/alunoService.js
 import api from "./api"; // axios com token JWT
 
+let transferenciasPendentesCache = null;
+let transferenciasPendentesCacheAt = 0;
+let transferenciasPendentesInFlight = null;
+const TRANSFERENCIAS_PENDENTES_TTL_MS = 1500;
+
 export async function listarAlunos(turmaId) {
   const url = turmaId ? `/alunos?turma_id=${turmaId}` : "/alunos";
 
@@ -55,9 +60,40 @@ export async function solicitarTransferenciaTurma(
 }
 
 export async function listarTransferenciasPendentes(turmaId) {
+  if (!turmaId) {
+    const agora = Date.now();
+    if (
+      transferenciasPendentesCache &&
+      agora - transferenciasPendentesCacheAt < TRANSFERENCIAS_PENDENTES_TTL_MS
+    ) {
+      return transferenciasPendentesCache;
+    }
+    if (transferenciasPendentesInFlight) {
+      return transferenciasPendentesInFlight;
+    }
+  }
+
   const params = turmaId ? { turma_id: turmaId } : undefined;
-  const res = await api.get("/alunos/transferencias/pendentes", { params });
-  return Array.isArray(res.data) ? res.data : [];
+  const request = api
+    .get("/alunos/transferencias/pendentes", { params })
+    .then((res) => (Array.isArray(res.data) ? res.data : []));
+
+  if (!turmaId) {
+    transferenciasPendentesInFlight = request;
+  }
+
+  try {
+    const data = await request;
+    if (!turmaId) {
+      transferenciasPendentesCache = data;
+      transferenciasPendentesCacheAt = Date.now();
+    }
+    return data;
+  } finally {
+    if (!turmaId) {
+      transferenciasPendentesInFlight = null;
+    }
+  }
 }
 
 export async function listarTransferenciasRecentes(limit = 10) {

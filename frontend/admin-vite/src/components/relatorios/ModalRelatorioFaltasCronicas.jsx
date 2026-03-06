@@ -42,8 +42,18 @@ export default function ModalRelatorioFaltasCronicas({
   const [minimoFaltas, setMinimoFaltas] = useState(3);
   const [metricas, setMetricas] = useState({});
   const [carregando, setCarregando] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
 
-  const isMobile = window.innerWidth <= 768;
+  useEffect(() => {
+    function atualizarViewport() {
+      setIsMobile(window.innerWidth <= 768);
+    }
+    atualizarViewport();
+    window.addEventListener("resize", atualizarViewport);
+    return () => window.removeEventListener("resize", atualizarViewport);
+  }, []);
 
   const alunosFiltrados = useMemo(() => {
     if (!Array.isArray(alunos)) return [];
@@ -216,40 +226,76 @@ export default function ModalRelatorioFaltasCronicas({
                 Nenhum aluno encontrado nesse critério.
               </div>
             ) : (
-              <div className="overflow-auto max-h-[52vh]">
-                <table className="w-full text-sm border-collapse">
-                  <thead className="bg-gray-100 sticky top-0">
-                    <tr>
-                      <th className="p-2 border text-black">#</th>
-                      <th className="p-2 border text-black">Aluno</th>
-                      <th className="p-2 border text-black">Turma</th>
-                      <th className="p-2 border text-black">Categoria</th>
-                      <th className="p-2 border text-black">Presentes</th>
-                      <th className="p-2 border text-black">Faltas</th>
-                      <th className="p-2 border text-black">Frequência</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <>
+                {isMobile ? (
+                  <div className="max-h-[52vh] overflow-auto p-2 space-y-2">
                     {cronicos.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="p-2 border text-center text-black">{index + 1}</td>
-                        <td className="p-2 border text-black">{item.nome}</td>
-                        <td className="p-2 border text-black">{item.turma}</td>
-                        <td className="p-2 border text-black">{item.categoria}</td>
-                        <td className="p-2 border text-center text-black">
-                          {item.presentes}
-                        </td>
-                        <td className="p-2 border text-center text-red-700 font-semibold">
-                          {item.faltas}
-                        </td>
-                        <td className="p-2 border text-center text-black">
-                          {item.frequencia}%
-                        </td>
-                      </tr>
+                      <div key={item.id} className="rounded-md border border-gray-200 bg-white p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-semibold text-gray-600">#{index + 1}</p>
+                          <p className="text-xs font-semibold text-red-700">{item.faltas} faltas</p>
+                        </div>
+                        <p className="mt-1 text-sm font-semibold text-black">{item.nome}</p>
+                        <p className="text-xs text-gray-700">
+                          Turma: <span className="font-medium">{item.turma}</span>
+                        </p>
+                        <p className="text-xs text-gray-700">
+                          Categoria: <span className="font-medium">{item.categoria}</span>
+                        </p>
+                        <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                          <div className="rounded border border-gray-200 p-2 text-center">
+                            <p className="text-gray-500">Presentes</p>
+                            <p className="font-semibold text-black">{item.presentes}</p>
+                          </div>
+                          <div className="rounded border border-red-200 bg-red-50 p-2 text-center">
+                            <p className="text-red-600">Faltas</p>
+                            <p className="font-semibold text-red-700">{item.faltas}</p>
+                          </div>
+                          <div className="rounded border border-gray-200 p-2 text-center">
+                            <p className="text-gray-500">Frequência</p>
+                            <p className="font-semibold text-black">{item.frequencia}%</p>
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                ) : (
+                  <div className="overflow-auto max-h-[52vh]">
+                    <table className="w-full text-sm border-collapse">
+                      <thead className="bg-gray-100 sticky top-0">
+                        <tr>
+                          <th className="p-2 border text-black">#</th>
+                          <th className="p-2 border text-black">Aluno</th>
+                          <th className="p-2 border text-black">Turma</th>
+                          <th className="p-2 border text-black">Categoria</th>
+                          <th className="p-2 border text-black">Presentes</th>
+                          <th className="p-2 border text-black">Faltas</th>
+                          <th className="p-2 border text-black">Frequência</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cronicos.map((item, index) => (
+                          <tr key={item.id} className="hover:bg-gray-50">
+                            <td className="p-2 border text-center text-black">{index + 1}</td>
+                            <td className="p-2 border text-black">{item.nome}</td>
+                            <td className="p-2 border text-black">{item.turma}</td>
+                            <td className="p-2 border text-black">{item.categoria}</td>
+                            <td className="p-2 border text-center text-black">
+                              {item.presentes}
+                            </td>
+                            <td className="p-2 border text-center text-red-700 font-semibold">
+                              {item.faltas}
+                            </td>
+                            <td className="p-2 border text-center text-black">
+                              {item.frequencia}%
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
