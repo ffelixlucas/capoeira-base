@@ -19,6 +19,7 @@ import api from "../../services/api";
 import { toast } from "react-toastify";
 import { CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
+import { formatDate, parseDateTime } from "../../utils/datetime";
 
 export default function InscricaoEventoPublic() {
   const { slug, eventoId } = useParams(); 
@@ -47,27 +48,8 @@ export default function InscricaoEventoPublic() {
       return;
     }
 
-    // ✅ Função robusta para converter datas de forma segura (inclusive MySQL)
-    function parseDatetimeAsSaoPaulo(value) {
-      if (!value) return null;
-      if (value instanceof Date) return value;
-
-      const s = String(value).trim();
-      if (!s) return null;
-
-      // se já tem 'T' ou timezone explícito
-      if (s.includes("T") || /[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) {
-        const d = new Date(s);
-        return isNaN(d) ? null : d;
-      }
-
-      // formato MySQL "YYYY-MM-DD HH:MM:SS"
-      const d = new Date(s.replace(" ", "T") + "-03:00");
-      return isNaN(d) ? null : d;
-    }
-
-    const dataInicio = parseDatetimeAsSaoPaulo(evento?.data_inicio);
-    const dataLimite = parseDatetimeAsSaoPaulo(evento?.inscricoes_ate);
+    const dataInicio = parseDateTime(evento?.data_inicio, "sao_paulo");
+    const dataLimite = parseDateTime(evento?.inscricoes_ate, "sao_paulo");
     const agora = new Date();
 
     console.debug("[DEBUG BLOQUEIO DATAS]", {
@@ -355,11 +337,15 @@ export default function InscricaoEventoPublic() {
         <span className="relative z-10">
           INSCRIÇÕES ATÉ{" "}
           <span className="text-blue-50 font-bold drop-shadow-[0_0_6px_rgba(59,130,246,0.5)]">
-            {new Date(evento.inscricoes_ate).toLocaleDateString("pt-BR", {
+            {formatDate(
+              evento.inscricoes_ate,
+              {
               day: "2-digit",
               month: "long",
               year: "numeric",
-            })}
+              },
+              "sao_paulo"
+            )}
           </span>
         </span>
       </motion.div>

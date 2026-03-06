@@ -264,7 +264,7 @@ export async function resumoPorData({
         COUNT(*) AS total_registros,
         SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
         SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
-        MAX(p.updated_at) AS ultima_atualizacao,
+        DATE_FORMAT(MAX(p.updated_at), '%Y-%m-%dT%H:%i:%s.000Z') AS ultima_atualizacao,
         CAST(
           SUBSTRING_INDEX(
             GROUP_CONCAT(p.created_by ORDER BY p.updated_at DESC SEPARATOR ','),
@@ -307,7 +307,7 @@ export async function ultimasAtividadesPorInstrutor({
         COUNT(*) AS total_registros,
         SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
         SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
-        MAX(p.updated_at) AS ultima_atualizacao
+        DATE_FORMAT(MAX(p.updated_at), '%Y-%m-%dT%H:%i:%s.000Z') AS ultima_atualizacao
       FROM presencas p
       WHERE p.organizacao_id = ?
       GROUP BY p.created_by, p.turma_id, p.data
@@ -365,7 +365,7 @@ export async function ultimaAtividadeDoUsuario({
       COUNT(*) AS total_registros,
       SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
       SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
-      MAX(p.updated_at) AS ultima_atualizacao
+      DATE_FORMAT(MAX(p.updated_at), '%Y-%m-%dT%H:%i:%s.000Z') AS ultima_atualizacao
     FROM presencas p
     LEFT JOIN equipe e ON e.id = p.created_by
     LEFT JOIN turmas t ON t.id = p.turma_id
@@ -404,7 +404,7 @@ export async function atividadesDoUsuario({
       COUNT(*) AS total_registros,
       SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
       SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
-      MAX(p.updated_at) AS ultima_atualizacao
+      DATE_FORMAT(MAX(p.updated_at), '%Y-%m-%dT%H:%i:%s.000Z') AS ultima_atualizacao
     FROM presencas p
     LEFT JOIN equipe e ON e.id = p.created_by
     LEFT JOIN turmas t ON t.id = p.turma_id
@@ -451,7 +451,7 @@ export async function atividadesPorTurmas({
       COUNT(*) AS total_registros,
       SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
       SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
-      MAX(p.updated_at) AS ultima_atualizacao
+      DATE_FORMAT(MAX(p.updated_at), '%Y-%m-%dT%H:%i:%s.000Z') AS ultima_atualizacao
     FROM presencas p
     LEFT JOIN turmas t ON t.id = p.turma_id
     WHERE p.organizacao_id = ?
@@ -501,7 +501,7 @@ export async function atividadesDaTurma({
       COUNT(*) AS total_registros,
       SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS presentes,
       SUM(CASE WHEN p.status = 'falta' THEN 1 ELSE 0 END) AS faltas,
-      MAX(p.updated_at) AS ultima_atualizacao
+      DATE_FORMAT(MAX(p.updated_at), '%Y-%m-%dT%H:%i:%s.000Z') AS ultima_atualizacao
     FROM presencas p
     LEFT JOIN turmas t ON t.id = p.turma_id
     LEFT JOIN equipe cb ON cb.id = p.created_by

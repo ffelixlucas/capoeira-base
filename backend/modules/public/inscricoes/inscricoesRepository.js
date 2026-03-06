@@ -283,7 +283,12 @@ async function buscarValorEvento(eventoId) {
  */
 async function verificarEncerramentoInscricao(eventoId) {
   const [rows] = await db.execute(
-    "SELECT inscricoes_ate, data_inicio FROM agenda WHERE id = ? LIMIT 1",
+    `SELECT
+      DATE_FORMAT(inscricoes_ate, '%Y-%m-%dT%H:%i:%s.000Z') AS inscricoes_ate,
+      DATE_FORMAT(data_inicio, '%Y-%m-%dT%H:%i:%s.000Z') AS data_inicio
+     FROM agenda
+     WHERE id = ?
+     LIMIT 1`,
     [eventoId]
   );
 
@@ -306,8 +311,8 @@ async function verificarEncerramentoInscricao(eventoId) {
       return isNaN(d) ? null : d;
     }
 
-    // formato MySQL "YYYY-MM-DD HH:MM:SS"
-    const d = new Date(s.replace(" ", "T") + "-03:00");
+    // fallback: string sem timezone => UTC
+    const d = new Date(s.replace(" ", "T") + "Z");
     return isNaN(d) ? null : d;
   }
 

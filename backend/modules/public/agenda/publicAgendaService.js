@@ -10,7 +10,9 @@ async function listarEventosPublicos(organizacaoId) {
     SELECT 
       id, organizacao_id, titulo, descricao_curta, descricao_completa,
       local, endereco, telefone_contato, whatsapp_url,
-      data_inicio, data_fim, inscricoes_ate,
+      DATE_FORMAT(data_inicio, '%Y-%m-%dT%H:%i:%s.000Z') AS data_inicio,
+      DATE_FORMAT(data_fim, '%Y-%m-%dT%H:%i:%s.000Z') AS data_fim,
+      DATE_FORMAT(inscricoes_ate, '%Y-%m-%dT%H:%i:%s.000Z') AS inscricoes_ate,
       imagem_url, com_inscricao, valor, possui_camiseta,
       configuracoes
     FROM agenda
@@ -43,7 +45,9 @@ async function buscarEventoPublicoPorId(id, organizacaoId) {
     SELECT 
       id, organizacao_id, titulo, descricao_curta, descricao_completa,
       local, endereco, telefone_contato, whatsapp_url,
-      data_inicio, data_fim, inscricoes_ate,
+      DATE_FORMAT(data_inicio, '%Y-%m-%dT%H:%i:%s.000Z') AS data_inicio,
+      DATE_FORMAT(data_fim, '%Y-%m-%dT%H:%i:%s.000Z') AS data_fim,
+      DATE_FORMAT(inscricoes_ate, '%Y-%m-%dT%H:%i:%s.000Z') AS inscricoes_ate,
       imagem_url, com_inscricao, valor, possui_camiseta,
       configuracoes
     FROM agenda

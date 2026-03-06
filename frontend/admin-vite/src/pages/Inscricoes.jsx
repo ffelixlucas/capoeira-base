@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { listarEventos } from "../services/agendaService";
 import { logger } from "../utils/logger";
+import { formatDate, parseDateTime, toTimestamp } from "../utils/datetime";
 
 function Inscricoes() {
   const navigate = useNavigate();
@@ -25,23 +26,10 @@ function Inscricoes() {
     }
   }
 
-  const parseDatetimeAsSaoPaulo = (value) => {
-    if (!value) return Number.NaN;
-    const raw = String(value).trim();
-    if (!raw) return Number.NaN;
-    if (raw.includes("T") || /[zZ]|[+\-]\d{2}:\d{2}$/.test(raw)) {
-      const parsed = new Date(raw).getTime();
-      return Number.isFinite(parsed) ? parsed : Number.NaN;
-    }
-    const normalized = raw.replace(" ", "T");
-    const parsed = new Date(`${normalized}-03:00`).getTime();
-    return Number.isFinite(parsed) ? parsed : Number.NaN;
-  };
-
   const getEventoReferenciaTs = (evento) => {
     const prioridade = [evento.inscricoes_ate, evento.data_fim, evento.data_inicio];
     for (const candidate of prioridade) {
-      const ts = parseDatetimeAsSaoPaulo(candidate);
+      const ts = toTimestamp(candidate, "sao_paulo");
       if (Number.isFinite(ts)) return ts;
     }
     return Number.NaN;
@@ -75,13 +63,17 @@ function Inscricoes() {
   const formatarDataHora = (evento) => {
     const ts = getEventoReferenciaTs(evento);
     if (!Number.isFinite(ts)) return "Data a definir";
-    const d = new Date(ts);
-    const data = d.toLocaleDateString("pt-BR", {
+    const data = formatDate(ts, {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
-    const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const d = parseDateTime(ts, "sao_paulo");
+    const hora = d.toLocaleTimeString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     return hora === "00:00" ? data : `${data} • ${hora}`;
   };
 

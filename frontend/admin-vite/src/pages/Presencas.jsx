@@ -9,13 +9,37 @@ import {
   atualizarPresenca,
 } from "../services/presencaService";
 import { listarTurmas, getMinhasTurmas } from "../services/turmaService";
-import { ArrowLeftIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, CheckCircleIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
 import { logger } from "../utils/logger";
+import InfoTip from "../components/ui/InfoTip";
 
 function useQuery() {
   const { search } = useLocation();
   return useMemo(() => new URLSearchParams(search), [search]);
+}
+
+function hojeIsoLocal() {
+  const now = new Date();
+  const tzOffsetMs = now.getTimezoneOffset() * 60 * 1000;
+  return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 10);
+}
+
+function parseDataFlex(raw) {
+  if (!raw) return null;
+  const valor = String(raw).trim();
+  if (!valor) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return new Date(`${valor}T00:00:00-03:00`);
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/.test(valor)) {
+    // `updated_at` do banco pode vir sem timezone; tratamos como UTC.
+    return new Date(`${valor.replace(" ", "T")}Z`);
+  }
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(valor)) {
+    // ISO sem offset também deve ser interpretado como UTC.
+    return new Date(`${valor}Z`);
+  }
+  const d = new Date(valor);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 export default function Presencas() {
@@ -26,7 +50,7 @@ export default function Presencas() {
   const turmaId = query.get("turma"); // /presencas?turma=4
   const turmaIdNum = turmaId ? Number(turmaId) : null;
 
-  const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
+  const [data, setData] = useState(() => hojeIsoLocal());
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
@@ -54,11 +78,17 @@ export default function Presencas() {
   const [mostrarUltimaChamadaAdmin, setMostrarUltimaChamadaAdmin] = useState(true);
   const [filtroUltimaChamadaAdmin, setFiltroUltimaChamadaAdmin] = useState("todas");
   const [abaPainel, setAbaPainel] = useState("chamada");
+  const [agora, setAgora] = useState(() => new Date());
 
   const isAdmin = useMemo(
     () => Array.isArray(usuario?.roles) && usuario.roles.includes("admin"),
     [usuario]
   );
+
+  useEffect(() => {
+    const id = setInterval(() => setAgora(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // ---- Carregar turmas (minhas + todas) ----
   useEffect(() => {
@@ -199,6 +229,8 @@ export default function Presencas() {
           historico: Array.isArray(resp?.historico) ? resp.historico.length : 0,
           ultimaData: resp?.atividade?.data,
           ultimaTurmaId: resp?.atividade?.turma_id,
+          ultimaAtualizacaoRaw: resp?.atividade?.ultima_atualizacao,
+          historicoPrimeiraAtualizacaoRaw: Array.isArray(resp?.historico) ? resp?.historico?.[0]?.ultima_atualizacao : null,
         });
       } catch (e) {
         logger.error(e);
@@ -228,6 +260,13 @@ export default function Presencas() {
 
         // 2) Presenças do dia (se houver)
         const resp = await listarPorTurmaEData(turmaIdNum, data);
+        logger.debug("[Presencas] carregarDia", {
+          turmaId: turmaIdNum,
+          dataSelecionada: data,
+          nowIso: new Date().toISOString(),
+          nowSp: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+          totalPresencasApi: Array.isArray(resp?.presencas) ? resp.presencas.length : 0,
+        });
         const marcados = (resp?.presencas || []).reduce((acc, p) => {
           acc.set(
             Number(p.aluno_id),
@@ -282,10 +321,27 @@ export default function Presencas() {
     }
     try {
       setSalvando(true);
+      const totalPresentes = itens.filter((i) => i.status === "presente").length;
+      const totalFaltas = itens.length - totalPresentes;
+      logger.debug("[Presencas] salvarBatch:inicio", {
+        turmaId: turmaIdNum,
+        dataSelecionada: data,
+        totalItens: itens.length,
+        presentes: totalPresentes,
+        faltas: totalFaltas,
+        nowIso: new Date().toISOString(),
+        nowSp: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+      });
       await salvarBatch({
         turma_id: turmaIdNum,
         data,
         itens, // [{ aluno_id, status }]
+      });
+      logger.debug("[Presencas] salvarBatch:sucesso", {
+        turmaId: turmaIdNum,
+        dataSelecionada: data,
+        nowIso: new Date().toISOString(),
+        nowSp: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
       });
       alert("Presenças salvas com sucesso!");
     } catch (e) {
@@ -322,27 +378,33 @@ const alunosOrdenados = useMemo(() => {
 
   const formatarDataHora = (raw) => {
     if (!raw) return "Sem registro";
-    const d = new Date(raw);
-    if (Number.isNaN(d.getTime())) return "Sem registro";
+    const d = parseDataFlex(raw);
+    if (!d) return "Sem registro";
     return d.toLocaleString("pt-BR", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "America/Sao_Paulo",
     });
   };
+
+  const formatarHoraAtualSp = (date) =>
+    date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone: "America/Sao_Paulo",
+    });
 
   const formatarDataDia = (raw) => {
     if (!raw) return "Data inválida";
     const valor = String(raw).trim();
     if (!valor) return "Data inválida";
-    const normalizado = /^\d{4}-\d{2}-\d{2}$/.test(valor)
-      ? `${valor}T00:00:00`
-      : valor;
-    const d = new Date(normalizado);
-    if (Number.isNaN(d.getTime())) return "Data inválida";
-    return d.toLocaleDateString("pt-BR");
+    const d = parseDataFlex(valor);
+    if (!d) return "Data inválida";
+    return d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
   };
 
   const normalizarDataParaApi = (raw) => {
@@ -350,8 +412,8 @@ const alunosOrdenados = useMemo(() => {
     const valor = String(raw).trim();
     if (!valor) return "";
     if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
-    const d = new Date(valor);
-    if (Number.isNaN(d.getTime())) return "";
+    const d = parseDataFlex(valor);
+    if (!d) return "";
     return d.toISOString().slice(0, 10);
   };
 
@@ -589,13 +651,6 @@ const alunosOrdenados = useMemo(() => {
               </div>
             )}
           </div>
-          <input
-            type="date"
-            className="h-9 rounded-xl border border-cor-secundaria/35 px-2.5 text-sm bg-cor-fundo/25"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-            aria-label="Selecionar data"
-          />
         </div>
       </div>
 
@@ -718,8 +773,16 @@ const alunosOrdenados = useMemo(() => {
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-cor-texto/70 mt-1">
-                    {atividadeInstrutor.turma_nome} • {formatarDataDia(atividadeInstrutor.data)}
+                  <p className="text-xs text-cor-texto/70 mt-1 flex flex-wrap items-center gap-2">
+                    <span>
+                      {atividadeInstrutor.turma_nome} • {formatarDataDia(atividadeInstrutor.data)}
+                    </span>
+                    <span className="text-red-300/90">
+                      Faltas: {Number(atividadeInstrutor.faltas || 0)}
+                    </span>
+                    <span className="text-green-300/90">
+                      Presenças: {Number(atividadeInstrutor.presentes || 0)}
+                    </span>
                   </p>
                   <button
                     type="button"
@@ -728,6 +791,18 @@ const alunosOrdenados = useMemo(() => {
                   >
                     Ver detalhes da chamada
                   </button>
+                  {historicoInstrutor.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFiltroDataHistorico("");
+                        setModalHistoricoAberto(true);
+                      }}
+                      className="text-xs underline text-cor-primaria mt-2 ml-3 font-medium"
+                    >
+                      Ver todas chamadas
+                    </button>
+                  )}
                 </>
               )}
             </>
@@ -899,47 +974,71 @@ const alunosOrdenados = useMemo(() => {
         </div>
       )}
 
-      {/* Ações rápidas */}
-      <div className="mx-2 grid grid-cols-2 gap-2">
-        <button
-          disabled={
-            !turmaIdNum ||
-            !turmaPermitida ||
-            carregando ||
-            alunosTurma.length === 0
-          }
-          onClick={() => marcarTodos("presente")}
-          className={`rounded-xl border px-3 py-3 text-sm font-semibold ${
-            turmaIdNum && turmaPermitida && !carregando && alunosTurma.length
-              ? "border-green-500/45 bg-green-500/10 text-green-200 active:scale-[0.99]"
-              : "border-cor-secundaria/10 opacity-60"
-          }`}
-        >
-          Marcar todos presentes
-        </button>
-
-        <button
-          disabled={
-            !turmaIdNum ||
-            !turmaPermitida ||
-            carregando ||
-            alunosTurma.length === 0
-          }
-          onClick={() => marcarTodos("falta")}
-          className={`rounded-xl border px-3 py-3 text-sm font-semibold ${
-            turmaIdNum && turmaPermitida && !carregando && alunosTurma.length
-              ? "border-red-500/45 bg-red-500/10 text-red-200 active:scale-[0.99]"
-              : "border-cor-secundaria/10 opacity-60"
-          }`}
-        >
-          Marcar todos falta
-        </button>
+      <div className="mx-2 rounded-2xl border border-cor-secundaria/25 bg-gradient-to-r from-[#0f2e24] to-[#184436] p-4 shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
+        <p className="text-sm font-semibold text-cor-titulo">
+          Chamada da turma: <span className="text-cor-primaria">{tituloTurma}</span>
+        </p>
+        <InfoTip type="info" className="mt-2 !py-2 !px-3 text-xs">
+          A chamada usa a data selecionada. Altere somente quando precisar lançar outro dia.
+        </InfoTip>
+        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-cor-texto/85">
+          <label className="inline-flex items-center gap-2">
+            <span>Referente ao dia:</span>
+            <input
+              type="date"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="h-8 rounded-lg border border-cor-secundaria/35 px-2 text-xs bg-cor-fundo/25 text-cor-titulo"
+              aria-label="Selecionar dia da chamada"
+            />
+          </label>
+          <p className="inline-flex items-center gap-1.5">
+            <ClockIcon className="h-4 w-4 text-cor-primaria" />
+            <span>Horário atual: <span className="font-semibold text-cor-titulo">{formatarHoraAtualSp(agora)}</span></span>
+          </p>
+        </div>
       </div>
 
       {/* Lista de alunos com toggles grandes */}
       <div className="mx-2 rounded-2xl border border-cor-secundaria/20 bg-gradient-to-br from-[#0e2c23] to-[#163a2f] shadow-[0_14px_30px_rgba(0,0,0,0.22)]">
-        <div className="p-4 text-sm font-semibold text-cor-titulo border-b border-cor-secundaria/15">
-          Lista de alunos
+        <div className="p-4 border-b border-cor-secundaria/15">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-sm font-semibold text-cor-titulo">Lista de alunos</p>
+            <div className="inline-flex items-center gap-2">
+              <button
+                disabled={
+                  !turmaIdNum ||
+                  !turmaPermitida ||
+                  carregando ||
+                  alunosTurma.length === 0
+                }
+                onClick={() => marcarTodos("presente")}
+                className={`h-8 rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                  turmaIdNum && turmaPermitida && !carregando && alunosTurma.length
+                    ? "border-green-500/50 bg-green-500/12 text-green-200 hover:bg-green-500/20"
+                    : "border-cor-secundaria/15 text-cor-texto/60"
+                }`}
+              >
+                Todos presentes
+              </button>
+              <button
+                disabled={
+                  !turmaIdNum ||
+                  !turmaPermitida ||
+                  carregando ||
+                  alunosTurma.length === 0
+                }
+                onClick={() => marcarTodos("falta")}
+                className={`h-8 rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                  turmaIdNum && turmaPermitida && !carregando && alunosTurma.length
+                    ? "border-red-500/50 bg-red-500/12 text-red-200 hover:bg-red-500/20"
+                    : "border-cor-secundaria/15 text-cor-texto/60"
+                }`}
+              >
+                Todos falta
+              </button>
+            </div>
+          </div>
         </div>
 
         {carregando && (
@@ -1023,11 +1122,11 @@ const alunosOrdenados = useMemo(() => {
             !turmaIdNum || !turmaPermitida || salvando || itens.length === 0
           }
           onClick={handleSalvar}
-          className={`w-full rounded-2xl px-6 py-3 text-white shadow-xl flex items-center justify-center gap-2 font-semibold
+          className={`w-full rounded-xl px-5 py-2.5 text-white shadow-lg flex items-center justify-center gap-2 text-sm font-semibold
       ${
         !turmaIdNum || !turmaPermitida || salvando || itens.length === 0
-          ? "bg-cor-secundaria/40"
-          : "bg-gradient-to-r from-[#f4cf4e] to-[#f0bc3d] text-[#1a2213] active:scale-[0.98]"
+          ? "bg-cor-secundaria/35 text-cor-texto/70"
+          : "bg-gradient-to-r from-[#f4cf4e] to-[#f0bc3d] text-[#1a2213] hover:brightness-105 active:scale-[0.99]"
       }
     `}
           aria-label="Salvar presenças"
@@ -1179,6 +1278,14 @@ const alunosOrdenados = useMemo(() => {
                     </p>
                     <p className="text-xs text-cor-texto/70">
                       {formatarDataDia(atividade.data)} • Atualizado em {formatarDataHora(atividade.ultima_atualizacao)}
+                    </p>
+                    <p className="text-[11px] mt-1 flex items-center gap-3">
+                      <span className="text-red-300/90">
+                        Faltas: {Number(atividade.faltas || 0)}
+                      </span>
+                      <span className="text-green-300/90">
+                        Presenças: {Number(atividade.presentes || 0)}
+                      </span>
                     </p>
                   </button>
                 </li>

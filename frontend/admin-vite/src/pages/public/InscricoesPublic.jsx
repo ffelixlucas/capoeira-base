@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { listarEventosPublicos } from "../../services/agendaService";
 import { logger } from "../../utils/logger";
+import { formatDate } from "../../utils/datetime";
 
 function InscricoesPublic() {
   const navigate = useNavigate();
@@ -63,7 +64,15 @@ function InscricoesPublic() {
             </h2>
 
             <p className="text-xs sm:text-sm text-gray-700 mb-1">
-              {new Date(evento.data_inicio).toLocaleDateString("pt-BR")}
+              {formatDate(
+                evento.data_inicio,
+                {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                },
+                "sao_paulo"
+              )}
             </p>
 
             {evento.valor && (

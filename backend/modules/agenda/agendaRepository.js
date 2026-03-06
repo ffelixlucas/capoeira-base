@@ -15,9 +15,14 @@ async function listarEventos(organizacaoId, status, situacao) {
   let sql = `
     SELECT 
       a.id, a.organizacao_id, a.titulo, a.descricao_curta, a.descricao_completa,
-      a.local, a.endereco, a.telefone_contato, a.whatsapp_url, a.data_inicio, a.data_fim,
-      a.inscricoes_ate, a.imagem_url, a.com_inscricao, a.valor, a.responsavel_id,
-      a.configuracoes, a.status, a.criado_em, a.criado_por, a.possui_camiseta,
+      a.local, a.endereco, a.telefone_contato, a.whatsapp_url,
+      DATE_FORMAT(a.data_inicio, '%Y-%m-%dT%H:%i:%s.000Z') AS data_inicio,
+      DATE_FORMAT(a.data_fim, '%Y-%m-%dT%H:%i:%s.000Z') AS data_fim,
+      DATE_FORMAT(a.inscricoes_ate, '%Y-%m-%dT%H:%i:%s.000Z') AS inscricoes_ate,
+      a.imagem_url, a.com_inscricao, a.valor, a.responsavel_id,
+      a.configuracoes, a.status,
+      DATE_FORMAT(a.criado_em, '%Y-%m-%dT%H:%i:%s.000Z') AS criado_em,
+      a.criado_por, a.possui_camiseta,
       COALESCE(stats.total_inscritos, 0) AS total_inscritos,
       COALESCE(stats.total_pendentes, 0) AS total_pendentes,
       COALESCE(stats.total_extornados, 0) AS total_extornados,
@@ -113,7 +118,17 @@ async function criarEvento(evento) {
 /* -------------------------------------------------------------------------- */
 async function buscarPorId(id, organizacaoId) {
   const [rows] = await db.execute(
-    `SELECT * FROM agenda WHERE id = ? AND organizacao_id = ? LIMIT 1`,
+    `SELECT
+      id, organizacao_id, titulo, descricao_curta, descricao_completa,
+      local, endereco, telefone_contato, whatsapp_url,
+      DATE_FORMAT(data_inicio, '%Y-%m-%dT%H:%i:%s.000Z') AS data_inicio,
+      DATE_FORMAT(data_fim, '%Y-%m-%dT%H:%i:%s.000Z') AS data_fim,
+      DATE_FORMAT(inscricoes_ate, '%Y-%m-%dT%H:%i:%s.000Z') AS inscricoes_ate,
+      imagem_url, com_inscricao, valor, responsavel_id, configuracoes, status,
+      DATE_FORMAT(criado_em, '%Y-%m-%dT%H:%i:%s.000Z') AS criado_em,
+      criado_por, possui_camiseta
+     FROM agenda
+     WHERE id = ? AND organizacao_id = ? LIMIT 1`,
     [id, organizacaoId]
   );
   const evento = rows[0] || null;

@@ -37,6 +37,21 @@ export async function listarPorTurmaEData(req: Request, res: Response) {
 export async function salvarBatch(req: Request, res: Response) {
   try {
     const { turma_id, data, itens } = req.body;
+    const user = (req as any).user;
+    logger.debug("[presencasController] salvarBatch:entrada", {
+      userId: user?.id,
+      organizacaoId: user?.organizacao_id,
+      turmaId: turma_id,
+      dataSelecionada: data,
+      totalItens: Array.isArray(itens) ? itens.length : 0,
+      presentes: Array.isArray(itens)
+        ? itens.filter((i: any) => i?.status === "presente").length
+        : 0,
+      faltas: Array.isArray(itens)
+        ? itens.filter((i: any) => i?.status !== "presente").length
+        : 0,
+      nowIso: new Date().toISOString(),
+    });
 
     if (!turma_id || !data || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).json({
@@ -45,10 +60,18 @@ export async function salvarBatch(req: Request, res: Response) {
     }
 
     const result = await service.salvarBatch({
-      user: (req as any).user,
+      user,
       turma_id: Number(turma_id),
       data: String(data),
       itens,
+    });
+
+    logger.debug("[presencasController] salvarBatch:saida", {
+      userId: user?.id,
+      organizacaoId: user?.organizacao_id,
+      turmaId: turma_id,
+      dataSelecionada: data,
+      nowIso: new Date().toISOString(),
     });
 
     return res.status(201).json(result);
