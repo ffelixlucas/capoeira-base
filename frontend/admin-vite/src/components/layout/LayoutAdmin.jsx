@@ -20,7 +20,7 @@ import {
   XMarkIcon,
   ArchiveBoxIcon
 } from "@heroicons/react/24/outline";
-import logo from "../../assets/images/logo.png";
+const logoSistema = "/icons/icon-512.png";
 
 // 🔹 NOVO: Back e meta das rotas
 import { Breadcrumb } from "../ui/Breadcrumb"
@@ -188,14 +188,20 @@ function LayoutAdmin() {
           <div className="flex justify-center mb-6 relative">
             <div className="w-20 h-20">
               <img
-                src={logo}
-                alt="Ícone Capoeira"
-                className="w-full h-full object-contain"
+                src={logoSistema}
+                alt="Capoeira Base"
+                className="w-full h-full object-cover rounded-full border-2 border-[#f4cf4e]/80 bg-cor-fundo/30"
               />
             </div>
             <button onClick={toggleMenu} className="absolute right-0 top-1">
               <XMarkIcon className="h-6 w-6" />
             </button>
+          </div>
+          <div className="mb-6 text-center">
+            <p className="text-sm font-bold text-cor-titulo leading-tight">Capoeira Base</p>
+            <p className="text-[11px] text-cor-texto/70 leading-tight">
+              Sistema para gerenciamento de grupos de capoeira
+            </p>
           </div>
 
           <nav className="flex-1 space-y-2">
@@ -227,11 +233,17 @@ function LayoutAdmin() {
         <div className="flex justify-center mb-8">
           <div className="w-24 h-24">
             <img
-              src={logo}
-              alt="Ícone Capoeira"
-              className="w-full h-full object-contain"
+              src={logoSistema}
+              alt="Capoeira Base"
+              className="w-full h-full object-cover rounded-full border-2 border-[#f4cf4e]/80 bg-cor-fundo/30"
             />
           </div>
+        </div>
+        <div className="mb-6 text-center">
+          <p className="text-sm font-bold text-cor-titulo leading-tight">Capoeira Base</p>
+          <p className="text-[11px] text-cor-texto/70 leading-tight">
+            Sistema para gerenciamento de grupos de capoeira
+          </p>
         </div>
 
         <nav className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-1">

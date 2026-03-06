@@ -25,7 +25,7 @@ import {
 } from "@heroicons/react/24/outline";
 import ModalLembretes from "../components/lembretes/ModalLembretes";
 import InfoTip from "../components/ui/InfoTip";
-import logo from "../assets/images/logo.png";
+const logoSistema = "/icons/icon-192.png";
 import {
   listarAlunos,
   solicitarTransferenciaTurma,
@@ -1005,9 +1005,16 @@ export default function Dashboard() {
         }}
       />
       <div className="flex flex-col items-center pt-10">
-        <img src={logo} alt="Logo da associação" className="h-36" />
+        <img
+          src={logoSistema}
+          alt="Capoeira Base"
+          className="h-20 w-20 object-cover rounded-full border-2 border-[#f4cf4e]/80 bg-cor-fundo/30"
+        />
         <p className="mt-1 text-sm text-cor-texto/60 tracking-wide font-semibold">
-          CAPOEIRA NOTA 10
+          CAPOEIRA BASE
+        </p>
+        <p className="text-xs text-cor-texto/50 tracking-wide">
+          Sistema para gerenciamento de grupos de capoeira
         </p>
       </div>
     </>
