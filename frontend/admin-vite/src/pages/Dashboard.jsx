@@ -31,6 +31,7 @@ import {
   solicitarTransferenciaTurma,
   desfazerTransferencia,
   listarAuditoriaAtividades,
+  listarTransferenciasRecentes,
 } from "../services/alunoService";
 import { getMinhasTurmas, listarTurmas } from "../services/turmaService";
 import { logger } from "../utils/logger";
@@ -61,6 +62,31 @@ export default function Dashboard() {
   const [auditoriaRefreshKey, setAuditoriaRefreshKey] = useState(0);
   const turmasOrigemAjuste = isAdmin ? turmasDestinoDisponiveis : minhasTurmas;
   const turmasDestinoAjuste = isAdmin ? turmasDestinoDisponiveis : minhasTurmas;
+
+  const mapearTransferenciasParaAuditoria = (rows) =>
+    (Array.isArray(rows) ? rows : []).map((item) => {
+      const nomeAluno = item.aluno_nome || `Aluno #${item.aluno_id}`;
+      const origem = item.turma_origem_nome || `Turma #${item.turma_origem_id}`;
+      const destino = item.turma_destino_nome || `Turma #${item.turma_destino_id}`;
+      const status = item.status || "pendente";
+      const acao =
+        status === "confirmada"
+          ? "transferencia_confirmada"
+          : status === "cancelada"
+          ? "transferencia_cancelada"
+          : "transferencia_solicitada";
+
+      return {
+        id: `fallback-trf-${item.id}`,
+        entidade: "transferencia_turma",
+        entidade_id: String(item.id),
+        acao,
+        descricao: `Transferência de ${nomeAluno}: ${origem} -> ${destino}`,
+        usuario_nome: item.confirmado_por_nome || item.solicitado_por_nome || null,
+        metadata: { transferencia_id: item.id, status },
+        created_at: item.confirmed_at || item.created_at,
+      };
+    });
 
   useEffect(() => {
     let ativo = true;
@@ -137,9 +163,28 @@ export default function Dashboard() {
       try {
         const itens = await listarAuditoriaAtividades(200);
         if (!ativo) return;
-        setAuditoriaAtividades(Array.isArray(itens) ? itens : []);
+        if (Array.isArray(itens) && itens.length > 0) {
+          setAuditoriaAtividades(itens);
+          return;
+        }
+
+        const transferencias = await listarTransferenciasRecentes(200);
+        if (!ativo) return;
+        setAuditoriaAtividades(mapearTransferenciasParaAuditoria(transferencias));
       } catch (error) {
-        logger.error("Erro ao carregar auditoria de atividades:", error);
+        const status = error?.response?.status;
+        if (status === 404) {
+          try {
+            const transferencias = await listarTransferenciasRecentes(200);
+            if (!ativo) return;
+            setAuditoriaAtividades(mapearTransferenciasParaAuditoria(transferencias));
+            return;
+          } catch (fallbackError) {
+            logger.error("Erro ao carregar fallback de auditoria:", fallbackError);
+          }
+        } else {
+          logger.error("Erro ao carregar auditoria de atividades:", error);
+        }
         if (ativo) setAuditoriaAtividades([]);
       }
     })();
