@@ -581,7 +581,7 @@ export default function Dashboard() {
               </h3>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] rounded-full border border-cor-secundaria/35 px-2 py-1 text-cor-texto/80">
-                  Alterações: {alteracoesMesAtual} no mês • {atividadesSistema.length} totais
+                  Alterações do sistema: {alteracoesMesAtual} no mês • {atividadesSistema.length} totais
                 </span>
                 <button
                   type="button"
