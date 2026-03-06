@@ -59,6 +59,8 @@ export default function Dashboard() {
   const [abrirModalHistoricoSistema, setAbrirModalHistoricoSistema] = useState(false);
   const [auditoriaAtividades, setAuditoriaAtividades] = useState([]);
   const [auditoriaRefreshKey, setAuditoriaRefreshKey] = useState(0);
+  const turmasOrigemAjuste = isAdmin ? turmasDestinoDisponiveis : minhasTurmas;
+  const turmasDestinoAjuste = isAdmin ? turmasDestinoDisponiveis : minhasTurmas;
 
   useEffect(() => {
     let ativo = true;
@@ -458,10 +460,10 @@ export default function Dashboard() {
     const aluno = alunosTurmaOrigem.find(
       (item) => Number(item.id) === Number(alunoSelecionadoAjuste)
     );
-    const turmaOrigem = minhasTurmas.find(
+    const turmaOrigem = turmasOrigemAjuste.find(
       (item) => Number(item.id) === Number(turmaOrigemAjuste)
     );
-    const turmaDestino = minhasTurmas.find(
+    const turmaDestino = turmasDestinoAjuste.find(
       (item) => Number(item.id) === Number(turmaDestinoAjuste)
     );
 
@@ -814,7 +816,7 @@ export default function Dashboard() {
         </div>
 
         {(temPapel(["instrutor"]) ||
-          (temPapel(["admin"]) && temTurmaResponsavel)) && (
+          (temPapel(["admin"]) && turmasOrigemAjuste.length > 0)) && (
           <div className="rounded-2xl p-4 border border-sky-300/45 bg-gradient-to-r from-sky-500/15 to-sky-300/10 space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -826,14 +828,14 @@ export default function Dashboard() {
                 </p>
               </div>
               <span className="text-[11px] rounded-full border border-sky-300/45 px-2 py-1 text-sky-100">
-                {minhasTurmas.length} turma{minhasTurmas.length === 1 ? "" : "s"}
+                {turmasOrigemAjuste.length} turma{turmasOrigemAjuste.length === 1 ? "" : "s"}
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="rounded-lg border border-sky-300/35 bg-cor-fundo/20 p-2">
                 <p className="text-sky-50/80">Turmas</p>
-                <p className="text-sm font-bold text-sky-100">{minhasTurmas.length}</p>
+                <p className="text-sm font-bold text-sky-100">{turmasOrigemAjuste.length}</p>
               </div>
               <div className="rounded-lg border border-sky-300/35 bg-cor-fundo/20 p-2">
                 <p className="text-sky-50/80">Lembretes</p>
@@ -861,7 +863,7 @@ export default function Dashboard() {
                     className="mt-1 w-full rounded-lg border border-sky-300/35 bg-cor-fundo/30 px-2 py-2 text-xs text-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
                   >
                     <option value="">Selecione</option>
-                    {minhasTurmas.map((turma) => (
+                    {turmasOrigemAjuste.map((turma) => (
                       <option key={turma.id} value={turma.id}>
                         {turma.nome || `Turma #${turma.id}`}
                       </option>
@@ -896,7 +898,7 @@ export default function Dashboard() {
                     className="mt-1 w-full rounded-lg border border-sky-300/35 bg-cor-fundo/30 px-2 py-2 text-xs text-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
                   >
                     <option value="">Selecione</option>
-                    {turmasDestinoDisponiveis
+                    {turmasDestinoAjuste
                       .filter((turma) => Number(turma.id) !== Number(turmaOrigemAjuste))
                       .map((turma) => (
                         <option key={turma.id} value={turma.id}>
