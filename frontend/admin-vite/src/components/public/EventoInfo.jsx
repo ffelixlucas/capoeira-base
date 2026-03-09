@@ -53,27 +53,16 @@ export default function EventoInfo({ evento }) {
 
   const resumo = evento.descricao_curta || evento.descricao_completa || "";
   const descricaoDetalhada = evento.descricao_completa || resumo;
-  const imagemFocoX = Math.min(
-    100,
-    Math.max(0, Number(evento?.configuracoes?.imagem_foco_x ?? 50))
-  );
-  const imagemFocoY = Math.min(
-    100,
-    Math.max(0, Number(evento?.configuracoes?.imagem_foco_y ?? 50))
-  );
 
   return (
     <>
       <section className="overflow-hidden rounded-2xl border border-[rgba(253,245,221,0.12)] bg-[#1d3128] text-[#f8f2dc] shadow-[0_20px_45px_rgba(2,26,19,0.35)]">
-        <div className="relative h-52 sm:h-60">
+        <div className="relative h-52 bg-[#10231b] sm:h-60">
           {evento.imagem_url ? (
             <img
               src={evento.imagem_url}
               alt={evento.titulo}
-              className="h-full w-full cursor-zoom-in object-cover"
-              style={{
-                objectPosition: `${imagemFocoX}% ${imagemFocoY}%`,
-              }}
+              className="h-full w-full cursor-zoom-in object-contain"
               onClick={() => setMostrarImagem(true)}
             />
           ) : (
@@ -192,15 +181,12 @@ export default function EventoInfo({ evento }) {
                   <X className="h-4 w-4" />
                 </button>
 
-                <div className="overflow-hidden rounded-2xl">
+                <div className="overflow-hidden rounded-2xl bg-[#10231b]">
                   {evento.imagem_url && (
                     <img
                       src={evento.imagem_url}
                       alt={evento.titulo}
-                      className="w-full max-h-[320px] object-cover cursor-zoom-in"
-                      style={{
-                        objectPosition: `${imagemFocoX}% ${imagemFocoY}%`,
-                      }}
+                      className="w-full max-h-[320px] object-contain cursor-zoom-in"
                       onClick={() => setMostrarImagem(true)}
                     />
                   )}
