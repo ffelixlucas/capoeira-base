@@ -26,12 +26,52 @@ export default function FormInscricaoPublic({
   const idadeMinima = Number(evento?.configuracoes?.idade_minima || 0);
   const idadeMinimaNaoAtendida =
     idade !== null && idadeMinima > 0 && idade < idadeMinima;
+  const [anoNascimento = "", mesNascimento = "", diaNascimento = ""] =
+    form.data_nascimento ? form.data_nascimento.split("-") : ["", "", ""];
+  const anoAtual = new Date().getFullYear();
+  const meses = [
+    "Jan",
+    "Fev",
+    "Mar",
+    "Abr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Set",
+    "Out",
+    "Nov",
+    "Dez",
+  ];
 
   function handleChange(e) {
     const { name, type, value, checked } = e.target;
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
+    }));
+  }
+
+  function atualizarDataNascimento(parte, valor) {
+    const proximoAno = anoNascimento || "";
+    const proximoMes = mesNascimento || "";
+    const proximoDia = diaNascimento || "";
+
+    const partes = {
+      ano: proximoAno,
+      mes: proximoMes,
+      dia: proximoDia,
+      [parte]: valor,
+    };
+
+    const dataCompleta =
+      partes.ano && partes.mes && partes.dia
+        ? `${partes.ano}-${partes.mes}-${partes.dia}`
+        : [partes.ano, partes.mes, partes.dia].filter(Boolean).join("-");
+
+    setForm((prev) => ({
+      ...prev,
+      data_nascimento: dataCompleta,
     }));
   }
 
@@ -142,20 +182,59 @@ export default function FormInscricaoPublic({
         onChange={handleChange}
       />
       <div className="flex flex-col gap-1">
-        <label
-          htmlFor="data_nascimento"
-          className="text-sm text-gray-700 font-medium"
-        >
+        <label className="text-sm text-gray-700 font-medium">
           Data de nascimento
         </label>
-        <InputBase
-          type="date"
-          id="data_nascimento"
-          name="data_nascimento"
-          value={form.data_nascimento}
-          onChange={handleChange}
-          required
-        />
+        <div className="grid grid-cols-3 gap-2">
+          <select
+            name="dia_nascimento"
+            value={diaNascimento ? Number(diaNascimento) : ""}
+            onChange={(e) =>
+              atualizarDataNascimento("dia", e.target.value.padStart(2, "0"))
+            }
+            className="w-full border rounded-lg px-3 py-2 text-black text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Dia</option>
+            {Array.from({ length: 31 }, (_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {i + 1}
+              </option>
+            ))}
+          </select>
+
+          <select
+            name="mes_nascimento"
+            value={mesNascimento ? Number(mesNascimento) : ""}
+            onChange={(e) =>
+              atualizarDataNascimento("mes", e.target.value.padStart(2, "0"))
+            }
+            className="w-full border rounded-lg px-3 py-2 text-black text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Mês</option>
+            {meses.map((mes, index) => (
+              <option key={mes} value={index + 1}>
+                {mes}
+              </option>
+            ))}
+          </select>
+
+          <select
+            name="ano_nascimento"
+            value={anoNascimento ? Number(anoNascimento) : ""}
+            onChange={(e) => atualizarDataNascimento("ano", e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 text-black text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Ano</option>
+            {Array.from({ length: 100 }, (_, i) => anoAtual - i).map((ano) => (
+              <option key={ano} value={ano}>
+                {ano}
+              </option>
+            ))}
+          </select>
+        </div>
         {idadeMinima > 0 && (
           <p
             className={`text-xs ${
