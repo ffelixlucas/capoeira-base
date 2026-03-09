@@ -63,6 +63,16 @@ export const pagarCartao = async (dados) => {
       );
     }
 
+    if (
+      msg.includes("idade mínima") ||
+      msg.includes("a partir de") ||
+      msg.includes("encerradas") ||
+      msg.includes("Limite de inscritos") ||
+      msg.includes("inválid")
+    ) {
+      throw new Error(msg);
+    }
+
     // Fallback genérico
     throw new Error("Erro ao processar pagamento com cartão. Tente novamente.");
   }
@@ -101,6 +111,15 @@ export const pagarBoleto = async (dados) => {
 
     if (msg.includes("inválido") || msg.includes("obrigatório")) {
       throw new Error(msg); // mostra a validação exata
+    }
+
+    if (
+      msg.includes("idade mínima") ||
+      msg.includes("a partir de") ||
+      msg.includes("encerradas") ||
+      msg.includes("Limite de inscritos")
+    ) {
+      throw new Error(msg);
     }
 
     // Fallback genérico

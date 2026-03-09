@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useRef, useState, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { buscarEventoPublicoPorId } from "../../services/agendaService";
 import { Dialog, Transition } from "@headlessui/react";
@@ -18,6 +18,23 @@ import { toast } from "react-toastify";
 import { CalendarDays } from "lucide-react";
 import { formatDate, parseDateTime } from "../../utils/datetime";
 
+function calcularIdade(dataNascimento) {
+  if (!dataNascimento) return null;
+
+  const nascimento = new Date(`${dataNascimento}T00:00:00`);
+  if (Number.isNaN(nascimento.getTime())) return null;
+
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const mes = hoje.getMonth() - nascimento.getMonth();
+
+  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+    idade -= 1;
+  }
+
+  return idade >= 0 ? idade : null;
+}
+
 export default function InscricaoEventoPublic() {
   const { slug, eventoId } = useParams(); 
   console.log(
@@ -36,6 +53,7 @@ export default function InscricaoEventoPublic() {
   const [modalBoleto, setModalBoleto] = useState(false);
   const [modalConfirmacao, setModalConfirmacao] = useState(false);
   const [encerrado, setEncerrado] = useState(false);
+  const avisoIdadeMinimaExibidoRef = useRef(false);
 
   console.debug("[DEBUG EVENTO COMPLETO]", evento);
 
@@ -89,12 +107,27 @@ export default function InscricaoEventoPublic() {
     graduacao_id: "",
   });
 
-  const idade = form.data_nascimento
-    ? Math.floor(
-        (new Date() - new Date(form.data_nascimento)) /
-          (365.25 * 24 * 60 * 60 * 1000)
-      )
-    : null;
+  const idade = calcularIdade(form.data_nascimento);
+  const idadeMinima = Number(evento?.configuracoes?.idade_minima || 0);
+
+  useEffect(() => {
+    if (!form.data_nascimento || idade === null || idadeMinima <= 0) {
+      avisoIdadeMinimaExibidoRef.current = false;
+      return;
+    }
+
+    if (idade < idadeMinima) {
+      if (!avisoIdadeMinimaExibidoRef.current) {
+        toast.error(
+          `Este evento aceita inscrições somente a partir de ${idadeMinima} anos.`
+        );
+        avisoIdadeMinimaExibidoRef.current = true;
+      }
+      return;
+    }
+
+    avisoIdadeMinimaExibidoRef.current = false;
+  }, [form.data_nascimento, idade, idadeMinima]);
 
   function formatarTelefone(valor) {
     return valor
@@ -169,6 +202,13 @@ export default function InscricaoEventoPublic() {
     if (!evento) {
       toast.error("Evento não encontrado ou indisponível.");
       navigate(`/inscrever/${slug}`);
+      return;
+    }
+
+    if (idade !== null && idadeMinima > 0 && idade < idadeMinima) {
+      toast.error(
+        `Este evento permite inscrições somente a partir de ${idadeMinima} anos.`
+      );
       return;
     }
     

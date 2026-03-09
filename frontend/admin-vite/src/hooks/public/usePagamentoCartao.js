@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { pagarCartao } from "../../services/public/pagamentoPublicService";
 import { logger } from "../../utils/logger";
 import { toast } from "react-toastify";
@@ -39,7 +39,7 @@ import { useMonitorarPagamento } from "./useMonitorarPagamento";
         logger.error("[usePagamentoCartao] erro no pagamento:", err);
         const msg = err?.message?.includes("Pagamento rejeitado")
           ? "❌ Pagamento rejeitado: verifique os dados do cartão."
-          : "⚠️ Erro ao processar o pagamento. Tente novamente.";
+          : err?.message || "⚠️ Erro ao processar o pagamento. Tente novamente.";
         setErro(new Error(msg));
         toast.error(msg);
         throw new Error(msg);

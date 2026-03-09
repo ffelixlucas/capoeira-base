@@ -1,6 +1,17 @@
 // backend/modules/public/agenda/publicAgendaService.js
 const db = require("../../../database/connection");
 
+function normalizarConfiguracoes(configuracoes) {
+  if (!configuracoes) return {};
+  if (typeof configuracoes === "object") return configuracoes;
+
+  try {
+    return JSON.parse(configuracoes);
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Lista eventos públicos de uma organização específica (multi-org)
  */
@@ -34,15 +45,7 @@ async function listarEventosPublicos(organizacaoId) {
 
   return rows.map((evento) => ({
     ...evento,
-    configuracoes: (() => {
-      if (!evento.configuracoes) return {};
-      if (typeof evento.configuracoes === "object") return evento.configuracoes;
-      try {
-        return JSON.parse(evento.configuracoes);
-      } catch {
-        return {};
-      }
-    })(),
+    configuracoes: normalizarConfiguracoes(evento.configuracoes),
   }));
 }
 
@@ -79,11 +82,7 @@ async function buscarEventoPublicoPorId(id, organizacaoId) {
   if (!rows.length) return null;
 
   const evento = rows[0];
-  try {
-    evento.configuracoes = JSON.parse(evento.configuracoes || "{}");
-  } catch {
-    evento.configuracoes = {};
-  }
+  evento.configuracoes = normalizarConfiguracoes(evento.configuracoes);
 
   return evento;
 }

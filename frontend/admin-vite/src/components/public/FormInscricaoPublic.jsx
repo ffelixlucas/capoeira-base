@@ -23,6 +23,9 @@ export default function FormInscricaoPublic({
   const { slug } = useParams();
   const [categorias, setCategorias] = useState([]);
   const [graduacoesDaCategoria, setGraduacoesDaCategoria] = useState([]);
+  const idadeMinima = Number(evento?.configuracoes?.idade_minima || 0);
+  const idadeMinimaNaoAtendida =
+    idade !== null && idadeMinima > 0 && idade < idadeMinima;
 
   function handleChange(e) {
     const { name, type, value, checked } = e.target;
@@ -153,6 +156,21 @@ export default function FormInscricaoPublic({
           onChange={handleChange}
           required
         />
+        {idadeMinima > 0 && (
+          <p
+            className={`text-xs ${
+              idadeMinimaNaoAtendida ? "text-red-600" : "text-gray-500"
+            }`}
+          >
+            Idade minima para este evento: {idadeMinima} anos.
+          </p>
+        )}
+        {idadeMinimaNaoAtendida && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            Inscrição indisponível para esta data de nascimento. Este evento
+            aceita participantes somente a partir de {idadeMinima} anos.
+          </div>
+        )}
       </div>
       <InputBase
         type="email"
@@ -365,10 +383,14 @@ export default function FormInscricaoPublic({
       {/* Botão */}
       <button
         type="submit"
-        disabled={enviando}
+        disabled={enviando || idadeMinimaNaoAtendida}
         className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium disabled:opacity-60"
       >
-        {enviando ? "Enviando..." : "Confirmar inscrição"}
+        {enviando
+          ? "Enviando..."
+          : idadeMinimaNaoAtendida
+            ? `Disponivel a partir de ${idadeMinima} anos`
+            : "Confirmar inscrição"}
       </button>
     </form>
   );

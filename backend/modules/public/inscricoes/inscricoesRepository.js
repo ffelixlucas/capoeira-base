@@ -267,7 +267,7 @@ async function buscarValorEvento(eventoId) {
   logger.debug("[inscricoesRepository.buscarValorEvento] eventoId:", eventoId);
 
   const [rows] = await db.execute(
-    "SELECT id, valor FROM agenda WHERE id = ? LIMIT 1",
+    "SELECT id, valor, configuracoes FROM agenda WHERE id = ? LIMIT 1",
     [eventoId]
   );
 

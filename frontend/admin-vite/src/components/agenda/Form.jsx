@@ -27,6 +27,7 @@ function createInitialForm() {
     imagem_url: null,
     com_inscricao: false,
     inscricao_externa_url: "",
+    idade_minima: "",
     valor: "",
     limite_inscritos: "",
     possui_camiseta: false,
@@ -44,6 +45,13 @@ function clampFocus(value, fallback = 50) {
 }
 
 function normalizarLimiteInscritos(value) {
+  if (value === "" || value == null) return "";
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed < 1) return "";
+  return Math.floor(parsed);
+}
+
+function normalizarIdadeMinima(value) {
   if (value === "" || value == null) return "";
   const parsed = Number(value);
   if (Number.isNaN(parsed) || parsed < 1) return "";
@@ -140,6 +148,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
           ),
           com_inscricao: normalizarBoolean(eventoEditando.com_inscricao),
           valor: eventoEditando.valor == null ? "" : String(eventoEditando.valor),
+          idade_minima: normalizarIdadeMinima(configuracoes.idade_minima),
           limite_inscritos: normalizarLimiteInscritos(
             configuracoes.limite_inscritos
           ),
@@ -217,6 +226,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         )
       : null;
     const limiteInscritos = normalizarLimiteInscritos(form.limite_inscritos);
+    const idadeMinima = normalizarIdadeMinima(form.idade_minima);
 
     setEnviando(true);
     try {
@@ -246,6 +256,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
           JSON.stringify({
             camiseta_tamanhos: form.camiseta_tamanhos,
             inscricao_externa_url: form.inscricao_externa_url?.trim() || "",
+            idade_minima: idadeMinima || null,
             limite_inscritos: limiteInscritos || null,
             imagem_foco_x: clampFocus(form.imagem_foco_x, 50),
             imagem_foco_y: clampFocus(form.imagem_foco_y, 50),
@@ -278,6 +289,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
           JSON.stringify({
             camiseta_tamanhos: form.camiseta_tamanhos || [],
             inscricao_externa_url: form.inscricao_externa_url?.trim() || "",
+            idade_minima: idadeMinima || null,
             limite_inscritos: limiteInscritos || null,
             imagem_foco_x: clampFocus(form.imagem_foco_x, 50),
             imagem_foco_y: clampFocus(form.imagem_foco_y, 50),
@@ -571,6 +583,16 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
 
               <InputBase
                 type="number"
+                name="idade_minima"
+                placeholder="Idade mínima para inscrição (opcional)"
+                value={form.idade_minima}
+                onChange={handleChange}
+                min="1"
+                step="1"
+              />
+
+              <InputBase
+                type="number"
                 name="limite_inscritos"
                 placeholder="Limite de inscritos (opcional)"
                 value={form.limite_inscritos}
@@ -823,6 +845,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
             configuracoes: {
               camiseta_tamanhos: form.camiseta_tamanhos,
               inscricao_externa_url: form.inscricao_externa_url,
+              idade_minima: normalizarIdadeMinima(form.idade_minima) || null,
               limite_inscritos:
                 normalizarLimiteInscritos(form.limite_inscritos) || null,
               imagem_foco_x: clampFocus(form.imagem_foco_x, 50),

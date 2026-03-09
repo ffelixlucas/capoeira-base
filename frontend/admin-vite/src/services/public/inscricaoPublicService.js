@@ -6,9 +6,22 @@ export async function gerarPagamentoPix(dados) {
     const response = await api.post("/public/inscricoes/pagamento", dados);
     return response.data;
   } catch (error) {
-    if (error.response?.data?.error === "Inscrição já realizada e paga.") {
+    const msg = error.response?.data?.error || "";
+
+    if (msg === "Inscrição já realizada e paga.") {
       throw new Error("Este CPF já possui uma inscrição paga para este evento.");
     }
+
+    if (
+      msg.includes("idade mínima") ||
+      msg.includes("a partir de") ||
+      msg.includes("encerradas") ||
+      msg.includes("Limite de inscritos") ||
+      msg.includes("inválid")
+    ) {
+      throw new Error(msg);
+    }
+
     throw new Error("Erro ao gerar pagamento. Tente novamente mais tarde.");
   }
 }

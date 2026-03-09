@@ -113,6 +113,59 @@ function validarTelefone(telefone) {
   return digits.length >= 10 && digits.length <= 11;
 }
 
+function normalizarConfiguracoesEvento(rawConfig) {
+  if (!rawConfig) return {};
+  if (typeof rawConfig === "object") return rawConfig;
+
+  try {
+    return JSON.parse(rawConfig);
+  } catch {
+    return {};
+  }
+}
+
+function calcularIdade(dataNascimento) {
+  if (!dataNascimento) return null;
+
+  const nascimento = new Date(`${dataNascimento}T00:00:00`);
+  if (Number.isNaN(nascimento.getTime())) return null;
+
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const mes = hoje.getMonth() - nascimento.getMonth();
+
+  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+    idade -= 1;
+  }
+
+  return idade >= 0 ? idade : null;
+}
+
+async function validarIdadeMinimaEvento(eventoId, dataNascimento) {
+  const evento = await buscarValorEvento(eventoId);
+  if (!evento) {
+    throw new Error("Evento não encontrado.");
+  }
+
+  const configuracoes = normalizarConfiguracoesEvento(evento.configuracoes);
+  const idadeMinima = Number(configuracoes?.idade_minima || 0);
+
+  if (!Number.isFinite(idadeMinima) || idadeMinima < 1) {
+    return;
+  }
+
+  const idade = calcularIdade(dataNascimento);
+  if (idade === null) {
+    throw new Error("Data de nascimento inválida.");
+  }
+
+  if (idade < idadeMinima) {
+    throw new Error(
+      `Este evento permite inscrições somente a partir de ${idadeMinima} anos.`
+    );
+  }
+}
+
 const gerarPagamentoPixService = async (dadosFormulario) => {
   const { cpf, responsavel_documento, nome, apelido, valor, evento_id } =
     dadosFormulario;
@@ -147,6 +200,11 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
   if (!validarTelefone(dadosFormulario.telefone)) {
     throw new Error("Telefone inválido.");
   }
+
+  await validarIdadeMinimaEvento(
+    evento_id,
+    dadosFormulario.data_nascimento
+  );
 
   // 🔒 Validar valor
   const valorNum = parseFloat(
@@ -322,6 +380,8 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
     if (jaPago) {
       throw new Error("Este CPF já possui inscrição confirmada neste evento.");
     }
+
+    await validarIdadeMinimaEvento(evento_id, dadosFormulario.data_nascimento);
 
     // 🔒 Normalizar dados do pagador
     const documentoCPF = responsavel_documento
@@ -737,6 +797,8 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
     }
     if (!validarEmail(email)) throw new Error("E-mail inválido.");
     if (!validarTelefone(telefone)) throw new Error("Telefone inválido.");
+
+    await validarIdadeMinimaEvento(evento_id, dadosFormulario.data_nascimento);
 
     let valorBase = parseFloat(dadosFormulario.total_amount || valor);
     if (isNaN(valorBase) || valorBase <= 0) {

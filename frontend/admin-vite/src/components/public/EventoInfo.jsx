@@ -47,6 +47,7 @@ export default function EventoInfo({ evento }) {
         evento.endereco
       )}`
     : null;
+  const idadeMinima = Number(evento?.configuracoes?.idade_minima || 0);
   const inscricoesAteLabel = evento.inscricoes_ate
     ? formatarDataHora(evento.inscricoes_ate)
     : null;
@@ -104,11 +105,20 @@ export default function EventoInfo({ evento }) {
             </p>
           )}
 
-          {(inscricoesAteLabel || evento.local || Number(evento.valor) > 0) && (
+          {(inscricoesAteLabel ||
+            evento.local ||
+            Number(evento.valor) > 0 ||
+            idadeMinima > 0) && (
             <div className="mt-4 rounded-xl border border-[#8fffc8]/20 bg-[#0b241c]/25 px-3 py-3 space-y-1.5 text-sm text-[#d6e4dc]">
               {evento.local && (
                 <p>
                   Local <strong className="text-[#8fffc8]">{evento.local}</strong>
+                </p>
+              )}
+              {idadeMinima > 0 && (
+                <p>
+                  Idade minima{" "}
+                  <strong className="text-[#f8f2dc]">{idadeMinima} anos</strong>
                 </p>
               )}
               {inscricoesAteLabel && (
@@ -261,13 +271,22 @@ export default function EventoInfo({ evento }) {
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-[#0b241c]/35 p-4">
                       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#f4cf4e]/70">
-                        Valor
+                        {idadeMinima > 0 ? "Idade minima" : "Valor"}
                       </p>
                       <p className="mt-2 text-sm font-semibold text-white">
-                        {formatarValor(evento.valor)}
+                        {idadeMinima > 0
+                          ? `${idadeMinima} anos`
+                          : formatarValor(evento.valor)}
                       </p>
                     </div>
                   </div>
+
+                  {idadeMinima > 0 && (
+                    <p className="mt-4 text-sm text-[#d6e4dc]">
+                      Este evento aceita inscrições somente a partir de{" "}
+                      <strong className="text-[#f8f2dc]">{idadeMinima} anos</strong>.
+                    </p>
+                  )}
 
                   {descricaoDetalhada && (
                     <div className="mt-5 rounded-2xl border border-white/10 bg-[#0b241c]/35 p-4 sm:p-5">

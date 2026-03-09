@@ -7,10 +7,12 @@
     "build": "tsc",
     "build:clean": "rm -rf dist && tsc",
     "dev": "tsc --watch",
+    "dev:nodemon": "nodemon --watch src-ts --watch modules --watch app.js --watch server.js --watch middlewares --watch services --watch utils --ext ts,js,json --exec \"npm run build && npm run start:dev\"",
     "start": "node dist/server.js",
     "start:dev": "NODE_ENV=development LOG_LEVEL=debug node dist/server.js",
     "start:prod": "NODE_ENV=production LOG_LEVEL=info node dist/server.js",
-    "dev:local": "npm run build && npm run start:dev",
+    "dev:local": "npm run dev:nodemon",
+    "dev:local:clean": "nodemon --watch src-ts --watch modules --watch app.js --watch server.js --watch middlewares --watch services --watch utils --ext ts,js,json --exec \"npm run build:clean && npm run start:dev\"",
     "prod:local": "npm run build && npm run start:prod"
   },
   "keywords": [],
@@ -33,6 +35,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
