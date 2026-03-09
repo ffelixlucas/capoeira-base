@@ -32,6 +32,32 @@ function normalizarWhatsappUrl(value) {
   return raw.slice(0, 255);
 }
 
+function parseBooleanFlag(value) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function extrairCaminhoStorage(url) {
+  if (!url) return null;
+  return decodeURIComponent(new URL(url).pathname.replace(/^\/[^/]+\//, ""));
+}
+
+async function excluirImagemStorage(url) {
+  const caminho = extrairCaminhoStorage(url);
+  if (!caminho) return;
+  await bucket.file(caminho).delete({ ignoreNotFound: true });
+}
+
+async function salvarImagemEvento(imagem) {
+  const nomeArquivo = `eventos/${uuidv4()}-${imagem.originalname}`;
+  const file = bucket.file(nomeArquivo);
+
+  await file.save(imagem.buffer, {
+    metadata: { contentType: imagem.mimetype },
+  });
+
+  return `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 🔍 Listar eventos (multi-org)                                              */
 /* -------------------------------------------------------------------------- */
@@ -95,15 +121,8 @@ async function processarUploadEvento(imagem, dados, usuarioId, organizacaoId) {
 
   try {
     if (imagem) {
-      const nomeArquivo = `eventos/${uuidv4()}-${imagem.originalname}`;
-      const file = bucket.file(nomeArquivo);
-
-      await file.save(imagem.buffer, {
-        metadata: { contentType: imagem.mimetype },
-      });
-
-      imagem_url = `https://storage.googleapis.com/${bucket.name}/${nomeArquivo}`;
-      logger.debug("[agendaService] Imagem salva no Firebase", { nomeArquivo });
+      imagem_url = await salvarImagemEvento(imagem);
+      logger.debug("[agendaService] Imagem salva no Firebase", { imagem_url });
     }
 
     const evento = {
@@ -162,28 +181,62 @@ async function excluirEvento(id, organizacaoId) {
 /* -------------------------------------------------------------------------- */
 /* ✏️ Atualizar evento                                                       */
 /* -------------------------------------------------------------------------- */
-async function atualizarEvento(id, organizacaoId, dados) {
-  const evento = {
-    titulo: dados.titulo ?? "",
-    descricao_curta: dados.descricao_curta ?? "",
-    descricao_completa: dados.descricao_completa ?? "",
-    local: dados.local ?? "",
-    endereco: dados.endereco ?? "",
-    telefone_contato: normalizarTelefoneContato(dados.telefone_contato),
-    whatsapp_url: normalizarWhatsappUrl(dados.whatsapp_url),
-    data_inicio: dados.data_inicio ?? null,
-    data_fim: dados.data_fim ?? null,
-    inscricoes_ate: dados.inscricoes_ate ?? null,
-    imagem_url: dados.imagem_url ?? null,
-    com_inscricao: dados.com_inscricao ?? false,
-    valor: dados.valor ?? 0,
-    responsavel_id: dados.responsavel_id ?? null,
-    configuracoes: normalizarConfig(dados.configuracoes),
-    possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0,
-    status: dados.status || "ativo",
-  };
+async function atualizarEvento(id, organizacaoId, dados, imagem = null) {
+  const atual = await agendaRepository.buscarPorId(id, organizacaoId);
+  if (!atual) {
+    throw new Error("Evento não encontrado.");
+  }
 
-  return agendaRepository.atualizar(id, organizacaoId, evento);
+  const removerImagemAtual = parseBooleanFlag(dados.imagem_removida);
+  let novaImagemUrl = atual.imagem_url ?? null;
+  let uploadedImageUrl = null;
+
+  try {
+    if (imagem) {
+      uploadedImageUrl = await salvarImagemEvento(imagem);
+      novaImagemUrl = uploadedImageUrl;
+    } else if (removerImagemAtual) {
+      novaImagemUrl = null;
+    }
+
+    const evento = {
+      titulo: dados.titulo ?? "",
+      descricao_curta: dados.descricao_curta ?? "",
+      descricao_completa: dados.descricao_completa ?? "",
+      local: dados.local ?? "",
+      endereco: dados.endereco ?? "",
+      telefone_contato: normalizarTelefoneContato(dados.telefone_contato),
+      whatsapp_url: normalizarWhatsappUrl(dados.whatsapp_url),
+      data_inicio: dados.data_inicio ?? null,
+      data_fim: dados.data_fim ?? null,
+      inscricoes_ate: dados.inscricoes_ate ?? null,
+      imagem_url: novaImagemUrl,
+      com_inscricao: dados.com_inscricao ?? false,
+      valor: dados.valor ?? 0,
+      responsavel_id: dados.responsavel_id ?? null,
+      configuracoes: normalizarConfig(dados.configuracoes),
+      possui_camiseta: parseInt(dados.possui_camiseta) === 1 ? 1 : 0,
+      status: dados.status || "ativo",
+    };
+
+    const atualizado = await agendaRepository.atualizar(id, organizacaoId, evento);
+
+    if (atualizado && atual.imagem_url && (imagem || removerImagemAtual)) {
+      await excluirImagemStorage(atual.imagem_url).catch((error) => {
+        logger.warn("[agendaService] Erro ao excluir imagem antiga", {
+          erro: error.message,
+          id,
+        });
+      });
+    }
+
+    return atualizado;
+  } catch (error) {
+    if (uploadedImageUrl) {
+      await excluirImagemStorage(uploadedImageUrl).catch(() => undefined);
+    }
+    throw error;
+  }
 }
 
 /* -------------------------------------------------------------------------- */

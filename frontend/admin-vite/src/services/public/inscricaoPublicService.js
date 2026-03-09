@@ -13,6 +13,18 @@ export async function gerarPagamentoPix(dados) {
   }
 }
 
+export async function buscarCategoriasPublicas(slug) {
+  const { data } = await api.get(`/public/pre-matriculas/${slug}/categorias`);
+  return Array.isArray(data?.data) ? data.data : [];
+}
+
+export async function buscarGraduacoesPublicas(slug, categoriaId) {
+  const { data } = await api.get(
+    `/public/pre-matriculas/${slug}/graduacoes/${categoriaId}`
+  );
+  return Array.isArray(data?.data) ? data.data : [];
+}
+
 export const buscarStatusInscricao = async (inscricaoId) => {
   const { data } = await api.get(`/public/inscricoes/${inscricaoId}`);
   return data;

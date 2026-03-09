@@ -8,6 +8,35 @@ import AgendaPreview from "./Preview";
 import { logger } from "../../utils/logger";
 import InputBase from "../ui/InputBase";
 
+function createInitialForm() {
+  return {
+    titulo: "",
+    descricao_curta: "",
+    descricao_completa: "",
+    local: "",
+    endereco: "",
+    telefone_contato: "",
+    whatsapp_url: "",
+    data_inicio: "",
+    hora_inicio: "",
+    data_fim: "",
+    hora_fim: "",
+    data_limite_inscricao: "",
+    hora_limite_inscricao: "",
+    imagem: null,
+    imagem_url: null,
+    com_inscricao: false,
+    inscricao_externa_url: "",
+    valor: "",
+    limite_inscritos: "",
+    possui_camiseta: false,
+    camiseta_tamanhos: [],
+    imagem_foco_x: 50,
+    imagem_foco_y: 50,
+    status: "ativo",
+  };
+}
+
 function clampFocus(value, fallback = 50) {
   const parsed = Number(value);
   if (Number.isNaN(parsed)) return fallback;
@@ -19,6 +48,21 @@ function normalizarLimiteInscritos(value) {
   const parsed = Number(value);
   if (Number.isNaN(parsed) || parsed < 1) return "";
   return Math.floor(parsed);
+}
+
+function normalizarTexto(value) {
+  if (value == null) return "";
+  return String(value);
+}
+
+function normalizarBoolean(value) {
+  return value === true || value === 1 || value === "1";
+}
+
+function parseDateSafe(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
@@ -36,30 +80,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
     "XG",
   ];
 
-  const [form, setForm] = useState({
-    titulo: "",
-    descricao_curta: "",
-    descricao_completa: "",
-    local: "",
-    endereco: "",
-    telefone_contato: "",
-    whatsapp_url: "",
-    data_inicio: "",
-    hora_inicio: "",
-    data_fim: "",
-    hora_fim: "",
-    data_limite_inscricao: "",
-    hora_limite_inscricao: "",
-    imagem: null,
-    com_inscricao: false,
-    inscricao_externa_url: "",
-    valor: "",
-    limite_inscritos: "",
-    possui_camiseta: false,
-    camiseta_tamanhos: [],
-    imagem_foco_x: 50,
-    imagem_foco_y: 50,
-  });
+  const [form, setForm] = useState(createInitialForm);
 
   const [mostrarDataFim, setMostrarDataFim] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -77,23 +98,29 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
   useEffect(() => {
     if (eventoEditando) {
       try {
-        const dataInicio = new Date(eventoEditando.data_inicio);
-        const dataFim = eventoEditando.data_fim
-          ? new Date(eventoEditando.data_fim)
-          : null;
-        const dataLimiteInscricao = eventoEditando.inscricoes_ate
-          ? new Date(eventoEditando.inscricoes_ate)
-          : null;
-        const horaInicioIso = dataInicio.toISOString().slice(11, 16);
-        const semHoraInicio = horaInicioIso === "00:00";
+        const dataInicio = parseDateSafe(eventoEditando.data_inicio);
+        const dataFim = parseDateSafe(eventoEditando.data_fim);
+        const dataLimiteInscricao = parseDateSafe(eventoEditando.inscricoes_ate);
+        const horaInicioIso = dataInicio ? dataInicio.toISOString().slice(11, 16) : "";
+        const semHoraInicio = !horaInicioIso || horaInicioIso === "00:00";
         const horaFimIso = dataFim ? dataFim.toISOString().slice(11, 16) : "";
         const semHoraFim = !horaFimIso || horaFimIso === "00:00";
 
         const configuracoes = eventoEditando.configuracoes || {};
 
         setForm({
-          ...eventoEditando,
-          data_inicio: dataInicio.toISOString().slice(0, 10),
+          ...createInitialForm(),
+          id: eventoEditando.id,
+          imagem_url: eventoEditando.imagem_url || null,
+          status: eventoEditando.status || "ativo",
+          titulo: normalizarTexto(eventoEditando.titulo),
+          descricao_curta: normalizarTexto(eventoEditando.descricao_curta),
+          descricao_completa: normalizarTexto(eventoEditando.descricao_completa),
+          local: normalizarTexto(eventoEditando.local),
+          endereco: normalizarTexto(eventoEditando.endereco),
+          telefone_contato: normalizarTexto(eventoEditando.telefone_contato),
+          whatsapp_url: normalizarTexto(eventoEditando.whatsapp_url),
+          data_inicio: dataInicio ? dataInicio.toISOString().slice(0, 10) : "",
           hora_inicio: semHoraInicio ? "" : horaInicioIso,
           data_fim: dataFim ? dataFim.toISOString().slice(0, 10) : "",
           hora_fim: dataFim && !semHoraFim ? horaFimIso : "",
@@ -104,11 +131,15 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
             ? dataLimiteInscricao.toISOString().slice(11, 16)
             : "",
           imagem: null,
-          possui_camiseta: eventoEditando.possui_camiseta ?? false,
-          camiseta_tamanhos: configuracoes.camiseta_tamanhos || [],
-          inscricao_externa_url: configuracoes.inscricao_externa_url || "",
-          com_inscricao: eventoEditando.com_inscricao ?? false,
-          valor: eventoEditando.valor || "",
+          possui_camiseta: normalizarBoolean(eventoEditando.possui_camiseta),
+          camiseta_tamanhos: Array.isArray(configuracoes.camiseta_tamanhos)
+            ? configuracoes.camiseta_tamanhos
+            : [],
+          inscricao_externa_url: normalizarTexto(
+            configuracoes.inscricao_externa_url
+          ),
+          com_inscricao: normalizarBoolean(eventoEditando.com_inscricao),
+          valor: eventoEditando.valor == null ? "" : String(eventoEditando.valor),
           limite_inscritos: normalizarLimiteInscritos(
             configuracoes.limite_inscritos
           ),
@@ -124,30 +155,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
         logger.error("Erro ao carregar evento:", err);
       }
     } else {
-      setForm({
-        titulo: "",
-        descricao_curta: "",
-        descricao_completa: "",
-        local: "",
-        endereco: "",
-        telefone_contato: "",
-        whatsapp_url: "",
-        data_inicio: "",
-        hora_inicio: "",
-        data_fim: "",
-        hora_fim: "",
-        data_limite_inscricao: "",
-        hora_limite_inscricao: "",
-        imagem: null,
-        com_inscricao: false,
-        inscricao_externa_url: "",
-        valor: "",
-        limite_inscritos: "",
-        possui_camiseta: false,
-        camiseta_tamanhos: [],
-        imagem_foco_x: 50,
-        imagem_foco_y: 50,
-      });
+      setForm(createInitialForm());
       setImagemPreview(null);
       setMostrarDataFim(false);
       setSemHorarioInicio(false);
@@ -213,19 +221,36 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
     setEnviando(true);
     try {
       if (eventoEditando) {
-        const dados = {
-          ...form,
+        const dados = new FormData();
+        Object.entries({
+          titulo: form.titulo.trim(),
+          descricao_curta: form.descricao_curta,
+          descricao_completa: form.descricao_completa,
+          local: form.local,
+          endereco: form.endereco,
+          telefone_contato: form.telefone_contato,
+          whatsapp_url: form.whatsapp_url,
           data_inicio,
-          data_fim,
-          inscricoes_ate,
-          configuracoes: {
+          com_inscricao: form.com_inscricao ? 1 : 0,
+          valor: form.com_inscricao ? form.valor || 0 : 0,
+          possui_camiseta: form.possui_camiseta ? 1 : 0,
+          status: form.status || "ativo",
+          imagem_removida: form.imagem_url ? 0 : 1,
+        }).forEach(([k, v]) => dados.append(k, v));
+
+        if (data_fim) dados.append("data_fim", data_fim);
+        if (inscricoes_ate) dados.append("inscricoes_ate", inscricoes_ate);
+        if (form.imagem) dados.append("imagem", form.imagem);
+        dados.append(
+          "configuracoes",
+          JSON.stringify({
             camiseta_tamanhos: form.camiseta_tamanhos,
             inscricao_externa_url: form.inscricao_externa_url?.trim() || "",
             limite_inscritos: limiteInscritos || null,
             imagem_foco_x: clampFocus(form.imagem_foco_x, 50),
             imagem_foco_y: clampFocus(form.imagem_foco_y, 50),
-          },
-        };
+          })
+        );
         await atualizarEvento(eventoEditando.id, dados, token);
         toast.success("Evento atualizado com sucesso!");
       } else {
@@ -264,30 +289,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
       }
 
       // Reset
-      setForm({
-        titulo: "",
-        descricao_curta: "",
-        descricao_completa: "",
-        local: "",
-        endereco: "",
-        telefone_contato: "",
-        whatsapp_url: "",
-        data_inicio: "",
-        hora_inicio: "",
-        data_fim: "",
-        hora_fim: "",
-        data_limite_inscricao: "",
-        hora_limite_inscricao: "",
-        imagem: null,
-        com_inscricao: false,
-        inscricao_externa_url: "",
-        valor: "",
-        limite_inscritos: "",
-        possui_camiseta: false,
-        camiseta_tamanhos: [],
-        imagem_foco_x: 50,
-        imagem_foco_y: 50,
-      });
+      setForm(createInitialForm());
       setImagemPreview(null);
       setMostrarDataFim(false);
       setSemHorarioInicio(false);
@@ -681,7 +683,7 @@ function AgendaForm({ onCriado, eventoEditando, onLimparEdicao }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setForm((p) => ({ ...p, imagem: null }));
+                    setForm((p) => ({ ...p, imagem: null, imagem_url: null }));
                     setImagemPreview(null);
                   }}
                   className="absolute top-2 right-2 w-7 h-7 bg-red-500/90 hover:bg-red-600 text-white rounded-full text-sm flex items-center justify-center"

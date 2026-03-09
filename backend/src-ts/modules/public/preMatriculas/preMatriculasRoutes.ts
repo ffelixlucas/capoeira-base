@@ -27,6 +27,12 @@ router.post(
 );
 
 router.get(
+  "/pre-matriculas/:slug/categorias",
+  (req: Request, res: Response) =>
+    preMatriculasController.listarCategoriasPublic(req, res)
+);
+
+router.get(
   "/pre-matriculas/:slug/graduacoes/:categoriaId",
   (req: Request, res: Response) =>
     preMatriculasController.listarGraduacoesPorCategoriaPublic(req, res)

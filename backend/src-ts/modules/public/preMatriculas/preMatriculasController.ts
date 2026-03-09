@@ -190,6 +190,31 @@ class PreMatriculasController {
       });
     }
   }
+
+  async listarCategoriasPublic(req: Request, res: Response) {
+    try {
+      const { slug } = req.params;
+
+      logger.debug(
+        `[preMatriculasController] Buscando categorias públicas slug=${slug}`
+      );
+
+      const categorias = await preMatriculasService.listarCategoriasPublic({
+        slug,
+      });
+
+      return res.json({ data: categorias });
+    } catch (err: any) {
+      logger.error(
+        "[preMatriculasController] Erro ao listar categorias públicas:",
+        err.message
+      );
+      return res.status(400).json({
+        error: "Erro ao listar categorias para essa organização.",
+      });
+    }
+  }
+
   async validarCpf(req: Request, res: Response) {
     try {
       const { cpf, slug } = req.query as { cpf: string; slug: string };

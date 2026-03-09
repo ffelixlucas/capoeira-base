@@ -38,10 +38,10 @@ function renderTextWithLinks(text) {
 }
 
 function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextEvent = false }) {
-  if (!evento) return null;
   const navigate = useNavigate();
   const [detalhesAbertos, setDetalhesAbertos] = useState(false);
   const [mostrarImagem, setMostrarImagem] = useState(false);
+  const [agoraMs, setAgoraMs] = useState(Date.now());
 
   const {
     id,
@@ -56,12 +56,10 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextE
     telefone_contato,
     whatsapp_url,
     com_inscricao,
-    valor,
     inscricoes_ate,
     total_inscritos,
     configuracoes,
-  } = evento;
-  const [agoraMs, setAgoraMs] = useState(Date.now());
+  } = evento || {};
 
   const imagemFocoX = Math.min(
     100,
@@ -106,19 +104,6 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextE
       .toUpperCase();
     const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     return time === "00:00" ? date : `${date} • ${time}`;
-  };
-
-  const formatarDataInscricao = (raw) => {
-    if (!raw) return "";
-    const d = new Date(raw);
-    if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "America/Sao_Paulo",
-    });
   };
 
   const contagemInscricao = useMemo(() => {
@@ -177,6 +162,8 @@ function AgendaItem({ evento, onExcluir, onEditar, mostrarBotoes = true, isNextE
     if (Number(com_inscricao) !== 1) return;
     navigate(`/inscricoes/${id}`);
   };
+
+  if (!evento) return null;
 
   return (
     <article

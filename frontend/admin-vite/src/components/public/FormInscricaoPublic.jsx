@@ -1,11 +1,13 @@
 // components/public/FormInscricaoPublic.jsx
-import { useState, useEffect } from "react";
+import { createElement, useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import InputBase from "../../components/ui/InputBase";
-import { calcularValorComTaxa } from "../../utils/calcularValor";
-import { motion } from "framer-motion";
 import { CreditCard, Landmark, QrCode, CheckCircle2 } from "lucide-react";
-import { buscarValoresEvento } from "../../services/public/inscricaoPublicService";
-import { useCategorias } from "../../hooks/useCategorias";
+import {
+  buscarCategoriasPublicas,
+  buscarGraduacoesPublicas,
+  buscarValoresEvento,
+} from "../../services/public/inscricaoPublicService";
 
 export default function FormInscricaoPublic({
   form,
@@ -18,11 +20,9 @@ export default function FormInscricaoPublic({
   formatarCPF,
   evento,
 }) {
-  const valorComTaxa = calcularValorComTaxa(evento?.valor || 0, "cartao");
-  const { categorias = [] } = useCategorias();
-  const graduacoesDaCategoria =
-    categorias.find((c) => String(c.id) === String(form.categoria_id))
-      ?.graduacoes || [];
+  const { slug } = useParams();
+  const [categorias, setCategorias] = useState([]);
+  const [graduacoesDaCategoria, setGraduacoesDaCategoria] = useState([]);
 
   function handleChange(e) {
     const { name, type, value, checked } = e.target;
@@ -49,6 +49,26 @@ export default function FormInscricaoPublic({
   }
 
   const [valores, setValores] = useState(null);
+
+  useEffect(() => {
+    if (!slug) return;
+
+    buscarCategoriasPublicas(slug)
+      .then(setCategorias)
+      .catch(() => setCategorias([]));
+  }, [slug]);
+
+  useEffect(() => {
+    if (!slug || !form.categoria_id) {
+      setGraduacoesDaCategoria([]);
+      return;
+    }
+
+    buscarGraduacoesPublicas(slug, form.categoria_id)
+      .then(setGraduacoesDaCategoria)
+      .catch(() => setGraduacoesDaCategoria([]));
+  }, [slug, form.categoria_id]);
+
   useEffect(() => {
     if (evento?.id) {
       buscarValoresEvento(evento.id).then(setValores);
@@ -60,15 +80,18 @@ export default function FormInscricaoPublic({
     ativo,
     onClick,
     cor,
-    icon: Icon,
+    icon,
     label,
     valor,
     descricao, // 👈 adicionamos aqui
-  }) => (
-    <motion.button
+  }) => {
+    const iconNode = createElement(icon, {
+      className: `w-6 h-6 mb-1 ${cor.icon}`,
+    });
+
+    return (
+      <button
       type="button"
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
       onClick={onClick}
       className={`relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-colors shadow-sm text-center
       ${
@@ -78,7 +101,7 @@ export default function FormInscricaoPublic({
       }
     `}
     >
-      <Icon className={`w-6 h-6 mb-1 ${cor.icon}`} />
+      {iconNode}
       <span className="text-xs font-medium text-gray-800">{label}</span>
       <span className="text-sm font-semibold text-gray-900">R$ {valor}</span>
 
@@ -92,8 +115,9 @@ export default function FormInscricaoPublic({
           className={`w-4 h-4 absolute top-2 right-2 ${cor.icon}`}
         />
       )}
-    </motion.button>
-  );
+    </button>
+    );
+  };
 
   return (
     <form

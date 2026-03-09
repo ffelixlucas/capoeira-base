@@ -195,12 +195,13 @@ async function atualizarEvento(req, res) {
   try {
     const { id } = req.params;
     const organizacaoId = req.usuario?.organizacao_id;
+    const imagem = req.file;
     const dados = {
       ...req.body,
       possui_camiseta: parseInt(req.body.possui_camiseta) === 1 ? 1 : 0,
     };
 
-    await agendaService.atualizarEvento(id, organizacaoId, dados);
+    await agendaService.atualizarEvento(id, organizacaoId, dados, imagem);
     res.status(200).json({ message: "Evento atualizado com sucesso" });
     await registrarAuditoria({
       organizacaoId,

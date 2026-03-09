@@ -40,6 +40,7 @@ router.put(
   "/:id",
   verifyToken,
   checkRole(["admin", "instrutor", "midia"]),
+  upload.single("imagem"),
   agendaController.atualizarEvento
 );
 

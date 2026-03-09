@@ -394,6 +394,16 @@ class PreMatriculasService {
     return preMatriculasRepository.buscarTurmaPorIdade(organizacaoId, idade);
   }
 
+  async listarCategoriasPublic(payload: { slug: string }) {
+    const { slug } = payload;
+
+    const organizacaoId = await organizacaoService.resolverIdPorSlug(slug);
+    if (!organizacaoId)
+      throw new Error("Organização não encontrada pelo slug.");
+
+    return preMatriculasRepository.listarCategoriasPublic(organizacaoId);
+  }
+
   async listarGraduacoesPorCategoriaPublic(payload: {
     slug: string;
     categoriaId: string;

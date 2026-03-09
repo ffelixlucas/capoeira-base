@@ -115,8 +115,13 @@ export const excluirEvento = async (id, token) => {
 };
 
 export const atualizarEvento = async (id, dados, token) => {
+  const headers = { Authorization: `Bearer ${token}` };
+  if (dados instanceof FormData) {
+    headers["Content-Type"] = "multipart/form-data";
+  }
+
   const response = await api.put(`/agenda/${id}`, dados, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers,
   });
   return response.data;
 };

@@ -1,9 +1,8 @@
 import { useEffect, useState, Fragment } from "react";
-import { useParams, useNavigate, data } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { buscarEventoPublicoPorId } from "../../services/agendaService";
 import { Dialog, Transition } from "@headlessui/react";
 import { gerarPagamentoPix } from "../../services/public/inscricaoPublicService";
-import { pagarBoleto } from "../../services/public/pagamentoPublicService";
 
 import EventoInfo from "../../components/public/EventoInfo.jsx";
 import FormInscricaoPublic from "../../components/public/FormInscricaoPublic.jsx";
@@ -13,12 +12,10 @@ import { logger } from "../../utils/logger.js";
 import ModalPagamentoCartao from "../../components/public/pagamento/ModalPagamentoCartao.jsx";
 import ModalPagamentoBoleto from "../../components/public/pagamento/ModalPagamentoBoleto.jsx";
 import ModalConfirmacaoPagamento from "../../components/public/ModalConfirmacaoPagamento.jsx";
-import AgendaItem from "../../components/agenda/Item.jsx";
 
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { CalendarDays } from "lucide-react";
-import { motion } from "framer-motion";
 import { formatDate, parseDateTime } from "../../utils/datetime";
 
 export default function InscricaoEventoPublic() {
@@ -162,7 +159,7 @@ export default function InscricaoEventoPublic() {
     }
   
     carregarEvento();
-  }, [slug, eventoId]);
+  }, [slug, eventoId, navigate]);
   
   
 
@@ -313,50 +310,45 @@ export default function InscricaoEventoPublic() {
   return (
     <div className="w-full flex flex-col items-center text-white">
       <div className="w-full flex justify-center mb-10 px-4">
-  <div className="w-full max-w-[350px] rounded-2xl overflow-hidden border border-blue-400/30 
+        <div
+          className="w-full max-w-[720px] rounded-2xl overflow-hidden border border-blue-400/30 
                   bg-gradient-to-b from-blue-950/60 via-blue-900/40 to-blue-950/60 
-                  backdrop-blur-md shadow-[0_0_25px_-4px_rgba(59,130,246,0.3)]">
-
-    {/* Cabeçalho neon translúcido */}
-    {evento?.inscricoes_ate && (
-      <motion.div
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative flex items-center justify-center gap-2 py-3 px-4 
+                  backdrop-blur-md shadow-[0_0_25px_-4px_rgba(59,130,246,0.3)]"
+        >
+          {evento?.inscricoes_ate && (
+            <div
+              className="relative flex items-center justify-center gap-2 py-3 px-4 
                    bg-gradient-to-r from-blue-700/40 via-blue-600/30 to-blue-700/40 
                    border-b border-blue-400/30 text-blue-100 font-semibold text-sm tracking-wide"
-      >
-        {/* Glow animado */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-transparent animate-pulse-slow" />
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-transparent animate-pulse-slow" />
 
-        <CalendarDays
-          className="w-5 h-5 text-blue-300 drop-shadow-[0_0_6px_rgba(59,130,246,0.6)]"
-          strokeWidth={2}
-        />
-        <span className="relative z-10">
-          INSCRIÇÕES ATÉ{" "}
-          <span className="text-blue-50 font-bold drop-shadow-[0_0_6px_rgba(59,130,246,0.5)]">
-            {formatDate(
-              evento.inscricoes_ate,
-              {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-              },
-              "sao_paulo"
-            )}
-          </span>
-        </span>
-      </motion.div>
-    )}
+              <CalendarDays
+                className="w-5 h-5 text-blue-300 drop-shadow-[0_0_6px_rgba(59,130,246,0.6)]"
+                strokeWidth={2}
+              />
+              <span className="relative z-10">
+                INSCRIÇÕES ATÉ{" "}
+                <span className="text-blue-50 font-bold drop-shadow-[0_0_6px_rgba(59,130,246,0.5)]">
+                  {formatDate(
+                    evento.inscricoes_ate,
+                    {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    },
+                    "sao_paulo"
+                  )}
+                </span>
+              </span>
+            </div>
+          )}
 
-    {/* Card do evento */}
-    <div className="bg-white/95 backdrop-blur-md">
-      <AgendaItem evento={evento} mostrarBotoes={false} />
-    </div>
-  </div>
-</div>
+          <div className="p-3 sm:p-4">
+            <EventoInfo evento={evento} />
+          </div>
+        </div>
+      </div>
 
 
       <FormInscricaoPublic

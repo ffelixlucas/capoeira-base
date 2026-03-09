@@ -29,6 +29,28 @@ export interface PreMatriculaRow {
 }
 
 class PreMatriculasRepository {
+  async listarCategoriasPublic(organizacaoId: number) {
+    try {
+      const [rows] = await db.execute<any[]>(
+        `
+          SELECT id, nome
+            FROM categorias
+           WHERE organizacao_id = ?
+           ORDER BY nome ASC
+        `,
+        [organizacaoId]
+      );
+
+      return rows;
+    } catch (err: any) {
+      logger.error(
+        "[preMatriculasRepository] Erro ao listar categorias públicas:",
+        err.message
+      );
+      throw err;
+    }
+  }
+
   async verificarCpfExistente(cpf: string, organizacao_id: number) {
     try {
       const cpfLimpo = cpf.replace(/\D/g, "");
