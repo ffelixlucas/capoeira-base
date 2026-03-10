@@ -2,6 +2,7 @@
 const logger = require("../../utils/logger.js");
 const alunoService = require("./alunosService");
 const matriculaService = require("../matricula/matriculaService");
+const turmasRepository = require("../turmas/turmasRepository");
 const {
   registrarAuditoria,
   listarAuditoriaPorOrganizacao,
@@ -102,14 +103,27 @@ async function trocarTurma(req, res) {
   try {
     const usuario = req.usuario;
     const organizacaoId = usuario.organizacao_id;
+    const alunoId = Number(req.params.id);
 
     const { nova_turma_id } = req.body;
     if (!nova_turma_id) {
       return res.status(400).json({ erro: "Nova turma obrigatória." });
     }
 
+    const alunoAtual = await alunoService.buscarPorId(alunoId, organizacaoId);
+    const turmas = await turmasRepository.buscarTodasComInstrutor(organizacaoId);
+    const turmaDestino = (Array.isArray(turmas) ? turmas : []).find(
+      (item) => Number(item.id) === Number(nova_turma_id)
+    );
+
+    const alunoNome = alunoAtual?.apelido || alunoAtual?.nome || `Aluno #${alunoId}`;
+    const turmaOrigemNome =
+      alunoAtual?.turma_nome || `Turma #${alunoAtual?.turma_id || "-"}`;
+    const turmaDestinoNome =
+      turmaDestino?.nome || turmaDestino?.nome_instrutor || `Turma #${nova_turma_id}`;
+
     await alunoService.trocarTurma(
-      req.params.id,
+      alunoId,
       nova_turma_id,
       organizacaoId
     );
@@ -119,8 +133,17 @@ async function trocarTurma(req, res) {
       usuarioNome: usuario.nome || null,
       acao: "aluno_turma_trocada",
       entidade: "aluno",
-      entidadeId: req.params.id,
-      descricao: `Trocou aluno #${req.params.id} para turma #${nova_turma_id}`,
+      entidadeId: alunoId,
+      descricao: `Trocou aluno "${alunoNome}" da turma "${turmaOrigemNome}" para "${turmaDestinoNome}"`,
+      metadata: {
+        aluno_id: alunoId,
+        aluno_nome: alunoAtual?.nome || null,
+        aluno_apelido: alunoAtual?.apelido || null,
+        turma_origem_id: alunoAtual?.turma_id || null,
+        turma_origem_nome: turmaOrigemNome,
+        turma_destino_id: Number(nova_turma_id),
+        turma_destino_nome: turmaDestinoNome,
+      },
     });
 
     return res.json({ sucesso: true });

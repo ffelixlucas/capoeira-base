@@ -61,6 +61,7 @@ export default function Dashboard() {
   const [confirmandoTransferenciaId, setConfirmandoTransferenciaId] = useState(null);
   const [mostrarAjusteRapidoTurma, setMostrarAjusteRapidoTurma] = useState(false);
   const [turmasDestinoDisponiveis, setTurmasDestinoDisponiveis] = useState([]);
+  const [alunosAdminCatalogo, setAlunosAdminCatalogo] = useState([]);
   const [noticiasResumo, setNoticiasResumo] = useState([]);
   const [abrirModalHistoricoSistema, setAbrirModalHistoricoSistema] = useState(false);
   const [auditoriaAtividades, setAuditoriaAtividades] = useState([]);
@@ -264,6 +265,7 @@ export default function Dashboard() {
 
     if (!isAdmin) {
       setQtdAlunos(0);
+      setAlunosAdminCatalogo([]);
       return;
     }
 
@@ -271,6 +273,7 @@ export default function Dashboard() {
       try {
         const alunos = await listarAlunos();
         setQtdAlunos(alunos.length);
+        setAlunosAdminCatalogo(Array.isArray(alunos) ? alunos : []);
       } catch (error) {
         logger.error("Erro ao buscar alunos:", error);
       }
@@ -472,13 +475,13 @@ export default function Dashboard() {
         hour: "2-digit",
         minute: "2-digit",
       },
-      "utc"
+      "sao_paulo"
     );
     return texto || "Sem data";
   };
 
   const parseDataAuditoria = (value) => {
-    return parseDateTime(value, "utc");
+    return parseDateTime(value, "sao_paulo");
   };
 
   const atividadesSistema = useMemo(() => {
@@ -487,6 +490,7 @@ export default function Dashboard() {
       id: `aud-${item.id}`,
       tipo: item.entidade || "sistema",
       entidadeId: item.entidade_id || null,
+      metadata: item.metadata || null,
       transferenciaId: item.metadata?.transferencia_id || null,
       transferenciaStatus: item.metadata?.status || null,
       acao: item.acao || null,
@@ -509,6 +513,22 @@ export default function Dashboard() {
     return mapa;
   }, [transferenciasRecentesAuditoria]);
 
+  const alunosPorId = useMemo(() => {
+    const mapa = new Map();
+    (alunosAdminCatalogo || []).forEach((aluno) => {
+      mapa.set(Number(aluno.id), aluno);
+    });
+    return mapa;
+  }, [alunosAdminCatalogo]);
+
+  const turmasPorId = useMemo(() => {
+    const mapa = new Map();
+    (turmasDestinoDisponiveis || []).forEach((turma) => {
+      mapa.set(Number(turma.id), turma);
+    });
+    return mapa;
+  }, [turmasDestinoDisponiveis]);
+
   const obterBadgeTransferencia = (status, tipo) => {
     const valor = String(status || "").toLowerCase();
     if (valor === "pendente") return "Aguardando confirmação";
@@ -518,6 +538,33 @@ export default function Dashboard() {
   };
 
   const montarDescricaoAtividade = (item) => {
+    if (item?.acao === "aluno_turma_trocada") {
+      const alunoNome =
+        item?.metadata?.aluno_apelido || item?.metadata?.aluno_nome || null;
+      const origem = item?.metadata?.turma_origem_nome || null;
+      const destino = item?.metadata?.turma_destino_nome || null;
+
+      if (alunoNome || origem || destino) {
+        return `Trocou aluno "${alunoNome || "aluno"}" da turma "${origem || "turma atual"}" para "${destino || "nova turma"}".`;
+      }
+
+      const descricaoRaw = String(item?.descricao || "");
+      const matchAntigo = descricaoRaw.match(/aluno\s*#?(\d+)\s+para\s+turma\s*#?(\d+)/i);
+      const alunoId = Number(matchAntigo?.[1]);
+      const turmaDestinoId = Number(matchAntigo?.[2]);
+
+      if (Number.isFinite(alunoId) && Number.isFinite(turmaDestinoId)) {
+        const aluno = alunosPorId.get(alunoId);
+        const turmaDestino = turmasPorId.get(turmaDestinoId);
+        const nomeAluno =
+          aluno?.apelido || aluno?.nome || `Aluno #${alunoId}`;
+        const nomeTurma = turmaDestino?.nome || `Turma #${turmaDestinoId}`;
+        return `Trocou aluno "${nomeAluno}" para turma "${nomeTurma}".`;
+      }
+
+      return descricaoRaw || "Troca de turma registrada.";
+    }
+
     if (item?.tipo !== "transferencia_turma") return item.descricao;
 
     const transferencia = transferenciasRecentesMap.get(Number(item.transferenciaId));
