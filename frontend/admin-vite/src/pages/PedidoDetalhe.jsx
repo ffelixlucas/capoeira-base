@@ -42,13 +42,18 @@ export default function PedidoDetalhe() {
     }
 
     async function handleEntregue() {
+        const confirmou = confirm(
+            "Confirmar entrega do pedido?\n\nUse este botão somente quando o cliente já retirou o produto."
+        );
+        if (!confirmou) return;
+
         try {
             setLoadingAcao(true);
             await marcarPedidoEntregue(id);
 
             setPedido((prev) => ({
                 ...prev,
-                status_operacional: "entregue",
+                status_operacional: "finalizado",
             }));
         } catch (err) {
             console.error("Erro ao marcar como entregue:", err);
@@ -58,7 +63,14 @@ export default function PedidoDetalhe() {
     }
 
     async function handleEstornar() {
-        if (!confirm("Tem certeza que deseja estornar este pedido?")) return;
+        const confirmou = confirm(
+            "Confirmar estorno deste pedido?\n\n" +
+            "Apos confirmar:\n" +
+            "- o pagamento sera estornado no gateway;\n" +
+            "- o estoque dos itens sera devolvido;\n" +
+            "- o pedido ficara com status financeiro 'estornado'."
+        );
+        if (!confirmou) return;
 
         try {
             setLoadingAcao(true);

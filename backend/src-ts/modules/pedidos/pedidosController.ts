@@ -11,7 +11,21 @@ import { marcarPedidoProntoRetirada } from "./pedidosRepository";
 import { dispararEventoEmail } from "../notificacoes/notificacoesEventosService";
 import emailService from "../../services/emailService";
 import { buscarConfiguracao } from "../shared/organizacoes/organizacaoRepository";
+import {
+  buscarPagamentoPorPedido,
+  atualizarCobrancaPagamentoRepository,
+} from "../pagamentos/pagamentosRepository";
+import { buscarPagamentoMP } from "../pagamentos/pagamentosService";
+import { resolverCredenciaisMercadoPagoPorOrganizacaoId } from "../shared/organizacoes/organizacaoService";
+import { processarCobrancaPaga } from "../pagamentos/processarCobrancaPaga";
 
+function mapearStatusMP(statusMP?: string): string {
+  if (statusMP === "approved") return "pago";
+  if (statusMP === "pending") return "pendente";
+  if (statusMP === "rejected") return "rejeitado";
+  if (statusMP === "cancelled") return "cancelado";
+  return "pendente";
+}
 
 
 export async function buscarPedido(req: Request, res: Response) {
@@ -82,14 +96,62 @@ export async function marcarPedidoPronto(req: Request, res: Response) {
       });
     }
 
-    if (pedido.status !== "convertido") {
-      return res.status(400).json({
-        success: false,
-        message: "Pedido ainda não foi pago",
-      });
+    if (pedido.status_financeiro !== "pago") {
+      try {
+        const pagamento = await buscarPagamentoPorPedido(
+          organizacaoId,
+          pedidoIdNum
+        );
+
+        if (pagamento?.pagamento_id) {
+          const credenciais =
+            await resolverCredenciaisMercadoPagoPorOrganizacaoId(organizacaoId);
+          const pagamentoMP = await buscarPagamentoMP(
+            String(pagamento.pagamento_id),
+            credenciais.accessToken
+          );
+          const statusInterno = mapearStatusMP(pagamentoMP?.status);
+
+          if (statusInterno !== pagamento.status) {
+            await atualizarCobrancaPagamentoRepository({
+              cobranca_id: Number(pagamento.id),
+              status: statusInterno,
+              status_detail: pagamentoMP?.status_detail || null,
+              pagamento_id: pagamentoMP?.id || undefined,
+            });
+          }
+
+          if (statusInterno === "pago") {
+            await processarCobrancaPaga(Number(pagamento.id));
+          }
+        }
+      } catch (syncError: any) {
+        logger.warn("[pedidosController] Falha ao sincronizar pagamento no pronto-retirada", {
+          pedidoId: pedidoIdNum,
+          organizacaoId,
+          erro: syncError?.message,
+        });
+      }
+
+      const pedidoAtualizado = await buscarPedidoPorId(
+        organizacaoId,
+        pedidoIdNum
+      );
+
+      if (!pedidoAtualizado || pedidoAtualizado.status_financeiro !== "pago") {
+        return res.status(400).json({
+          success: false,
+          message: "Pedido ainda não foi pago",
+        });
+      }
     }
 
-    if (pedido.status_operacional === "pronto_retirada") {
+    const pedidoEstadoAtual = await buscarPedidoPorId(
+      organizacaoId,
+      pedidoIdNum
+    );
+
+    if (pedidoEstadoAtual?.status_operacional === "pronto_retirada") {
       return res.status(400).json({
         success: false,
         message: "Pedido já está marcado como pronto",
@@ -198,11 +260,16 @@ export async function listarPedidos(req: Request, res: Response) {
 
     const limite = limit ? Number(limit) : 20;
 
+    const statusOperacionalNormalizado =
+      status_operacional === "entregue"
+        ? "finalizado"
+        : (status_operacional as string | undefined);
+
     const resultado = await listarPedidosPorOrg(
       organizacaoId,
       {
         status_financeiro: status_financeiro as string | undefined,
-        status_operacional: status_operacional as string | undefined,
+        status_operacional: statusOperacionalNormalizado,
         data_inicio: data_inicio as string | undefined,
         data_fim: data_fim as string | undefined,
       },

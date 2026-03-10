@@ -4,7 +4,8 @@ import { ProdutoCard } from './ProdutoCard.jsx'
 
 export const ProdutosTable = ({
   produtos,
-  loading
+  loading,
+  onEditar
 }) => {
 
   const navigate = useNavigate()
@@ -37,6 +38,7 @@ export const ProdutosTable = ({
             key={produto.id}
             produto={produto}
             onGerenciar={() => navigate(`/admin/produtos/${produto.id}`)}
+            onEditar={() => onEditar(produto)}
           />
         ))}
       </div>
@@ -76,11 +78,20 @@ export const ProdutosTable = ({
                 <td className="py-4">{produto.skus?.length || 0}</td>
                 <td className="py-4 font-medium">{estoqueTotal}</td>
                 <td className="py-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onEditar(produto)}
+                      className="min-h-[44px] px-4 border border-cor-secundaria/30 text-on-surface rounded-xl font-medium hover:bg-cor-secundaria/10 transition-colors"
+                    >
+                      Editar
+                    </button>
                   <button
                     onClick={() => navigate(`/admin/produtos/${produto.id}`)}
-                    className="min-h-[44px] px-4 bg-cor-primaria text-white rounded-xl font-medium hover:opacity-90 transition-opacity"                  >
+                    className="min-h-[44px] px-4 bg-cor-primaria text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+                  >
                     Gerenciar
                   </button>
+                  </div>
                 </td>
               </tr>
             )

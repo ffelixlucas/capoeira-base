@@ -3,11 +3,16 @@ import { produtosService } from "../../../services/produtosService";
 import { toast } from "react-toastify";
 import  InfoTip  from "../../ui/InfoTip";
 
-export default function SkuGaleria({ sku, onAtualizado }) {
+export default function SkuGaleria({ sku, imagensReaproveitaveis = [], onAtualizado }) {
     const imagens = sku.imagens || [];
     const [open, setOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [preview, setPreview] = useState(null);
+    const [reutilizandoImagemId, setReutilizandoImagemId] = useState(null);
+
+    const imagensDisponiveis = imagensReaproveitaveis.filter(
+        (imagem) => !imagens.some((imgSku) => imgSku.url === imagem.url)
+    );
 
     async function handleUpload(e) {
         const file = e.target.files[0];
@@ -45,6 +50,23 @@ export default function SkuGaleria({ sku, onAtualizado }) {
         }
     }
 
+    async function reutilizarImagemExistente(imagem) {
+        try {
+            setReutilizandoImagemId(imagem.chave);
+            await produtosService.reutilizarImagemProdutoNaSku(sku.id, {
+                url: imagem.url,
+            });
+            toast.success("Imagem adicionada na variação");
+            onAtualizado?.();
+        } catch (error) {
+            toast.error(
+                error.response?.data?.message || "Erro ao reutilizar imagem"
+            );
+        } finally {
+            setReutilizandoImagemId(null);
+        }
+    }
+
     return (
         <>
             {/* BOTÃO */}
@@ -77,6 +99,43 @@ export default function SkuGaleria({ sku, onAtualizado }) {
                                 Exemplo: cor diferente, modelo regata ou material distinto.
                             </span>
                         </InfoTip>
+
+                        {imagensDisponiveis.length > 0 && (
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <h4 className="text-sm font-semibold text-on-surface">
+                                        Imagens usadas neste produto
+                                    </h4>
+                                    <span className="text-xs text-on-surface/40">
+                                        {imagensDisponiveis.length} disponíveis
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                    {imagensDisponiveis.map((img) => (
+                                        <button
+                                            key={img.chave}
+                                            type="button"
+                                            onClick={() => reutilizarImagemExistente(img)}
+                                            disabled={reutilizandoImagemId === img.chave}
+                                            className="relative h-24 rounded-lg overflow-hidden border border-cor-secundaria/30 bg-cor-fundo group"
+                                        >
+                                            <img
+                                                src={img.url}
+                                                alt="Imagem reaproveitavel"
+                                                className="h-full w-full object-contain"
+                                            />
+                                            <div className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                                {img.origem}
+                                            </div>
+                                            <div className="absolute inset-x-0 bottom-0 bg-black/70 px-2 py-1 text-[11px] font-medium text-white">
+                                                {reutilizandoImagemId === img.chave ? "Adicionando..." : "Usar nesta variação"}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Upload */}
                         <label className="block mb-6">

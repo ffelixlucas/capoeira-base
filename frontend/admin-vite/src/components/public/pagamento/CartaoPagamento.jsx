@@ -6,6 +6,8 @@ import { logger } from "../../../utils/logger";
 import { usePagamentoCartao } from "../../../hooks/public/usePagamentoCartao";
 import ModalErroPagamento from "../ModalErroPagamento";
 import ModalPagamentoPendente from "../pagamento/ModalPagamentoPendente";
+import { useParams } from "react-router-dom";
+import { buscarMercadoPagoPublico } from "../../../services/organizacaoConfigService";
 
 // Inicializa SDK
 initMP();
@@ -17,9 +19,35 @@ export default function CartaoPagamento({
   setDadosPagamento,
   onSucesso,
 }) {
+  const { slug } = useParams();
   const { pagar, loading, erro, resposta } = usePagamentoCartao();
   const [modalErro, setModalErro] = useState(false);
   const [modalPendente, setModalPendente] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarPublicKey() {
+      if (!slug) return;
+
+      try {
+        const data = await buscarMercadoPagoPublico(slug);
+        if (!ativo) return;
+
+        if (data?.public_key) {
+          initMP(data.public_key);
+        }
+      } catch (error) {
+        logger.warn("[CartaoPagamento] Nao foi possivel carregar public key da organizacao", error);
+      }
+    }
+
+    carregarPublicKey();
+
+    return () => {
+      ativo = false;
+    };
+  }, [slug]);
 
   const handleSubmit = async (formData) => {
     try {

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import NotificacoesEmail from "../components/config/NotificacoesEmail";
 import ConfigCategorias from "../components/config/ConfigCategorias";
+import MercadoPagoConfig from "../components/config/MercadoPagoConfig";
 import { useCategorias } from "../hooks/useCategorias";
 import { useAuth } from "../contexts/AuthContext";
 import { buscarContatoOrganizacao, atualizarContatoOrganizacao } from "../services/organizacaoConfigService";
@@ -281,7 +282,12 @@ export default function ConfigSistema() {
       )}
 
       {/* Notificações */}
-      <NotificacoesEmail />
+      <NotificacoesEmail
+        emailContatoPadrao={emailContato}
+        emailUsuarioPadrao={usuario?.email || ""}
+      />
+
+      {usuario?.roles?.includes("admin") && <MercadoPagoConfig />}
 
       {/* Categorias */}
       <div id="categorias">

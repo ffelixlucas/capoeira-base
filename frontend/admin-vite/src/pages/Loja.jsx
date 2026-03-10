@@ -35,7 +35,7 @@ export default function Loja() {
       contador: estatisticas?.pronto_retirada || 0,
     },
     {
-      id: "entregue",
+      id: "finalizado",
       label: "Entregue",
       labelCurto: "Entregues",
       contador: estatisticas?.entregues || 0,

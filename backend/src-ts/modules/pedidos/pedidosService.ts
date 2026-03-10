@@ -9,6 +9,14 @@ import { PoolConnection } from "mysql2/promise";
 import axios from "axios";
 import { logger } from "../../utils/logger";
 import { withTransaction } from "../../database/connection";
+import { resolverCredenciaisMercadoPagoPorOrganizacaoId } from "../shared/organizacoes/organizacaoService";
+
+function mascararPagamentoId(id: any): string {
+  const digits = String(id || "").replace(/\D/g, "");
+  if (!digits) return "***";
+  if (digits.length <= 6) return `***${digits.slice(-2)}`;
+  return `${digits.slice(0, 3)}***${digits.slice(-3)}`;
+}
 
 export async function buscarPedidoPorId(
   organizacaoId: number,
@@ -150,16 +158,20 @@ export async function estornarPedidoService(
     }
 
     logger.debug("[estorno] pagamento_id usado", {
-      pagamento_id: pagamento.pagamento_id
+      pagamento_id: mascararPagamentoId(pagamento.pagamento_id)
     });
 
     // 3️⃣ Estorno Mercado Pago (externo, antes de mexer no banco)
+    const credenciais = await resolverCredenciaisMercadoPagoPorOrganizacaoId(
+      organizacaoId
+    );
+
     await axios.post(
       `https://api.mercadopago.com/v1/payments/${pagamento.pagamento_id}/refunds`,
       {},
       {
         headers: {
-          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${credenciais.accessToken}`,
         },
       }
     );

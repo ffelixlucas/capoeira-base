@@ -10,9 +10,11 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { AuthProvider } from "./contexts/AuthContext";
+import { FamilyAuthProvider } from "./contexts/FamilyAuthContext";
 import PrivateRoute from "./components/layout/PrivateRoute";
 import RoleRoute from "./components/RoleRoute";
 import LayoutAdmin from "./components/layout/LayoutAdmin";
+import FamilyPrivateRoute from "./components/layout/FamilyPrivateRoute";
 
 // Imports de páginas administrativas
 
@@ -50,12 +52,15 @@ import LojaWrapper from "./pages/public/loja/LojaWrapper.jsx";
 import CheckoutPublic from "./pages/public/loja/CheckoutPublic.jsx";
 import PedidoConfirmado from "./pages/public/loja/PedidoConfirmado.jsx"
 import { ProdutosPage } from "./pages/produtos/ProdutosPage";
+import FamiliaLogin from "./pages/public/familia/FamiliaLogin.jsx";
+import FamiliaPainel from "./pages/public/familia/FamiliaPainel.jsx";
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
+      <FamilyAuthProvider>
+        <Router>
+          <Routes>
           {/* Redirecionamento inicial */}
           <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -120,28 +125,39 @@ function App() {
           {/* Rota de fallback */}
           <Route path="*" element={<NotFound />} />
 
-          <Route element={<LayoutPublic />}>
-            {/* 🔹 Multi-org: listagem e inscrição de eventos */}
-            <Route path="/inscrever/:slug" element={<InscricoesPublic />} />
-            <Route
-              path="/inscrever/:slug/:eventoId"
-              element={<InscricaoEventoPublic />}
-            />
-            <Route path="/cartao-pagamento" element={<CartaoPagamento />} />          </Route>
-        </Routes>
-      </Router>
+            <Route element={<LayoutPublic />}>
+              {/* 🔹 Multi-org: listagem e inscrição de eventos */}
+              <Route path="/inscrever/:slug" element={<InscricoesPublic />} />
+              <Route
+                path="/inscrever/:slug/:eventoId"
+                element={<InscricaoEventoPublic />}
+              />
+              <Route path="/cartao-pagamento" element={<CartaoPagamento />} />
+              <Route path="/familia/:slug/login" element={<FamiliaLogin />} />
+              <Route
+                path="/familia/:slug"
+                element={
+                  <FamilyPrivateRoute>
+                    <FamiliaPainel />
+                  </FamilyPrivateRoute>
+                }
+              />
+            </Route>
+          </Routes>
+        </Router>
 
-      {/* 🔥 Toast Global */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        pauseOnFocusLoss
-        pauseOnHover
-        theme="light"
-      />
+        {/* 🔥 Toast Global */}
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          pauseOnFocusLoss
+          pauseOnHover
+          theme="light"
+        />
+      </FamilyAuthProvider>
     </AuthProvider>
   );
 }

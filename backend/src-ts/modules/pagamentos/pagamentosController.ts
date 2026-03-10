@@ -5,12 +5,24 @@ import {
   gerarPagamentoPixService,
   gerarPagamentoCartaoService,
   gerarPagamentoBoletoService,
+  buscarPagamentoMP,
 } from "./pagamentosService";
 import {
   buscarOrganizacaoPorSlug,
   buscarCobrancaPorId,
-  buscarCobrancaPorIdRepository
+  buscarCobrancaPorIdRepository,
+  atualizarCobrancaPagamentoRepository,
 } from "./pagamentosRepository";
+import { resolverCredenciaisMercadoPagoPorOrganizacaoId } from "../shared/organizacoes/organizacaoService";
+import { processarCobrancaPaga } from "./processarCobrancaPaga";
+
+function mapearStatusMP(statusMP?: string): string {
+  if (statusMP === "approved") return "pago";
+  if (statusMP === "pending") return "pendente";
+  if (statusMP === "rejected") return "rejeitado";
+  if (statusMP === "cancelled") return "cancelado";
+  return "pendente";
+}
 
 /* ======================================================
    Criar cobrança (intenção)
@@ -144,13 +156,47 @@ export async function buscarStatusCobranca(req: Request, res: Response) {
   try {
     const { cobrancaId } = req.params;
 
-    const cobranca = await buscarCobrancaPorIdRepository(Number(cobrancaId));
+    let cobranca = await buscarCobrancaPorIdRepository(Number(cobrancaId));
 
     if (!cobranca) {
       return res.status(404).json({
         success: false,
         message: "Cobrança não encontrada",
       });
+    }
+
+    // Fallback resiliente: se webhook falhar/atrasar, sincroniza status consultando o gateway.
+    if (cobranca.status === "pendente" && cobranca.pagamento_id) {
+      try {
+        const credenciais = await resolverCredenciaisMercadoPagoPorOrganizacaoId(
+          Number(cobranca.organizacao_id)
+        );
+        const pagamento = await buscarPagamentoMP(
+          String(cobranca.pagamento_id),
+          credenciais.accessToken
+        );
+        const statusInterno = mapearStatusMP(pagamento?.status);
+
+        if (statusInterno !== cobranca.status) {
+          await atualizarCobrancaPagamentoRepository({
+            cobranca_id: Number(cobranca.id),
+            status: statusInterno,
+            status_detail: pagamento?.status_detail || null,
+            pagamento_id: pagamento?.id || undefined,
+          });
+
+          if (statusInterno === "pago") {
+            await processarCobrancaPaga(Number(cobranca.id));
+          }
+
+          cobranca = await buscarCobrancaPorIdRepository(Number(cobrancaId));
+        }
+      } catch (syncError: any) {
+        logger.warn("[pagamentosController] Falha ao sincronizar status no fallback", {
+          cobrancaId: Number(cobrancaId),
+          erro: syncError?.message,
+        });
+      }
     }
 
     return res.json({

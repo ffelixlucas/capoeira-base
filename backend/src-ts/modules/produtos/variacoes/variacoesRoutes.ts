@@ -32,6 +32,13 @@ router.post(
   variacoesController.criarTipo
 );
 
+router.put(
+  "/tipos/:tipoId",
+  verifyToken,
+  checkRole(["admin"]),
+  variacoesController.atualizarTipo
+);
+
 router.delete(
   "/tipos/:tipoId",
   verifyToken,
@@ -48,6 +55,13 @@ router.post(
   verifyToken,
   checkRole(["admin"]),
   variacoesController.criarValor
+);
+
+router.put(
+  "/valores/:valorId",
+  verifyToken,
+  checkRole(["admin"]),
+  variacoesController.atualizarValor
 );
 
 router.delete(

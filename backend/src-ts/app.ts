@@ -34,6 +34,7 @@ const matriculaRoutes = require("../modules/matricula/matriculaRoutes");
 const notificacaoDestinosRoutes = require("../modules/notificacaoDestinos/notificacaoDestinosRoutes");
 const uploadRoutes = require("../modules/uploads/uploadRoutes");
 const notificacoesPushRoutes = require("../modules/notificacoesPush/notificacoesPushRoutes"); 
+const familiaRoutes = require("../modules/familia/familiaRoutes");
 const variacoesRoutes = require("../modules/produtos/variacoes/variacoesRoutes");
 
 
@@ -112,6 +113,7 @@ app.use("/api/graduacoes", graduacoesRoutes);
 app.use("/api/whatsapp-destinos", whatsappRoutes);
 app.use("/api/notificacoes-push", notificacoesPushRoutes);
 app.use("/api/produtos/variacoes", variacoesRoutes);
+app.use("/api/familia", familiaRoutes);
 
 
 

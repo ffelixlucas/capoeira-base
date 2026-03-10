@@ -4,7 +4,10 @@ import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../contexts/AuthContext";
 import logger from "../../utils/logger";
 
-export default function NotificacoesEmail() {
+export default function NotificacoesEmail({
+  emailContatoPadrao = "",
+  emailUsuarioPadrao = "",
+}) {
   const { usuario } = useAuth();
 
   // ❌ Antes: useNotificacoes(usuario?.grupo_id)
@@ -12,6 +15,13 @@ export default function NotificacoesEmail() {
   const { lista, tipo, setTipo, loading, adicionar, remover } = useNotificacoes();
 
   const [novoEmail, setNovoEmail] = useState("");
+
+  const descricoesTipo = {
+    matricula: "Recebe avisos do fluxo de matrícula.",
+    evento: "Recebe avisos relacionados a eventos.",
+    pagamento: "Recebe avisos financeiros gerais.",
+    loja: "Recebe aviso quando uma nova venda da loja for aprovada.",
+  };
 
   async function handleAdicionar() {
     if (!novoEmail) return;
@@ -37,6 +47,9 @@ export default function NotificacoesEmail() {
     }
   }
 
+  const emailContatoDisponivel = String(emailContatoPadrao || "").trim().toLowerCase();
+  const emailUsuarioDisponivel = String(emailUsuarioPadrao || "").trim().toLowerCase();
+
   return (
     <div className="bg-cor-card rounded-2xl p-6 border border-cor-secundaria/30 space-y-4">
       <h2 className="text-lg font-semibold text-cor-titulo">
@@ -54,7 +67,11 @@ export default function NotificacoesEmail() {
           <option value="matricula">Matrícula</option>
           <option value="evento">Evento</option>
           <option value="pagamento">Pagamento</option>
+          <option value="loja">Loja</option>
         </select>
+        <p className="mt-2 text-sm text-cor-texto/60">
+          {descricoesTipo[tipo] || "Recebe notificações desse tipo."}
+        </p>
       </div>
 
       {/* Lista */}
@@ -82,7 +99,32 @@ export default function NotificacoesEmail() {
       )}
 
       {/* Form adicionar */}
-      <div className="flex gap-2 mt-3">
+      <div className="space-y-3 mt-3">
+        {(emailContatoDisponivel || emailUsuarioDisponivel) && (
+          <div className="flex flex-wrap gap-2">
+            {emailContatoDisponivel && (
+              <button
+                type="button"
+                onClick={() => setNovoEmail(emailContatoDisponivel)}
+                className="rounded-full border border-cor-primaria/20 px-3 py-1.5 text-xs text-cor-texto/70 hover:border-cor-primaria/40 hover:text-cor-texto"
+              >
+                Usar e-mail de contato
+              </button>
+            )}
+
+            {emailUsuarioDisponivel && (
+              <button
+                type="button"
+                onClick={() => setNovoEmail(emailUsuarioDisponivel)}
+                className="rounded-full border border-cor-primaria/20 px-3 py-1.5 text-xs text-cor-texto/70 hover:border-cor-primaria/40 hover:text-cor-texto"
+              >
+                Usar meu e-mail
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2">
         <input
           type="email"
           value={novoEmail}
@@ -96,6 +138,7 @@ export default function NotificacoesEmail() {
         >
           <PlusIcon className="h-4 w-4" /> Adicionar
         </button>
+        </div>
       </div>
     </div>
   );

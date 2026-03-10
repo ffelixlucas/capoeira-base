@@ -80,6 +80,37 @@ async function criarTipoVariacao(
 }
 
 /* ======================================================
+   ATUALIZAR TIPO
+====================================================== */
+
+async function atualizarTipoVariacao(
+  organizacaoId: number,
+  tipoId: number,
+  nome: string
+) {
+  const sql = `
+    UPDATE variacoes_tipos
+    SET nome = ?
+    WHERE id = ?
+      AND organizacao_id = ?
+  `;
+
+  logger.debug("[variacoesRepository] atualizarTipoVariacao", {
+    organizacaoId,
+    tipoId,
+    nome,
+  });
+
+  const [result]: any = await connection.query(sql, [
+    nome,
+    tipoId,
+    organizacaoId,
+  ]);
+
+  return result.affectedRows;
+}
+
+/* ======================================================
    EXCLUIR TIPO
 ====================================================== */
 
@@ -133,6 +164,37 @@ async function criarValorVariacao(
 }
 
 /* ======================================================
+   ATUALIZAR VALOR
+====================================================== */
+
+async function atualizarValorVariacao(
+  organizacaoId: number,
+  valorId: number,
+  valor: string
+) {
+  const sql = `
+    UPDATE variacoes_valores
+    SET valor = ?
+    WHERE id = ?
+      AND organizacao_id = ?
+  `;
+
+  logger.debug("[variacoesRepository] atualizarValorVariacao", {
+    organizacaoId,
+    valorId,
+    valor,
+  });
+
+  const [result]: any = await connection.query(sql, [
+    valor,
+    valorId,
+    organizacaoId,
+  ]);
+
+  return result.affectedRows;
+}
+
+/* ======================================================
    EXCLUIR VALOR
 ====================================================== */
 
@@ -158,7 +220,9 @@ export default {
   listarTiposVariacao,
   listarValoresPorTipo,
   criarTipoVariacao,
+  atualizarTipoVariacao,
   excluirTipoVariacao,
   criarValorVariacao,
+  atualizarValorVariacao,
   excluirValorVariacao,
 };

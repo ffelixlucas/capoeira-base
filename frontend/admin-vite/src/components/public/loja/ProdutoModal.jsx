@@ -11,6 +11,79 @@ function formatarPreco(valor) {
   });
 }
 
+function normalizarTamanho(valor) {
+  return String(valor || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+}
+
+function obterPesoTamanho(valor) {
+  const normalizado = normalizarTamanho(valor);
+  const ordemFixa = {
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "6": 6,
+    "8": 8,
+    "10": 10,
+    "12": 12,
+    "14": 14,
+    "16": 16,
+    "PP": 100,
+    "XP": 100,
+    "P": 110,
+    "M": 120,
+    "G": 130,
+    "GG": 140,
+    "XG": 150,
+    "XGG": 160,
+    "EXG": 160,
+    "EG": 150,
+    "EXGG": 170,
+    "G1": 180,
+    "G2": 190,
+    "G3": 200,
+    "G4": 210,
+  };
+
+  if (ordemFixa[normalizado] !== undefined) {
+    return ordemFixa[normalizado];
+  }
+
+  if (/^\d+$/.test(normalizado)) {
+    return Number(normalizado);
+  }
+
+  return 1000;
+}
+
+function ordenarValoresVariacao(tipo, valores, tipoTamanho) {
+  const lista = [...valores];
+
+  if (tipo === tipoTamanho) {
+    return lista.sort((a, b) => {
+      const pesoA = obterPesoTamanho(a);
+      const pesoB = obterPesoTamanho(b);
+
+      if (pesoA !== pesoB) return pesoA - pesoB;
+      return String(a).localeCompare(String(b), "pt-BR", { numeric: true });
+    });
+  }
+
+  return lista.sort((a, b) =>
+    String(a).localeCompare(String(b), "pt-BR", { numeric: true })
+  );
+}
+
+function formatarNomeTipo(tipo) {
+  return String(tipo || "")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letra) => letra.toUpperCase());
+}
+
 export default function ProdutoModal({ produto, fechar }) {
   const { slug } = useParams();
   const { adicionarItem } = useCarrinho();
@@ -19,6 +92,84 @@ export default function ProdutoModal({ produto, fechar }) {
   const [carregando, setCarregando] = useState(false);
   const [selecoes, setSelecoes] = useState({});
   const [quantidade, setQuantidade] = useState(1);
+  const [avisosVariacao, setAvisosVariacao] = useState({});
+
+  function handleSelecionarVariacao(tipo, valor) {
+    const jaSelecionado = selecoes[tipo] === valor;
+
+    if (jaSelecionado) {
+      if (tipo === tipoTamanho) {
+        setSelecoes({});
+        setQuantidade(1);
+        setAvisosVariacao({});
+        return;
+      }
+
+      const proximasSelecoes = { ...selecoes };
+      delete proximasSelecoes[tipo];
+
+      const skusCompativeis = (dadosProduto?.skus || []).filter((sku) =>
+        Object.entries(proximasSelecoes).every(([tipoSelecionado, valorSelecionado]) =>
+          sku.variacoes?.some(
+            (variacao) =>
+              variacao.tipo === tipoSelecionado &&
+              variacao.valor === valorSelecionado
+          )
+        )
+      );
+
+      const existeAlternativaSemEssaMarcacao = skusCompativeis.some((sku) => {
+        const variacaoDoTipo = sku.variacoes?.find((variacao) => variacao.tipo === tipo);
+
+        return !variacaoDoTipo || variacaoDoTipo.valor !== valor;
+      });
+
+      if (!existeAlternativaSemEssaMarcacao) {
+        const tamanhoSelecionado = selecoes[tipoTamanho];
+        const detalheTipo =
+          String(valor).toLowerCase() === "sim"
+            ? formatarNomeTipo(tipo)
+            : `${formatarNomeTipo(tipo)}: ${valor}`;
+
+        setAvisosVariacao((prev) => ({
+          ...prev,
+          [tipo]: tamanhoSelecionado
+            ? `Em estoque, o tamanho ${tamanhoSelecionado} so esta disponivel em ${detalheTipo}.`
+            : `Em estoque, esta versao so esta disponivel em ${detalheTipo}.`,
+        }));
+        return;
+      }
+
+      setSelecoes(proximasSelecoes);
+      setQuantidade(1);
+      setAvisosVariacao((prev) => {
+        const proximosAvisos = { ...prev };
+        delete proximosAvisos[tipo];
+        return proximosAvisos;
+      });
+      return;
+    }
+
+    if (tipo === tipoTamanho) {
+      setSelecoes({
+        [tipo]: valor,
+      });
+      setQuantidade(1);
+      setAvisosVariacao({});
+      return;
+    }
+
+    setSelecoes((prev) => ({
+      ...prev,
+      [tipo]: valor,
+    }));
+    setQuantidade(1);
+    setAvisosVariacao((prev) => {
+      const proximosAvisos = { ...prev };
+      delete proximosAvisos[tipo];
+      return proximosAvisos;
+    });
+  }
 
   // 🔹 Buscar produto completo ao abrir modal
   useEffect(() => {
@@ -33,6 +184,7 @@ export default function ProdutoModal({ produto, fechar }) {
           setDadosProduto(response.data);
           setSelecoes({});
           setQuantidade(1);
+          setAvisosVariacao({});
         }
       } catch (error) {
         console.error("Erro ao carregar produto:", error);
@@ -90,7 +242,11 @@ export default function ProdutoModal({ produto, fechar }) {
     });
 
     Object.keys(mapa).forEach((k) => {
-      mapa[k] = Array.from(mapa[k]);
+      mapa[k] = ordenarValoresVariacao(
+        k,
+        Array.from(mapa[k]),
+        tipoTamanho
+      );
     });
 
     return mapa;
@@ -107,38 +263,21 @@ export default function ProdutoModal({ produto, fechar }) {
     );
   }, [dadosProduto, selecoes]);
 
+  const possuiPrecosDiferentes = useMemo(() => {
+    if (!dadosProduto?.skus?.length) return false;
+
+    const precos = new Set(
+      dadosProduto.skus.map((sku) => Number(sku.preco).toFixed(2))
+    );
+
+    return precos.size > 1;
+  }, [dadosProduto]);
+
   useEffect(() => {
     if (skuSelecionado) {
       console.log("SKU SELECIONADO:", skuSelecionado);
     }
   }, [skuSelecionado]);
-
-  // 🔹 Auto preencher quando só houver 1 combinação
-  useEffect(() => {
-    if (!dadosProduto?.skus || !tipoTamanho) return;
-
-    const tamanhoSelecionado = selecoes[tipoTamanho];
-    if (!tamanhoSelecionado) return;
-
-    const skusFiltradas = dadosProduto.skus.filter((sku) =>
-      sku.variacoes?.some(
-        (v) =>
-          v.tipo === tipoTamanho &&
-          v.valor === tamanhoSelecionado
-      )
-    );
-
-    if (skusFiltradas.length === 1) {
-      const unicaSku = skusFiltradas[0];
-
-      const novasSelecoes = {};
-      unicaSku.variacoes.forEach((v) => {
-        novasSelecoes[v.tipo] = v.valor;
-      });
-
-      setSelecoes(novasSelecoes);
-    }
-  }, [selecoes[tipoTamanho], dadosProduto, tipoTamanho]);
 
   if (!produto) return null;
 
@@ -198,6 +337,17 @@ export default function ProdutoModal({ produto, fechar }) {
                     </p>
                   </div>
 
+                  {possuiPrecosDiferentes && (
+                    <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-500/8 px-3 py-1.5 text-xs text-sky-200/90">
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full border border-sky-300/40 text-[10px] font-semibold">
+                        i
+                      </span>
+                      <span>
+                        Algumas variacoes possuem valor diferente. O preco atualiza automaticamente.
+                      </span>
+                    </div>
+                  )}
+
                   {/* Variações */}
                   {Object.keys(variacoesAgrupadas).length > 0 && (
                     <div className="space-y-4">
@@ -212,13 +362,7 @@ export default function ProdutoModal({ produto, fechar }) {
                               {variacoesAgrupadas[tipo].map((valor) => (
                                 <button
                                   key={valor}
-                                  onClick={() => {
-                                    setSelecoes((prev) => ({
-                                      ...prev,
-                                      [tipo]: valor,
-                                    }));
-                                    setQuantidade(1);
-                                  }}
+                                  onClick={() => handleSelecionarVariacao(tipo, valor)}
                                   className={`px-4 py-2 border rounded-lg text-sm font-medium transition ${selecoes[tipo] === valor
                                     ? "bg-cor-primaria border-cor-primaria text-cor-fundo"
                                     : "bg-transparent border-cor-secundaria/50 text-cor-texto hover:border-cor-primaria"
@@ -228,6 +372,12 @@ export default function ProdutoModal({ produto, fechar }) {
                                 </button>
                               ))}
                             </div>
+
+                            {avisosVariacao[tipo] && (
+                              <p className="mt-2 text-sm font-medium text-red-500">
+                                {avisosVariacao[tipo]}
+                              </p>
+                            )}
                           </div>
                         ))}
                     </div>

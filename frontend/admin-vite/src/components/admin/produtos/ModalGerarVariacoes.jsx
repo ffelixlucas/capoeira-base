@@ -5,6 +5,62 @@ import { toast } from 'react-toastify'
 import InfoTip from '../../ui/InfoTip'
 import ModoGerenciarVariacoes from './ModoGerenciarVariacoes'
 
+const VALOR_BOOLEANO_PADRAO = 'Sim'
+const VALOR_TEMPORARIO_BOOLEANO = '__BOOL_SIM__'
+
+function normalizarTexto(valor) {
+  return String(valor || '').trim().toLowerCase()
+}
+
+function obterExemploDoTipo(nomeTipo) {
+  const nome = nomeTipo.toLowerCase()
+
+  if (nome.includes('tamanho')) return 'Ex.: P, M, G'
+  if (nome.includes('cor')) return 'Ex.: Preto, Branco, Azul'
+  if (nome.includes('manga')) return 'Ex.: Curta, Comprida'
+  if (nome.includes('nome')) return 'Ex.: Sem nome, Com nome'
+
+  return 'Cadastre pelo menos uma opção para esse tipo.'
+}
+
+function obterOrientacaoDoTipo(nomeTipo) {
+  const nome = nomeTipo.toLowerCase()
+
+  if (nome.includes('manga')) {
+    return 'Se isso for só uma marcação, você pode usar o checkbox e o sistema grava internamente "Sim".'
+  }
+
+  return 'Tipo é o nome do grupo. Valor é a opção que aparece no select.'
+}
+
+function ehMarcacaoSimples(valores) {
+  if (valores.length === 0) return true
+  if (valores.length !== 1) return false
+
+  return normalizarTexto(valores[0]?.valor) === normalizarTexto(VALOR_BOOLEANO_PADRAO)
+}
+
+async function garantirValorBooleano(tipoId) {
+  try {
+    await variacoesService.criarValor({
+      tipoId,
+      valor: VALOR_BOOLEANO_PADRAO
+    })
+  } catch {
+    // Se outro fluxo já criou, seguimos e buscamos novamente.
+  }
+
+  const valoresAtualizados = await variacoesService.listarValores(tipoId)
+  const valorBooleano = valoresAtualizados.find(
+    (valor) => normalizarTexto(valor.valor) === normalizarTexto(VALOR_BOOLEANO_PADRAO)
+  )
+
+  return {
+    valorBooleano,
+    valoresAtualizados
+  }
+}
+
 export default function ModalGerarVariacoes({
   open,
   onClose,
@@ -15,10 +71,12 @@ export default function ModalGerarVariacoes({
   const [tipos, setTipos] = useState([])
   const [valoresPorTipo, setValoresPorTipo] = useState({})
   const [selecionados, setSelecionados] = useState({})
+  const [tiposAtivos, setTiposAtivos] = useState({})
   const [preco, setPreco] = useState('')
   const [quantidade, setQuantidade] = useState('')
   const [loading, setLoading] = useState(false)
   const [modo, setModo] = useState('criar')
+  const [tipoInicialGerenciar, setTipoInicialGerenciar] = useState(null)
 
   /* ===============================
      RECARREGAR ESTRUTURA
@@ -37,6 +95,8 @@ export default function ModalGerarVariacoes({
       }
 
       setValoresPorTipo(mapa)
+      setSelecionados({})
+      setTiposAtivos({})
     } catch {
       toast.error('Erro ao carregar variações')
     }
@@ -58,11 +118,38 @@ export default function ModalGerarVariacoes({
     }))
   }
 
+  function toggleTipoAtivo(tipo, ativo) {
+    const valores = valoresPorTipo[tipo.id] || []
+    const usarMarcacaoSimples = ehMarcacaoSimples(valores)
+
+    setTiposAtivos((prev) => ({
+      ...prev,
+      [tipo.id]: ativo
+    }))
+
+    setSelecionados((prev) => {
+      const proximos = { ...prev }
+
+      if (!ativo) {
+        delete proximos[tipo.id]
+        return proximos
+      }
+
+      if (usarMarcacaoSimples) {
+        proximos[tipo.id] = valores[0]?.id || VALOR_TEMPORARIO_BOOLEANO
+      }
+
+      return proximos
+    })
+  }
+
   function obterResumo() {
     return tipos
       .map(tipo => {
+        if (!tiposAtivos[tipo.id]) return null
         const valorId = selecionados[tipo.id]
         if (!valorId) return null
+        if (valorId === VALOR_TEMPORARIO_BOOLEANO) return tipo.nome
         const valor = valoresPorTipo[tipo.id]?.find(v => v.id === valorId)
         return valor?.valor || null
       })
@@ -75,15 +162,35 @@ export default function ModalGerarVariacoes({
   =============================== */
 
   async function criarVariacao() {
-
-    const valoresIds = Object.values(selecionados).filter(Boolean)
+    const valoresIds = []
 
     const tipoTamanho = tipos.find(
       t => t.nome.toLowerCase() === 'tamanho'
     )
 
-    if (tipoTamanho && !selecionados[tipoTamanho.id]) {
+    const tiposSelecionados = tipos.filter((tipo) => tiposAtivos[tipo.id])
+
+    if (tiposSelecionados.length === 0) {
+      toast.warn('Marque pelo menos um tipo para esta versão')
+      return
+    }
+
+    if (tipoTamanho && tiposAtivos[tipoTamanho.id] && !selecionados[tipoTamanho.id]) {
       toast.warn('Selecione o tamanho da camiseta')
+      return
+    }
+
+    const tipoPendente = tiposSelecionados.find((tipo) => {
+      const valores = valoresPorTipo[tipo.id] || []
+
+      if (ehMarcacaoSimples(valores)) return false
+      if (tipo.nome.toLowerCase() === 'nome_camisa') return false
+
+      return !selecionados[tipo.id]
+    })
+
+    if (tipoPendente) {
+      toast.warn(`Selecione uma opção para ${tipoPendente.nome}`)
       return
     }
 
@@ -99,6 +206,35 @@ export default function ModalGerarVariacoes({
 
     try {
       setLoading(true)
+
+      for (const tipo of tipos) {
+        if (!tiposAtivos[tipo.id]) continue
+        const valorSelecionado = selecionados[tipo.id]
+        if (!valorSelecionado) continue
+
+        if (valorSelecionado === VALOR_TEMPORARIO_BOOLEANO) {
+          const { valorBooleano, valoresAtualizados } = await garantirValorBooleano(tipo.id)
+
+          if (!valorBooleano) {
+            toast.error(`Nao foi possivel preparar a variacao ${tipo.nome}`)
+            setLoading(false)
+            return
+          }
+
+          valoresIds.push(valorBooleano.id)
+          setValoresPorTipo((prev) => ({
+            ...prev,
+            [tipo.id]: valoresAtualizados
+          }))
+          setSelecionados((prev) => ({
+            ...prev,
+            [tipo.id]: valorBooleano.id
+          }))
+          continue
+        }
+
+        valoresIds.push(valorSelecionado)
+      }
 
       await produtosService.gerarSkus(produtoId, {
         valoresIds,
@@ -122,6 +258,13 @@ export default function ModalGerarVariacoes({
   }
 
   if (!open) return null
+
+  const tiposSemValores = tipos.filter(
+    (tipo) => {
+      const valores = valoresPorTipo[tipo.id] || []
+      return !ehMarcacaoSimples(valores) && valores.length === 0
+    }
+  )
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-3 sm:p-6 z-50">
@@ -149,16 +292,27 @@ export default function ModalGerarVariacoes({
 
             <button
               type="button"
-              onClick={() => setModo('gerenciar')}
+              onClick={() => {
+                setTipoInicialGerenciar(null)
+                setModo('gerenciar')
+              }}
               className="text-sm text-cor-primaria underline mb-2"
             >
               Gerenciar tipos e valores
             </button>
 
-            <InfoTip type="warning" className="mb-6">
-              Se precisar de um tamanho, cor ou nome que ainda não exista,
-              clique em <strong>Gerenciar tipos e valores</strong>.
+            <InfoTip type="info" className="mb-6">
+              Marque apenas os tipos que esta versão realmente usa.
             </InfoTip>
+
+            {tiposSemValores.length > 0 && (
+              <InfoTip type="info" className="mb-6">
+                Estes tipos ainda não têm valores cadastrados:
+                <strong> {tiposSemValores.map((tipo) => tipo.nome).join(', ')}</strong>.
+                <br /><br />
+                Se forem marcacoes simples, voce pode usar o checkbox normalmente.
+              </InfoTip>
+            )}
 
             {/* VARIAÇÕES */}
             <div className="space-y-5 mb-6">
@@ -179,32 +333,90 @@ export default function ModalGerarVariacoes({
                 }
 
                 const valores = valoresPorTipo[tipo.id] || []
+                const usarCheckbox = ehMarcacaoSimples(valores)
+                const tipoAtivo = Boolean(tiposAtivos[tipo.id])
 
                 return (
-                  <div key={tipo.id}>
-                    <label className="block text-sm font-semibold mb-2">
-                      {titulo}
+                  <div key={tipo.id} className="rounded-xl border border-cor-secundaria/20 bg-surface p-4">
+                    <label className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 accent-cor-primaria"
+                        checked={tipoAtivo}
+                        onChange={(e) => toggleTipoAtivo(tipo, e.target.checked)}
+                      />
+
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-on-surface">
+                          {titulo}
+                        </span>
+                        <span className="mt-1 block text-xs leading-relaxed text-on-surface/60">
+                          {usarCheckbox
+                            ? `Marque quando esta versão tiver ${tipo.nome}.`
+                            : `Habilite para escolher uma opção de ${tipo.nome}.`}
+                        </span>
+                      </span>
                     </label>
 
-                    <select
-                      className="select-admin w-full"
-                      value={selecionados[tipo.id] || ''}
-                      onChange={(e) =>
-                        selecionarValor(tipo.id, Number(e.target.value))
-                      }
-                    >
-                      <option value="">{placeholder}</option>
-                      {valores.map(valor => (
-                        <option key={valor.id} value={valor.id}>
-                          {valor.valor}
-                        </option>
-                      ))}
-                    </select>
-
-                    {valores.length === 0 && (
-                      <div className="mt-2 text-xs text-red-400">
-                        Nenhum valor cadastrado.
+                    {tipoAtivo && usarCheckbox && (
+                      <div className="mt-3 rounded-xl border border-cor-secundaria/15 bg-cor-secundaria/5 px-3 py-2 text-sm text-on-surface/70">
+                        Esta marcacao sera aplicada nesta versão.
                       </div>
+                    )}
+
+                    {tipoAtivo && !usarCheckbox && (
+                      <div className="mt-3">
+                        <select
+                          className="select-admin w-full"
+                          value={selecionados[tipo.id] || ''}
+                          onChange={(e) =>
+                            selecionarValor(tipo.id, Number(e.target.value))
+                          }
+                        >
+                          <option value="">{placeholder}</option>
+                          {valores.map(valor => (
+                            <option key={valor.id} value={valor.id}>
+                              {valor.valor}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {tipoAtivo && !usarCheckbox && valores.length === 0 && (
+                      <div className="mt-3 rounded-xl border border-amber-400/40 bg-amber-900/20 p-4 text-sm text-amber-100">
+                        <div className="font-medium">
+                          Este tipo ainda nao pode ser usado.
+                        </div>
+                        <div className="mt-1 text-xs leading-relaxed text-amber-100/80">
+                          {obterOrientacaoDoTipo(tipo.nome)}
+                          <br />
+                          {obterExemploDoTipo(tipo.nome)}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTipoInicialGerenciar(tipo.id)
+                            setModo('gerenciar')
+                          }}
+                          className="mt-3 text-sm font-medium text-amber-200 underline"
+                        >
+                          Cadastrar valores para {tipo.nome}
+                        </button>
+                      </div>
+                    )}
+
+                    {tipoAtivo && usarCheckbox && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTipoInicialGerenciar(tipo.id)
+                          setModo('gerenciar')
+                        }}
+                        className="mt-3 text-xs text-cor-primaria underline"
+                      >
+                        Gerenciar este tipo
+                      </button>
                     )}
                   </div>
                 )
@@ -276,9 +488,11 @@ export default function ModalGerarVariacoes({
 
         {modo === 'gerenciar' && (
           <ModoGerenciarVariacoes
+            tipoInicialId={tipoInicialGerenciar}
             setModo={(novoModo) => {
               setModo(novoModo)
               if (novoModo === 'criar') {
+                setTipoInicialGerenciar(null)
                 recarregarEstrutura()
               }
             }}

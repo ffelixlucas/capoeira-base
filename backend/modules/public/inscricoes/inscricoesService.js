@@ -75,6 +75,16 @@ function mapearStatusMP(status) {
   }
 }
 
+function getApiBaseUrl() {
+  const raw = String(process.env.SERVER_URL || "").trim();
+  if (!raw) return "";
+
+  const withoutTrailingSlash = raw.replace(/\/+$/, "");
+  const withoutApiSuffix = withoutTrailingSlash.replace(/\/api$/i, "");
+
+  return `${withoutApiSuffix}/api`;
+}
+
 /**
  * Gera pagamento PIX no Mercado Pago ou retorna QR de inscrição pendente
  */
@@ -262,9 +272,7 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
     dadosFormulario.responsavel_email || dadosFormulario.email;
 
   // 🔒 Garante que não duplique o /api
-  const baseUrl = process.env.SERVER_URL.endsWith("/api")
-    ? process.env.SERVER_URL
-    : `${process.env.SERVER_URL}/api`;
+  const baseUrl = getApiBaseUrl();
 
   const apelidoNormalizado = apelido || "";
 
@@ -390,9 +398,7 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
     const nomePagador = responsavel_nome || nome;
     const emailPagador = responsavel_email || email;
 
-    const baseUrl = process.env.SERVER_URL.endsWith("/api")
-      ? process.env.SERVER_URL
-      : `${process.env.SERVER_URL}/api`;
+    const baseUrl = getApiBaseUrl();
 
     // ✅ garantir inscrição e atualizar dados ANTES do pagamento
     let inscricaoId;
@@ -841,9 +847,7 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
     const nomePagador = responsavel_nome || nome;
     const emailPagador = responsavel_email || email;
 
-    const baseUrl = process.env.SERVER_URL.endsWith("/api")
-      ? process.env.SERVER_URL
-      : `${process.env.SERVER_URL}/api`;
+    const baseUrl = getApiBaseUrl();
 
     // 📦 Monta body do boleto
     const body = {

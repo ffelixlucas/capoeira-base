@@ -1,6 +1,18 @@
 import logger from "../../../utils/logger";
 import variacoesRepository from "./variacoesRepository";
 
+function traduzirErroBanco(error: any, tipoEntidade: "tipo" | "valor") {
+  if (error?.code === "ER_DUP_ENTRY") {
+    return new Error(
+      tipoEntidade === "tipo"
+        ? "Ja existe um tipo com esse nome"
+        : "Ja existe um valor igual para esse tipo"
+    );
+  }
+
+  return error;
+}
+
 /* ======================================================
    LISTAR TIPOS
 ====================================================== */
@@ -68,11 +80,17 @@ async function criarTipoVariacaoService(
     throw new Error("Nome inválido");
   }
 
-  const tipoId =
-    await variacoesRepository.criarTipoVariacao(
-      organizacaoId,
-      nome.trim()
-    );
+  let tipoId: number;
+
+  try {
+    tipoId =
+      await variacoesRepository.criarTipoVariacao(
+        organizacaoId,
+        nome.trim()
+      );
+  } catch (error: any) {
+    throw traduzirErroBanco(error, "tipo");
+  }
 
   logger.info("[variacoesService] tipo criado", {
     organizacaoId,
@@ -80,6 +98,46 @@ async function criarTipoVariacaoService(
   });
 
   return tipoId;
+}
+
+/* ======================================================
+   ATUALIZAR TIPO
+====================================================== */
+
+async function atualizarTipoVariacaoService(
+  organizacaoId: number,
+  tipoId: number,
+  nome: string
+) {
+  if (!organizacaoId || !tipoId) {
+    throw new Error("Parametros invalidos");
+  }
+
+  if (!nome || nome.trim().length < 2) {
+    throw new Error("Nome invalido");
+  }
+
+  let afetados: number;
+
+  try {
+    afetados =
+      await variacoesRepository.atualizarTipoVariacao(
+        organizacaoId,
+        tipoId,
+        nome.trim()
+      );
+  } catch (error: any) {
+    throw traduzirErroBanco(error, "tipo");
+  }
+
+  if (!afetados) {
+    throw new Error("Tipo nao encontrado");
+  }
+
+  logger.info("[variacoesService] tipo atualizado", {
+    organizacaoId,
+    tipoId,
+  });
 }
 
 /* ======================================================
@@ -122,12 +180,18 @@ async function criarValorVariacaoService(
     throw new Error("Valor inválido");
   }
 
-  const valorId =
-    await variacoesRepository.criarValorVariacao(
-      organizacaoId,
-      tipoId,
-      valor.trim()
-    );
+  let valorId: number;
+
+  try {
+    valorId =
+      await variacoesRepository.criarValorVariacao(
+        organizacaoId,
+        tipoId,
+        valor.trim()
+      );
+  } catch (error: any) {
+    throw traduzirErroBanco(error, "valor");
+  }
 
   logger.info("[variacoesService] valor criado", {
     organizacaoId,
@@ -136,6 +200,46 @@ async function criarValorVariacaoService(
   });
 
   return valorId;
+}
+
+/* ======================================================
+   ATUALIZAR VALOR
+====================================================== */
+
+async function atualizarValorVariacaoService(
+  organizacaoId: number,
+  valorId: number,
+  valor: string
+) {
+  if (!organizacaoId || !valorId) {
+    throw new Error("Parametros invalidos");
+  }
+
+  if (!valor || valor.trim().length < 1) {
+    throw new Error("Valor invalido");
+  }
+
+  let afetados: number;
+
+  try {
+    afetados =
+      await variacoesRepository.atualizarValorVariacao(
+        organizacaoId,
+        valorId,
+        valor.trim()
+      );
+  } catch (error: any) {
+    throw traduzirErroBanco(error, "valor");
+  }
+
+  if (!afetados) {
+    throw new Error("Valor nao encontrado");
+  }
+
+  logger.info("[variacoesService] valor atualizado", {
+    organizacaoId,
+    valorId,
+  });
 }
 
 /* ======================================================
@@ -165,7 +269,9 @@ export default {
   listarTiposVariacaoService,
   listarValoresPorTipoService,
   criarTipoVariacaoService,
+  atualizarTipoVariacaoService,
   excluirTipoVariacaoService,
   criarValorVariacaoService,
+  atualizarValorVariacaoService,
   excluirValorVariacaoService,
 };

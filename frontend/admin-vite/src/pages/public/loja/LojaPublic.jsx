@@ -16,11 +16,21 @@ export default function LojaPublic() {
   const { itens } = useCarrinho();
   const [drawerAberto, setDrawerAberto] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [filtroModo, setFiltroModo] = useState("estoque");
 
   const quantidadeTotal = itens.reduce(
     (acc, item) => acc + item.quantidade,
     0
   );
+
+  const produtosFiltrados = produtos.filter((produto) => {
+    const possuiEstoque = Number(produto.possui_estoque) === 1;
+    const possuiEncomenda = Number(produto.possui_encomenda ?? produto.encomenda) === 1;
+
+    if (filtroModo === "estoque") return possuiEstoque;
+    if (filtroModo === "encomenda") return possuiEncomenda;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-cor-fundo">
@@ -49,6 +59,29 @@ export default function LojaPublic() {
             Produtos disponíveis
           </h2>
         </div>
+
+        {!carregando && produtos.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {[
+              { id: "estoque", label: "Em estoque" },
+              { id: "encomenda", label: "Por encomenda" },
+              { id: "todos", label: "Todos" },
+            ].map((opcao) => (
+              <button
+                key={opcao.id}
+                type="button"
+                onClick={() => setFiltroModo(opcao.id)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                  filtroModo === opcao.id
+                    ? "border-cor-primaria bg-cor-primaria text-cor-fundo"
+                    : "border-cor-primaria/20 bg-cor-secundaria text-cor-texto/70 hover:border-cor-primaria/40"
+                }`}
+              >
+                {opcao.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Estados de carregamento/erro */}
         {carregando && (
@@ -83,18 +116,29 @@ export default function LojaPublic() {
         {!carregando && produtos.length > 0 && (
           <>
             <div className="mb-4 text-sm text-cor-texto/50">
-              {produtos.length} {produtos.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
+              {produtosFiltrados.length} {produtosFiltrados.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
             </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {produtos.map((produto) => (
-                <ProdutoCard
-                  key={produto.id}
-                  produto={produto}
-                  onSelecionar={() => setProdutoSelecionado(produto)}
-                />
-              ))}
-            </div>
+
+            {produtosFiltrados.length === 0 ? (
+              <div className="bg-cor-secundaria/20 border border-cor-secundaria/30 rounded-lg p-10 text-center">
+                <p className="text-cor-texto font-medium">
+                  Nenhum produto encontrado neste modo.
+                </p>
+                <p className="mt-1 text-sm text-cor-texto/50">
+                  Tente alternar entre estoque e encomenda.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {produtosFiltrados.map((produto) => (
+                  <ProdutoCard
+                    key={produto.id}
+                    produto={produto}
+                    onSelecionar={() => setProdutoSelecionado(produto)}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useProdutos } from '../../hooks/useProdutos'
 import { ProdutosTable } from '../../components/admin/produtos/ProdutosTable'
 import { ProdutoFormModal } from '../../components/admin/produtos/ProdutoFormModal'
+import { produtosService } from '../../services/produtosService'
 import { toast } from 'react-toastify'
 import { Breadcrumb } from '../../components/ui/Breadcrumb.jsx'
 
@@ -13,10 +14,12 @@ export const ProdutosPage = () => {
   const {
     produtos,
     loading,
-    criarProduto
+    criarProduto,
+    listarProdutos
   } = useProdutos()
 
   const [novoProdutoOpen, setNovoProdutoOpen] = useState(false)
+  const [produtoEditando, setProdutoEditando] = useState(null)
 
   const handleCriarProduto = async (dados) => {
     try {
@@ -30,6 +33,28 @@ export const ProdutosPage = () => {
 
   const handleGerenciarProduto = (produto) => {
     navigate(`/admin/produtos/${produto.id}`)
+  }
+
+  const handleAbrirEdicao = (produto) => {
+    setProdutoEditando(produto)
+  }
+
+  const handleSalvarEdicao = async (dados) => {
+    if (!produtoEditando) return
+
+    try {
+      await produtosService.atualizar(produtoEditando.id, {
+        nome: dados.nome,
+        descricao: dados.descricao || '',
+        categoria: dados.categoria,
+        ativo: Number(dados.ativo),
+      })
+      await listarProdutos()
+      toast.success('Produto atualizado com sucesso!')
+      setProdutoEditando(null)
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Erro ao atualizar produto')
+    }
   }
 
   return (
@@ -65,6 +90,7 @@ export const ProdutosPage = () => {
           produtos={produtos}
           loading={loading}
           onGerenciar={handleGerenciarProduto}
+          onEditar={handleAbrirEdicao}
         />
       </div>
 
@@ -72,6 +98,13 @@ export const ProdutosPage = () => {
         isOpen={novoProdutoOpen}
         onClose={() => setNovoProdutoOpen(false)}
         onSave={handleCriarProduto}
+      />
+
+      <ProdutoFormModal
+        isOpen={Boolean(produtoEditando)}
+        produto={produtoEditando}
+        onClose={() => setProdutoEditando(null)}
+        onSave={handleSalvarEdicao}
       />
     </div>
   )

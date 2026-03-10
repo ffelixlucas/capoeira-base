@@ -2,7 +2,8 @@
 
 export const ProdutoCard = ({
   produto,
-  onGerenciar
+  onGerenciar,
+  onEditar
 }) => {
 
   const totalSkus = produto.skus?.length || 0
@@ -39,12 +40,20 @@ export const ProdutoCard = ({
       </div>
 
       {/* Ação */}
-      <button
-        onClick={() => onGerenciar(produto)}
-        className="w-full min-h-[44px] bg-cor-primaria text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-      >
-        Gerenciar
-      </button>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => onEditar(produto)}
+          className="w-full min-h-[44px] rounded-lg border border-cor-secundaria/30 text-sm font-medium text-on-surface hover:bg-cor-secundaria/10 transition-colors"
+        >
+          Editar
+        </button>
+        <button
+          onClick={() => onGerenciar(produto)}
+          className="w-full min-h-[44px] bg-cor-primaria text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          Gerenciar
+        </button>
+      </div>
 
     </div>
   )

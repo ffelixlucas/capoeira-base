@@ -7,6 +7,7 @@ import {
 } from "./pagamentosRepository";
 import { buscarPedidoPorId } from "../pedidos/pedidosService";
 import { validarEstoqueParaPedido } from "../estoque/estoqueRepository";
+import { resolverCredenciaisMercadoPagoPorOrganizacaoId } from "../shared/organizacoes/organizacaoService";
 
 /* ======================================================
    Tipos
@@ -25,11 +26,25 @@ interface CriarCobrancaInput {
 
 interface CobrancaBase {
   id: number;
+  organizacao_id: number;
   nome_pagador: string;
   cpf: string;
   telefone: string;
   email: string;
   valor_total: number;
+}
+
+function getNotificationUrl() {
+  const rawServerUrl = String(process.env.SERVER_URL || "").trim();
+  if (!rawServerUrl) {
+    return "/api/pagamentos/webhook";
+  }
+
+  const normalizedBase = rawServerUrl
+    .replace(/\/$/, "")
+    .replace(/\/api$/i, "");
+
+  return `${normalizedBase}/api/pagamentos/webhook`;
 }
 
 /* ======================================================
@@ -110,14 +125,14 @@ export async function criarCobrancaService(dados: CriarCobrancaInput) {
    CLIENTE AXIOS MERCADO PAGO
 ====================================================== */
 
-async function criarPagamentoMP(payload: any) {
+async function criarPagamentoMP(payload: any, accessToken: string) {
   try {
     const response = await axios.post(
       "https://api.mercadopago.com/v1/payments",
       payload,
       {
         headers: {
-          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
           "X-Idempotency-Key": crypto.randomUUID(),
         },
@@ -144,6 +159,10 @@ export async function gerarPagamentoPixService(cobranca: CobrancaBase) {
     valor_total: cobranca.valor_total,
   });
 
+  const credenciais = await resolverCredenciaisMercadoPagoPorOrganizacaoId(
+    cobranca.organizacao_id
+  );
+
   const result = await criarPagamentoMP({
     transaction_amount: Number(cobranca.valor_total),
     description: `Cobrança ${cobranca.id}`,
@@ -157,8 +176,8 @@ export async function gerarPagamentoPixService(cobranca: CobrancaBase) {
       },
     },
     external_reference: String(cobranca.id),
-    notification_url: `${process.env.SERVER_URL}/pagamentos/webhook`,
-  });
+    notification_url: `${getNotificationUrl()}?org=${cobranca.organizacao_id}`,
+  }, credenciais.accessToken);
 
   const tx = result.point_of_interaction?.transaction_data;
   if (!tx) throw new Error("PIX sem transaction_data");
@@ -201,6 +220,10 @@ export async function gerarPagamentoCartaoService(
     cobranca_id: cobranca.id,
   });
 
+  const credenciais = await resolverCredenciaisMercadoPagoPorOrganizacaoId(
+    cobranca.organizacao_id
+  );
+
   const result = await criarPagamentoMP({
     transaction_amount: Number(cobranca.valor_total),
     token: cobranca.token,
@@ -217,9 +240,9 @@ export async function gerarPagamentoCartaoService(
       },
     },
     external_reference: String(cobranca.id),
-    notification_url: `${process.env.SERVER_URL}/pagamentos/webhook`,
+    notification_url: `${getNotificationUrl()}?org=${cobranca.organizacao_id}`,
     statement_descriptor: "CAPOEIRA BASE",
-  });
+  }, credenciais.accessToken);
 
   await atualizarCobrancaPagamentoRepository({
     cobranca_id: cobranca.id,
@@ -247,6 +270,10 @@ export async function gerarPagamentoBoletoService(cobranca: CobrancaBase) {
     cobranca_id: cobranca.id,
   });
 
+  const credenciais = await resolverCredenciaisMercadoPagoPorOrganizacaoId(
+    cobranca.organizacao_id
+  );
+
   const result = await criarPagamentoMP({
     transaction_amount: Number(cobranca.valor_total),
     description: `Cobrança ${cobranca.id}`,
@@ -262,8 +289,8 @@ export async function gerarPagamentoBoletoService(cobranca: CobrancaBase) {
       },
     },
     external_reference: String(cobranca.id),
-    notification_url: `${process.env.SERVER_URL}/pagamentos/webhook`,
-  });
+    notification_url: `${getNotificationUrl()}?org=${cobranca.organizacao_id}`,
+  }, credenciais.accessToken);
 
   const boletoUrl =
     result.transaction_details?.external_resource_url ||
@@ -287,12 +314,17 @@ export async function gerarPagamentoBoletoService(cobranca: CobrancaBase) {
   };
 }
 
-export async function buscarPagamentoMP(paymentId: string) {
+export async function buscarPagamentoMP(paymentId: string, accessToken?: string) {
+  const token = String(accessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN || "");
+  if (!token) {
+    throw new Error("MERCADO_PAGO_ACCESS_TOKEN nao configurado");
+  }
+
   const response = await axios.get(
     `https://api.mercadopago.com/v1/payments/${paymentId}`,
     {
       headers: {
-        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
     }
   );

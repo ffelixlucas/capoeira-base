@@ -5,6 +5,7 @@ export function formatarStatusOperacional(status) {
     case "pronto_retirada":
       return "Pronto para retirada";
     case "entregue":
+    case "finalizado":
       return "Entregue";
     case "cancelado":
       return "Cancelado";
@@ -36,6 +37,7 @@ export function obterStatusOperacionalConfig(status) {
       };
 
     case "entregue":
+    case "finalizado":
       return {
         label: "Entregue",
         bg: "bg-gray-500/20",

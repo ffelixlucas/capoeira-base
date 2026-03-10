@@ -25,6 +25,11 @@ export const variacoesService = {
     return response.data
   },
 
+  async atualizarTipo(tipoId, payload) {
+    const response = await api.put(`/produtos/variacoes/tipos/${tipoId}`, payload)
+    return response.data
+  },
+
   /* ===============================
      EXCLUIR TIPO
   =============================== */
@@ -40,6 +45,11 @@ export const variacoesService = {
 
   async criarValor(payload) {
     const response = await api.post('/produtos/variacoes/valores', payload)
+    return response.data
+  },
+
+  async atualizarValor(valorId, payload) {
+    const response = await api.put(`/produtos/variacoes/valores/${valorId}`, payload)
     return response.data
   },
 

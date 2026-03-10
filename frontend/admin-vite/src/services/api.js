@@ -16,9 +16,11 @@ const api = axios.create({
 // 🧭 Helpers
 // ----------------------------------------------------
 const isOnLogin = () => window.location.pathname.startsWith("/login");
+const isFamilyPortalRoute = () => window.location.pathname.startsWith("/familia/");
 
 const redirectToLogin = () => {
   if (isOnLogin()) return; // evita loop em /login
+  if (isFamilyPortalRoute()) return; // não sequestra o portal do aluno
 
   try {
     sessionStorage.setItem("auth.message", "expired");

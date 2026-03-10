@@ -53,6 +53,32 @@ interface AtualizarProdutoCompletoInput {
   quantidade: number;
 }
 
+async function contarReferenciasImagem(url: string) {
+  const [[produtoRefs]]: any = await db.pool.query(
+    `SELECT COUNT(*) AS total
+     FROM produto_imagens
+     WHERE url = ?`,
+    [url]
+  );
+
+  const [[skuRefs]]: any = await db.pool.query(
+    `SELECT COUNT(*) AS total
+     FROM sku_imagens
+     WHERE url = ?`,
+    [url]
+  );
+
+  return Number(produtoRefs.total || 0) + Number(skuRefs.total || 0);
+}
+
+async function deletarArquivoSeSemReferencias(url: string) {
+  const totalReferencias = await contarReferenciasImagem(url);
+
+  if (totalReferencias === 0) {
+    await deletarArquivoFirebase(url);
+  }
+}
+
 /* =========================
    LISTAR
 ========================= */
@@ -428,12 +454,13 @@ async function deletarProdutoService(
 
     await connection.commit();
 
-    for (const img of imagensProduto) {
-      await deletarArquivoFirebase(img.url);
-    }
+    const urlsParaVerificar = [
+      ...imagensProduto.map((img: any) => img.url),
+      ...imagensSku.map((img: any) => img.url),
+    ];
 
-    for (const img of imagensSku) {
-      await deletarArquivoFirebase(img.url);
+    for (const url of [...new Set(urlsParaVerificar)]) {
+      await deletarArquivoSeSemReferencias(url);
     }
 
   } catch (error) {
@@ -470,7 +497,7 @@ async function deletarImagemProdutoService(
     [imagemId, organizacaoId]
   );
 
-  await deletarArquivoFirebase(url);
+  await deletarArquivoSeSemReferencias(url);
 }
 
 async function definirCapaProdutoService(
@@ -535,7 +562,7 @@ async function deletarImagemSkuService(
     [imagemId, organizacaoId]
   );
 
-  await deletarArquivoFirebase(url);
+  await deletarArquivoSeSemReferencias(url);
 }
 
 async function definirCapaSkuService(
@@ -572,6 +599,112 @@ async function definirCapaSkuService(
   } finally {
     connection.release();
   }
+}
+
+async function reutilizarImagemProdutoNaSkuService(
+  organizacaoId: number,
+  skuId: number,
+  referencia: { imagemProdutoId?: number; url?: string }
+) {
+  if (!organizacaoId || !skuId) {
+    throw new Error("Parâmetros inválidos");
+  }
+
+  const [[sku]]: any = await db.pool.query(
+    `SELECT id, produto_id
+     FROM produtos_skus
+     WHERE id = ?
+       AND organizacao_id = ?`,
+    [skuId, organizacaoId]
+  );
+
+  if (!sku) {
+    throw new Error("SKU não encontrada");
+  }
+
+  let urlImagem = "";
+
+  if (referencia.imagemProdutoId) {
+    const [[imagemProduto]]: any = await db.pool.query(
+      `SELECT id, url
+       FROM produto_imagens
+       WHERE id = ?
+         AND produto_id = ?
+         AND organizacao_id = ?`,
+      [referencia.imagemProdutoId, sku.produto_id, organizacaoId]
+    );
+
+    if (!imagemProduto) {
+      throw new Error("Imagem do produto não encontrada");
+    }
+
+    urlImagem = String(imagemProduto.url);
+  } else if (referencia.url) {
+    const [[origemProduto]]: any = await db.pool.query(
+      `SELECT pi.url
+       FROM produto_imagens pi
+       WHERE pi.organizacao_id = ?
+         AND pi.produto_id = ?
+         AND pi.url = ?
+       LIMIT 1`,
+      [organizacaoId, sku.produto_id, referencia.url]
+    );
+
+    const [[origemSku]]: any = await db.pool.query(
+      `SELECT si.url
+       FROM sku_imagens si
+       JOIN produtos_skus ps ON ps.id = si.sku_id
+       WHERE si.organizacao_id = ?
+         AND ps.organizacao_id = ?
+         AND ps.produto_id = ?
+         AND si.url = ?
+       LIMIT 1`,
+      [organizacaoId, organizacaoId, sku.produto_id, referencia.url]
+    );
+
+    if (!origemProduto && !origemSku) {
+      throw new Error("Imagem não pertence a este produto");
+    }
+
+    urlImagem = String(referencia.url);
+  } else {
+    throw new Error("Informe uma imagem para reaproveitar");
+  }
+
+  const [[{ total }]]: any = await db.pool.query(
+    `SELECT COUNT(*) AS total
+     FROM sku_imagens
+     WHERE sku_id = ?
+       AND organizacao_id = ?`,
+    [skuId, organizacaoId]
+  );
+
+  if (Number(total) >= 6) {
+    throw new Error("Limite máximo de 6 imagens atingido");
+  }
+
+  const [[imagemJaVinculada]]: any = await db.pool.query(
+    `SELECT id
+     FROM sku_imagens
+     WHERE sku_id = ?
+       AND organizacao_id = ?
+       AND url = ?`,
+    [skuId, organizacaoId, urlImagem]
+  );
+
+  if (imagemJaVinculada) {
+    throw new Error("Essa imagem já está vinculada a esta variação");
+  }
+
+  const ordem = Number(total);
+  const isCapa = Number(total) === 0 ? 1 : 0;
+
+  await db.pool.query(
+    `INSERT INTO sku_imagens
+      (organizacao_id, sku_id, url, ordem, is_capa)
+     VALUES (?, ?, ?, ?, ?)`,
+    [organizacaoId, skuId, urlImagem, ordem, isCapa]
+  );
 }
 
 /* =========================
@@ -652,8 +785,10 @@ async function deletarSkuService(
     await connection.commit();
 
     // remove arquivos do firebase depois do commit
-    for (const img of imagens) {
-      await deletarArquivoFirebase(img.url);
+    const urlsImagens: string[] = imagens.map((img: any) => String(img.url));
+
+    for (const url of Array.from(new Set<string>(urlsImagens))) {
+      await deletarArquivoSeSemReferencias(url);
     }
 
     logger.info("[produtosService] SKU deletada fisicamente", {
@@ -720,6 +855,7 @@ export {
   definirCapaProdutoService,
   deletarImagemSkuService,
   definirCapaSkuService,
+  reutilizarImagemProdutoNaSkuService,
   deletarSkuService,
   reativarSkuService,
   desativarSkuService

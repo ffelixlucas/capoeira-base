@@ -203,6 +203,7 @@ export async function buscarCobrancaPorId(cobrancaId: number) {
     `
     SELECT
       id,
+      organizacao_id,
       nome_pagador,
       cpf,
       telefone,
@@ -227,6 +228,8 @@ export async function buscarCobrancaPorIdRepository(cobrancaId: number) {
       origem,
       entidade_id,
       status,
+      pagamento_id,
+      status_detail,
       consequencia_executada,
       nome_pagador,
       telefone,
@@ -286,4 +289,3 @@ export async function buscarPagamentoPorPedido(
 
   return rows[0] || null;
 }
-

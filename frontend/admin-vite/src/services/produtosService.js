@@ -101,6 +101,16 @@ uploadImagemSku: async (skuId, file) => {
   return response.data;
 },
 
+// 🔵 REUTILIZAR IMAGEM DO PRODUTO NA SKU
+reutilizarImagemProdutoNaSku: async (skuId, payload) => {
+  const response = await api.post(
+    `/produtos/sku/${skuId}/imagens/reutilizar`,
+    payload
+  );
+
+  return response.data;
+},
+
 // 🔵 DEFINIR CAPA SKU
 definirCapaSku: async (skuId, imagemId) => {
   const response = await api.put(
@@ -143,4 +153,3 @@ reativarSku: async (skuId) => {
 },
 
 }
-

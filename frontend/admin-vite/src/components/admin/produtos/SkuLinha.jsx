@@ -4,7 +4,29 @@ import { produtosService } from "../../../services/produtosService";
 import { toast } from "react-toastify";
 import SkuGaleria from "./SkuGaleria";
 
-export default function SkuLinha({ sku, onAtualizado }) {
+function humanizarTipo(tipo = "") {
+  const normalizado = String(tipo).trim().toLowerCase();
+
+  if (normalizado === "tamanho") return "Tamanho";
+  if (normalizado === "cor") return "Cor";
+  if (normalizado === "nome_camisa") return "Personalização";
+
+  return String(tipo)
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letra) => letra.toUpperCase());
+}
+
+function formatarVariacaoResumo(variacao) {
+  const tipo = humanizarTipo(variacao.tipo);
+  const valor = String(variacao.valor || "").trim();
+
+  if (!valor) return tipo;
+  if (valor.toLowerCase() === "sim") return tipo;
+
+  return `${tipo}: ${valor}`;
+}
+
+export default function SkuLinha({ sku, imagensReaproveitaveis = [], onAtualizado }) {
   const isInativa = Number(sku.ativo) === 0;
   const [preco, setPreco] = useState(Number(sku.preco));
   const [estoque, setEstoque] = useState(Number(sku.quantidade));
@@ -15,13 +37,20 @@ export default function SkuLinha({ sku, onAtualizado }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const variacoes = sku.variacoes || [];
-  const tamanho = variacoes.find(v => v.tipo === "tamanho")?.valor || "—";
-  const cor = variacoes.find(v => v.tipo === "cor")?.valor || null;
-  const nomeCamisa = variacoes.find(v => v.tipo === "nome_camisa")?.valor || null; // Mudado para null quando não existe
+  const prioridadeTipos = ["tamanho", "cor", "nome_camisa"];
+  const variacoesOrdenadas = [...variacoes].sort((a, b) => {
+    const prioridadeA = prioridadeTipos.indexOf(String(a.tipo).toLowerCase());
+    const prioridadeB = prioridadeTipos.indexOf(String(b.tipo).toLowerCase());
 
-  const outrasVariacoes = variacoes.filter(v =>
-    v.tipo !== "tamanho" && v.tipo !== "cor" && v.tipo !== "nome_camisa"
-  );
+    const ordemA = prioridadeA === -1 ? prioridadeTipos.length : prioridadeA;
+    const ordemB = prioridadeB === -1 ? prioridadeTipos.length : prioridadeB;
+
+    if (ordemA !== ordemB) return ordemA - ordemB;
+    return String(a.tipo).localeCompare(String(b.tipo));
+  });
+  const resumoCabecalho =
+    variacoesOrdenadas.map(formatarVariacaoResumo).join(" • ") || "Sem variações definidas";
+  const codigoSku = sku.sku_codigo || `#${sku.id}`;
 
   const getCorStyle = (corNome) => {
     if (!corNome) return {};
@@ -80,7 +109,7 @@ export default function SkuLinha({ sku, onAtualizado }) {
       toast.success("Variação atualizada!");
       onAtualizado();
       setIsExpanded(false);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao atualizar");
     } finally {
       setLoading(false);
@@ -174,16 +203,22 @@ export default function SkuLinha({ sku, onAtualizado }) {
         className="p-4 flex items-center justify-between border-b-2 border-cor-secundaria/30 cursor-pointer hover:bg-cor-secundaria/5"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-cor-primaria">
-            Tamanho: {tamanho}
-          </span>
-
-          {isInativa && (
-            <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-600 font-bold">
-              INATIVA
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-on-surface/45">
+              SKU {codigoSku}
             </span>
-          )}
+
+            {isInativa && (
+              <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-600 font-bold">
+                INATIVA
+              </span>
+            )}
+          </div>
+
+          <div className="mt-2 pr-3 text-sm font-semibold text-on-surface leading-relaxed">
+            {resumoCabecalho}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -204,37 +239,47 @@ export default function SkuLinha({ sku, onAtualizado }) {
 
       {/* CONTEÚDO */}
       <div className="p-4 space-y-3">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-on-surface/45">
+            Variações desta versão
+          </span>
 
-        {/* Cor (se existir) */}
-        {cor && (
-          <div className="flex items-start">
-            <span className="text-xs text-on-surface/40 w-16 font-medium">Cor:</span>
-            <div className="flex items-center gap-2">
-              <span
-                className="w-5 h-5 rounded-full border-2 border-cor-secundaria/40 shadow-sm"
-                style={getCorStyle(cor)}
-                title={`Cor: ${cor}`}
-              />
-              <span className="text-base text-on-surface capitalize font-medium">{cor}</span>
+          {variacoesOrdenadas.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {variacoesOrdenadas.map((variacao, index) => {
+                const tipoNormalizado = String(variacao.tipo).toLowerCase();
+                const exibirSwatch = tipoNormalizado === "cor" && variacao.valor;
+
+                return (
+                  <div
+                    key={`${variacao.tipo}-${variacao.valor}-${index}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-cor-secundaria/25 bg-cor-fundo px-3 py-1.5 text-sm text-on-surface"
+                  >
+                    {exibirSwatch && (
+                      <span
+                        className="h-3.5 w-3.5 rounded-full border border-cor-secundaria/30"
+                        style={getCorStyle(variacao.valor)}
+                        title={`Cor: ${variacao.valor}`}
+                      />
+                    )}
+                    <span className="font-semibold text-on-surface/70">
+                      {humanizarTipo(variacao.tipo)}
+                    </span>
+                    <span className="font-medium">
+                      {String(variacao.valor).toLowerCase() === "sim"
+                        ? "Marcado"
+                        : variacao.valor}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        )}
-
-        {/* Outras variações */}
-        {outrasVariacoes.map((v, index) => (
-          <div key={index} className="flex items-start">
-            <span className="text-xs text-on-surface/40 w-16 font-medium capitalize">{v.tipo}:</span>
-            <span className="text-base text-on-surface capitalize font-medium">{v.valor}</span>
-          </div>
-        ))}
-
-        {/* Nome - SÓ MOSTRA SE TIVER VALOR */}
-        {nomeCamisa && (
-          <div className="flex items-start">
-            <span className="text-xs text-on-surface/40 w-16 font-medium">Nome:</span>
-            <span className="text-base text-on-surface font-medium">{nomeCamisa}</span>
-          </div>
-        )}
+          ) : (
+            <div className="mt-2 text-sm text-on-surface/50">
+              Nenhuma variação identificada nesta versão.
+            </div>
+          )}
+        </div>
 
         {/* Preço */}
         <div className="flex items-start">
@@ -264,7 +309,11 @@ export default function SkuLinha({ sku, onAtualizado }) {
 
         {/* Imagens da variação */}
         <div className="mt-3">
-          <SkuGaleria sku={sku} onAtualizado={onAtualizado} />
+          <SkuGaleria
+            sku={sku}
+            imagensReaproveitaveis={imagensReaproveitaveis}
+            onAtualizado={onAtualizado}
+          />
         </div>
       </div>
 

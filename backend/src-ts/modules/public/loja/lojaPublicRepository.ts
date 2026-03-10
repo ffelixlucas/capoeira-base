@@ -102,11 +102,24 @@ class LojaPublicRepository {
       p.descricao,
       p.categoria,
       MIN(ps.preco) AS preco_minimo,
+      MAX(ps.preco) AS preco_maximo,
       MAX(ps.encomenda) AS encomenda,
+      MAX(
+        CASE
+          WHEN ps.encomenda = 1 THEN 1
+          ELSE 0
+        END
+      ) AS possui_encomenda,
+      MAX(
+        CASE
+          WHEN ps.encomenda = 0 AND COALESCE(e.quantidade, 0) > 0 THEN 1
+          ELSE 0
+        END
+      ) AS possui_estoque,
       SUM(
         CASE 
-          WHEN ps.encomenda = 1 THEN 9999
-          ELSE COALESCE(e.quantidade, 0)
+          WHEN ps.encomenda = 0 THEN COALESCE(e.quantidade, 0)
+          ELSE 0
         END
       ) AS quantidade_total,
       (

@@ -1,5 +1,6 @@
 // src/firebase/config.js
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import logger from "../utils/logger";
 
@@ -14,6 +15,7 @@ const firebaseConfig = {
 
 // Inicializa o app e o storage
 const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
 export const storage = getStorage(app);
 
 // 🔥 Log detalhado com logger

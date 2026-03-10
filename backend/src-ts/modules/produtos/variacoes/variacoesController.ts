@@ -81,6 +81,33 @@ async function criarTipo(req: Request, res: Response) {
 }
 
 /* ======================================================
+   ATUALIZAR TIPO
+====================================================== */
+
+async function atualizarTipo(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const tipoId = Number(req.params.tipoId);
+    const { nome } = req.body;
+
+    await variacoesService.atualizarTipoVariacaoService(
+      organizacaoId,
+      tipoId,
+      nome
+    );
+
+    return res.json({
+      success: true,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/* ======================================================
    EXCLUIR TIPO
 ====================================================== */
 
@@ -134,6 +161,33 @@ async function criarValor(req: Request, res: Response) {
 }
 
 /* ======================================================
+   ATUALIZAR VALOR
+====================================================== */
+
+async function atualizarValor(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const valorId = Number(req.params.valorId);
+    const { valor } = req.body;
+
+    await variacoesService.atualizarValorVariacaoService(
+      organizacaoId,
+      valorId,
+      valor
+    );
+
+    return res.json({
+      success: true,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/* ======================================================
    EXCLUIR VALOR
 ====================================================== */
 
@@ -162,7 +216,9 @@ export default {
   listarTipos,
   listarValores,
   criarTipo,
+  atualizarTipo,
   excluirTipo,
   criarValor,
+  atualizarValor,
   excluirValor,
 };

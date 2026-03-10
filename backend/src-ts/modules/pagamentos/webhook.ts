@@ -3,6 +3,8 @@ import {
   atualizarCobrancaPagamentoRepository, buscarCobrancaPorIdRepository
 } from "./pagamentosRepository";
 import { processarCobrancaPaga } from "./processarCobrancaPaga";
+import { resolverCredenciaisMercadoPagoPorOrganizacaoId } from "../shared/organizacoes/organizacaoService";
+import logger from "../../utils/logger";
 
 /* ======================================================
    Mapear status do Mercado Pago → padrão interno
@@ -16,16 +18,48 @@ function mapearStatusMP(statusMP: string): string {
   return "pendente";
 }
 
+function mascararEmail(email?: string): string | null {
+  if (!email) return null;
+  const [local, domain] = String(email).split("@");
+  if (!local || !domain) return "***";
+  const inicio = local.slice(0, 2);
+  return `${inicio}***@${domain}`;
+}
+
+function mascararTelefone(telefone?: string): string | null {
+  if (!telefone) return null;
+  const digits = String(telefone).replace(/\D/g, "");
+  if (digits.length <= 4) return "***";
+  return `***${digits.slice(-4)}`;
+}
+
+function mascararPagamentoId(id: any): string | null {
+  const digits = String(id || "").replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.length <= 6) return `***${digits.slice(-2)}`;
+  return `${digits.slice(0, 3)}***${digits.slice(-3)}`;
+}
+
 export async function webhookPagamentos(req, res) {
   try {
-    console.log("WEBHOOK RECEBIDO:", JSON.stringify(req.body, null, 2));
+    logger.debug("[webhookPagamentos] webhook recebido", {
+      query: req.query,
+      body: req.body,
+    });
     const paymentId =
       req.body?.data?.id ||
       req.body?.resource; if (!paymentId) {
         return res.status(200).json({ ignored: true });
       }
 
-    const pagamento = await buscarPagamentoMP(String(paymentId));
+    const orgId = Number(req.query?.org || req.body?.organization_id || 0);
+    let accessToken: string | undefined;
+    if (orgId > 0) {
+      const cred = await resolverCredenciaisMercadoPagoPorOrganizacaoId(orgId);
+      accessToken = cred.accessToken;
+    }
+
+    const pagamento = await buscarPagamentoMP(String(paymentId), accessToken);
 
     const cobrancaId = Number(pagamento.external_reference);
     if (!cobrancaId) {
@@ -34,16 +68,30 @@ export async function webhookPagamentos(req, res) {
 
     const cobranca = await buscarCobrancaPorIdRepository(cobrancaId);
 
-    console.log("STATUS ATUAL NO BANCO:", cobranca);
+    logger.debug("[webhookPagamentos] status atual da cobranca", {
+      id: cobranca?.id,
+      organizacao_id: cobranca?.organizacao_id,
+      origem: cobranca?.origem,
+      entidade_id: cobranca?.entidade_id,
+      status: cobranca?.status,
+      consequencia_executada: cobranca?.consequencia_executada,
+      pagamento_id: mascararPagamentoId(cobranca?.pagamento_id),
+      telefone: mascararTelefone(cobranca?.telefone),
+      email: mascararEmail(cobranca?.email),
+    });
 
     // 🔒 BLOQUEIO DEFINITIVO
     if (cobranca?.status === "estornado") {
-      console.log("Webhook ignorado: cobrança já estornada");
+      logger.info("[webhookPagamentos] webhook ignorado: cobranca ja estornada", {
+        cobrancaId,
+      });
       return res.status(200).json({ ignored: "already_refunded" });
     }
 
     if (cobranca?.consequencia_executada === 1) {
-      console.log("Webhook ignorado: consequência já executada");
+      logger.info("[webhookPagamentos] webhook ignorado: consequencia ja executada", {
+        cobrancaId,
+      });
       return res.status(200).json({ ignored: "already_processed" });
     }
 
@@ -55,7 +103,9 @@ export async function webhookPagamentos(req, res) {
       statusInterno === "pendente" &&
       cobranca?.status === "pago"
     ) {
-      console.log("Ignorando downgrade de pago para pendente");
+      logger.info("[webhookPagamentos] downgrade ignorado de pago para pendente", {
+        cobrancaId,
+      });
       return res.status(200).json({ ignored: "no_downgrade" });
     }
 
@@ -72,6 +122,9 @@ export async function webhookPagamentos(req, res) {
 
     return res.status(200).json({ processed: true });
   } catch (error) {
+    logger.error("[webhookPagamentos] erro no processamento", {
+      erro: error?.message,
+    });
     return res.status(500).json({ error: "webhook_error" });
   }
 }

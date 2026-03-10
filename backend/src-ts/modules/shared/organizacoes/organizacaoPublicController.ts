@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import {
   buscarPorSlug,
   buscarSiteUrlPorSlug,
-  buscarWhatsappContatoPorSlug
+  buscarWhatsappContatoPorSlug,
+  buscarMercadoPagoPublicoPorSlug
 } from "./organizacaoService";
 import logger from "../../../utils/logger";
 
@@ -51,5 +52,28 @@ export async function getOrganizacaoPublica(req: Request, res: Response) {
       err.message
     );
     return res.status(500).json({ error: "Erro ao buscar organização" });
+  }
+}
+
+export async function getMercadoPagoPublico(req: Request, res: Response) {
+  try {
+    const { slug } = req.params;
+
+    if (!slug) {
+      return res.status(400).json({ error: "Slug nao informado" });
+    }
+
+    const config = await buscarMercadoPagoPublicoPorSlug(slug);
+
+    return res.json({
+      success: true,
+      data: config,
+    });
+  } catch (err: any) {
+    logger.error(
+      "[organizacaoPublicController] Erro ao buscar Mercado Pago publico",
+      err?.message || err
+    );
+    return res.status(500).json({ error: "Erro ao buscar configuracao de pagamento" });
   }
 }

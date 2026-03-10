@@ -2,7 +2,28 @@ import { useEffect, useState, useCallback } from "react"
 import { variacoesService } from "../../../services/variacoesService"
 import { toast } from "react-toastify"
 
-export default function ModoGerenciarVariacoes({ setModo }) {
+function obterPlaceholderValor(nomeTipo = "") {
+  const nome = nomeTipo.toLowerCase()
+
+  if (nome.includes("tamanho")) return "Ex: P, M, G"
+  if (nome.includes("cor")) return "Ex: Preto, Branco, Azul"
+  if (nome.includes("manga")) return "Ex: Sim"
+  if (nome.includes("nome")) return "Ex: Sem nome, Com nome"
+
+  return "Ex: opção 1, opção 2"
+}
+
+function obterDicaTipo(nomeTipo = "") {
+  const nome = nomeTipo.toLowerCase()
+
+  if (nome.includes("manga")) {
+    return 'Dica: para marcações simples como "Manga comprida", basta um único valor como "Sim". Na geração da versão isso pode aparecer como checkbox.'
+  }
+
+  return "Tipo é o nome do grupo. Valor é cada opção que vai aparecer no select."
+}
+
+export default function ModoGerenciarVariacoes({ setModo, tipoInicialId = null }) {
 
   const [tipos, setTipos] = useState([])
   const [tipoSelecionado, setTipoSelecionado] = useState(null)
@@ -10,9 +31,15 @@ export default function ModoGerenciarVariacoes({ setModo }) {
 
   const [novoTipo, setNovoTipo] = useState("")
   const [novoValor, setNovoValor] = useState("")
+  const [editandoTipoId, setEditandoTipoId] = useState(null)
+  const [nomeTipoEdicao, setNomeTipoEdicao] = useState("")
+  const [editandoValorId, setEditandoValorId] = useState(null)
+  const [valorEdicao, setValorEdicao] = useState("")
 
   const [loadingTipo, setLoadingTipo] = useState(false)
   const [loadingValor, setLoadingValor] = useState(false)
+  const [savingTipoId, setSavingTipoId] = useState(null)
+  const [savingValorId, setSavingValorId] = useState(null)
 
   /* ===============================
      CARREGAR TIPOS
@@ -30,6 +57,15 @@ export default function ModoGerenciarVariacoes({ setModo }) {
   useEffect(() => {
     carregarTipos()
   }, [carregarTipos])
+
+  useEffect(() => {
+    if (!tipoInicialId || tipos.length === 0) return
+
+    const tipoInicial = tipos.find((tipo) => tipo.id === tipoInicialId)
+    if (tipoInicial) {
+      setTipoSelecionado(tipoInicial)
+    }
+  }, [tipoInicialId, tipos])
 
   /* ===============================
      CARREGAR VALORES
@@ -82,6 +118,33 @@ export default function ModoGerenciarVariacoes({ setModo }) {
     }
   }
 
+  async function salvarTipoEdicao(tipo) {
+    const nome = nomeTipoEdicao.trim()
+
+    if (!nome) {
+      toast.warn("Digite o nome do tipo")
+      return
+    }
+
+    try {
+      setSavingTipoId(tipo.id)
+      await variacoesService.atualizarTipo(tipo.id, { nome })
+      toast.success("Tipo atualizado")
+      setEditandoTipoId(null)
+      setNomeTipoEdicao("")
+      await carregarTipos()
+      setTipoSelecionado((atual) =>
+        atual?.id === tipo.id ? { ...atual, nome } : atual
+      )
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Erro ao atualizar tipo"
+      )
+    } finally {
+      setSavingTipoId(null)
+    }
+  }
+
   /* ===============================
      CRIAR VALOR
   =============================== */
@@ -117,6 +180,30 @@ export default function ModoGerenciarVariacoes({ setModo }) {
     }
   }
 
+  async function salvarValorEdicao(valor) {
+    const texto = valorEdicao.trim()
+
+    if (!texto) {
+      toast.warn("Digite o valor")
+      return
+    }
+
+    try {
+      setSavingValorId(valor.id)
+      await variacoesService.atualizarValor(valor.id, { valor: texto })
+      toast.success("Valor atualizado")
+      setEditandoValorId(null)
+      setValorEdicao("")
+      await carregarValores(tipoSelecionado.id)
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Erro ao atualizar valor"
+      )
+    } finally {
+      setSavingValorId(null)
+    }
+  }
+
   /* ===============================
      REMOVER VALOR
   =============================== */
@@ -147,7 +234,7 @@ export default function ModoGerenciarVariacoes({ setModo }) {
           Gerenciar Estrutura de Variações
         </h2>
         <p className="text-sm text-on-surface/60 mt-1">
-          Tipos definem categorias. Valores são as opções dentro delas.
+          Tipo é o nome do grupo. Valor é a opção que aparece no produto ou marca a variação.
         </p>
       </div>
 
@@ -189,7 +276,6 @@ export default function ModoGerenciarVariacoes({ setModo }) {
             {tipos.map((tipo) => (
               <div
                 key={tipo.id}
-                onClick={() => setTipoSelecionado(tipo)}
                 className={`p-3 rounded-lg border cursor-pointer text-sm transition-colors
                   ${
                     tipoSelecionado?.id === tipo.id
@@ -197,7 +283,62 @@ export default function ModoGerenciarVariacoes({ setModo }) {
                       : "border-border bg-surface hover:border-cor-primaria/30"
                   }`}
               >
-                {tipo.nome}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTipoSelecionado(tipo)}
+                    className="flex-1 text-left"
+                  >
+                    {editandoTipoId === tipo.id ? (
+                      <input
+                        type="text"
+                        value={nomeTipoEdicao}
+                        onChange={(e) => setNomeTipoEdicao(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="input-admin w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      tipo.nome
+                    )}
+                  </button>
+
+                  {editandoTipoId === tipo.id ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => salvarTipoEdicao(tipo)}
+                        disabled={savingTipoId === tipo.id}
+                        className="text-xs font-medium text-cor-primaria"
+                      >
+                        {savingTipoId === tipo.id ? "..." : "Salvar"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditandoTipoId(null)
+                          setNomeTipoEdicao("")
+                        }}
+                        className="text-xs text-on-surface/60"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setTipoSelecionado(tipo)
+                        setEditandoTipoId(tipo.id)
+                        setNomeTipoEdicao(tipo.nome)
+                      }}
+                      className="text-xs text-on-surface/60 hover:text-cor-primaria"
+                    >
+                      Editar
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
 
@@ -220,6 +361,9 @@ export default function ModoGerenciarVariacoes({ setModo }) {
             </h3>
 
             <div className="bg-surface p-4 rounded-xl border border-border">
+              <div className="mb-4 rounded-lg border border-cor-secundaria/20 bg-cor-secundaria/5 p-3 text-xs leading-relaxed text-on-surface/70">
+                {obterDicaTipo(tipoSelecionado.nome)}
+              </div>
 
               <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
                 {valores.map((valor) => (
@@ -227,14 +371,62 @@ export default function ModoGerenciarVariacoes({ setModo }) {
                     key={valor.id}
                     className="flex justify-between items-center p-2 rounded-lg border border-border text-sm"
                   >
-                    {valor.valor}
+                    <div className="flex-1 pr-3">
+                      {editandoValorId === valor.id ? (
+                        <input
+                          type="text"
+                          value={valorEdicao}
+                          onChange={(e) => setValorEdicao(e.target.value)}
+                          className="input-admin w-full"
+                          autoFocus
+                        />
+                      ) : (
+                        valor.valor
+                      )}
+                    </div>
 
-                    <button
-                      onClick={() => removerValor(valor.id)}
-                      className="text-on-surface/40 hover:text-red-500 text-xs transition-colors"
-                    >
-                      Remover
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {editandoValorId === valor.id ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => salvarValorEdicao(valor)}
+                            disabled={savingValorId === valor.id}
+                            className="text-xs font-medium text-cor-primaria"
+                          >
+                            {savingValorId === valor.id ? "..." : "Salvar"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditandoValorId(null)
+                              setValorEdicao("")
+                            }}
+                            className="text-xs text-on-surface/60"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditandoValorId(valor.id)
+                            setValorEdicao(valor.valor)
+                          }}
+                          className="text-on-surface/40 hover:text-cor-primaria text-xs transition-colors"
+                        >
+                          Editar
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => removerValor(valor.id)}
+                        className="text-on-surface/40 hover:text-red-500 text-xs transition-colors"
+                      >
+                        Remover
+                      </button>
+                    </div>
                   </div>
                 ))}
 
@@ -249,7 +441,7 @@ export default function ModoGerenciarVariacoes({ setModo }) {
                 <input
                   type="text"
                   className="input-admin flex-1"
-                  placeholder="Ex: P, M, G"
+                  placeholder={obterPlaceholderValor(tipoSelecionado.nome)}
                   value={novoValor}
                   onChange={(e) => setNovoValor(e.target.value)}
                 />

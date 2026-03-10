@@ -12,6 +12,7 @@ import {
   deletarImagemProdutoService,
   definirCapaSkuService,
   deletarImagemSkuService,
+  reutilizarImagemProdutoNaSkuService,
   deletarSkuService,
     reativarSkuService,
     desativarSkuService
@@ -596,6 +597,37 @@ async function removerImagemSku(req: Request, res: Response) {
   }
 }
 
+async function reutilizarImagemProdutoNaSku(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const skuId = Number(req.params.skuId);
+    const imagemProdutoId = Number(req.body.imagemProdutoId);
+    const imagemUrl =
+      typeof req.body.url === "string" ? req.body.url.trim() : "";
+
+    await reutilizarImagemProdutoNaSkuService(
+      organizacaoId,
+      skuId,
+      {
+        imagemProdutoId: Number.isFinite(imagemProdutoId) && imagemProdutoId > 0
+          ? imagemProdutoId
+          : undefined,
+        url: imagemUrl || undefined,
+      }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Imagem vinculada a esta variação",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 async function deletarSku(req: Request, res: Response) {
   try {
     const organizacaoId = req.usuario.organizacao_id;
@@ -689,6 +721,7 @@ export {
   definirCapaProduto,
   removerImagemProduto,
   definirCapaSku,
+  reutilizarImagemProdutoNaSku,
   removerImagemSku,
   uploadImagemSku,
   deletarSku,
@@ -696,5 +729,3 @@ export {
   desativarSku
 
 };
-
-

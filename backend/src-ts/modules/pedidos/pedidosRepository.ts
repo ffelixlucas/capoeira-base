@@ -268,7 +268,7 @@ export async function buscarEstatisticasPedidos(
     SUM(CASE WHEN p.status_financeiro = 'cancelado' THEN 1 ELSE 0 END) AS cancelados,
     SUM(CASE WHEN p.status_operacional = 'em_separacao' THEN 1 ELSE 0 END) AS em_separacao,
     SUM(CASE WHEN p.status_operacional = 'pronto_retirada' THEN 1 ELSE 0 END) AS pronto_retirada,
-    SUM(CASE WHEN p.status_operacional = 'entregue' THEN 1 ELSE 0 END) AS entregues,
+    SUM(CASE WHEN p.status_operacional = 'finalizado' THEN 1 ELSE 0 END) AS entregues,
     SUM(CASE WHEN p.status_financeiro = 'pago' THEN p.valor_total ELSE 0 END) AS total_faturado
   FROM pedidos p
   WHERE p.organizacao_id = ?
@@ -291,7 +291,7 @@ export async function atualizarStatusPedidoEntregue(
   const [result]: any = await connection.pool.query(
     `
     UPDATE pedidos
-    SET status_operacional = 'entregue'
+    SET status_operacional = 'finalizado'
     WHERE id = ?
       AND organizacao_id = ?
       AND status_operacional = 'pronto_retirada'

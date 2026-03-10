@@ -69,6 +69,34 @@ export default function ProdutoGerenciarPage() {
   if (!produto) return null;
   console.log("Produto carregado:", produto);
 
+  const imagensReaproveitaveisBrutas = [
+    ...(produto.imagens || []).map((img) => ({
+      chave: `produto-${img.id}`,
+      url: img.url,
+      origem: "Produto",
+    })),
+    ...((produto.skus || []).flatMap((skuItem) =>
+      (skuItem.imagens || []).map((img) => {
+        const resumoSku = (skuItem.variacoes || [])
+          .map((variacao) => variacao.valor)
+          .filter(Boolean)
+          .join(" • ");
+
+        return {
+          chave: `sku-${img.id}`,
+          url: img.url,
+          origem: resumoSku ? `SKU ${resumoSku}` : `SKU #${skuItem.id}`,
+        };
+      })
+    )),
+  ];
+
+  const imagensReaproveitaveis = Array.from(
+    new Map(
+      imagensReaproveitaveisBrutas.map((imagem) => [imagem.url, imagem])
+    ).values()
+  );
+
   return (
     <div className="min-h-screen bg-cor-fundo text-cor-texto pb-24">
 
@@ -166,6 +194,7 @@ export default function ProdutoGerenciarPage() {
                     <SkuLinha
                       key={sku.id}
                       sku={sku}
+                      imagensReaproveitaveis={imagensReaproveitaveis}
                       onAtualizado={carregar}
                     />
                   ))}

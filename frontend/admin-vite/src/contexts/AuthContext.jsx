@@ -10,6 +10,8 @@ let perfilBootstrapToken = null;
 
 export const AuthContext = createContext(null);
 
+const isFamilyPortalRoute = () => window.location.pathname.startsWith("/familia/");
+
 function decodeJwtExp(token) {
   try {
     const [, payload] = token.split(".");
@@ -27,6 +29,11 @@ export const AuthProvider = ({ children }) => {
   const [logoutTimer, setLogoutTimer] = useState(null);
 
   const redirectToLogin = () => {
+    if (isFamilyPortalRoute()) {
+      logger.info("🔒 [AuthContext] Ignorando redirect do admin dentro do portal do aluno");
+      return;
+    }
+
     sessionStorage.setItem("auth.message", "expired");
     const next = encodeURIComponent(
       window.location.pathname + window.location.search

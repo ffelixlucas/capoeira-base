@@ -13,6 +13,7 @@ import {
   definirCapaProduto,
   removerImagemProduto,
   definirCapaSku,
+  reutilizarImagemProdutoNaSku,
   removerImagemSku,
   uploadImagemSku,
   deletarSku,
@@ -31,6 +32,7 @@ router.delete("/sku/:id", verifyToken, deletarSku);
 router.patch("/sku/:id/desativar", verifyToken, desativarSku);
 router.patch("/sku/:id/reativar", verifyToken, reativarSku);
 router.put("/sku/:skuId/imagens/:imagemId/capa", verifyToken, definirCapaSku);
+router.post("/sku/:skuId/imagens/reutilizar", verifyToken, reutilizarImagemProdutoNaSku);
 router.delete("/sku/imagens/:imagemId", verifyToken, removerImagemSku);
 
 // 2️⃣ Produto 
