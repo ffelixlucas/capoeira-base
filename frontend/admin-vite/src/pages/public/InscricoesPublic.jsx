@@ -11,6 +11,21 @@ function InscricoesPublic() {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
+    if (!slug) return;
+
+    // Recupera rota quebrada no formato /inscrever/:eventoId
+    // Ex.: /inscrever/42 -> /inscrever/capoeira-base/42
+    if (/^\d+$/.test(slug)) {
+      const slugSalvo =
+        localStorage.getItem("slug") ||
+        localStorage.getItem("organizacao_slug");
+
+      if (slugSalvo && !/^\d+$/.test(slugSalvo)) {
+        navigate(`/inscrever/${slugSalvo}/${slug}`, { replace: true });
+      }
+      return;
+    }
+
     async function carregarEventos() {
       if (!slug) return; // evita chamadas sem org
 
@@ -27,7 +42,7 @@ function InscricoesPublic() {
     }
 
     carregarEventos();
-  }, [slug]);
+  }, [slug, navigate]);
 
   return (
     <div className="w-full">

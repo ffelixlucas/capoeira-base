@@ -457,7 +457,13 @@ export default function InscricaoEventoPublic() {
           isOpen={modalPagamento}
           onClose={() => {
             setModalPagamento(false);
-            navigate(`/inscrever/${evento.id}`);
+            if (slug && evento?.id) {
+              navigate(`/inscrever/${slug}/${evento.id}`);
+              return;
+            }
+            if (slug) {
+              navigate(`/inscrever/${slug}`);
+            }
           }}
           pagamento={dadosPagamento}
         />

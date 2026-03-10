@@ -106,6 +106,7 @@ const calcularParcelas = async (req, res) => {
     const valorComTaxa = calcularValorComTaxa(valorBase, "cartao");
 
     const parcelas = await calcularParcelasService({
+      evento_id,
       amount: valorComTaxa,
       bin,
       payment_method_id,
@@ -120,7 +121,7 @@ const calcularParcelas = async (req, res) => {
 
 const webhookPagamento = async (req, res) => {
   try {
-    await processarWebhookService(req.body);
+    await processarWebhookService(req.body, { orgId: req.query?.org });
     return res.sendStatus(200);
   } catch (error) {
     logger.error("Erro Controller webhookPagamento:", error);

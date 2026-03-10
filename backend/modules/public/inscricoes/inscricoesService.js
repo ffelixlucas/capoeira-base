@@ -1,8 +1,10 @@
 //backend/modules/public/inscricoes/inscricoesService.js
 const crypto = require("crypto");
 const axios = require("axios");
-const { MercadoPagoConfig, Payment } = require("mercadopago");
 const inscricoesRepository = require("./inscricoesRepository");
+const {
+  resolverCredenciaisMercadoPagoPorOrganizacaoId,
+} = require("../../../dist/modules/shared/organizacoes/organizacaoService.js");
 
 const {
   buscarInscricaoPendente,
@@ -21,14 +23,6 @@ const {
   enviarEmailPendente,
 } = require("../../../services/emailService.js");
 const logger = require("../../../utils/logger.js");
-
-
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
-  options: { timeout: 8000 },
-});
-
-const payment = new Payment(client);
 
 const TAXA_CARTAO = 0.0499;
 
@@ -83,6 +77,36 @@ function getApiBaseUrl() {
   const withoutApiSuffix = withoutTrailingSlash.replace(/\/api$/i, "");
 
   return `${withoutApiSuffix}/api`;
+}
+
+async function resolverAccessTokenPorEvento(eventoId) {
+  const evento = await buscarValorEvento(eventoId);
+  if (!evento?.organizacao_id) {
+    throw new Error("Evento sem organização vinculada.");
+  }
+
+  const credenciais = await resolverCredenciaisMercadoPagoPorOrganizacaoId(
+    Number(evento.organizacao_id)
+  );
+
+  return {
+    accessToken: credenciais.accessToken,
+    organizacaoId: Number(evento.organizacao_id),
+  };
+}
+
+async function criarPagamentoMP(body, accessToken) {
+  const { MercadoPagoConfig, Payment } = require("mercadopago");
+  const client = new MercadoPagoConfig({
+    accessToken,
+    options: { timeout: 8000 },
+  });
+  const payment = new Payment(client);
+
+  return payment.create({
+    body,
+    requestOptions: { idempotencyKey: crypto.randomUUID() },
+  });
 }
 
 /**
@@ -273,6 +297,9 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
 
   // 🔒 Garante que não duplique o /api
   const baseUrl = getApiBaseUrl();
+  const { accessToken, organizacaoId } = await resolverAccessTokenPorEvento(
+    evento_id
+  );
 
   const apelidoNormalizado = apelido || "";
 
@@ -288,14 +315,11 @@ const gerarPagamentoPixService = async (dadosFormulario) => {
         number: documentoCPF,
       },
     },
-    notification_url: `${baseUrl}/public/inscricoes/webhook`,
+    notification_url: `${baseUrl}/public/inscricoes/webhook?org=${organizacaoId}`,
     external_reference: `${inscricaoId}`, // agora usamos o ID da inscrição
   };
 
-  const result = await payment.create({
-    body,
-    requestOptions: { idempotencyKey: crypto.randomUUID() },
-  });
+  const result = await criarPagamentoMP(body, accessToken);
 
   // 4️⃣ Extrai dados do PIX
   const qrCode = result.point_of_interaction.transaction_data.qr_code_base64;
@@ -399,6 +423,9 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
     const emailPagador = responsavel_email || email;
 
     const baseUrl = getApiBaseUrl();
+    const { accessToken, organizacaoId } = await resolverAccessTokenPorEvento(
+      evento_id
+    );
 
     // ✅ garantir inscrição e atualizar dados ANTES do pagamento
     let inscricaoId;
@@ -444,7 +471,7 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
           address: { zip_code: "", street_name: "", street_number: "" },
         },
       },
-      notification_url: `${baseUrl}/public/inscricoes/webhook`,
+      notification_url: `${baseUrl}/public/inscricoes/webhook?org=${organizacaoId}`,
       external_reference: inscricaoId.toString(), // 🔥 chave para o webhook achar sua inscrição
       statement_descriptor: "CAPOEIRA BASE",
     };
@@ -452,10 +479,7 @@ const gerarPagamentoCartaoService = async (dadosFormulario) => {
     const safeBodyForLog = { ...body, token: "***" };
     logger.log("📦 [Cartão] Body enviado ao MP:", safeBodyForLog);
 
-    const result = await payment.create({
-      body,
-      requestOptions: { idempotencyKey: crypto.randomUUID() },
-    });
+    const result = await criarPagamentoMP(body, accessToken);
 
     logger.log("📦 [Cartão] Resposta MP:", {
       id: result.id,
@@ -551,6 +575,7 @@ async function fetchInstallments({
   bin = null,
   payment_method_id = null,
   issuer_id = null,
+  accessToken,
 }) {
   const url = new URL(
     "https://api.mercadopago.com/v1/payment_methods/installments"
@@ -563,7 +588,7 @@ async function fetchInstallments({
 
   const { data } = await axios.get(url.toString(), {
     headers: {
-      Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     timeout: 8000,
   });
@@ -571,18 +596,22 @@ async function fetchInstallments({
 }
 
 const calcularParcelasService = async ({
+  evento_id,
   amount,
   payment_method_id = null,
   issuer_id = null,
   bin = null,
 }) => {
   try {
+    const { accessToken } = await resolverAccessTokenPorEvento(evento_id);
+
     // 1) tenta com BIN puro
     let lista = await fetchInstallments({
       amount,
       bin,
       payment_method_id,
       issuer_id,
+      accessToken,
     });
 
     // 2) fallback: se veio vazio, força VISA
@@ -592,6 +621,7 @@ const calcularParcelasService = async ({
         bin,
         payment_method_id: "visa",
         issuer_id: null,
+        accessToken,
       });
     }
 
@@ -602,6 +632,7 @@ const calcularParcelasService = async ({
         bin,
         payment_method_id: "master",
         issuer_id: null,
+        accessToken,
       });
     }
 
@@ -618,17 +649,26 @@ const calcularParcelasService = async ({
 
 // Processa webhook do Mercado Pago
 
-const processarWebhookService = async (payload) => {
+const processarWebhookService = async (payload, options = {}) => {
   if (payload?.type !== "payment") return;
 
   try {
     const paymentId = payload.data.id;
+    const orgId = Number(options?.orgId);
+
+    let accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    if (Number.isFinite(orgId) && orgId > 0) {
+      const credenciais = await resolverCredenciaisMercadoPagoPorOrganizacaoId(
+        orgId
+      );
+      accessToken = credenciais.accessToken;
+    }
 
     const { data: pagamento } = await axios.get(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       }
     );
@@ -848,6 +888,9 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
     const emailPagador = responsavel_email || email;
 
     const baseUrl = getApiBaseUrl();
+    const { accessToken, organizacaoId } = await resolverAccessTokenPorEvento(
+      evento_id
+    );
 
     // 📦 Monta body do boleto
     const body = {
@@ -871,16 +914,13 @@ const gerarPagamentoBoletoService = async (dadosFormulario) => {
           federal_unit: dadosFormulario.federal_unit,
         },
       },
-      notification_url: `${baseUrl}/public/inscricoes/webhook`,
+      notification_url: `${baseUrl}/public/inscricoes/webhook?org=${organizacaoId}`,
       external_reference: inscricaoId.toString(), // ✅ agora existe
     };
 
     logger.log("📦 [Boleto] Body enviado ao MP:", body);
 
-    const result = await payment.create({
-      body,
-      requestOptions: { idempotencyKey: crypto.randomUUID() },
-    });
+    const result = await criarPagamentoMP(body, accessToken);
 
     logger.log("📦 [Boleto] Resposta MP:", {
       id: result.id,
