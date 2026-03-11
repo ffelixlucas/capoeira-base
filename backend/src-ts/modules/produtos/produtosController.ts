@@ -14,11 +14,10 @@ import {
   deletarImagemSkuService,
   reutilizarImagemProdutoNaSkuService,
   deletarSkuService,
-    reativarSkuService,
-    desativarSkuService
-
-
-
+  reativarSkuService,
+  desativarSkuService,
+  adicionarVariacaoSkuService,
+  atualizarVariacoesSkuService
 } from "./produtosService";
 import { atualizarEstoqueDireto } from "./produtosRepository";
 
@@ -708,6 +707,71 @@ async function desativarSku(req: Request, res: Response) {
   }
 }
 
+/**
+ * ADICIONAR VARIAÇÃO EM SKU
+ * POST /api/produtos/sku/:id/variacoes
+ */
+async function adicionarVariacaoSku(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const skuId = Number(req.params.id);
+    const variacaoValorId = Number(req.body?.variacao_valor_id);
+
+    if (!Number.isFinite(variacaoValorId) || variacaoValorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Variação inválida",
+      });
+    }
+
+    await adicionarVariacaoSkuService({
+      organizacaoId,
+      skuId,
+      variacaoValorId,
+    });
+
+    return res.json({
+      success: true,
+      message: "Variação adicionada com sucesso",
+    });
+  } catch (error: any) {
+    logger.warn("[produtosController] Erro ao adicionar variação na SKU", { error });
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Erro ao adicionar variação",
+    });
+  }
+}
+
+/**
+ * ATUALIZAR VARIAÇÕES DA SKU
+ * PUT /api/produtos/sku/:id/variacoes
+ */
+async function atualizarVariacoesSku(req: Request, res: Response) {
+  try {
+    const organizacaoId = req.usuario.organizacao_id;
+    const skuId = Number(req.params.id);
+    const valoresIds = Array.isArray(req.body?.valores_ids) ? req.body.valores_ids : [];
+
+    await atualizarVariacoesSkuService({
+      organizacaoId,
+      skuId,
+      valoresIds,
+    });
+
+    return res.json({
+      success: true,
+      message: "Variações da SKU atualizadas com sucesso",
+    });
+  } catch (error: any) {
+    logger.warn("[produtosController] Erro ao atualizar variações da SKU", { error });
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Erro ao atualizar variações da SKU",
+    });
+  }
+}
+
 export {
   listarProdutos,
   buscarProdutoPorId,
@@ -726,6 +790,8 @@ export {
   uploadImagemSku,
   deletarSku,
   reativarSku,
-  desativarSku
+  desativarSku,
+  adicionarVariacaoSku,
+  atualizarVariacoesSku
 
 };

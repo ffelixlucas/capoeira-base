@@ -53,6 +53,18 @@ interface AtualizarProdutoCompletoInput {
   quantidade: number;
 }
 
+interface AdicionarVariacaoSkuInput {
+  organizacaoId: number;
+  skuId: number;
+  variacaoValorId: number;
+}
+
+interface AtualizarVariacoesSkuInput {
+  organizacaoId: number;
+  skuId: number;
+  valoresIds: number[];
+}
+
 async function contarReferenciasImagem(url: string) {
   const [[produtoRefs]]: any = await db.pool.query(
     `SELECT COUNT(*) AS total
@@ -842,6 +854,189 @@ async function desativarSkuService(
   });
 }
 
+async function adicionarVariacaoSkuService({
+  organizacaoId,
+  skuId,
+  variacaoValorId,
+}: AdicionarVariacaoSkuInput) {
+  const [[sku]]: any = await db.pool.query(
+    `
+    SELECT id
+    FROM produtos_skus
+    WHERE id = ?
+      AND organizacao_id = ?
+    LIMIT 1
+    `,
+    [skuId, organizacaoId]
+  );
+
+  if (!sku) {
+    throw new Error("SKU não encontrada");
+  }
+
+  const totalPedidos = await contarPedidosPorSku(organizacaoId, skuId);
+  if (totalPedidos > 0) {
+    throw new Error("Esta SKU já possui pedidos e não pode ter variações alteradas");
+  }
+
+  const [[variacaoValor]]: any = await db.pool.query(
+    `
+    SELECT vv.id, vv.variacao_tipo_id, vt.nome AS tipo_nome
+    FROM variacoes_valores vv
+    INNER JOIN variacoes_tipos vt
+      ON vt.id = vv.variacao_tipo_id
+    WHERE vv.id = ?
+      AND vv.organizacao_id = ?
+    LIMIT 1
+    `,
+    [variacaoValorId, organizacaoId]
+  );
+
+  if (!variacaoValor) {
+    throw new Error("Variação não encontrada");
+  }
+
+  const [[tipoJaExiste]]: any = await db.pool.query(
+    `
+    SELECT sv.sku_id
+    FROM sku_variacoes sv
+    INNER JOIN variacoes_valores vv
+      ON vv.id = sv.variacao_valor_id
+    WHERE sv.organizacao_id = ?
+      AND sv.sku_id = ?
+      AND vv.variacao_tipo_id = ?
+    LIMIT 1
+    `,
+    [organizacaoId, skuId, variacaoValor.variacao_tipo_id]
+  );
+
+  if (tipoJaExiste) {
+    throw new Error(`Esta SKU já possui variação do tipo "${variacaoValor.tipo_nome}"`);
+  }
+
+  const [[valorJaExiste]]: any = await db.pool.query(
+    `
+    SELECT sku_id
+    FROM sku_variacoes
+    WHERE organizacao_id = ?
+      AND sku_id = ?
+      AND variacao_valor_id = ?
+    LIMIT 1
+    `,
+    [organizacaoId, skuId, variacaoValorId]
+  );
+
+  if (valorJaExiste) {
+    throw new Error("Esta variação já está vinculada à SKU");
+  }
+
+  await db.pool.query(
+    `
+    INSERT INTO sku_variacoes
+      (organizacao_id, sku_id, variacao_valor_id)
+    VALUES (?, ?, ?)
+    `,
+    [organizacaoId, skuId, variacaoValorId]
+  );
+
+  logger.info("[produtosService] Variação adicionada à SKU", {
+    organizacaoId,
+    skuId,
+    variacaoValorId,
+  });
+}
+
+async function atualizarVariacoesSkuService({
+  organizacaoId,
+  skuId,
+  valoresIds,
+}: AtualizarVariacoesSkuInput) {
+  const idsNormalizados = Array.from(
+    new Set((valoresIds || []).map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0))
+  );
+
+  const [[sku]]: any = await db.pool.query(
+    `
+    SELECT id
+    FROM produtos_skus
+    WHERE id = ?
+      AND organizacao_id = ?
+    LIMIT 1
+    `,
+    [skuId, organizacaoId]
+  );
+
+  if (!sku) {
+    throw new Error("SKU não encontrada");
+  }
+
+  const totalPedidos = await contarPedidosPorSku(organizacaoId, skuId);
+  if (totalPedidos > 0) {
+    throw new Error("Esta SKU já possui pedidos e não pode ter variações alteradas");
+  }
+
+  let valoresRows: any[] = [];
+  if (idsNormalizados.length > 0) {
+    const [rows]: any = await db.pool.query(
+      `
+      SELECT id, variacao_tipo_id
+      FROM variacoes_valores
+      WHERE organizacao_id = ?
+        AND id IN (?)
+      `,
+      [organizacaoId, idsNormalizados]
+    );
+    valoresRows = rows || [];
+
+    if (valoresRows.length !== idsNormalizados.length) {
+      throw new Error("Uma ou mais variações informadas são inválidas");
+    }
+
+    const tipos = valoresRows.map((row) => Number(row.variacao_tipo_id));
+    if (new Set(tipos).size !== tipos.length) {
+      throw new Error("Não é permitido selecionar dois valores do mesmo tipo");
+    }
+  }
+
+  const connection = await db.pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      `
+      DELETE FROM sku_variacoes
+      WHERE organizacao_id = ?
+        AND sku_id = ?
+      `,
+      [organizacaoId, skuId]
+    );
+
+    for (const valorId of idsNormalizados) {
+      await connection.query(
+        `
+        INSERT INTO sku_variacoes
+          (organizacao_id, sku_id, variacao_valor_id)
+        VALUES (?, ?, ?)
+        `,
+        [organizacaoId, skuId, valorId]
+      );
+    }
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+
+  logger.info("[produtosService] Variações da SKU atualizadas", {
+    organizacaoId,
+    skuId,
+    total: idsNormalizados.length,
+  });
+}
+
 export {
   listarProdutosService,
   buscarProdutoPorIdService,
@@ -858,5 +1053,7 @@ export {
   reutilizarImagemProdutoNaSkuService,
   deletarSkuService,
   reativarSkuService,
-  desativarSkuService
+  desativarSkuService,
+  adicionarVariacaoSkuService,
+  atualizarVariacoesSkuService
 };

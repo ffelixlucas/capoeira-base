@@ -1,8 +1,10 @@
 // SkuLinha.jsx - Versão com classes admin e nome oculto quando vazio
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { produtosService } from "../../../services/produtosService";
+import { variacoesService } from "../../../services/variacoesService";
 import { toast } from "react-toastify";
 import SkuGaleria from "./SkuGaleria";
+import SkuEditarModal from "./SkuEditarModal";
 
 function humanizarTipo(tipo = "") {
   const normalizado = String(tipo).trim().toLowerCase();
@@ -35,6 +37,11 @@ export default function SkuLinha({ sku, imagensReaproveitaveis = [], onAtualizad
   );
   const [loading, setLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [carregandoTamanhos, setCarregandoTamanhos] = useState(false);
+  const [tipoTamanhoId, setTipoTamanhoId] = useState(null);
+  const [tamanhosDisponiveis, setTamanhosDisponiveis] = useState([]);
+  const [tamanhoSelecionadoId, setTamanhoSelecionadoId] = useState("");
+  const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false);
 
   const variacoes = sku.variacoes || [];
   const prioridadeTipos = ["tamanho", "cor", "nome_camisa"];
@@ -51,6 +58,9 @@ export default function SkuLinha({ sku, imagensReaproveitaveis = [], onAtualizad
   const resumoCabecalho =
     variacoesOrdenadas.map(formatarVariacaoResumo).join(" • ") || "Sem variações definidas";
   const codigoSku = sku.sku_codigo || `#${sku.id}`;
+  const skuSemTamanho = !variacoesOrdenadas.some(
+    (variacao) => String(variacao.tipo).trim().toLowerCase() === "tamanho"
+  );
 
   const getCorStyle = (corNome) => {
     if (!corNome) return {};
@@ -195,6 +205,58 @@ export default function SkuLinha({ sku, imagensReaproveitaveis = [], onAtualizad
     }
   }
 
+  useEffect(() => {
+    async function carregarTamanhos() {
+      if (!isExpanded || !skuSemTamanho) return;
+
+      try {
+        setCarregandoTamanhos(true);
+        const tipos = await variacoesService.listarTipos();
+        const tipoTamanho = (tipos || []).find(
+          (tipo) => String(tipo.nome || "").trim().toLowerCase() === "tamanho"
+        );
+
+        if (!tipoTamanho) {
+          setTipoTamanhoId(null);
+          setTamanhosDisponiveis([]);
+          setTamanhoSelecionadoId("");
+          return;
+        }
+
+        setTipoTamanhoId(tipoTamanho.id);
+        const valores = await variacoesService.listarValores(tipoTamanho.id);
+        setTamanhosDisponiveis(valores || []);
+        setTamanhoSelecionadoId((valores || [])[0]?.id ? String((valores || [])[0].id) : "");
+      } catch {
+        toast.error("Erro ao carregar tamanhos");
+      } finally {
+        setCarregandoTamanhos(false);
+      }
+    }
+
+    carregarTamanhos();
+  }, [isExpanded, skuSemTamanho]);
+
+  async function adicionarTamanhoNaSku() {
+    if (!tamanhoSelecionadoId) {
+      toast.warning("Selecione um tamanho");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await produtosService.adicionarVariacaoSku(sku.id, Number(tamanhoSelecionadoId));
+      toast.success("Tamanho adicionado na variação");
+      onAtualizado();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Erro ao adicionar tamanho"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="bg-cor-secundaria rounded-xl border-2 border-cor-secundaria/30 overflow-hidden mb-3 shadow-sm">
 
@@ -222,6 +284,16 @@ export default function SkuLinha({ sku, imagensReaproveitaveis = [], onAtualizad
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setModalEdicaoAberto(true);
+            }}
+            className="rounded-lg border border-cor-secundaria/40 px-2.5 py-1 text-xs font-semibold text-on-surface/70 hover:bg-cor-secundaria/10 transition"
+          >
+            Editar
+          </button>
           <span className={`text-sm font-medium ${estoque === 0 ? 'text-red-500' :
             estoque < 5 ? 'text-yellow-500' :
               'text-green-500'
@@ -326,6 +398,53 @@ export default function SkuLinha({ sku, imagensReaproveitaveis = [], onAtualizad
 
             <div className="space-y-4">
 
+              {skuSemTamanho && (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                  <p className="text-xs font-semibold text-amber-600 mb-2">
+                    Esta SKU está sem tamanho.
+                  </p>
+                  {carregandoTamanhos ? (
+                    <p className="text-xs text-on-surface/60">Carregando tamanhos...</p>
+                  ) : !tipoTamanhoId ? (
+                    <p className="text-xs text-on-surface/60">
+                      Tipo "Tamanho" não encontrado em Gerenciar tipos e valores.
+                    </p>
+                  ) : tamanhosDisponiveis.length === 0 ? (
+                    <p className="text-xs text-on-surface/60">
+                      Não há valores de tamanho cadastrados.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div>
+                        <label className="block text-xs text-on-surface/40 font-medium mb-1">
+                          Tamanho
+                        </label>
+                        <select
+                          value={tamanhoSelecionadoId}
+                          onChange={(event) => setTamanhoSelecionadoId(event.target.value)}
+                          className="input-number-admin min-w-[120px]"
+                        >
+                          {tamanhosDisponiveis.map((valor) => (
+                            <option key={valor.id} value={valor.id}>
+                              {valor.valor}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={adicionarTamanhoNaSku}
+                        disabled={loading || !tamanhoSelecionadoId}
+                        className="py-2 px-3 text-xs font-semibold rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition"
+                      >
+                        Adicionar tamanho
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Linha compacta */}
               <div className="flex gap-4">
 
@@ -423,6 +542,14 @@ export default function SkuLinha({ sku, imagensReaproveitaveis = [], onAtualizad
 </div>
           </div>
         </div>
+      )}
+
+      {modalEdicaoAberto && (
+        <SkuEditarModal
+          sku={sku}
+          onClose={() => setModalEdicaoAberto(false)}
+          onSaved={onAtualizado}
+        />
       )}
     </div>
   );

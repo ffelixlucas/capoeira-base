@@ -18,7 +18,9 @@ import {
   uploadImagemSku,
   deletarSku,
   reativarSku,
-  desativarSku
+  desativarSku,
+  adicionarVariacaoSku,
+  atualizarVariacoesSku
 
 } from "./produtosController";
 
@@ -31,6 +33,8 @@ router.put("/sku/:id/estoque", verifyToken, atualizarEstoqueSku);
 router.delete("/sku/:id", verifyToken, deletarSku);
 router.patch("/sku/:id/desativar", verifyToken, desativarSku);
 router.patch("/sku/:id/reativar", verifyToken, reativarSku);
+router.post("/sku/:id/variacoes", verifyToken, adicionarVariacaoSku);
+router.put("/sku/:id/variacoes", verifyToken, atualizarVariacoesSku);
 router.put("/sku/:skuId/imagens/:imagemId/capa", verifyToken, definirCapaSku);
 router.post("/sku/:skuId/imagens/reutilizar", verifyToken, reutilizarImagemProdutoNaSku);
 router.delete("/sku/imagens/:imagemId", verifyToken, removerImagemSku);

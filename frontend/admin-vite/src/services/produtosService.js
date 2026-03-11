@@ -52,6 +52,22 @@ atualizarEstoque: async (skuId, dados) => {
   return response.data
 },
 
+// 🔵 ADICIONAR VARIAÇÃO EM SKU
+adicionarVariacaoSku: async (skuId, variacaoValorId) => {
+  const response = await api.post(`/produtos/sku/${skuId}/variacoes`, {
+    variacao_valor_id: variacaoValorId,
+  });
+  return response.data;
+},
+
+// 🔵 ATUALIZAR TODAS AS VARIAÇÕES DA SKU
+atualizarVariacoesSku: async (skuId, valoresIds) => {
+  const response = await api.put(`/produtos/sku/${skuId}/variacoes`, {
+    valores_ids: valoresIds,
+  });
+  return response.data;
+},
+
 // 🔵 UPLOAD IMAGEM PRODUTO
 uploadImagemProduto: async (produtoId, file) => {
   const formData = new FormData();

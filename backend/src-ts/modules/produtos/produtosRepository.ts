@@ -174,7 +174,9 @@ async function buscarProdutoPorId(
     `
     SELECT
       sv.sku_id,
+      vt.id AS tipo_id,
       vt.nome AS tipo,
+      vv.id AS valor_id,
       vv.valor
     FROM sku_variacoes sv
     JOIN variacoes_valores vv
@@ -216,7 +218,9 @@ async function buscarProdutoPorId(
       const variacoesDaSku = variacoes
         .filter((v: any) => v.sku_id === sku.id)
         .map((v: any) => ({
+          tipo_id: v.tipo_id,
           tipo: v.tipo,
+          valor_id: v.valor_id,
           valor: v.valor
         }));
   
